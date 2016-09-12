@@ -41,7 +41,6 @@ class HybridSearchCommandController extends CommandController
      *
      * This command is used to create full search index.
      *
-     *
      * @param string $path Name of the root node
      * @param string $site Name of the site
      * @param string $workspacename Name of the workspace
@@ -49,6 +48,7 @@ class HybridSearchCommandController extends CommandController
      */
     public function createFullIndexCommand($path,$site,$workspacename)
     {
+
 
 
         $site = $this->siteRepository->findOneByNodeName($site);
@@ -62,9 +62,6 @@ class HybridSearchCommandController extends CommandController
         $this->searchIndexFactory->createFullIndex($path,$site,$workspacename);
 
     }
-
-
-
 
 
 }

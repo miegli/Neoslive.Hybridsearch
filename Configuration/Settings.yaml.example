@@ -4,3 +4,7 @@ Neoslive:
       endpoint: 'https://**firebaseio.com'
       token: '***'
       path: '/search'
+    Filter:
+      GrantParentNodeTypeFilter: '[instanceof TYPO3.Neos:Document]'
+      ParentNodeTypeFilter: '[instanceof TYPO3.Neos:Content]'
+      NodeTypeFilter: '[instanceof TYPO3.Neos:Node]'

@@ -5,8 +5,6 @@
         "typo3/flow": "*",
         "flowpack/jobqueue-common": "*",
         "Org_Heigl/Hyphenator": "~2.0",
-        "kreait/firebase-php": "*",
-        "salsify/json-streaming-parser": "dev-master",
         "neitanod/forceutf8": "dev-master"
     },
     "name": "neoslive/hybridsearch",
