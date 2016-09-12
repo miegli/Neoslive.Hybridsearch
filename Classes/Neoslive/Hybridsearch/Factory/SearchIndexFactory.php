@@ -44,7 +44,6 @@ class SearchIndexFactory
     protected $nodeDataRepository;
 
 
-
     /**
      * @Flow\Inject
      * @var SiteRepository
@@ -103,9 +102,27 @@ class SearchIndexFactory
 
 
     /**
+     * @var \stdClass
+     */
+    protected $keywords;
+
+
+    /**
      * @var array
      */
     protected $settings;
+
+
+    /**
+     * @var string
+     */
+    protected $servername;
+
+
+    /**
+     * @var boolean
+     */
+    protected $creatingFullIndex = false;
 
 
     /**
@@ -119,6 +136,7 @@ class SearchIndexFactory
         $this->settings = $settings;
 
         $this->index = new \stdClass();
+        $this->keywords = new \stdClass();
 
     }
 
@@ -151,13 +169,15 @@ class SearchIndexFactory
         $this->temporaryDirectory = $temporaryDirectory;
 
 
+        $this->servername = 'localhost';
+
+
     }
 
 
     /**
      * Create full search index for given node path
      * @Job\Defer(queueName="neoslive-hybridsearch-queue")
-     *
      * @param string $path path of the root node name
      * @param Site $site
      * @param string $workspacename
@@ -179,25 +199,21 @@ class SearchIndexFactory
         }
 
 
-
     }
 
 
     /**
      * Update index for given node and target workspace
-     *
-     *
+     * @Job\Defer(queueName="neoslive-hybridsearch-queue")
      * @param Node $node
      * @param Workspace $workspace
      */
-    public function updateIndex($node,$workspace)
+    public function updateIndex($node, $workspace)
     {
 
 
-        $this->generateSingleIndex($node,$this->getWorkspaceHash($workspace),$node->getNodeData()->getDimensionsHash());
+        $this->generateSingleIndex($node, $this->getWorkspaceHash($workspace), $node->getNodeData()->getDimensionsHash());
         $this->save();
-
-
 
 
     }
@@ -269,6 +285,7 @@ class SearchIndexFactory
 
             /** @var Node $children */
             $this->generateSingleIndex($children, $workspaceHash, $dimensionConfigurationHash);
+
         }
 
 
@@ -276,6 +293,34 @@ class SearchIndexFactory
 
     }
 
+
+    /**
+     * Remove single index for given node
+     *
+     * @param Node $node
+     * @param String $workspaceHash
+     * @param string $dimensionConfigurationHash
+     * @return void
+     */
+    private function removeSingleIndex($node, $workspaceHash, $dimensionConfigurationHash)
+    {
+
+        if ($this->creatingFullIndex === false) {
+
+            $servername = $this->getServerName();
+
+
+            foreach ($this->firebaseGetIndexByNode($node, $workspaceHash, $dimensionConfigurationHash) as $keyword => $val) {
+               $this->firebasePersistSynchronous(array(), 'PUT', $servername . "/index/" . $workspaceHash . "/" . $dimensionConfigurationHash . "/" . urlencode($keyword) . "/" . urlencode($node->getIdentifier()));
+
+            }
+
+
+
+        }
+
+
+    }
 
     /**
      * Generates single index for given node
@@ -289,6 +334,16 @@ class SearchIndexFactory
     {
 
 
+        if (isset($this->keywords->keywords->$workspaceHash->$dimensionConfigurationHash->keywords) === false) {
+            $this->keywords->keywords = new \stdClass();
+            $this->keywords->keywords->$workspaceHash = new \stdClass();
+            $this->keywords->keywords->$workspaceHash->$dimensionConfigurationHash = new \stdClass();
+            $this->keywords->keywords->$workspaceHash->$dimensionConfigurationHash->keywords = new \stdClass();
+        }
+
+        $this->removeSingleIndex($node, $workspaceHash, $dimensionConfigurationHash);
+
+
         if (isset($this->index->$workspaceHash) === false) {
             $this->index->$workspaceHash = new \stdClass();
         }
@@ -299,6 +354,9 @@ class SearchIndexFactory
 
 
         $indexData = $this->convertNodeToSearchIndexResult($node);
+        $identifier = $indexData->identifier;
+
+        $this->keywords->keywords->$workspaceHash->$dimensionConfigurationHash->$identifier = new \stdClass();
 
         foreach ($this->generateSearchIndexFromProperties($indexData->properties) as $keyword => $frequency) {
 
@@ -306,8 +364,10 @@ class SearchIndexFactory
                 $this->index->$workspaceHash->$dimensionConfigurationHash->$keyword = new \stdClass();
             }
 
-            $identifier = $indexData->identifier;
+
             $this->index->$workspaceHash->$dimensionConfigurationHash->$keyword->$identifier = $indexData;
+            $this->keywords->keywords->$workspaceHash->$dimensionConfigurationHash->$identifier->$keyword = true;
+
 
         }
 
@@ -474,8 +534,6 @@ class SearchIndexFactory
     }
 
 
-
-
     /**
      * Get dimension confiuguration hash (replace critical strings)
      * @param array $dimensionConfiguration
@@ -510,16 +568,94 @@ class SearchIndexFactory
     protected function save()
     {
 
-        foreach ($this->index as $workspace => $workspaceData) {
-            foreach ($workspaceData as $dimension => $dimensionData) {
-                $this->firebasePersist($dimensionData, 'PATCH', $workspace . "/" . $dimension);
+        $servername = $this->getServerName();
+
+        if ($this->creatingFullIndex) {
+
+            // patch index data all in one request
+            foreach ($this->index as $workspace => $workspaceData) {
+                foreach ($workspaceData as $dimension => $dimensionData) {
+                    $this->firebasePersist($dimensionData, 'PATCH', $servername . "/index/" . $workspace . "/" . $dimension);
+                }
             }
+
+            // patch keywords data all in one request
+            $this->firebasePersist($this->keywords, 'PATCH', $servername);
+
+
+        } else {
+
+
+            // put index data node by node for keep old records existing
+            foreach ($this->index as $workspace => $workspaceData) {
+                foreach ($workspaceData as $dimension => $dimensionData) {
+                    foreach ($dimensionData as $keyword => $keywordData) {
+                        foreach ($keywordData as $node => $nodeData) {
+
+                            $this->firebasePersistSynchronous($nodeData, 'PUT', $servername . "/index/" . $workspace . "/" . $dimension . "/" . urlencode($keyword) . "/" . urlencode($node));
+                        }
+                    }
+                }
+            }
+
+            // patch keywords data all in one request
+
+            foreach ($this->keywords as $path => $pathData) {
+
+                foreach ($pathData as $workspace => $workspaceData) {
+
+                    foreach ($workspaceData as $dimension => $dimensionData) {
+
+                        foreach ($dimensionData as $node => $nodeData) {
+                            $this->firebasePersistSynchronous($nodeData, 'PUT', $servername . "/keywords/" . $workspace . "/" . $dimension . "/" . urlencode($node));
+                        }
+
+                    }
+                }
+
+
+            }
+
+
 
         }
 
 
         $this->index = new \stdClass();
+        $this->keywords = new \stdClass();
 
+
+    }
+
+
+    /**
+     * Get Firebase index by node
+     * @param Node $node
+     * @param String $workspaceHash
+     * @param string $dimensionConfigurationHash
+     * @return array
+     */
+    public function firebaseGetIndexByNode($node, $workspaceHash, $dimensionConfigurationHash)
+    {
+
+
+        $headers = array(
+            "Cache-Control: no-cache",
+        );
+
+        $path = $this->getServerName() . "/keywords/" . $workspaceHash . "/" . $dimensionConfigurationHash . "/" . $node->getIdentifier();
+
+        $response = $this->getBrowser($headers)->request('https://phlu-f98dd.firebaseio.com/' . $this->settings['Firebase']['path'] . '/' . $path . '/.json?auth=' . $this->settings['Firebase']['token'], 'GET', array(), array(), array(), '');
+
+
+        if ($response->getStatusCode() === 200) {
+            if ($response->getContent() == 'null') {
+                return array();
+            }
+            return json_decode($response->getContent());
+        }
+
+        return array();
 
     }
 
@@ -551,6 +687,30 @@ class SearchIndexFactory
 
     }
 
+    /**
+     * Do synchronous firebase request
+     * @param mixed $data
+     * @param string $method
+     * @param string $path
+     * @return void
+     */
+    public function firebasePersistSynchronous($data, $method = 'PATCH', $path = "/")
+    {
+
+        $jsondata = json_encode($data);
+        $length = strlen($jsondata);
+
+        $headers = array(
+            "Cache-Control: no-cache",
+            "Content-Type: application/json; charset=utf-8",
+            "Content-Length: " . $length
+        );
+
+
+        $this->getBrowser($headers)->request('https://phlu-f98dd.firebaseio.com/' . $this->settings['Firebase']['path'] . '/' . $path . '/.json?auth=' . $this->settings['Firebase']['token'], $method, array(), array(), array(), $jsondata);
+
+
+    }
 
 
     /**
@@ -562,13 +722,28 @@ class SearchIndexFactory
     protected function firebaseDeleteWorkspace($workspace)
     {
 
+        $this->creatingFullIndex = true;
+
         $headers = array(
             "Cache-Control: no-cache",
             "Content-Type: application/json; charset=utf-8",
         );
 
 
-        $this->getBrowser($headers)->request('https://phlu-f98dd.firebaseio.com/' . $this->settings['Firebase']['path'] . '/'. $workspace->getName() .'/.json?auth=' . $this->settings['Firebase']['token'], 'DELETE', array(), array(), array());
+        $this->getBrowser($headers)->request('https://phlu-f98dd.firebaseio.com/' . $this->settings['Firebase']['path'] . '/' . $this->getServerName() . '/index/' . $workspace->getName() . '/.json?auth=' . $this->settings['Firebase']['token'], 'DELETE', array(), array(), array());
+        $this->getBrowser($headers)->request('https://phlu-f98dd.firebaseio.com/' . $this->settings['Firebase']['path'] . '/' . $this->getServerName() . '/keywords/' . $workspace->getName() . '/.json?auth=' . $this->settings['Firebase']['token'], 'DELETE', array(), array(), array());
+
+
+    }
+
+    /**
+     * Get servers name
+     * @return string
+     */
+    protected function getServerName()
+    {
+
+        return preg_replace("/[^A-z0-9]/","-",$this->servername);
 
 
     }
