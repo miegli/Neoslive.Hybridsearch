@@ -13,10 +13,4 @@ Flowpack:
     Common:
       queues:
         'neoslive-hybridsearch-queue':
-          className: 'Neoslive\Hybridsearch\Queue\SearchIndexJob'
-          executeIsolated: true
-          options:
-            defaultTimeout: 500000
-          releaseOptions:
-            priority: 512
-            delay: 120
+          className: 'Neoslive\Hybridsearch\Queue\SearchIndexQueue'

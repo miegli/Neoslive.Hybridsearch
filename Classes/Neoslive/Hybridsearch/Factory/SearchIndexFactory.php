@@ -11,7 +11,7 @@ namespace Neoslive\Hybridsearch\Factory;
  * source code.
  */
 
-use Neoslive\Hybridsearch\Queue\SearchIndexJob;
+
 use TYPO3\Flow\Annotations as Flow;
 use TYPO3\Flow\Http\Client\Browser;
 use TYPO3\Neos\Domain\Repository\SiteRepository;
@@ -26,17 +26,9 @@ use TYPO3\Eel\FlowQuery\FlowQuery;
 use \Org\Heigl\Hyphenator as h;
 use \ForceUTF8\Encoding;
 use Flowpack\JobQueue\Common\Annotations as Job;
-use Flowpack\JobQueue\Common\Job\JobInterface;
-use Flowpack\JobQueue\Common\Job\JobManager;
 
 class SearchIndexFactory
 {
-
-    /**
-     * @Flow\Inject
-     * @var JobManager
-     */
-    protected $jobManager;
 
 
     /**
@@ -164,7 +156,7 @@ class SearchIndexFactory
 
     /**
      * Create full search index for given node path
-     *
+     * @Job\Defer(queueName="neoslive-hybridsearch-queue")
      *
      * @param string $path path of the root node name
      * @param Site $site
@@ -520,7 +512,7 @@ class SearchIndexFactory
 
         foreach ($this->index as $workspace => $workspaceData) {
             foreach ($workspaceData as $dimension => $dimensionData) {
-                $this->firebaseRequest($dimensionData, 'PATCH', $workspace . "/" . $dimension);
+                $this->firebasePersist($dimensionData, 'PATCH', $workspace . "/" . $dimension);
             }
 
         }
@@ -534,16 +526,14 @@ class SearchIndexFactory
 
     /**
      * Do defered firebase request
+     * @Job\Defer(queueName="neoslive-hybridsearch-queue")
      * @param mixed $data
      * @param string $method
      * @param string $path
      * @return void
      */
-    public function firebaseRequest($data, $method = 'PATCH', $path = "/")
+    public function firebasePersist($data, $method = 'PATCH', $path = "/")
     {
-
-        $job = new SearchIndexJob('some@email.com');
-        $this->jobManager->queue('neoslive-hybridsearch-queue', $job);
 
 
         $jsondata = json_encode($data);
