@@ -11,7 +11,9 @@ namespace Neoslive\Hybridsearch\Factory;
  * source code.
  */
 
+use Neoslive\Hybridsearch\Queue\SearchIndexJob;
 use TYPO3\Flow\Annotations as Flow;
+use TYPO3\Flow\Http\Client\Browser;
 use TYPO3\Neos\Domain\Repository\SiteRepository;
 use TYPO3\Neos\Domain\Service\ContentContextFactory;
 use TYPO3\TYPO3CR\Domain\Model\Node;
@@ -23,9 +25,19 @@ use TYPO3\TYPO3CR\Domain\Service\ContentDimensionCombinator;
 use TYPO3\Eel\FlowQuery\FlowQuery;
 use \Org\Heigl\Hyphenator as h;
 use \ForceUTF8\Encoding;
+use Flowpack\JobQueue\Common\Annotations as Job;
+use Flowpack\JobQueue\Common\Job\JobInterface;
+use Flowpack\JobQueue\Common\Job\JobManager;
 
 class SearchIndexFactory
 {
+
+    /**
+     * @Flow\Inject
+     * @var JobManager
+     */
+    protected $jobManager;
+
 
     /**
      * @Flow\Inject
@@ -38,6 +50,7 @@ class SearchIndexFactory
      * @var NodeDataRepository
      */
     protected $nodeDataRepository;
+
 
 
     /**
@@ -63,7 +76,6 @@ class SearchIndexFactory
      * @var \TYPO3\Flow\Http\Client\Browser
      */
     protected $browser;
-
 
 
     /**
@@ -102,8 +114,6 @@ class SearchIndexFactory
      * @var array
      */
     protected $settings;
-
-
 
 
     /**
@@ -164,30 +174,49 @@ class SearchIndexFactory
     public function createFullIndex($path, $site, $workspacename)
     {
 
-        $this->firebaseDeleteAll();
-
 
         foreach ($this->workspaceRepository->findAll() as $workspace) {
 
             /** @var Workspace $workspace */
             if ($workspacename === null || $workspacename === $workspace->getName()) {
+                $this->firebaseDeleteWorkspace($workspace);
                 $this->createIndex($path, $workspace, $site);
+                $this->save();
             }
 
         }
 
 
+
+    }
+
+
+    /**
+     * Update index for given node and target workspace
+     *
+     *
+     * @param Node $node
+     * @param Workspace $workspace
+     */
+    public function updateIndex($node,$workspace)
+    {
+
+
+        $this->generateSingleIndex($node,$this->getWorkspaceHash($workspace),$node->getNodeData()->getDimensionsHash());
         $this->save();
+
+
 
 
     }
 
     /**
-     * Create search index for given root node name, workspace and dimension array
+     * Create search index for given root node name, workspace and site
      *
      *
      * @param string $path node identified by path used as entry point for creating search index
      * @param Workspace $workspace workspace creating search index for
+     * @param Site $site neos site
      * @return void
      */
     private function createIndex($path, $workspace, $site)
@@ -196,6 +225,8 @@ class SearchIndexFactory
 
         // TODO: Performance could be improved by a search for all child node data instead of looping over all contexts
         foreach ($this->contentDimensionCombinator->getAllAllowedCombinations() as $dimensionConfiguration) {
+
+
             $context = $this->createContext($workspace->getName(), $dimensionConfiguration, $site);
 
             /** @var Node $node */
@@ -222,11 +253,21 @@ class SearchIndexFactory
      * @param string $nodeTypeFilter If specified, only nodes with that node type are considered
      * @return void
      */
-    private function generateIndex($node, $workspace, $dimensionConfiguration, $nodeTypeFilter = '[instanceof TYPO3.Neos:Node]')
+    private function generateIndex($node, $workspace, $dimensionConfiguration, $nodeTypeFilter = '')
     {
 
-        $workspaceHash = preg_replace("/^A-z0-9/", "-", $workspace->getName());
-        $dimensionConfigurationHash = sha1(json_encode($dimensionConfiguration));
+
+        if ($nodeTypeFilter === '') {
+            if (isset($this->settings['Filter']['NodeTypeFilter'])) {
+                $nodeTypeFilter = $this->settings['Filter']['NodeTypeFilter'];
+            } else {
+                $nodeTypeFilter = '[instanceof TYPO3.Neos:Content]';
+            }
+        }
+
+
+        $workspaceHash = $this->getWorkspaceHash($workspace);
+        $dimensionConfigurationHash = $this->getDimensionConfiugurationHash($dimensionConfiguration);
 
 
         $flowQuery = new FlowQuery(array($node));
@@ -340,10 +381,27 @@ class SearchIndexFactory
     /**
      * @param Node $node
      * @param string $grandParentNodeFilter
+     * @param string $parentNodeFilter
      * @return \stdClass
      */
-    private function convertNodeToSearchIndexResult($node, $grandParentNodeFilter = '[instanceof TYPO3.Neos:Document]')
+    private function convertNodeToSearchIndexResult($node, $grandParentNodeFilter = '', $parentNodeFilter = '')
     {
+
+        if ($grandParentNodeFilter === '') {
+            if (isset($this->settings['Filter']['GrantParentNodeTypeFilter'])) {
+                $grandParentNodeFilter = $this->settings['Filter']['GrantParentNodeTypeFilter'];
+            } else {
+                $grandParentNodeFilter = '[instanceof TYPO3.Neos:Content]';
+            }
+        }
+
+        if ($parentNodeFilter === '') {
+            if (isset($this->settings['Filter']['ParentNodeTypeFilter'])) {
+                $parentNodeFilter = $this->settings['Filter']['ParentNodeTypeFilter'];
+            } else {
+                $parentNodeFilter = '[instanceof TYPO3.Neos:Content]';
+            }
+        }
 
 
         $properties = new \stdClass();
@@ -364,7 +422,7 @@ class SearchIndexFactory
 
         $flowQuery = new FlowQuery(array($node));
 
-        $parentNode = $flowQuery->parent()->closest('[instanceof TYPO3.Neos:Content]')->get(0);
+        $parentNode = $flowQuery->parent()->closest($parentNodeFilter)->get(0);
         $grandParentNode = $flowQuery->closest($grandParentNodeFilter)->get(0);
 
 
@@ -400,9 +458,6 @@ class SearchIndexFactory
         $data = new \stdClass();
 
 
-
-
-
         $data->identifier = $node->getNodeData()->getIdentifier();
         $data->properties = $properties;
         $data->nodeType = $node->getNodeType()->getName();
@@ -428,6 +483,33 @@ class SearchIndexFactory
 
 
 
+
+    /**
+     * Get dimension confiuguration hash (replace critical strings)
+     * @param array $dimensionConfiguration
+     * @return string
+     */
+    private function getDimensionConfiugurationHash($dimensionConfiguration)
+    {
+
+        return \TYPO3\TYPO3CR\Utility::sortDimensionValueArrayAndReturnDimensionsHash($dimensionConfiguration);
+
+    }
+
+
+    /**
+     * Get workspace hash (replace critical strings) for given workspace
+     * @param Workspace $workspace
+     * @return string
+     */
+    private function getWorkspaceHash($workspace)
+    {
+
+        return preg_replace("/^A-z0-9/", "-", $workspace->getName());
+
+    }
+
+
     /**
      * Save generated search index as tempory json file for persisting later
      *
@@ -436,25 +518,12 @@ class SearchIndexFactory
     protected function save()
     {
 
+        foreach ($this->index as $workspace => $workspaceData) {
+            foreach ($workspaceData as $dimension => $dimensionData) {
+                $this->firebaseRequest($dimensionData, 'PATCH', $workspace . "/" . $dimension);
+            }
 
-    //    $this->firebaseRequest($this->index);
-
-
-
-     foreach ($this->index as $workspace => $workspaceData) {
-
-
-         foreach ($workspaceData as $dimension => $dimensionData) {
-
-             $this->firebaseRequest($dimensionData, 'PATCH', $workspace . "/" . $dimension);
-
-            // foreach ($dimensionData as $keyword => $keywordData) {
-           //      $this->firebaseRequest($keywordData, 'PATCH', $workspace . "/" . urlencode($keyword));
-           //  }
-
-         }
-
-     }
+        }
 
 
         $this->index = new \stdClass();
@@ -464,14 +533,18 @@ class SearchIndexFactory
 
 
     /**
-     * Do firebase request
+     * Do defered firebase request
      * @param mixed $data
      * @param string $method
      * @param string $path
-     * @return mixed
+     * @return void
      */
-    protected function firebaseRequest($data,$method='PATCH',$path="/")
+    public function firebaseRequest($data, $method = 'PATCH', $path = "/")
     {
+
+        $job = new SearchIndexJob('some@email.com');
+        $this->jobManager->queue('neoslive-hybridsearch-queue', $job);
+
 
         $jsondata = json_encode($data);
         $length = strlen($jsondata);
@@ -479,38 +552,51 @@ class SearchIndexFactory
         $headers = array(
             "Cache-Control: no-cache",
             "Content-Type: application/json; charset=utf-8",
-            "Content-Length: ".$length
+            "Content-Length: " . $length
         );
 
-        $this->browserRequestEngine->setOption(CURLOPT_HTTPHEADER, $headers);
-        $this->browserRequestEngine->setOption(CURLOPT_SSL_VERIFYPEER, FALSE);
-        $this->browserRequestEngine->setOption(CURLOPT_SSL_VERIFYHOST, FALSE);
-        $this->browserRequestEngine->setOption(CURLOPT_CONNECTTIMEOUT, 600000);
-        $this->browserRequestEngine->setOption(CURLOPT_TIMEOUT, 600000);
-        $this->browserRequestEngine->setOption(CURLOPT_FRESH_CONNECT, FALSE);
-        $this->browserRequestEngine->setOption(CURLOPT_TCP_NODELAY, FALSE);
-        $this->browserRequestEngine->setOption(CURLOPT_RETURNTRANSFER, TRUE);
-        $this->browser->setRequestEngine($this->browserRequestEngine);
 
-        $this->browser->request('https://phlu-f98dd.firebaseio.com/'.$this->settings['Firebase']['path'].'/'.$path.'/.json?auth='.$this->settings['Firebase']['token'], $method,array(),array(),array(),$jsondata);
+        $this->getBrowser($headers)->request('https://phlu-f98dd.firebaseio.com/' . $this->settings['Firebase']['path'] . '/' . $path . '/.json?auth=' . $this->settings['Firebase']['token'], $method, array(), array(), array(), $jsondata);
 
 
     }
 
+
+
     /**
+     * Delete index for given workspace
      * Do firebase delete request
+     * @param Workspace $workspace
      * @return mixed
      */
-    protected function firebaseDeleteAll()
+    protected function firebaseDeleteWorkspace($workspace)
     {
-
-
 
         $headers = array(
             "Cache-Control: no-cache",
             "Content-Type: application/json; charset=utf-8",
         );
 
+
+        $this->getBrowser($headers)->request('https://phlu-f98dd.firebaseio.com/' . $this->settings['Firebase']['path'] . '/'. $workspace->getName() .'/.json?auth=' . $this->settings['Firebase']['token'], 'DELETE', array(), array(), array());
+
+
+    }
+
+    /**
+     * Get http browser
+     * @param array http headers
+     * @return Browser
+     */
+    protected function getBrowser($headers = false)
+    {
+
+        if ($headers === false) {
+            $headers = array(
+                "Cache-Control: no-cache"
+            );
+        }
+
         $this->browserRequestEngine->setOption(CURLOPT_HTTPHEADER, $headers);
         $this->browserRequestEngine->setOption(CURLOPT_SSL_VERIFYPEER, FALSE);
         $this->browserRequestEngine->setOption(CURLOPT_SSL_VERIFYHOST, FALSE);
@@ -521,7 +607,7 @@ class SearchIndexFactory
         $this->browserRequestEngine->setOption(CURLOPT_RETURNTRANSFER, TRUE);
         $this->browser->setRequestEngine($this->browserRequestEngine);
 
-        $this->browser->request('https://phlu-f98dd.firebaseio.com/'.$this->settings['Firebase']['path'].'/.json?auth='.$this->settings['Firebase']['token'], 'DELETE',array(),array(),array());
+        return $this->browser;
 
 
     }
