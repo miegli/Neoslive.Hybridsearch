@@ -1,0 +1,6 @@
+Neoslive:
+  Hybridsearch:
+    Firebase:
+      endpoint: 'https://**firebaseio.com'
+      token: '***'
+      path: '/search'

@@ -1,0 +1,6 @@
+Neoslive:
+  Hybridsearch:
+    Firebase:
+      endpoint: 'https://phlu-f98dd.firebaseio.com'
+      token: '4h2MfKKtGkpsBCg0tcxoRzvVnmiFapCv6L3UqfWZ'
+      path: '/search'

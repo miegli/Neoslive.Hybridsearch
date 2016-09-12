@@ -1,0 +1,23 @@
+{
+    "description": "Add description here",
+    "type": "neos-package",
+    "require": {
+        "typo3/flow": "*",
+        "flowpack/jobqueue-common": "*",
+        "Org_Heigl/Hyphenator": "~2.0",
+        "kreait/firebase-php": "*",
+        "salsify/json-streaming-parser": "dev-master",
+        "neitanod/forceutf8": "dev-master"
+    },
+    "name": "neoslive/hybridsearch",
+    "autoload": {
+        "psr-0": {
+            "Neoslive\\Hybridsearch": "Classes/"
+        }
+    },
+    "extra": {
+        "neos": {
+            "package-key": "Neoslive.Hybridsearch"
+        }
+    }
+}
