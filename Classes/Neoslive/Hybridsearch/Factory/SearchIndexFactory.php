@@ -309,11 +309,16 @@ class SearchIndexFactory
 
             $servername = $this->getServerName();
 
-
+            $removenodes = array();
             foreach ($this->firebaseGetIndexByNode($node, $workspaceHash, $dimensionConfigurationHash) as $keyword => $val) {
-               $this->firebasePersistSynchronous(array(), 'PUT', $servername . "/index/" . $workspaceHash . "/" . $dimensionConfigurationHash . "/" . urlencode($keyword) . "/" . urlencode($node->getIdentifier()));
+               $removenodes[] = $servername . "/index/" . $workspaceHash . "/" . $dimensionConfigurationHash . "/" . urlencode($keyword) . "/" . urlencode($node->getIdentifier());
+                //$this->firebasePersist(array(), 'PUT', $servername . "/index/" . $workspaceHash . "/" . $dimensionConfigurationHash . "/" . urlencode($keyword) . "/" . urlencode($node->getIdentifier()));
 
             }
+
+            $this->firebasePersist(array(), 'PUT', $servername . "/index/" . $workspaceHash . "/" . $dimensionConfigurationHash . "/" . urlencode($keyword) . "/" . urlencode($node->getIdentifier()));
+
+
 
 
 
@@ -592,7 +597,7 @@ class SearchIndexFactory
                     foreach ($dimensionData as $keyword => $keywordData) {
                         foreach ($keywordData as $node => $nodeData) {
 
-                            $this->firebasePersistSynchronous($nodeData, 'PUT', $servername . "/index/" . $workspace . "/" . $dimension . "/" . urlencode($keyword) . "/" . urlencode($node));
+                            $this->firebasePersist($nodeData, 'PUT', $servername . "/index/" . $workspace . "/" . $dimension . "/" . urlencode($keyword) . "/" . urlencode($node));
                         }
                     }
                 }
@@ -607,7 +612,7 @@ class SearchIndexFactory
                     foreach ($workspaceData as $dimension => $dimensionData) {
 
                         foreach ($dimensionData as $node => $nodeData) {
-                            $this->firebasePersistSynchronous($nodeData, 'PUT', $servername . "/keywords/" . $workspace . "/" . $dimension . "/" . urlencode($node));
+                            $this->firebasePersist($nodeData, 'PUT', $servername . "/keywords/" . $workspace . "/" . $dimension . "/" . urlencode($node));
                         }
 
                     }
@@ -661,8 +666,7 @@ class SearchIndexFactory
 
 
     /**
-     * Do defered firebase request
-     * @Job\Defer(queueName="neoslive-hybridsearch-queue")
+     * Do firebase request
      * @param mixed $data
      * @param string $method
      * @param string $path
@@ -687,30 +691,6 @@ class SearchIndexFactory
 
     }
 
-    /**
-     * Do synchronous firebase request
-     * @param mixed $data
-     * @param string $method
-     * @param string $path
-     * @return void
-     */
-    public function firebasePersistSynchronous($data, $method = 'PATCH', $path = "/")
-    {
-
-        $jsondata = json_encode($data);
-        $length = strlen($jsondata);
-
-        $headers = array(
-            "Cache-Control: no-cache",
-            "Content-Type: application/json; charset=utf-8",
-            "Content-Length: " . $length
-        );
-
-
-        $this->getBrowser($headers)->request('https://phlu-f98dd.firebaseio.com/' . $this->settings['Firebase']['path'] . '/' . $path . '/.json?auth=' . $this->settings['Firebase']['token'], $method, array(), array(), array(), $jsondata);
-
-
-    }
 
 
     /**
