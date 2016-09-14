@@ -185,6 +185,7 @@ class SearchIndexFactory
 
     /**
      * Update index for given node and target workspace
+     * @Job\Defer(queueName="neoslive-hybridsearch-queue")
      * @param Node $node
      * @param Workspace $workspace
      */
