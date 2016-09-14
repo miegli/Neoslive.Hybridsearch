@@ -3,6 +3,7 @@
     "type": "neos-package",
     "require": {
         "typo3/flow": "*",
+        "ktamas77/firebase-php": "*",
         "flowpack/jobqueue-common": "*",
         "Org_Heigl/Hyphenator": "*",
         "neitanod/forceutf8": "*"

@@ -30,7 +30,12 @@ class NodePublishingAspect
      */
     public function publish(JoinPointInterface $joinPoint)
     {
-        $this->searchIndexFactory->updateIndex($joinPoint->getMethodArgument('node'),$joinPoint->getMethodArgument('targetWorkspace'));
+
+        if ($joinPoint->getMethodArgument('node')->isRemoved()) {
+            $this->searchIndexFactory->removeIndex($joinPoint->getMethodArgument('node'), $joinPoint->getMethodArgument('targetWorkspace'));
+        } else {
+            $this->searchIndexFactory->updateIndex($joinPoint->getMethodArgument('node'), $joinPoint->getMethodArgument('targetWorkspace'));
+        }
 
     }
 
