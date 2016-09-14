@@ -64,4 +64,19 @@ class HybridSearchCommandController extends CommandController
     }
 
 
+    /**
+     * Proceed index asynchronous
+     *
+     * This command proceeds index queue
+     *
+     * @return void
+     */
+    public function proceedCommand()
+    {
+
+        $this->searchIndexFactory->proceedQueue();
+
+    }
+
+
 }

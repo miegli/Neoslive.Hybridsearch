@@ -26,10 +26,25 @@ use \Org\Heigl\Hyphenator as h;
 use \ForceUTF8\Encoding;
 use Flowpack\JobQueue\Common\Annotations as Job;
 use Firebase\FirebaseLib;
+use Flowpack\JobQueue\Common\Job\JobManager;
+use TYPO3\Flow\Utility\Algorithms;
+use TYPO3\Flow\Core\Booting\Scripts;
 
 class SearchIndexFactory
 {
 
+
+    /**
+     * @Flow\Inject
+     * @var JobManager
+     */
+    protected $jobManager;
+
+    /**
+     * @Flow\InjectConfiguration(package="TYPO3.Flow")
+     * @var array
+     */
+    protected $flowSettings;
 
     /**
      * @Flow\Inject
@@ -96,7 +111,13 @@ class SearchIndexFactory
     /**
      * @var string
      */
-    protected $servername;
+    protected $basepath;
+
+
+    /**
+     * @var string
+     */
+    protected $temporaryDirectory;
 
 
     /**
@@ -109,6 +130,7 @@ class SearchIndexFactory
      * @var boolean
      */
     protected $creatingFullIndex = false;
+
 
 
     /**
@@ -135,8 +157,28 @@ class SearchIndexFactory
     public function injectEnvironment(\TYPO3\Flow\Utility\Environment $environment)
     {
 
-        $this->servername = 'localhost';
-        $this->firebase = new FirebaseLib($this->settings['Firebase']['endpoint'] . "/" . $this->settings['Firebase']['path'], $this->settings['Firebase']['token']);
+        $this->firebase = new FirebaseLib($this->settings['Firebase']['endpoint'], $this->settings['Firebase']['token']);
+        $this->firebase->setTimeOut(0);
+
+        $this->environment = $environment;
+
+        $temporaryDirectory = $this->environment->getPathToTemporaryDirectory() . 'NeosliveHybridsearch/';
+
+        if (!is_writable($temporaryDirectory)) {
+            try {
+                \TYPO3\Flow\Utility\Files::createDirectoryRecursively($temporaryDirectory);
+            } catch (\TYPO3\Flow\Utility\Exception $exception) {
+                throw new Exception('The temporary directory "' . $temporaryDirectory . '" could not be created.', 1264426237);
+            }
+        }
+        if (!is_dir($temporaryDirectory) && !is_link($temporaryDirectory)) {
+            throw new Exception('The temporary directory "' . $temporaryDirectory . '" does not exist.', 1203965199);
+        }
+        if (!is_writable($temporaryDirectory)) {
+            throw new Exception('The temporary directory "' . $temporaryDirectory . '" is not writable.', 1203965200);
+        }
+
+        $this->temporaryDirectory = $temporaryDirectory;
 
 
     }
@@ -144,7 +186,6 @@ class SearchIndexFactory
 
     /**
      * Create full search index for given node path
-     * @Job\Defer(queueName="neoslive-hybridsearch-queue")
      * @param string $path path of the root node name
      * @param Site $site
      * @param string $workspacename
@@ -171,13 +212,13 @@ class SearchIndexFactory
 
     /**
      * Update index for given node and target workspace
-     * @Job\Defer(queueName="neoslive-hybridsearch-queue")
      * @param Node $node
      * @param Workspace $workspace
      */
     public function updateIndex($node, $workspace)
     {
 
+        \TYPO3\Flow\var_dump($node);
         $this->generateSingleIndex($node, $this->getWorkspaceHash($workspace), $node->getNodeData()->getDimensionsHash());
         $this->save();
 
@@ -191,7 +232,6 @@ class SearchIndexFactory
     public function removeIndex($node, $workspace)
     {
         $this->removeSingleIndex($node, $this->getWorkspaceHash($workspace), $node->getNodeData()->getDimensionsHash());
-
     }
 
     /**
@@ -220,7 +260,7 @@ class SearchIndexFactory
                 $context
             );
 
-            $this->generateIndex($node, $workspace, $dimensionConfiguration,'',$includingSelf);
+            $this->generateIndex($node, $workspace, $dimensionConfiguration, '', $includingSelf);
 
 
         }
@@ -272,8 +312,6 @@ class SearchIndexFactory
         }
 
 
-        $this->save();
-
     }
 
 
@@ -283,20 +321,21 @@ class SearchIndexFactory
      * @param Node $node
      * @param String $workspaceHash
      * @param string $dimensionConfigurationHash
+     * @param array $skipKeywords
      * @return void
      */
-    private function removeSingleIndex($node, $workspaceHash, $dimensionConfigurationHash)
+    private function removeSingleIndex($node, $workspaceHash, $dimensionConfigurationHash, $skipKeywords = array())
     {
 
         if ($this->creatingFullIndex === false) {
 
-            $servername = $this->getServerName();
+            $basepath = $this->getBasePath();
 
-            foreach ($this->getIndexByNode($node, $workspaceHash, $dimensionConfigurationHash) as $keyword => $val) {
-                $this->firebase->delete($servername . "/index/$workspaceHash/$dimensionConfigurationHash" . "/" . urlencode($keyword) . "/" . urlencode($node->getIdentifier()));
+            foreach ($this->getIndexByNode($node, $workspaceHash, $dimensionConfigurationHash, $skipKeywords) as $keyword => $val) {
+                $this->firebaseDelete($basepath . "/index/$workspaceHash/$dimensionConfigurationHash" . "/" . urlencode($keyword) . "/" . urlencode($node->getIdentifier()));
             }
 
-            $this->firebase->delete($servername . "/keywords/$workspaceHash/$dimensionConfigurationHash" . "/" . urlencode($node->getIdentifier()));
+            $this->firebaseDelete($basepath . "/keywords/$workspaceHash/$dimensionConfigurationHash" . "/" . urlencode($node->getIdentifier()));
 
         }
 
@@ -313,11 +352,6 @@ class SearchIndexFactory
      */
     private function generateSingleIndex($node, $workspaceHash, $dimensionConfigurationHash)
     {
-
-        $this->removeSingleIndex($node, $workspaceHash, $dimensionConfigurationHash);
-
-
-
 
 
         if ($node->isHidden() || $node->isRemoved()) {
@@ -348,18 +382,20 @@ class SearchIndexFactory
 
             $this->keywords->keywords->$workspaceHash->$dimensionConfigurationHash->$identifier = new \stdClass();
 
-            foreach ($this->generateSearchIndexFromProperties($indexData->properties) as $keyword => $frequency) {
+            $keywords = $this->generateSearchIndexFromProperties($indexData->properties);
+            $this->removeSingleIndex($node, $workspaceHash, $dimensionConfigurationHash, $keywords);
+
+            foreach ($keywords as $keyword => $frequency) {
 
                 if (isset($this->index->$workspaceHash->$dimensionConfigurationHash->$keyword) === false) {
                     $this->index->$workspaceHash->$dimensionConfigurationHash->$keyword = new \stdClass();
                 }
-
-
                 $this->index->$workspaceHash->$dimensionConfigurationHash->$keyword->$identifier = $indexData;
                 $this->keywords->keywords->$workspaceHash->$dimensionConfigurationHash->$identifier->$keyword = true;
 
 
             }
+
 
         }
 
@@ -555,54 +591,128 @@ class SearchIndexFactory
 
 
     /**
-     * Save generated search index as tempory json file for persisting later
-     *
+     * @param string $path
+     * @param mixed $data
      * @return void
      */
-    protected function save()
+    public function firebaseUpdate($path, $data)
     {
 
-        $servername = $this->getServerName();
 
-        if ($this->creatingFullIndex) {
+        $this->addToQueue($path, $data, 'update');
 
-            // patch index data all in one request
-            foreach ($this->index as $workspace => $workspaceData) {
-                foreach ($workspaceData as $dimension => $dimensionData) {
-                    $this->firebase->update($servername . "/index/" . $workspace . "/" . $dimension, $dimensionData);
-                }
-            }
+    }
 
-            // patch keywords data all in one request
-            $this->firebase->update($servername, $this->keywords);
+    /**
+     * @param string $path
+     * @param mixed $data
+     * @return void
+     */
+    public function firebaseSet($path, $data)
+    {
+
+        $this->addToQueue($path, $data, 'set');
+
+
+    }
+
+
+    /**
+     * @param string $path
+     * @return void
+     */
+    public function firebaseDelete($path)
+    {
+
+        $this->addToQueue($path, null, 'delete');
+
+
+    }
+
+
+    /**
+     * @param string $path
+     * @param mixed $data
+     * @param string $method
+     * @return void
+     */
+    protected function addToQueue($path, $data = null, $method = 'update')
+    {
+
+        $filename = $this->temporaryDirectory . "/queued_" . time() . "_" . Algorithms::generateUUID() . ".json";
+        $fp = fopen($filename, 'w');
+        fwrite($fp, json_encode(
+            array(
+                'path' => $path,
+                'data' => $data,
+                'method' => $method,
+            )
+        ));
+        fclose($fp);
+
+    }
+
+
+    /**
+     * @return void
+     */
+    public function proceedQueue()
+    {
+
+
+        $lockedfilename = $this->temporaryDirectory . "/locked.txt";
+
+        if (is_file($lockedfilename) === true) {
+
+            sleep(3);
+            $this->proceedQueue();
 
         } else {
 
+            $fp = fopen($lockedfilename, 'w');
+            fwrite($fp, time());
+            fclose($fp);
 
-            // put index data node by node for keep old records existing
-            foreach ($this->index as $workspace => $workspaceData) {
-                foreach ($workspaceData as $dimension => $dimensionData) {
-                    foreach ($dimensionData as $keyword => $keywordData) {
-                        foreach ($keywordData as $node => $nodeData) {
-                            $this->firebase->update($servername . "/index/" . $workspace . "/" . $dimension . "/" . urlencode($keyword) . "/" . urlencode($node), $nodeData);
-                        }
-                    }
+            $files = array();
+
+            $fp = opendir($this->temporaryDirectory);
+            while (false !== ($entry = readdir($fp))) {
+
+                if (substr($entry, 0, 6) === 'queued' && rename($this->temporaryDirectory . "/" . $entry, $this->temporaryDirectory . "/locked." . $entry)) {
+                    $files[] = $this->temporaryDirectory . "/locked." . $entry;
                 }
+
             }
 
-            // patch keywords data all in one request
+            unlink($lockedfilename);
+            sort($files);
 
-            foreach ($this->keywords as $path => $pathData) {
 
-                foreach ($pathData as $workspace => $workspaceData) {
+            foreach ($files as $file) {
 
-                    foreach ($workspaceData as $dimension => $dimensionData) {
+                $content = json_decode(file_get_contents($file));
 
-                        foreach ($dimensionData as $node => $nodeData) {
-                            $this->firebase->set($servername . "/keywords/" . $workspace . "/" . $dimension . "/" . urlencode($node), $nodeData);
-                        }
+                if ($content) {
 
+                    switch ($content->method) {
+                        case 'update':
+                            $this->firebase->update($content->path, $content->data);
+                            break;
+
+                        case 'delete':
+                            $this->firebase->delete($content->path);
+                            break;
+
+                        case 'set':
+                            $this->firebase->set($content->path, $content->data);
+                            break;
                     }
+
+                }
+
+
+                if (substr($file, 0, strlen($this->temporaryDirectory)) === $this->temporaryDirectory) {
+                    unlink($file);
                 }
 
 
@@ -612,8 +722,89 @@ class SearchIndexFactory
         }
 
 
-        $this->index = new \stdClass();
-        $this->keywords = new \stdClass();
+    }
+
+
+    /**
+     * Save generated search index as tempory json file for persisting later
+     * @param string $target keywords|index
+     * @param mixed index
+     * @param mixed keywords
+     * @return void
+     */
+    protected function save($target = 'all', $index = false, $keywords = false)
+    {
+
+        if ($index === false) {
+            $index = $this->index;
+        }
+
+        if ($keywords === false) {
+            $keywords = $this->keywords;
+        }
+
+        $basepath = $this->getBasePath();
+
+
+        if ($this->creatingFullIndex) {
+
+            if ($target === 'all' || $target == 'index') {
+                // patch index data all in one request
+                foreach ($index as $workspace => $workspaceData) {
+                    foreach ($workspaceData as $dimension => $dimensionData) {
+                        $this->firebaseSet($basepath . "/index/" . $workspace . "/" . $dimension, $dimensionData);
+                    }
+                }
+            }
+
+            if ($target === 'all' || $target == 'keywords') {
+                // patch keywords data all in one request
+                $this->firebaseUpdate($basepath, $keywords);
+            }
+
+
+        } else {
+
+            if ($target === 'all' || $target == 'index') {
+                // put index data node by node for keep old records existing
+                foreach ($index as $workspace => $workspaceData) {
+                    foreach ($workspaceData as $dimension => $dimensionData) {
+                        foreach ($dimensionData as $keyword => $keywordData) {
+                            foreach ($keywordData as $node => $nodeData) {
+                                $this->firebaseUpdate($basepath . "/index/" . $workspace . "/" . $dimension . "/" . urlencode($keyword) . "/" . urlencode($node), $nodeData);
+                            }
+                        }
+                    }
+                }
+            }
+            if ($target === 'all' || $target == 'keywords') {
+                // patch keywords by node for keep old records existing
+                foreach ($keywords as $path => $pathData) {
+                    foreach ($pathData as $workspace => $workspaceData) {
+                        foreach ($workspaceData as $dimension => $dimensionData) {
+                            foreach ($dimensionData as $node => $nodeData) {
+                                $this->firebaseSet($basepath . "/keywords/" . $workspace . "/" . $dimension . "/" . urlencode($node), $nodeData);
+                            }
+                        }
+                    }
+                }
+            }
+
+
+        }
+
+
+        if ($target === 'all' || $target == 'index') {
+            $this->index = new \stdClass();
+        }
+
+        if ($target === 'all' || $target == 'keywords') {
+            $this->keywords = new \stdClass();
+        }
+
+        Scripts::executeCommandAsync(' hybridsearch:proceed', $this->flowSettings,array());
+
+
 
 
     }
@@ -624,14 +815,30 @@ class SearchIndexFactory
      * @param Node $node
      * @param String $workspaceHash
      * @param string $dimensionConfigurationHash
+     * @param array $skipKeywords
      * @return array
      */
-    public function getIndexByNode($node, $workspaceHash, $dimensionConfigurationHash)
+    public function getIndexByNode($node, $workspaceHash, $dimensionConfigurationHash, $skipKeywords = array())
     {
 
-        $path = $this->getServerName() . "/keywords/" . $workspaceHash . "/" . $dimensionConfigurationHash . "/" . $node->getIdentifier();
+        $path = $this->getBasePath() . "/keywords/" . $workspaceHash . "/" . $dimensionConfigurationHash . "/" . $node->getIdentifier();
         $result = $this->firebase->get($path);
-        return $result != 'null' ? json_decode($result) : array();
+
+        if ($result != 'null') {
+            $result = json_decode($result);
+        } else {
+            $result = new \stdClass();
+        }
+
+        if (count($skipKeywords)) {
+            foreach (get_object_vars($result) as $keyword => $val) {
+                if (isset($skipKeywords[$keyword])) {
+                    unset($result->$keyword);
+                }
+            }
+        }
+
+        return $result;
 
 
     }
@@ -643,25 +850,27 @@ class SearchIndexFactory
      * @param Workspace $workspace
      * @return mixed
      */
-    protected function deleteWorkspace($workspace)
+    protected
+    function deleteWorkspace($workspace)
     {
 
         $this->creatingFullIndex = true;
 
-        $this->firebase->delete($this->getServerName() . '/index/' . $workspace->getName());
-        $this->firebase->delete($this->getServerName() . '/keywords/' . $workspace->getName());
-
+        $this->firebase->delete($this->getBasePath() . 'index/' . $workspace->getName());
+        $this->firebase->delete($this->getBasePath() . 'keywords/' . $workspace->getName());
 
     }
 
     /**
-     * Get servers name
+     * Get firebase base path
      * @return string
      */
-    protected function getServerName()
+    protected
+    function getBasePath()
     {
 
-        return preg_replace("/[^A-z0-9]/", "-", $this->servername);
+
+        return $this->settings['Firebase']['path']."/";
 
 
     }
@@ -672,7 +881,8 @@ class SearchIndexFactory
      *
      * @return h\Hyphenator
      */
-    protected function getHyphenator()
+    protected
+    function getHyphenator()
     {
 
 
@@ -706,7 +916,8 @@ class SearchIndexFactory
      * @param Site $currentSite
      * @return \TYPO3\TYPO3CR\Domain\Service\Context
      */
-    protected function createContext($workspaceName, $dimensions, $currentSite)
+    protected
+    function createContext($workspaceName, $dimensions, $currentSite)
     {
 
 
