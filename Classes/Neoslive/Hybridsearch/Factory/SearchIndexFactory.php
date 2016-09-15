@@ -692,10 +692,12 @@ class SearchIndexFactory
         $this->proceedcounter++;
         $lockedfilename = $this->temporaryDirectory . "/locked.txt";
 
-        if (is_file($lockedfilename) === true && $this->proceedcounter < 1000) {
+        if (is_file($lockedfilename) === true) {
 
             sleep(1);
-            $this->proceedQueue();
+            if ($this->proceedcounter < 1000) {
+                $this->proceedQueue();
+            }
 
         } else {
 
@@ -728,15 +730,15 @@ class SearchIndexFactory
 
                         switch ($content->method) {
                             case 'update':
-                                \TYPO3\Flow\var_dump($this->firebase->update($content->path, $content->data));
+                                $this->firebase->update($content->path, $content->data);
                                 break;
 
                             case 'delete':
-                                \TYPO3\Flow\var_dump($this->firebase->delete($content->path));
+                                $this->firebase->delete($content->path);
                                 break;
 
                             case 'set':
-                                \TYPO3\Flow\var_dump($this->firebase->set($content->path, $content->data));
+                                $this->firebase->set($content->path, $content->data);
                                 break;
                         }
                     }
