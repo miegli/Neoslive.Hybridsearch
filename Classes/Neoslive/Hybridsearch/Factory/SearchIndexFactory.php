@@ -24,21 +24,12 @@ use TYPO3\TYPO3CR\Domain\Service\ContentDimensionCombinator;
 use TYPO3\Eel\FlowQuery\FlowQuery;
 use \Org\Heigl\Hyphenator as h;
 use \ForceUTF8\Encoding;
-use Flowpack\JobQueue\Common\Annotations as Job;
 use Firebase\FirebaseLib;
-use Flowpack\JobQueue\Common\Job\JobManager;
 use TYPO3\Flow\Utility\Algorithms;
 use TYPO3\Flow\Core\Booting\Scripts;
 
 class SearchIndexFactory
 {
-
-
-    /**
-     * @Flow\Inject
-     * @var JobManager
-     */
-    protected $jobManager;
 
     /**
      * @Flow\InjectConfiguration(package="TYPO3.Flow")
@@ -103,6 +94,18 @@ class SearchIndexFactory
 
 
     /**
+     * @var integer
+     */
+    protected $queuecounter;
+
+
+    /**
+     * @var integer
+     */
+    protected $proceedcounter;
+
+
+    /**
      * @var array
      */
     protected $settings;
@@ -130,7 +133,6 @@ class SearchIndexFactory
      * @var boolean
      */
     protected $creatingFullIndex = false;
-
 
 
     /**
@@ -179,7 +181,7 @@ class SearchIndexFactory
         }
 
         $this->temporaryDirectory = $temporaryDirectory;
-
+        $this->queuecounter = 100000000;
 
     }
 
@@ -193,7 +195,6 @@ class SearchIndexFactory
      */
     public function createFullIndex($path, $site, $workspacename)
     {
-
 
         foreach ($this->workspaceRepository->findAll() as $workspace) {
 
@@ -215,22 +216,31 @@ class SearchIndexFactory
      * @param Node $node
      * @param Workspace $workspace
      */
-    public function updateIndex($node, $workspace)
+    public function updateIndex($node, $workspace = null)
     {
 
-        \TYPO3\Flow\var_dump($node);
-        $this->generateSingleIndex($node, $this->getWorkspaceHash($workspace), $node->getNodeData()->getDimensionsHash());
+        if (!$workspace instanceof Workspace) {
+            $workspace = $node->getWorkspace();
+        }
+
+        if ($node->isHidden() || $node->isRemoved()) {
+            $this->createIndex($node->getPath(), $workspace, null, true, $node);
+        } else {
+            $this->generateSingleIndex($node, $workspace, $node->getNodeData()->getDimensionsHash());
+        }
+
+
         $this->save();
+
 
     }
 
     /**
      * Update index for given node and target workspace
-     * @Job\Defer(queueName="neoslive-hybridsearch-queue")
      * @param Node $node
      * @param Workspace $workspace
      */
-    public function removeIndex($node, $workspace)
+    private function removeIndex($node, $workspace)
     {
         $this->removeSingleIndex($node, $this->getWorkspaceHash($workspace), $node->getNodeData()->getDimensionsHash());
     }
@@ -243,26 +253,38 @@ class SearchIndexFactory
      * @param Workspace $workspace workspace creating search index for
      * @param Site $site neos site
      * @param boolean $includingSelf If specified, indexing self node otherwise only children
+     * @param Node $node
      * @return void
      */
-    public function createIndex($path, $workspace, $site, $includingSelf = false)
+    public function createIndex($path, $workspace, $site = null, $includingSelf = false, $node = null)
     {
 
 
-        // TODO: Performance could be improved by a search for all child node data instead of looping over all contexts
-        foreach ($this->contentDimensionCombinator->getAllAllowedCombinations() as $dimensionConfiguration) {
+        if ($node !== null) {
+
+            $this->generateIndex($node, $workspace, $node->getContext()->getDimensions(), '', $includingSelf);
+
+        } else {
 
 
-            $context = $this->createContext($workspace->getName(), $dimensionConfiguration, $site);
+            // TODO: Performance could be improved by a search for all child node data instead of looping over all contexts
+            foreach ($this->contentDimensionCombinator->getAllAllowedCombinations() as $dimensionConfiguration) {
 
-            /** @var Node $node */
-            $node = new Node(
-                $this->nodeDataRepository->findOneByPath($path, $workspace),
-                $context
-            );
+                $targetDimension = array_map(function ($dimensionValues) {
+                    return array_shift($dimensionValues);
+                }, $dimensionConfiguration);
 
-            $this->generateIndex($node, $workspace, $dimensionConfiguration, '', $includingSelf);
+                $context = $this->createContext($workspace->getName(), $dimensionConfiguration, $targetDimension, $site);
+                /** @var Node $node */
+                $node = new Node(
+                    $this->nodeDataRepository->findOneByPath($path, $workspace),
+                    $context
+                );
 
+                $this->generateIndex($node, $workspace, $dimensionConfiguration, '', $includingSelf);
+
+
+            }
 
         }
 
@@ -293,7 +315,6 @@ class SearchIndexFactory
         }
 
 
-        $workspaceHash = $this->getWorkspaceHash($workspace);
         $dimensionConfigurationHash = $this->getDimensionConfiugurationHash($dimensionConfiguration);
 
 
@@ -301,14 +322,14 @@ class SearchIndexFactory
 
 
         if ($includingSelf) {
-            $this->generateSingleIndex($node, $workspaceHash, $dimensionConfigurationHash);
+            $this->generateSingleIndex($node, $workspace, $dimensionConfigurationHash);
         }
 
 
         foreach ($flowQuery->find($nodeTypeFilter) as $children) {
 
             /** @var Node $children */
-            $this->generateSingleIndex($children, $workspaceHash, $dimensionConfigurationHash);
+            $this->generateSingleIndex($children, $workspace, $dimensionConfigurationHash);
 
         }
 
@@ -347,17 +368,20 @@ class SearchIndexFactory
      * Generates single index for given node
      *
      * @param Node $node
-     * @param String $workspaceHash
+     * @param Workspace $workspace
      * @param string $dimensionConfigurationHash
      * @return void
      */
-    private function generateSingleIndex($node, $workspaceHash, $dimensionConfigurationHash)
+    private function generateSingleIndex($node, $workspace, $dimensionConfigurationHash)
     {
 
+        $workspaceHash = $this->getWorkspaceHash($workspace);
 
         if ($node->isHidden() || $node->isRemoved()) {
 
             // skipp node
+            $this->removeIndex($node, $workspace);
+
         } else {
 
 
@@ -640,7 +664,10 @@ class SearchIndexFactory
     protected function addToQueue($path, $data = null, $method = 'update')
     {
 
-        $filename = $this->temporaryDirectory . "/queued_" . time() . "_" . Algorithms::generateUUID() . ".json";
+
+
+        $filename = $this->temporaryDirectory . "/queued_" . time() . $this->queuecounter . "_" . Algorithms::generateUUID() . ".json";
+
         $fp = fopen($filename, 'w');
         fwrite($fp, json_encode(
             array(
@@ -651,6 +678,8 @@ class SearchIndexFactory
         ));
         fclose($fp);
 
+        $this->queuecounter++;
+
     }
 
 
@@ -660,12 +689,12 @@ class SearchIndexFactory
     public function proceedQueue()
     {
 
-
+        $this->proceedcounter++;
         $lockedfilename = $this->temporaryDirectory . "/locked.txt";
 
-        if (is_file($lockedfilename) === true) {
+        if (is_file($lockedfilename) === true && $this->proceedcounter < 1000) {
 
-            sleep(3);
+            sleep(1);
             $this->proceedQueue();
 
         } else {
@@ -679,48 +708,50 @@ class SearchIndexFactory
             $fp = opendir($this->temporaryDirectory);
             while (false !== ($entry = readdir($fp))) {
 
-                if (substr($entry, 0, 6) === 'queued' && rename($this->temporaryDirectory . "/" . $entry, $this->temporaryDirectory . "/locked." . $entry)) {
-                    $files[] = $this->temporaryDirectory . "/locked." . $entry;
+                if (substr($entry, 0, 6) === 'queued') {
+                    list($name, $number, $uuid) = explode("_", $entry);
+                    $files[$number][] = $this->temporaryDirectory . $entry;
                 }
 
             }
 
-            unlink($lockedfilename);
-            sort($files);
+
+            ksort($files);
 
 
-            foreach ($files as $file) {
+            foreach ($files as $filecollection) {
+                foreach ($filecollection as $file) {
 
-                $content = json_decode(file_get_contents($file));
+                    $content = json_decode(file_get_contents($file));
 
-                if ($content) {
+                    if ($content) {
 
-                    switch ($content->method) {
-                        case 'update':
-                            $this->firebase->update($content->path, $content->data);
-                            break;
+                        switch ($content->method) {
+                            case 'update':
+                                \TYPO3\Flow\var_dump($this->firebase->update($content->path, $content->data));
+                                break;
 
-                        case 'delete':
-                            $this->firebase->delete($content->path);
-                            break;
+                            case 'delete':
+                                \TYPO3\Flow\var_dump($this->firebase->delete($content->path));
+                                break;
 
-                        case 'set':
-                            $this->firebase->set($content->path, $content->data);
-                            break;
+                            case 'set':
+                                \TYPO3\Flow\var_dump($this->firebase->set($content->path, $content->data));
+                                break;
+                        }
                     }
-
                 }
 
 
-                if (substr($file, 0, strlen($this->temporaryDirectory)) === $this->temporaryDirectory) {
-                    unlink($file);
-                }
-
+                unlink($file);
 
             }
 
 
         }
+
+
+        unlink($lockedfilename);
 
 
     }
@@ -772,7 +803,7 @@ class SearchIndexFactory
                     foreach ($workspaceData as $dimension => $dimensionData) {
                         foreach ($dimensionData as $keyword => $keywordData) {
                             foreach ($keywordData as $node => $nodeData) {
-                                $this->firebaseUpdate($basepath . "/index/" . $workspace . "/" . $dimension . "/" . urlencode($keyword) . "/" . urlencode($node), $nodeData);
+                                $this->firebaseSet($basepath . "/index/" . $workspace . "/" . $dimension . "/" . urlencode($keyword) . "/" . urlencode($node), $nodeData);
                             }
                         }
                     }
@@ -803,9 +834,8 @@ class SearchIndexFactory
             $this->keywords = new \stdClass();
         }
 
-        Scripts::executeCommandAsync(' hybridsearch:proceed', $this->flowSettings,array());
 
-
+       Scripts::executeCommandAsync('hybridsearch:proceed', $this->flowSettings, array());
 
 
     }
@@ -821,6 +851,7 @@ class SearchIndexFactory
      */
     public function getIndexByNode($node, $workspaceHash, $dimensionConfigurationHash, $skipKeywords = array())
     {
+
 
         $path = $this->getBasePath() . "/keywords/" . $workspaceHash . "/" . $dimensionConfigurationHash . "/" . $node->getIdentifier();
         $result = $this->firebase->get($path);
@@ -871,7 +902,7 @@ class SearchIndexFactory
     {
 
 
-        return $this->settings['Firebase']['path']."/";
+        return $this->settings['Firebase']['path'] . "/";
 
 
     }
@@ -914,18 +945,19 @@ class SearchIndexFactory
      *
      * @param string $workspaceName
      * @param array $dimensions
+     * @param array $targetDimensions
      * @param Site $currentSite
      * @return \TYPO3\TYPO3CR\Domain\Service\Context
      */
     protected
-    function createContext($workspaceName, $dimensions, $currentSite)
+    function createContext($workspaceName, $dimensions, $targetDimensions, $currentSite)
     {
-
 
         return $this->contentContextFactory->create(array(
             'workspaceName' => $workspaceName,
             'currentSite' => $currentSite,
             'dimensions' => $dimensions,
+            'targetDimensions' => $targetDimensions,
             'invisibleContentShown' => false,
             'inaccessibleContentShown' => false,
             'removedContentShown' => false
