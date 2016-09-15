@@ -24,21 +24,12 @@ use TYPO3\TYPO3CR\Domain\Service\ContentDimensionCombinator;
 use TYPO3\Eel\FlowQuery\FlowQuery;
 use \Org\Heigl\Hyphenator as h;
 use \ForceUTF8\Encoding;
-use Flowpack\JobQueue\Common\Annotations as Job;
 use Firebase\FirebaseLib;
-use Flowpack\JobQueue\Common\Job\JobManager;
 use TYPO3\Flow\Utility\Algorithms;
 use TYPO3\Flow\Core\Booting\Scripts;
 
 class SearchIndexFactory
 {
-
-
-    /**
-     * @Flow\Inject
-     * @var JobManager
-     */
-    protected $jobManager;
 
     /**
      * @Flow\InjectConfiguration(package="TYPO3.Flow")
@@ -226,7 +217,6 @@ class SearchIndexFactory
 
     /**
      * Update index for given node and target workspace
-     * @Job\Defer(queueName="neoslive-hybridsearch-queue")
      * @param Node $node
      * @param Workspace $workspace
      */

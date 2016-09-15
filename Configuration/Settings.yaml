@@ -8,9 +8,3 @@ Neoslive:
       GrantParentNodeTypeFilter: '[instanceof TYPO3.Neos:Document]'
       ParentNodeTypeFilter: '[instanceof TYPO3.Neos:Content]'
       NodeTypeFilter: '[instanceof TYPO3.Neos:Node]'
-Flowpack:
-  JobQueue:
-    Common:
-      queues:
-        'neoslive-hybridsearch-queue':
-          className: 'Neoslive\Hybridsearch\Queue\SearchIndexQueue'
