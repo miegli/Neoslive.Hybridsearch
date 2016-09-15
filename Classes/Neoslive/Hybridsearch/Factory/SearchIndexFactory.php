@@ -202,11 +202,11 @@ class SearchIndexFactory
             if ($workspacename === null || $workspacename === $workspace->getName()) {
                 $this->deleteWorkspace($workspace);
                 $this->createIndex($path, $workspace, $site);
-                $this->save();
             }
 
         }
 
+        $this->save();
 
     }
 
@@ -357,7 +357,7 @@ class SearchIndexFactory
                 $this->firebaseDelete($basepath . "/index/$workspaceHash/$dimensionConfigurationHash" . "/" . urlencode($keyword) . "/" . urlencode($node->getIdentifier()));
             }
 
-            $this->firebaseDelete($basepath . "/keywords/$workspaceHash/$dimensionConfigurationHash" . "/" . urlencode($node->getIdentifier()));
+           // $this->firebaseDelete($basepath . "/keywords/$workspaceHash/$dimensionConfigurationHash" . "/" . urlencode($node->getIdentifier()));
 
         }
 
@@ -817,7 +817,7 @@ class SearchIndexFactory
                     foreach ($pathData as $workspace => $workspaceData) {
                         foreach ($workspaceData as $dimension => $dimensionData) {
                             foreach ($dimensionData as $node => $nodeData) {
-                                $this->firebaseSet($basepath . "/keywords/" . $workspace . "/" . $dimension . "/" . urlencode($node), $nodeData);
+                                $this->firebaseUpdate($basepath . "/keywords/" . $workspace . "/" . $dimension . "/" . urlencode($node), $nodeData);
                             }
                         }
                     }
