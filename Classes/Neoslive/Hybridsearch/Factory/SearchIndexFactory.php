@@ -224,7 +224,8 @@ class SearchIndexFactory
         }
 
         if ($node->isHidden() || $node->isRemoved()) {
-            $this->createIndex($node->getPath(), $workspace, null, true, $node);
+            //$this->createIndex($node->getPath(), $workspace, null, true, $node);
+            $this->removeIndex($node,$workspace);
         } else {
             $this->generateSingleIndex($node, $workspace, $node->getNodeData()->getDimensionsHash());
         }
