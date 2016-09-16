@@ -402,10 +402,9 @@ class SearchIndexFactory
             $indexData = $this->convertNodeToSearchIndexResult($node);
             $identifier = $indexData->identifier;
 
-
             $keywords = $this->generateSearchIndexFromProperties($indexData->properties);
-            $keywords['__node'] = $indexData;
-            $keywords['__nodetype'] = $indexData->nodeType;
+            $keywords->__node = $indexData;
+            $keywords->__nodetype = $indexData->nodeType;
 
             foreach ($keywords as $keyword => $val) {
                 $this->keywords->$workspaceHash->$dimensionConfigurationHash[strval($keyword)] = 1;
@@ -435,7 +434,7 @@ class SearchIndexFactory
             return $properties;
         }
 
-        $keywords = array();
+        $keywords = new \stdClass();
 
         $text = "";
 
@@ -447,7 +446,7 @@ class SearchIndexFactory
                 $value = json_encode($value);
             }
 
-            $text .= strip_tags(preg_replace("/[^A-z0-9öäüÖÄÜ ]/", "", mb_strtolower(strip_tags(preg_replace("/[^A-z0-9öäüÖÄÜ]/", " ", $value)))) . " ");
+            $text .= (preg_replace("/[^A-z0-9öäüÖÄÜ ]/", "", mb_strtolower(strip_tags(preg_replace("/[^A-z0-9öäüÖÄÜ]/", " ", $value)))) . " ");
 
         }
 
@@ -467,7 +466,12 @@ class SearchIndexFactory
         foreach ($words as $w) {
             if (strlen($w) > 1) {
                 $w = Encoding::UTF8FixWin1252Chars($w);
-                $keywords[substr($w,0,8)][$w] = 1;
+                $ws = mb_strtolower(substr(($w),0,8));
+                if (isset($keywords->$ws) === false) {
+                    $keywords->$ws = new \stdClass();
+                }
+
+                $keywords->$ws->$w = 1;
             }
         }
 
@@ -571,6 +575,7 @@ class SearchIndexFactory
         }
 
 
+
         return $data;
 
 
@@ -654,7 +659,6 @@ class SearchIndexFactory
 
 
         $filename = $this->temporaryDirectory . "/queued_" . time() . $this->queuecounter . "_" . Algorithms::generateUUID() . ".json";
-
 
         $fp = fopen($filename, 'w');
         fwrite($fp, json_encode(

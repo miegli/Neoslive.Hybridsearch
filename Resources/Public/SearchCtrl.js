@@ -18,13 +18,13 @@ PHLUCorporateApp.directive('search', function () {
             $scope.getTemplateUrl = function () {
                 switch ($scope.node.nodeType) {
 
-                    case 'PHLU.Qmpilot.NodeTypes:File':
+                    case 'phlu-qmpilot-nodeTypes-file':
                         return template + 'phlu-qmpilot-nodetypes-file.html';
 
-                    case 'PHLU.Corporate:Text':
+                    case 'phlu-corporate-text':
                         return template + 'phlu-qmpilot-nodetypes-text.html';
 
-                    case 'PHLU.Corporate:Contact':
+                    case 'phlu-corporate-contact':
                         return template + 'phlu-corporate-contact.html';
 
                     default:
@@ -136,7 +136,7 @@ PHLUCorporateApp.controller('SearchCtrl', ['$scope', '$timeout', '$cookies', fun
 
 
                 refIndex[subterm] = firebase.database().ref("index/" + config.workspace + "/" + config.dimension);
-                refIndex[subterm].orderByChild(subterm).on("value", function (snapshot) {
+                refIndex[subterm].orderByChild(subterm).startAt(term).on("value", function (snapshot) {
 
                     $scope.terms[subterm] = {term: subterm, results: {}};
 
@@ -166,14 +166,17 @@ PHLUCorporateApp.controller('SearchCtrl', ['$scope', '$timeout', '$cookies', fun
 
             angular.forEach(val.results, function (node) {
 
-                var doc = node.__node.properties;
 
-                if (node.__node != undefined) {
+                if (node.__node != undefined && node.__node.properties != undefined) {
+
+                    var doc = node.__node.properties;
+
                     angular.forEach(node.__node.properties, function (val, key) {
                         if (lunrSearch.getFields().indexOf(key) < 0) {
                             lunrSearch.addField(key);
                         }
                     });
+
 
                     doc.id = node.__node.identifier;
                     $scope.nodes[doc.id] = node.__node;
