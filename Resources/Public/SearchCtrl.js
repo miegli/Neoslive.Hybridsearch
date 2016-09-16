@@ -18,7 +18,7 @@ PHLUCorporateApp.directive('search', function () {
             $scope.getTemplateUrl = function () {
                 switch ($scope.node.nodeType) {
 
-                    case 'phlu-qmpilot-nodeTypes-file':
+                    case 'phlu-qmpilot-nodetypes-file':
                         return template + 'phlu-qmpilot-nodetypes-file.html';
 
                     case 'phlu-corporate-text':
@@ -136,17 +136,15 @@ PHLUCorporateApp.controller('SearchCtrl', ['$scope', '$timeout', '$cookies', fun
 
 
                 refIndex[subterm] = firebase.database().ref("index/" + config.workspace + "/" + config.dimension);
-                refIndex[subterm].orderByChild(subterm).startAt(term).on("value", function (snapshot) {
-
+                refIndex[subterm].orderByChild(subterm).startAt(term).limitToFirst(100).on("value", function (snapshot) {
                     $scope.terms[subterm] = {term: subterm, results: {}};
-
                     snapshot.forEach(function (data) {
                         $scope.terms[subterm].results[data.key] = data.val();
                     });
-
                     applyData();
-
                 });
+
+
             }
 
 
@@ -208,7 +206,7 @@ PHLUCorporateApp.controller('SearchCtrl', ['$scope', '$timeout', '$cookies', fun
         });
 
 
-        var results = lunrSearch.search(term, {
+        var results = lunrSearch.search(getSpecialTerm(term), {
             fields: fields,
             bool: "OR"
         });
