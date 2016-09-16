@@ -78,5 +78,19 @@ class HybridSearchCommandController extends CommandController
 
     }
 
+    /**
+     * Update firebase rules once a night for better performance
+     *
+     * This command updates firebase rules and index
+     *
+     * @return void
+     */
+    public function updateRulesCommand()
+    {
+
+        $this->searchIndexFactory->updateFireBaseRules();
+
+    }
+
 
 }

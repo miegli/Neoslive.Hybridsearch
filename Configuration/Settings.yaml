@@ -3,7 +3,6 @@ Neoslive:
     Firebase:
       endpoint: 'https://phlu-f98dd.firebaseio.com'
       token: '4h2MfKKtGkpsBCg0tcxoRzvVnmiFapCv6L3UqfWZ'
-      path: '/search/localhost'
     Filter:
       GrantParentNodeTypeFilter: '[instanceof TYPO3.Neos:Document]'
       ParentNodeTypeFilter: '[instanceof TYPO3.Neos:Content]'
