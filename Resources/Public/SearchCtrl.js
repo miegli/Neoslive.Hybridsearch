@@ -50,8 +50,6 @@ PHLUCorporateApp.controller('SearchCtrl', ['$scope', '$timeout', '$cookies', fun
 
     // Initialize Firebase
     config = {
-        apiKey: "4h2MfKKtGkpsBCg0tcxoRzvVnmiFapCv6L3UqfWZ",
-        authDomain: "phlu-f98dd.firebaseapp.com",
         databaseURL: "https://phlu-f98dd.firebaseio.com",
         storageBucket: "phlu-f98dd.appspot.com",
         workspace: "live",
@@ -98,15 +96,15 @@ PHLUCorporateApp.controller('SearchCtrl', ['$scope', '$timeout', '$cookies', fun
         $scope.terms[term] = {term: term, results: {}};
         refKeywords[term] = firebase.database().ref("keywords/" + config.workspace + "/" + config.dimension);
 
-        refKeywords[term].orderByKey().equalTo(term).once("value", function (dataSnapshot) {
+        refKeywords[term].orderByKey().equalTo(term).on("value", function (dataSnapshot) {
 
             if (dataSnapshot.val()) {
                 refIndex[term] = firebase.database().ref("index/" + config.workspace + "/" + config.dimension);
                 refIndex[term].orderByChild(term).startAt(1).on("value", function (snapshot) {
+
+                    $scope.terms[term] = {term: term, results: {}};
+
                     snapshot.forEach(function (data) {
-                        if ($scope.terms[term] === undefined) {
-                            $scope.terms[term] = {term: term, results: {}};
-                        }
                         $scope.terms[term].results[data.key] = data.val();
                     });
 

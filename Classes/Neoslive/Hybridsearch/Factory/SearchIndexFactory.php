@@ -202,10 +202,11 @@ class SearchIndexFactory
 
         }
 
-
-        /** @var Workspace $workspace */
-        if ($workspacename === null || $workspacename === $workspace->getName()) {
-            $this->deleteWorkspace($workspace);
+        foreach ($this->workspaceRepository->findAll() as $workspace) {
+            /** @var Workspace $workspace */
+            if ($workspacename === null || $workspacename === $workspace->getName()) {
+                $this->deleteWorkspace($workspace);
+            }
         }
 
         $this->save();
@@ -794,8 +795,6 @@ class SearchIndexFactory
             }
 
 
-
-
         }
 
 
@@ -845,7 +844,7 @@ class SearchIndexFactory
         return array(
             'rules' => array(
                 '.read' => true,
-                 'index' => current($rules)
+                'index' => current($rules)
             )
         );
 
