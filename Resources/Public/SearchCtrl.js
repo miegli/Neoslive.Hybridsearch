@@ -181,6 +181,7 @@ PHLUCorporateApp.controller('SearchCtrl', ['$scope', '$timeout', '$cookies', fun
                     lunrSearch.addDoc(doc);
 
 
+
                 }
 
             });
@@ -296,6 +297,12 @@ PHLUCorporateApp.controller('SearchCtrl', ['$scope', '$timeout', '$cookies', fun
                 refAutocomplete[v].once("value", function (dataSnapshot) {
                     if (dataSnapshot.val()) {
                         $scope.siteSearchAutocomplete = '';
+                        angular.forEach(refAutocomplete, function (a, k) {
+                            a.off();
+                        });
+                        getData(v);
+
+
                     }
                 });
             }
@@ -314,8 +321,18 @@ PHLUCorporateApp.controller('SearchCtrl', ['$scope', '$timeout', '$cookies', fun
 
         if (prop == '') {
             $scope.terms = {};
+            $scope.nodes = {};
+
             $scope.siteSearchAutocomplete = '';
             angular.forEach(refAutocomplete, function (a, k) {
+                a.off();
+            });
+
+            angular.forEach(refIndex, function (a, k) {
+                a.off();
+            });
+
+            angular.forEach(refKeywords, function (a, k) {
                 a.off();
             });
 
