@@ -106,6 +106,12 @@ class SearchIndexFactory
 
 
     /**
+     * @var integer
+     */
+    protected $magicSplit = 4;
+
+
+    /**
      * @var array
      */
     protected $settings;
@@ -453,23 +459,30 @@ class SearchIndexFactory
         $words = explode(" ", $text);
 
 
-        $hypenated = $this->getHyphenator()->hyphenate($text);
-        if (is_string($hypenated)) {
-            $hwords = explode(" ", $hypenated);
-            foreach ($hwords as $key => $v) {
-                if (strlen($v) > 2) {
-                    $words[] = $v;
-                }
-            }
-        }
+//        $hypenated = $this->getHyphenator()->hyphenate($text);
+//        if (is_string($hypenated)) {
+//            $hwords = explode(" ", $hypenated);
+//            foreach ($hwords as $key => $v) {
+//                if (strlen($v) > 2) {
+//                    $words[] = $v;
+//                }
+//            }
+//        }
 
         foreach ($words as $w) {
             if (strlen($w) > 1) {
                 $w = Encoding::UTF8FixWin1252Chars($w);
-                $ws = mb_strtolower(substr(($w),0,8));
+                $ws = mb_strtolower(substr(($w),0,$this->magicSplit*2));
                 if (isset($keywords->$ws) === false) {
                     $keywords->$ws = new \stdClass();
                 }
+
+                $wshort = mb_strtolower(substr(($w),0,$this->magicSplit));
+
+                if (isset($keywords->$wshort) === false) {
+                    $keywords->$wshort = new \stdClass();
+                }
+
 
                 $keywords->$ws->$w = 1;
             }
