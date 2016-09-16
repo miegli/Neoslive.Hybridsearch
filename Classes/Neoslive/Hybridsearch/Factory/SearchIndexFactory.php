@@ -202,10 +202,11 @@ class SearchIndexFactory
 
         }
 
-
-        /** @var Workspace $workspace */
-        if ($workspacename === null || $workspacename === $workspace->getName()) {
-            $this->deleteWorkspace($workspace);
+        foreach ($this->workspaceRepository->findAll() as $workspace) {
+            /** @var Workspace $workspace */
+            if ($workspacename === null || $workspacename === $workspace->getName()) {
+                $this->deleteWorkspace($workspace);
+            }
         }
 
         $this->save();
@@ -401,13 +402,16 @@ class SearchIndexFactory
             $indexData = $this->convertNodeToSearchIndexResult($node);
             $identifier = $indexData->identifier;
 
+
             $keywords = $this->generateSearchIndexFromProperties($indexData->properties);
+            $keywords['__node'] = $indexData;
+            $keywords['__nodetype'] = $indexData->nodeType;
 
             foreach ($keywords as $keyword => $val) {
-                $this->keywords->$workspaceHash->$dimensionConfigurationHash[strval($keyword)] = true;
+                $this->keywords->$workspaceHash->$dimensionConfigurationHash[strval($keyword)] = 1;
             }
 
-            $keywords['__data'] = $indexData;
+
             $this->index->$workspaceHash->$dimensionConfigurationHash->$identifier = $keywords;
 
 
@@ -443,7 +447,7 @@ class SearchIndexFactory
                 $value = json_encode($value);
             }
 
-            $text .= preg_replace("/[^A-z0-9öäüÖÄÜ ]/", "", mb_strtolower(strip_tags(preg_replace("/[^A-z0-9öäüÖÄÜ]/", " ", $value)))) . " ";
+            $text .= strip_tags(preg_replace("/[^A-z0-9öäüÖÄÜ ]/", "", mb_strtolower(strip_tags(preg_replace("/[^A-z0-9öäüÖÄÜ]/", " ", $value)))) . " ");
 
         }
 
@@ -463,7 +467,7 @@ class SearchIndexFactory
         foreach ($words as $w) {
             if (strlen($w) > 1) {
                 $w = Encoding::UTF8FixWin1252Chars($w);
-                $keywords[$w] = isset($keywords[$w]) ? $keywords[$w] + 1 : 1;
+                $keywords[substr($w,0,8)][$w] = 1;
             }
         }
 
@@ -505,9 +509,7 @@ class SearchIndexFactory
             if (gettype($val) === 'string') {
                 $k = mb_strtolower(preg_replace("/[^A-z0-9]/", "-", $node->getNodeType()->getName() . ":" . $key));
                 if (is_string($val)) {
-
-                    $properties->$k = (Encoding::UTF8FixWin1252Chars($val));
-
+                    $properties->$k = strip_tags(Encoding::UTF8FixWin1252Chars($val));
 
                 }
             }
@@ -554,10 +556,7 @@ class SearchIndexFactory
 
         $data->identifier = $node->getNodeData()->getIdentifier();
         $data->properties = $properties;
-        $data->nodeType = $node->getNodeType()->getName();
-        $data->isHidden = $node->isHidden();
-        $data->isRemoved = $node->isRemoved();
-
+        $data->nodeType = mb_strtolower(preg_replace("/[^A-z0-9]/", "-", $node->getNodeType()->getName()));
 
         $data->grandParentNode = new \stdClass();
         $data->grandParentNode->identifier = $grandParentNode ? $grandParentNode->getIdentifier() : null;
@@ -655,6 +654,7 @@ class SearchIndexFactory
 
 
         $filename = $this->temporaryDirectory . "/queued_" . time() . $this->queuecounter . "_" . Algorithms::generateUUID() . ".json";
+
 
         $fp = fopen($filename, 'w');
         fwrite($fp, json_encode(
@@ -781,8 +781,8 @@ class SearchIndexFactory
 
 
         if ($this->creatingFullIndex) {
-            $this->firebaseSet('.settings/rules', array($this->getFirebaseRules($this->keywords)));
-            $this->firebaseSet('keywords', $this->keywords);
+            $this->firebase->set('.settings/rules', $this->getFirebaseRules($this->keywords));
+            $this->firebase->set('keywords', $this->keywords);
         } else {
 
             foreach ($this->keywords as $workspace => $workspaceData) {
@@ -794,13 +794,12 @@ class SearchIndexFactory
             }
 
 
-
-
         }
 
 
         $this->index = new \stdClass();
         $this->keywords = new \stdClass();
+
         Scripts::executeCommandAsync('hybridsearch:proceed', $this->flowSettings, array());
 
 
@@ -845,7 +844,7 @@ class SearchIndexFactory
         return array(
             'rules' => array(
                 '.read' => true,
-                 'index' => current($rules)
+                'index' => current($rules)
             )
         );
 

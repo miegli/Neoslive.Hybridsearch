@@ -50,8 +50,6 @@ PHLUCorporateApp.controller('SearchCtrl', ['$scope', '$timeout', '$cookies', fun
 
     // Initialize Firebase
     config = {
-        apiKey: "4h2MfKKtGkpsBCg0tcxoRzvVnmiFapCv6L3UqfWZ",
-        authDomain: "phlu-f98dd.firebaseapp.com",
         databaseURL: "https://phlu-f98dd.firebaseio.com",
         storageBucket: "phlu-f98dd.appspot.com",
         workspace: "live",
@@ -93,21 +91,57 @@ PHLUCorporateApp.controller('SearchCtrl', ['$scope', '$timeout', '$cookies', fun
 
     getData = function (term) {
 
+
+        var subterm = term.substr(0, 8);
+        var hasdeletion = false;
+        var searchString = " " + $scope.siteSearch.toLowerCase() + " ";
+
+        angular.forEach($scope.terms, function (val, key) {
+            if (searchString.indexOf(" " + key + " ") < 0) {
+
+                if ($scope.terms[subterm] !== undefined) {
+                    delete $scope.terms[subterm];
+                }
+
+                if ($scope.terms[key] !== undefined) {
+                    delete $scope.terms[key];
+                }
+
+                if (refKeywords[subterm] !== undefined) {
+                    refKeywords[key].off();
+                }
+
+                if (refIndex[key] !== undefined) {
+                    refIndex[key].off();
+                }
+
+                hasdeletion = true;
+            }
+
+        });
+
+        if (hasdeletion) {
+            applyData();
+        }
+
+
         $scope.nodes = {};
 
-        $scope.terms[term] = {term: term, results: {}};
-        refKeywords[term] = firebase.database().ref("keywords/" + config.workspace + "/" + config.dimension);
+        $scope.terms[subterm] = {term: subterm, results: {}};
+        refKeywords[subterm] = firebase.database().ref("keywords/" + config.workspace + "/" + config.dimension);
 
-        refKeywords[term].orderByKey().equalTo(term).once("value", function (dataSnapshot) {
+        refKeywords[subterm].orderByKey().equalTo(subterm).on("value", function (dataSnapshot) {
 
             if (dataSnapshot.val()) {
-                refIndex[term] = firebase.database().ref("index/" + config.workspace + "/" + config.dimension);
-                refIndex[term].orderByChild(term).startAt(1).on("value", function (snapshot) {
+
+
+                refIndex[subterm] = firebase.database().ref("index/" + config.workspace + "/" + config.dimension);
+                refIndex[subterm].orderByChild(subterm).on("value", function (snapshot) {
+
+                    $scope.terms[subterm] = {term: subterm, results: {}};
+
                     snapshot.forEach(function (data) {
-                        if ($scope.terms[term] === undefined) {
-                            $scope.terms[term] = {term: term, results: {}};
-                        }
-                        $scope.terms[term].results[data.key] = data.val();
+                        $scope.terms[subterm].results[data.key] = data.val();
                     });
 
                     applyData();
@@ -129,28 +163,25 @@ PHLUCorporateApp.controller('SearchCtrl', ['$scope', '$timeout', '$cookies', fun
 
             var sresult = " " + $scope.siteSearch.toLowerCase() + " ";
 
-            if (sresult.indexOf(" " + key + " ") > -1) {
 
-                angular.forEach(val.results, function (node) {
+            angular.forEach(val.results, function (node) {
 
-                    var doc = node.__data.properties;
+                var doc = node.__node.properties;
 
-                    if (node.__data != undefined) {
-                        angular.forEach(node.__data.properties, function (val, key) {
-                            if (lunrSearch.getFields().indexOf(key) < 0) {
-                                lunrSearch.addField(key);
-                            }
-                        });
+                if (node.__node != undefined) {
+                    angular.forEach(node.__node.properties, function (val, key) {
+                        if (lunrSearch.getFields().indexOf(key) < 0) {
+                            lunrSearch.addField(key);
+                        }
+                    });
 
-                        doc.id = node.__data.identifier;
-                        $scope.nodes[doc.id] = node.__data;
-                        lunrSearch.addDoc(doc);
+                    doc.id = node.__node.identifier;
+                    $scope.nodes[doc.id] = node.__node;
+                    lunrSearch.addDoc(doc);
 
-                    }
+                }
 
-                });
-
-            }
+            });
 
 
         });
@@ -166,11 +197,7 @@ PHLUCorporateApp.controller('SearchCtrl', ['$scope', '$timeout', '$cookies', fun
     searchData = function (term) {
 
 
-
         var fields = {};
-
-
-
 
 
         angular.forEach(lunrSearch.getFields(), function (v, k) {
@@ -242,12 +269,19 @@ PHLUCorporateApp.controller('SearchCtrl', ['$scope', '$timeout', '$cookies', fun
 
     $scope.$watch('siteSearch', function (prop) {
 
+        if (prop == '') {
+            $scope.terms = {};
+            applyData();
 
-        angular.forEach(getSearchTerms(), function (v) {
-            if ($scope.terms[v] === undefined) {
-                getData(v);
-            }
-        });
+        } else {
+
+            angular.forEach(getSearchTerms(), function (v) {
+                if ($scope.terms[v] === undefined) {
+                    getData(v);
+                }
+            });
+
+        }
 
 
     });
