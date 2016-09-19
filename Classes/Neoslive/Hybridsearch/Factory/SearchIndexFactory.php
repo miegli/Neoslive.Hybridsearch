@@ -408,7 +408,7 @@ class SearchIndexFactory
             $indexData = $this->convertNodeToSearchIndexResult($node);
             $identifier = $indexData->identifier;
 
-            $keywords = $this->generateSearchIndexFromProperties($indexData->properties);
+            $keywords = $this->generateSearchIndexFromProperties($indexData->properties,$indexData->nodeType);
             $keywords->__node = $indexData;
             $keywords->__nodetype = $indexData->nodeType;
 
@@ -429,9 +429,10 @@ class SearchIndexFactory
      * Generate search index words from properties array
      *
      * @param array $properties
+     * @param string $nodeTypeName
      * @return void
      */
-    protected function generateSearchIndexFromProperties($properties)
+    protected function generateSearchIndexFromProperties($properties,$nodeTypeName)
     {
 
 
@@ -472,19 +473,7 @@ class SearchIndexFactory
         foreach ($words as $w) {
             if (strlen($w) > 1) {
                 $w = Encoding::UTF8FixWin1252Chars($w);
-                $ws = mb_strtolower(substr(($w),0,$this->magicSplit*2));
-                if (isset($keywords->$ws) === false) {
-                    $keywords->$ws = new \stdClass();
-                }
-
-                $wshort = mb_strtolower(substr(($w),0,$this->magicSplit));
-
-                if (isset($keywords->$wshort) === false) {
-                    $keywords->$wshort = new \stdClass();
-                }
-
-
-                $keywords->$ws->$w = 1;
+                $keywords->$w = $nodeTypeName;
             }
         }
 
