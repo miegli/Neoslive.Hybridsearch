@@ -52,8 +52,14 @@ PHLUCorporateApp.controller('SearchCtrl', ['$scope', '$hybridsearch', '$hybridse
 
     var hybridsearchObject = new $hybridsearchObject(hybridsearch,$scope);
 
-    hybridsearchObject.search('siteSearch',true).nodeTypeFilter('siteSearchFilter').$watch(function(i) {
+    hybridsearchObject.query('siteSearch',true).nodeTypeFilter('siteSearchFilter').$watch(function(i) {
         $scope.results = i;
+    });
+
+    var hybridsearchObject2 = new $hybridsearchObject(hybridsearch,$scope);
+
+    hybridsearchObject2.query('siteSearch').nodeTypeFilter('siteSearchFilter').$watch(function(i) {
+        console.log(i);
     });
 
 

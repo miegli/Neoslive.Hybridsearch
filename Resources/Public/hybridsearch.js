@@ -98,6 +98,8 @@
 
         function ($firebaseObject) {
 
+            var instance = 0;
+
 
             /**
              * HybridsearchObject.
@@ -108,11 +110,31 @@
             function HybridsearchObject(hybridsearch, scope) {
 
 
-                scope.hybridsearchFilter = {
+                instance++;
+
+
+                if (scope.hybridsearchData === undefined) {
+                    scope.hybridsearchData = {};
+                }
+
+                if (scope.hybridsearchData[instance] === undefined) {
+                    scope.hybridsearchData[instance] = {};
+                }
+
+                if (scope.hybridsearchResult === undefined) {
+                    scope.hybridsearchResult = {};
+                }
+
+                if (scope.hybridsearchResult[instance] === undefined) {
+                    scope.hybridsearchResult[instance] = {};
+                }
+
+                scope.hybridsearchData[instance].filter = {
                     'nodeType': '',
-                    'searchString': ''
+                    'query': ''
                 };
-                scope.hybridsearchResults = 2;
+
+                scope.hybridsearchResult[instance] = 2;
 
                 //
                 // var ref = firebase.database().ref().child("index");
@@ -173,9 +195,11 @@
                     value: this.$$search
                 });
 
-                scope.$watch('hybridsearchFilter', function (filter) {
-                    console.log(filter);
-                    scope.hybridsearchResults = filter.searchString;
+
+                scope.$watch('hybridsearchData['+instance+']', function (data) {
+
+                    scope.hybridsearchResult[instance] = data.filter.query;
+
                 }, true);
 
             }
@@ -189,8 +213,8 @@
 
                     var self = this;
 
-                    return this.$$conf.scope.$watch('hybridsearchResults', function (obj) {
-                        callback(self.$$app.search(obj));
+                    return this.$$conf.scope.$watch('hybridsearchResult['+instance+']', function (obj) {
+                        callback(obj);
                     });
 
                 },
@@ -200,17 +224,17 @@
                  * @param boolean scopevar false if is simple string, true if is binded scope variable
                  * @returns HybridsearchObject
                  */
-                nodeTypeFilter: function (filterNode, scopevar=false) {
+                nodeTypeFilter: function (nodeType, scopevar=false) {
 
                     var self = this;
 
                     if (scopevar) {
-                            self.$$conf.scope.$watch(filterNode, function (filterNodeInput) {
-                                self.$$conf.scope.hybridsearchFilter.nodeType = filterNodeInput;
-                            });
+                        self.$$conf.scope.$watch(nodeType, function (filterNodeInput) {
+                            self.$$conf.scope.hybridsearchData[instance].filter.nodeType = filterNodeInput;
+                        });
 
                     } else {
-                        self.$$conf.scope.hybridsearchFilter.nodeType = filterNode;
+                        self.$$conf.scope.hybridsearchData[instance].filter.nodeType = nodeType;
                     }
 
                     return this;
@@ -218,22 +242,25 @@
                 },
 
                 /**
-                 * @param string nodeType to search only for
+                 * @param string input to search
                  * @param boolean scopevar false if is simple string, true if is binded scope variable
                  * @returns HybridsearchObject
                  */
-                search: function (input, scopevar=false) {
+                query: function (input, scopevar=false) {
 
                     var self = this;
 
                     if (scopevar) {
                         self.$$conf.scope.$watch(input, function (searchInput) {
-                            self.$$conf.scope.hybridsearchFilter.searchString = searchInput;
+                            self.$$conf.scope.hybridsearchData[instance].filter.query = searchInput;
                         });
 
                     } else {
-                        self.$$conf.scope.hybridsearchFilter.searchString = input;
+                        self.$$conf.scope.hybridsearchData[instance].filter.query = input;
                     }
+
+
+                    self.$$conf.scope.hybridsearchResult[instance] = 1;
 
                     return this;
 
