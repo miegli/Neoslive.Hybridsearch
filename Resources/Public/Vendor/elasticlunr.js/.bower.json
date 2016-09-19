@@ -1,0 +1,21 @@
+{
+  "name": "elasticlunr.js",
+  "version": "0.9.5",
+  "main": "elasticlunr.js",
+  "ignore": [
+    "tests/",
+    "perf/",
+    "build/",
+    "docs/"
+  ],
+  "homepage": "https://github.com/weixsong/elasticlunr.js",
+  "_release": "0.9.5",
+  "_resolution": {
+    "type": "version",
+    "tag": "v0.9.5",
+    "commit": "6d806fac4ae055dbda3892751649823a85bb3329"
+  },
+  "_source": "https://github.com/weixsong/elasticlunr.js.git",
+  "_target": "*",
+  "_originalSource": "elasticlunr.js"
+}

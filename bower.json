@@ -1,0 +1,7 @@
+{
+  "name": "hybridsearch",
+  "dependencies": {
+    "angularfire": "*",
+    "elasticlunr.js": "*"
+  }
+}
