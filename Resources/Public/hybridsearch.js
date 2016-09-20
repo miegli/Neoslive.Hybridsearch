@@ -99,7 +99,7 @@
      */
     angular.module('hybridsearch.common').factory('$hybridsearchObject', ['$firebaseObject', '$hybridsearchResultsObject', '$hybridsearchFilterObject',
 
-        function ($firebaseObject, $hybridsearchResultsObject, $hybridsearchFilterObject) {
+        function (firebaseObject, $hybridsearchResultsObject, $hybridsearchFilterObject) {
 
 
             /**
@@ -111,44 +111,256 @@
             function HybridsearchObject(hybridsearch) {
 
 
-                var results, filter;
+                var results, filter, watchers, index, lunrSearch, nodes;
+
 
                 results = new $hybridsearchResultsObject();
                 filter = new $hybridsearchFilterObject();
+                nodes = {};
+                index = {};
+                watchers = {};
+                watchers.index = {};
+                watchers.keywords = {};
+                lunrSearch = elasticlunr(function () {
+                    this.setRef('id');
+                });
 
 
                 if (!(this instanceof HybridsearchObject)) {
                     return new HybridsearchObject();
                 }
-                // These are private config props and functions used internally
-                // they are collected here to reduce clutter in console.log and forEach
-                this.$$conf = {
-                    boost: {
-                        'phlu-corporate-contact-firstname': 100,
-                        'phlu-corporate-contact-lastname': 300,
-                        firstname: 100,
-                        lastname: 100,
-                        uriPathSegment: 150,
-                        phone: 35,
-                        street: 20,
-                        email: 10,
-                        title: 40,
-                        text: 1
-                    }
-                };
 
 
                 this.$$app = {
-                    search: function (input) {
-                        return input;
-                    },
                     getResults: function () {
                         return results;
                     },
                     getFilter: function () {
                         return filter;
+                    },
+                    /**
+                     * @returns mixed
+                     */
+                    search: function () {
+
+                        var fields = {}, items = {}, self = this, finalitems = [];
+
+                        angular.forEach(lunrSearch.getFields(), function (v, k) {
+                            fields[v] = {boost: 1}
+                        });
+
+
+                        angular.forEach(lunrSearch.search(self.getFilter().getQueryString(), {
+                            fields: fields,
+                            bool: "OR"
+                        }), function (item) {
+
+                            var nodeId = item.ref.substring(item.ref.indexOf("://") + 3);
+
+
+                            if (items[nodeId] === undefined) {
+                                items[nodeId] = {
+                                    score: 0,
+                                    nodeType: nodes[nodeId].nodeType,
+                                    properties: nodes[nodeId].properties
+                                };
+                            }
+
+                            items[nodeId].score = items[nodeId].score + item.score;
+
+
+                        });
+
+                        // make propre array
+                        angular.forEach(items, function (val, key) {
+                            finalitems.push(val);
+                        });
+
+
+                        results.setResults(finalitems);
+
+                    },
+
+                    /**
+                     * @returns mixed
+                     */
+                    setSearchIndex: function () {
+
+
+                        var self = this;
+                        nodes = {};
+
+                        // unbind all previous defined keywords watchers
+                        angular.forEach(watchers.keywords, function (unbind, key) {
+                            unbind();
+                            delete watchers.keywords[key];
+                        });
+                        // unbind all previous defined index watchers
+                        angular.forEach(watchers.index, function (unbind, key) {
+                            unbind();
+                            delete watchers.index[key];
+                        });
+
+                        angular.forEach(this.getFilter().getQueryKeywords(), function (value, keyword) {
+                            watchers.keywords[keyword] = self.getKeyword(keyword).$watch(function () {
+
+                                self.getKeyword(keyword).$loaded(function (data) {
+                                    if (data.$value) {
+
+                                        // keyword was found
+                                        watchers.index[keyword] = self.getIndex(keyword).$watch(function (obj) {
+                                            self.getIndex(keyword).$loaded(function (data) {
+
+                                                self.updateLocalIndex(keyword, data);
+
+                                            });
+                                        });
+
+                                    }
+                                });
+
+
+                            });
+                        });
+
+
+                        this.cleanLocalIndex(watchers.keywords);
+
+
+                    },
+                    /**
+                     * @param string querysegment
+                     * @returns {firebaseObject}
+                     */
+                    getKeyword: function (querysegment) {
+
+                        var ref = hybridsearch.$firebase().database().ref().child("keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/" + querysegment);
+                        return firebaseObject(ref);
+
+                        // to take an action after the data loads, use the $loaded() promise
+                        // var unwatch = obj.$watch(function () {
+                        //
+                        //     // To iterate the key/value pairs of the object, use angular.forEach()
+                        //     angular.forEach(obj, function (value, key) {
+                        //         console.log(key, value);
+                        //     });
+                        // });
+
+                    },
+                    /**
+                     * @param string keyword
+                     * @returns {firebaseObject}
+                     */
+                    getIndex: function (keyword) {
+
+                        var ref = hybridsearch.$firebase().database().ref().child("index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension);
+                        var query = false;
+
+
+                        if (query === false && keyword.length > 1 && this.getFilter().getNodeType()) {
+                            query = ref.orderByChild(keyword).startAt(this.getFilter().getNodeType()).endAt(this.getFilter().getNodeType());
+                        }
+
+                        if (query === false && keyword.length > 1) {
+                            query = ref.orderByChild(keyword);
+                        }
+
+
+                        if (query) {
+                            return firebaseObject(query);
+                        }
+
+                        return firebaseObject(ref);
+                    },
+                    /**
+                     * @param array
+                     * @returns void
+                     */
+                    cleanLocalIndex: function (existingkeywords) {
+
+                        var self = this;
+
+                        angular.forEach(index, function (value, key) {
+                            if (existingkeywords[value] === undefined) {
+                                self.removeLocalIndex(value);
+                            }
+                        });
+
+                    },
+                    /**
+                     * @param string keyword
+                     * @param object data
+                     * @returns void
+                     */
+                    updateLocalIndex: function (keyword, data) {
+                        this.removeLocalIndex(keyword);
+                        this.addLocalIndex(keyword, data);
+                        this.search();
+
+                    },
+                    /**
+                     * @param string keyword
+                     * @returns mixed
+                     */
+                    removeLocalIndex: function (values) {
+
+                        var keyword = false;
+                        angular.forEach(values, function (key, doc) {
+
+                            if (lunrSearch.documentStore.hasDoc(doc)) {
+                                lunrSearch.documentStore.removeDoc(doc);
+                            }
+                            keyword = key;
+                        });
+
+
+                        try {
+                            delete index[keyword];
+                        } catch (e) {
+                        }
+
+
+                    },
+                    /**
+                     * @param string keyword
+                     * @param object data
+                     * @returns mixed
+                     */
+                    addLocalIndex: function (keyword, data) {
+
+                        if (index[keyword] === undefined) {
+                            index[keyword] = {};
+                        }
+
+                        angular.forEach(data, function (value, key) {
+
+
+                            nodes[value['__node']['identifier']] = value['__node'];
+
+                            if (value.__node != undefined && value.__node.properties != undefined) {
+
+                                var doc = value.__node.properties;
+
+                                angular.forEach(value.__node.properties, function (val, key) {
+                                    if (lunrSearch.getFields().indexOf(key) < 0) {
+                                        lunrSearch.addField(key);
+                                    }
+                                });
+
+                                doc.id = keyword + "://" + value.__node.identifier;
+                                lunrSearch.addDoc(doc);
+                                index[keyword][doc.id] = keyword;
+
+                            }
+
+
+                        });
+
+
                     }
+
                 };
+
 
                 // this bit of magic makes $$conf non-enumerable and non-configurable
                 // and non-writable (its properties are still writable but the ref cannot be replaced)
@@ -156,22 +368,46 @@
                 Object.defineProperty(this, '$$conf', {
                     value: this.$$conf
                 });
-
-                // this bit of magic makes $$conf non-enumerable and non-configurable
-                // and non-writable (its properties are still writable but the ref cannot be replaced)
-                // we redundantly assign it above so the IDE can relax
                 Object.defineProperty(this, '$$app', {
                     value: this.$$app
                 });
 
+
+                //console.log(this.$$app.getIndex());
+
+                // /**
+                //  * @returns {HybridsearchObject}
+                //  */
+                // function getFirebaseIndex() {
                 //
-                // scope.$watch('hybridsearchData[' + instance + ']', function (data) {
+                //     if (unwatch !== undefined) {
+                //         unwatch();
+                //     }
                 //
-                //     //scope.hybridsearchResult[instance] = data.filter.query;
+                //     console.log(this.$$app);
                 //
-                // }, true);
+                //     var ref = hybridsearch.$firebase().database().ref().child("index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension);
+                //     var query = ref.orderByChild("egli").startAt("phlu-corporate-contact").endAt("phlu-corporate-contact");
+                //     var obj = firebaseObject(query);
+                //
+                //     // to take an action after the data loads, use the $loaded() promise
+                //     var unwatch = obj.$watch(function () {
+                //
+                //         // To iterate the key/value pairs of the object, use angular.forEach()
+                //         angular.forEach(obj, function (value, key) {
+                //             console.log(key, value);
+                //         });
+                //     });
+                //
+                //
+                // }
+                //
+                //
+                // getFirebaseIndex();
+
 
             }
+
 
             HybridsearchObject.prototype = {
 
@@ -179,8 +415,7 @@
                  * @returns a promise which will resolve after the save is completed.
                  */
                 $watch: function (callback) {
-                    console.log(this.$$app.getResults().setCallbackMethod(callback));
-
+                    this.$$app.getResults().setCallbackMethod(callback);
                 },
 
                 /**
@@ -217,6 +452,10 @@
                     if (scope) {
                         scope.$watch(input, function (searchInput) {
                             self.$$app.getFilter().setQuery(searchInput);
+                            if (searchInput !== undefined) {
+
+                                self.$$app.setSearchIndex();
+                            }
                         });
 
                     } else {
@@ -254,7 +493,7 @@
              */
             function HybridsearchResultsObject() {
 
-
+                var results = {};
 
 
                 if (!(this instanceof HybridsearchResultsObject)) {
@@ -283,6 +522,18 @@
             HybridsearchResultsObject.prototype = {
 
                 /**
+                 * @param object
+                 * @returns void
+                 */
+                setResults: function (results) {
+
+                    this.$$data.results = results;
+                    this.executeCallbackMethod();
+
+
+                },
+
+                /**
                  * @returns {HybridsearchResultsObject}
                  */
                 setCallbackMethod: function (callback) {
@@ -291,6 +542,14 @@
 
                     return this;
 
+                },
+
+                /**
+                 * @returns mixed
+                 */
+                executeCallbackMethod: function () {
+
+                    this.$$data.callbackMethod(this.$$data.results);
                 }
 
             };
@@ -312,6 +571,9 @@
 
         function () {
 
+
+            var filterReg = /[^0-9a-zA-ZöäüÖÄÜ]/g;
+
             /**
              * HybridsearchFilterObject.
              * @returns {HybridsearchFilterObject}
@@ -327,10 +589,7 @@
 
                 // These are private config props and functions used internally
                 // they are collected here to reduce clutter in console.log and forEach
-                this.$$data = {
-                    query: '',
-                    filter: ''
-                };
+                this.$$data = {};
 
                 // this bit of magic makes $$conf non-enumerable and non-configurable
                 // and non-writable (its properties are still writable but the ref cannot be replaced)
@@ -370,14 +629,53 @@
                  * @returns string
                  */
                 getNodeType: function () {
-                    return this.$$data.nodeType;
+                    return this.$$data.nodeType === undefined ? '' : this.$$data.nodeType;
                 },
 
                 /**
                  * @returns string
                  */
                 getQuery: function () {
-                    return this.$$data.query;
+                    return this.$$data.query === undefined ? '' : this.$$data.query.toLowerCase();
+                },
+
+                /**
+                 * @returns string
+                 */
+                getQueryString: function () {
+
+                    var s = '';
+
+                    angular.forEach(this.getQueryKeywords(), function (key, term) {
+                        s += term + " ";
+                    });
+
+                    return s;
+                },
+
+                /**
+                 * @returns object
+                 */
+                getQueryKeywords: function () {
+
+                    var keywords = {};
+
+                    if (this.$$data.query === undefined) {
+                        return keywords;
+                    }
+
+
+                    var s = this.$$data.query.replace(filterReg, " ");
+                    var t = s.replace(/([0-9])( )/i, '$1').replace(/([0-9]{2})/gi, '$1 ');
+                    s = s + " " + t;
+
+                    angular.forEach(s.split(" "), function (term) {
+                        term = term.replace(filterReg, "");
+                        if (term.length > 0) keywords[term] = true;
+                    });
+
+                    return keywords;
+
                 }
 
 
