@@ -408,7 +408,7 @@ class SearchIndexFactory
             $indexData = $this->convertNodeToSearchIndexResult($node);
             $identifier = $indexData->identifier;
 
-            $keywords = $this->generateSearchIndexFromProperties($indexData->properties,$indexData->nodeType);
+            $keywords = $this->generateSearchIndexFromProperties($indexData->properties, $indexData->nodeType);
             $keywords->__node = $indexData;
             $keywords->__nodetype = $indexData->nodeType;
 
@@ -433,7 +433,7 @@ class SearchIndexFactory
      * @param string $nodeTypeName
      * @return void
      */
-    protected function generateSearchIndexFromProperties($properties,$nodeTypeName)
+    protected function generateSearchIndexFromProperties($properties, $nodeTypeName)
     {
 
 
@@ -474,7 +474,12 @@ class SearchIndexFactory
         foreach ($words as $w) {
             if (strlen($w) > 1) {
                 $w = Encoding::UTF8FixWin1252Chars($w);
-                $keywords->$w = $nodeTypeName;
+                $keywords->$w = 1;
+
+                $a = "_nodeType_" . $w;
+                $keywords->$a = $nodeTypeName;
+
+
             }
         }
 
@@ -526,7 +531,7 @@ class SearchIndexFactory
             }
         }
 
-        $data->hash = sha1(json_encode(array($node->getNodeType()->getName(),$properties)));
+        $data->hash = sha1(json_encode(array($node->getNodeType()->getName(), $properties)));
 
 
         $flowQuery = new FlowQuery(array($node));
@@ -565,12 +570,9 @@ class SearchIndexFactory
         }
 
 
-
-
         $data->identifier = $node->getNodeData()->getIdentifier();
         $data->properties = $properties;
         $data->nodeType = mb_strtolower(preg_replace("/[^A-z0-9]/", "-", $node->getNodeType()->getName()));
-
 
 
         $data->grandParentNode = new \stdClass();
@@ -584,7 +586,6 @@ class SearchIndexFactory
             $data->parentNode->properties = $parentProperties;
             $data->parentNode->nodeType = $parentNode->getNodeType()->getName();
         }
-
 
 
         return $data;

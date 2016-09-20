@@ -54,9 +54,12 @@ PHLUCorporateApp.controller('SearchCtrl', ['$scope', '$hybridsearch', '$hybridse
     var hybridsearchObject = new $hybridsearchObject(hybridsearch);
 
     hybridsearchObject.setQuery('siteSearch', $scope).$watch(function (i) {
-        console.log(i.length);
        $scope.results = i;
     });
+
+      // hybridsearchObject.setQuery('löwengraben').setNodeType('phlu-corporate-contact').$watch(function (i) {
+      //      $scope.results = i;
+      // });
 
 
 }]);

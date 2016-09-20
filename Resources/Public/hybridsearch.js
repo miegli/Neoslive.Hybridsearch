@@ -143,7 +143,6 @@
                      */
                     search: function () {
 
-
                         var fields = {}, items = {}, self = this, finalitems = [];
 
                         angular.forEach(lunrSearch.getFields(), function (v, k) {
@@ -196,8 +195,10 @@
                      */
                     setSearchIndex: function () {
 
+
                         var self = this;
                         nodes = {};
+                        results.setResults([]);
 
                         // unbind all previous defined keywords watchers
                         angular.forEach(watchers.keywords, function (unbind, key) {
@@ -252,16 +253,16 @@
                      */
                     getIndex: function (keyword) {
 
-                        //var ref = hybridsearch.$firebase().database().ref().child("index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension);
+                        var ref = hybridsearch.$firebase().database().ref().child("index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension);
                         var query = false;
 
 
                         if (query === false && keyword.length > 1 && this.getFilter().getNodeType()) {
-                            query = hybridsearch.$firebase().database().ref().child("index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension).orderByChild(keyword).startAt(this.getFilter().getNodeType()).endAt(this.getFilter().getNodeType());
+                            query = ref.orderByChild("_nodeType_" + keyword).equalTo(this.getFilter().getNodeType()).limitToFirst(1000);
                         }
 
                         if (query === false && keyword.length > 1) {
-                            query = hybridsearch.$firebase().database().ref().child("index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension).orderByChild(keyword);
+                            query = ref.orderByChild(keyword).equalTo(1).limitToFirst(1000);
                         }
 
 
@@ -301,14 +302,18 @@
                      * @param string keyword
                      * @returns mixed
                      */
-                    removeLocalIndex: function (keyword) {
+                    removeLocalIndex: function (values) {
 
-                        // var keyword = false;
-                        // angular.forEach(values, function (key, doc) {
-                        //     lunrSearch.removeDocByRef(doc);
-                        //     keyword = key;
-                        // });
-                        //
+                        var keyword = false;
+                        angular.forEach(values, function (key, doc) {
+
+                            if (lunrSearch.documentStore.hasDoc(doc)) {
+                                lunrSearch.documentStore.removeDoc(doc);
+                            }
+                            keyword = key;
+                        });
+
+
                         try {
                             delete index[keyword];
                         } catch (e) {
@@ -357,6 +362,9 @@
                 };
 
 
+                // this bit of magic makes $$conf non-enumerable and non-configurable
+                // and non-writable (its properties are still writable but the ref cannot be replaced)
+                // we redundantly assign it above so the IDE can relax
                 Object.defineProperty(this, '$$conf', {
                     value: this.$$conf
                 });
@@ -413,7 +421,7 @@
                             self.$$app.getFilter().setQuery(searchInput);
                             if (searchInput !== undefined) {
 
-                                //self.$$app.setSearchIndex();
+                                self.$$app.setSearchIndex();
                             }
                         });
 
