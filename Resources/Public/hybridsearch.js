@@ -196,7 +196,8 @@
                     setSearchIndex: function () {
 
 
-                        var self = this;
+
+                        var self = this, counter = 0;
                         nodes = {};
                         results.setResults([]);
 
@@ -212,6 +213,7 @@
                         });
 
                         angular.forEach(this.getFilter().getQueryKeywords(), function (value, keyword) {
+                            counter++;
                             watchers.keywords[keyword] = self.getKeyword(keyword).$watch(function () {
 
                                 self.getKeyword(keyword).$loaded(function (data) {
@@ -220,9 +222,7 @@
                                         // keyword was found
                                         watchers.index[keyword] = self.getIndex(keyword).$watch(function (obj) {
                                             self.getIndex(keyword).$loaded(function (data) {
-
                                                 self.updateLocalIndex(keyword, data);
-
                                             });
                                         });
 
@@ -232,6 +232,17 @@
 
                             });
                         });
+
+
+                        if (counter == 0) {
+                            if (self.getFilter().getNodeType()) {
+                                // get all nodes by types without keyword
+                                self.getIndex("").$loaded(function (data) {
+                                    self.updateLocalIndex("_", data);
+                                });
+                            }
+                        }
+
 
 
                         this.cleanLocalIndex(watchers.keywords);
@@ -256,9 +267,8 @@
                         var ref = hybridsearch.$firebase().database().ref().child("index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension);
                         var query = false;
 
-
-                        if (query === false && keyword.length > 1 && this.getFilter().getNodeType()) {
-                            query = ref.orderByChild("_nodeType_" + keyword).equalTo(this.getFilter().getNodeType()).limitToFirst(1000);
+                        if (query === false && this.getFilter().getNodeType()) {
+                            query = ref.orderByChild("_nodetype" + keyword).equalTo(this.getFilter().getNodeType()).limitToFirst(1000);
                         }
 
                         if (query === false && keyword.length > 1) {
@@ -335,19 +345,19 @@
                         angular.forEach(data, function (value, key) {
 
 
-                            nodes[value['__node']['identifier']] = value['__node'];
+                            nodes[value['_node']['identifier']] = value['_node'];
 
-                            if (value.__node != undefined && value.__node.properties != undefined) {
+                            if (value._node != undefined && value._node.properties != undefined) {
 
-                                var doc = value.__node.properties;
+                                var doc = value._node.properties;
 
-                                angular.forEach(value.__node.properties, function (val, key) {
+                                angular.forEach(value._node.properties, function (val, key) {
                                     if (lunrSearch.getFields().indexOf(key) < 0) {
                                         lunrSearch.addField(key);
                                     }
                                 });
 
-                                doc.id = keyword + "://" + value.__node.identifier;
+                                doc.id = keyword + "://" + value._node.identifier;
                                 lunrSearch.addDoc(doc);
                                 index[keyword][doc.id] = keyword;
 
@@ -397,10 +407,12 @@
                     if (scope) {
                         self.$$conf.scope.$watch(nodeType, function (filterNodeInput) {
                             self.$$app.getFilter().setNodeType(searchInput);
+                            self.$$app.setSearchIndex();
                         });
 
                     } else {
                         self.$$app.getFilter().setNodeType(nodeType);
+                        self.$$app.setSearchIndex();
                     }
 
                     return this;

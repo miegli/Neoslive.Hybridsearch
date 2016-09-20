@@ -409,8 +409,8 @@ class SearchIndexFactory
             $identifier = $indexData->identifier;
 
             $keywords = $this->generateSearchIndexFromProperties($indexData->properties, $indexData->nodeType);
-            $keywords->__node = $indexData;
-            $keywords->__nodetype = $indexData->nodeType;
+            $keywords->_node = $indexData;
+            $keywords->_nodetype = $indexData->nodeType;
 
 
             foreach ($keywords as $keyword => $val) {
@@ -476,7 +476,7 @@ class SearchIndexFactory
                 $w = Encoding::UTF8FixWin1252Chars($w);
                 $keywords->$w = 1;
 
-                $a = "_nodeType_" . $w;
+                $a = "_nodetype" . $w;
                 $keywords->$a = $nodeTypeName;
 
 
