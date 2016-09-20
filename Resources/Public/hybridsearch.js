@@ -143,6 +143,7 @@
                      */
                     search: function () {
 
+
                         var fields = {}, items = {}, self = this, finalitems = [];
 
                         angular.forEach(lunrSearch.getFields(), function (v, k) {
@@ -155,18 +156,27 @@
                             bool: "OR"
                         }), function (item) {
 
+
                             var nodeId = item.ref.substring(item.ref.indexOf("://") + 3);
 
+                            if (nodes[nodeId] !== undefined) {
+                                var hash = nodes[nodeId].hash;
 
-                            if (items[nodeId] === undefined) {
-                                items[nodeId] = {
-                                    score: 0,
-                                    nodeType: nodes[nodeId].nodeType,
-                                    properties: nodes[nodeId].properties
-                                };
+
+                                if (items[hash] === undefined) {
+                                    items[hash] = {
+                                        score: 0,
+                                        nodeType: nodes[nodeId].nodeType,
+                                        nodes: {}
+                                    };
+                                }
+
+
+                                items[hash].score = items[hash].score + item.score;
+                                items[hash].nodes[nodeId] = nodes[nodeId];
+
+
                             }
-
-                            items[nodeId].score = items[nodeId].score + item.score;
 
 
                         });
@@ -185,7 +195,6 @@
                      * @returns mixed
                      */
                     setSearchIndex: function () {
-
 
                         var self = this;
                         nodes = {};
@@ -236,16 +245,6 @@
 
                         var ref = hybridsearch.$firebase().database().ref().child("keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/" + querysegment);
                         return firebaseObject(ref);
-
-                        // to take an action after the data loads, use the $loaded() promise
-                        // var unwatch = obj.$watch(function () {
-                        //
-                        //     // To iterate the key/value pairs of the object, use angular.forEach()
-                        //     angular.forEach(obj, function (value, key) {
-                        //         console.log(key, value);
-                        //     });
-                        // });
-
                     },
                     /**
                      * @param string keyword
@@ -253,16 +252,16 @@
                      */
                     getIndex: function (keyword) {
 
-                        var ref = hybridsearch.$firebase().database().ref().child("index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension);
+                        //var ref = hybridsearch.$firebase().database().ref().child("index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension);
                         var query = false;
 
 
                         if (query === false && keyword.length > 1 && this.getFilter().getNodeType()) {
-                            query = ref.orderByChild(keyword).startAt(this.getFilter().getNodeType()).endAt(this.getFilter().getNodeType());
+                            query = hybridsearch.$firebase().database().ref().child("index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension).orderByChild(keyword).startAt(this.getFilter().getNodeType()).endAt(this.getFilter().getNodeType());
                         }
 
                         if (query === false && keyword.length > 1) {
-                            query = ref.orderByChild(keyword);
+                            query = hybridsearch.$firebase().database().ref().child("index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension).orderByChild(keyword);
                         }
 
 
@@ -270,7 +269,8 @@
                             return firebaseObject(query);
                         }
 
-                        return firebaseObject(ref);
+                        return null;
+
                     },
                     /**
                      * @param array
@@ -296,24 +296,19 @@
                         this.removeLocalIndex(keyword);
                         this.addLocalIndex(keyword, data);
                         this.search();
-
                     },
                     /**
                      * @param string keyword
                      * @returns mixed
                      */
-                    removeLocalIndex: function (values) {
+                    removeLocalIndex: function (keyword) {
 
-                        var keyword = false;
-                        angular.forEach(values, function (key, doc) {
-
-                            if (lunrSearch.documentStore.hasDoc(doc)) {
-                                lunrSearch.documentStore.removeDoc(doc);
-                            }
-                            keyword = key;
-                        });
-
-
+                        // var keyword = false;
+                        // angular.forEach(values, function (key, doc) {
+                        //     lunrSearch.removeDocByRef(doc);
+                        //     keyword = key;
+                        // });
+                        //
                         try {
                             delete index[keyword];
                         } catch (e) {
@@ -362,48 +357,12 @@
                 };
 
 
-                // this bit of magic makes $$conf non-enumerable and non-configurable
-                // and non-writable (its properties are still writable but the ref cannot be replaced)
-                // we redundantly assign it above so the IDE can relax
                 Object.defineProperty(this, '$$conf', {
                     value: this.$$conf
                 });
                 Object.defineProperty(this, '$$app', {
                     value: this.$$app
                 });
-
-
-                //console.log(this.$$app.getIndex());
-
-                // /**
-                //  * @returns {HybridsearchObject}
-                //  */
-                // function getFirebaseIndex() {
-                //
-                //     if (unwatch !== undefined) {
-                //         unwatch();
-                //     }
-                //
-                //     console.log(this.$$app);
-                //
-                //     var ref = hybridsearch.$firebase().database().ref().child("index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension);
-                //     var query = ref.orderByChild("egli").startAt("phlu-corporate-contact").endAt("phlu-corporate-contact");
-                //     var obj = firebaseObject(query);
-                //
-                //     // to take an action after the data loads, use the $loaded() promise
-                //     var unwatch = obj.$watch(function () {
-                //
-                //         // To iterate the key/value pairs of the object, use angular.forEach()
-                //         angular.forEach(obj, function (value, key) {
-                //             console.log(key, value);
-                //         });
-                //     });
-                //
-                //
-                // }
-                //
-                //
-                // getFirebaseIndex();
 
 
             }
@@ -454,12 +413,13 @@
                             self.$$app.getFilter().setQuery(searchInput);
                             if (searchInput !== undefined) {
 
-                                self.$$app.setSearchIndex();
+                                //self.$$app.setSearchIndex();
                             }
                         });
 
                     } else {
-                        self.$app.getFilter().setQuery(input);
+                        self.$$app.getFilter().setQuery(input);
+                        self.$$app.setSearchIndex();
                     }
 
                     return this;
@@ -629,7 +589,7 @@
                  * @returns string
                  */
                 getNodeType: function () {
-                    return this.$$data.nodeType === undefined ? '' : this.$$data.nodeType;
+                    return this.$$data.nodeType === undefined ? false : this.$$data.nodeType;
                 },
 
                 /**

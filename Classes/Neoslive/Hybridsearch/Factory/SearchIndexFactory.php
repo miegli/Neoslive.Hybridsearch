@@ -412,6 +412,7 @@ class SearchIndexFactory
             $keywords->__node = $indexData;
             $keywords->__nodetype = $indexData->nodeType;
 
+
             foreach ($keywords as $keyword => $val) {
                 $this->keywords->$workspaceHash->$dimensionConfigurationHash[strval($keyword)] = 1;
             }
@@ -491,6 +492,10 @@ class SearchIndexFactory
     private function convertNodeToSearchIndexResult($node, $grandParentNodeFilter = '', $parentNodeFilter = '')
     {
 
+
+        $data = new \stdClass();
+
+
         if ($grandParentNodeFilter === '') {
             if (isset($this->settings['Filter']['GrantParentNodeTypeFilter'])) {
                 $grandParentNodeFilter = $this->settings['Filter']['GrantParentNodeTypeFilter'];
@@ -514,12 +519,14 @@ class SearchIndexFactory
 
             if (gettype($val) === 'string') {
                 $k = mb_strtolower(preg_replace("/[^A-z0-9]/", "-", $node->getNodeType()->getName() . ":" . $key));
-                if (is_string($val)) {
+                if (is_string($val) && strlen($val) > 0) {
                     $properties->$k = strip_tags(Encoding::UTF8FixWin1252Chars($val));
 
                 }
             }
         }
+
+        $data->hash = sha1(json_encode(array($node->getNodeType()->getName(),$properties)));
 
 
         $flowQuery = new FlowQuery(array($node));
@@ -557,12 +564,14 @@ class SearchIndexFactory
             $properties->grandparent = (Encoding::UTF8FixWin1252Chars($grandParentPropertiesText));
         }
 
-        $data = new \stdClass();
+
 
 
         $data->identifier = $node->getNodeData()->getIdentifier();
         $data->properties = $properties;
         $data->nodeType = mb_strtolower(preg_replace("/[^A-z0-9]/", "-", $node->getNodeType()->getName()));
+
+
 
         $data->grandParentNode = new \stdClass();
         $data->grandParentNode->identifier = $grandParentNode ? $grandParentNode->getIdentifier() : null;

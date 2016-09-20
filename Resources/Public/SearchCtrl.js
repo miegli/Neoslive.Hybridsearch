@@ -53,11 +53,9 @@ PHLUCorporateApp.controller('SearchCtrl', ['$scope', '$hybridsearch', '$hybridse
 
     var hybridsearchObject = new $hybridsearchObject(hybridsearch);
 
-    hybridsearchObject.setQuery('siteSearch', $scope).setNodeType('phlu-corporate-contact').$watch(function (i) {
-        console.log(i);
-
-        $scope.results = i;
-
+    hybridsearchObject.setQuery('siteSearch', $scope).$watch(function (i) {
+        console.log(i.length);
+       $scope.results = i;
     });
 
 
