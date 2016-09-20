@@ -196,7 +196,6 @@
                     setSearchIndex: function () {
 
 
-
                         var self = this, counter = 0;
                         nodes = {};
                         results.setResults([]);
@@ -235,14 +234,37 @@
 
 
                         if (counter == 0) {
+                            // get all nodes by types without keyword
+                            // don't process nodes over lunr search in this case
                             if (self.getFilter().getNodeType()) {
-                                // get all nodes by types without keyword
-                                self.getIndex("").$loaded(function (data) {
-                                    self.updateLocalIndex("_", data);
+                                watchers.index["_"] = self.getIndex().$watch(function (obj) {
+                                    self.getIndex().$loaded(function (data) {
+                                        console.log(data);
+
+                                        var finalitems = [];
+                                        var items = {};
+                                        angular.forEach(data, function (val, key) {
+                                            var hash = val['_node']['hash'];
+                                            if (items[hash] === undefined) {
+                                                items[hash] = {
+                                                    score: 0,
+                                                    nodeType: val['_nodetype'],
+                                                    nodes: {}
+                                                };
+                                            }
+                                            items[hash].nodes[val['_node']['identifier']] = val['_node'];
+
+
+                                        });
+                                        angular.forEach(items, function (val, key) {
+                                            finalitems.push(val);
+                                        });
+                                        results.setResults(finalitems);
+                                    });
                                 });
+
                             }
                         }
-
 
 
                         this.cleanLocalIndex(watchers.keywords);
@@ -264,11 +286,22 @@
                      */
                     getIndex: function (keyword) {
 
+
+
+                        if (keyword === undefined) {
+                            keyword = "";
+                        }
+
                         var ref = hybridsearch.$firebase().database().ref().child("index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension);
                         var query = false;
 
                         if (query === false && this.getFilter().getNodeType()) {
-                            query = ref.orderByChild("_nodetype" + keyword).equalTo(this.getFilter().getNodeType()).limitToFirst(1000);
+                            if (keyword === "") {
+                                query = ref.orderByChild("_nodetype" + keyword).equalTo(this.getFilter().getNodeType());
+                            } else {
+                                query = ref.orderByChild("_nodetype" + keyword).equalTo(this.getFilter().getNodeType()).limitToFirst(1000);
+                            }
+
                         }
 
                         if (query === false && keyword.length > 1) {

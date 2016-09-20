@@ -53,13 +53,17 @@ PHLUCorporateApp.controller('SearchCtrl', ['$scope', '$hybridsearch', '$hybridse
 
     var hybridsearchObject = new $hybridsearchObject(hybridsearch);
 
-    // hybridsearchObject.setQuery('siteSearch', $scope).$watch(function (i) {
-    //    $scope.results = i;
-    // });
+    hybridsearchObject.setQuery('siteSearch', $scope).$watch(function (i) {
+       $scope.results = i;
+    });
 
-      hybridsearchObject.setNodeType('phlu-corporate-contact').$watch(function (i) {
-           $scope.results = i;
-      });
+      // hybridsearchObject.setNodeType('phlu-corporate-contact').$watch(function (i) {
+      //      $scope.results = i;
+      // });
+
+      // hybridsearchObject.setQuery('ict').setNodeType('phlu-corporate-contact').$watch(function (i) {
+      //      $scope.results = i;
+      // });
 
 
 }]);
