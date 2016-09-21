@@ -149,8 +149,9 @@
                             fields[v] = {boost: 1}
                         });
 
+                        console.log(self.getFilter().getAutocompletedKeywords());
 
-                        angular.forEach(lunrSearch.search(self.getFilter().getQueryString(), {
+                        angular.forEach(lunrSearch.search(self.getFilter().getQueryString() + " " + self.getFilter().getAutocompletedKeywords(), {
                             fields: fields,
                             bool: "OR"
                         }), function (item) {
@@ -199,6 +200,7 @@
                         var self = this, counter = 0;
                         nodes = {};
                         results.setResults([]);
+                        filter.setAutocompletedKeywords('');
 
                         // unbind all previous defined keywords watchers
                         angular.forEach(watchers.keywords, function (unbind, key) {
@@ -211,21 +213,30 @@
                             delete watchers.index[key];
                         });
 
+
                         angular.forEach(this.getFilter().getQueryKeywords(), function (value, keyword) {
                             counter++;
-                            watchers.keywords[keyword] = self.getKeyword(keyword).$watch(function () {
+                            watchers.keywords[keyword] = self.getKeywords(keyword).$watch(function () {
 
-                                self.getKeyword(keyword).$loaded(function (data) {
-                                    if (data.$value) {
+                                self.getKeywords(keyword).$loaded(function (data) {
+
+
+                                    angular.forEach(data, function (val, keywordsegment) {
 
                                         // keyword was found
-                                        watchers.index[keyword] = self.getIndex(keyword).$watch(function (obj) {
-                                            self.getIndex(keyword).$loaded(function (data) {
-                                                self.updateLocalIndex(keyword, data);
+                                        if (keywordsegment.substring(0, keyword.length) === keyword) {
+                                            filter.addAutocompletedKeywords(keywordsegment);
+                                            watchers.index[keywordsegment] = self.getIndex(keywordsegment).$watch(function (obj) {
+                                                self.getIndex(keywordsegment).$loaded(function (data) {
+                                                    self.updateLocalIndex(keywordsegment, data);
+                                                });
                                             });
-                                        });
+                                        }
 
-                                    }
+
+                                    });
+
+
                                 });
 
 
@@ -239,7 +250,6 @@
                             if (self.getFilter().getNodeType()) {
                                 watchers.index["_"] = self.getIndex().$watch(function (obj) {
                                     self.getIndex().$loaded(function (data) {
-                                        console.log(data);
 
                                         var finalitems = [];
                                         var items = {};
@@ -281,11 +291,24 @@
                         return firebaseObject(ref);
                     },
                     /**
+                     * @param string querysegment
+                     * @returns {firebaseObject}
+                     */
+                    getKeywords: function (querysegment) {
+
+                        var substr = querysegment.substring(0, querysegment.length - 2);
+                        if (substr === '') {
+                            substr = querysegment;
+                        }
+
+                        var ref = hybridsearch.$firebase().database().ref().child("keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().startAt(substr).limitToFirst(10);
+                        return firebaseObject(ref);
+                    },
+                    /**
                      * @param string keyword
                      * @returns {firebaseObject}
                      */
                     getIndex: function (keyword) {
-
 
 
                         if (keyword === undefined) {
@@ -636,6 +659,30 @@
                 setQuery: function (query) {
                     this.$$data.query = query;
                     return this;
+                },
+
+                /**
+                 * @param string autocompletedKeywords to search
+                 */
+                setAutocompletedKeywords: function (autocompletedKeywords) {
+                    this.$$data.autocompletedKeywords = autocompletedKeywords;
+                    return this;
+                },
+
+                /**
+                 * @param string autocompletedKeyword to search
+                 */
+                addAutocompletedKeywords: function (autocompletedKeyword) {
+                    this.$$data.autocompletedKeywords = this.$$data.autocompletedKeywords + " " + autocompletedKeyword;
+                    return this;
+                },
+
+                /**
+                 * @returns string
+                 */
+                getAutocompletedKeywords: function (autocompletedKeywords) {
+                    return this.$$data.autocompletedKeywords;
+
                 },
 
                 /**
