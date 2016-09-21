@@ -1,0 +1,13 @@
+'TYPO3.Neos:Content':
+  ui:
+    inspector:
+      groups:
+        hybridsearch:
+          label: 'Hybrid Search'
+  properties:
+    neoslivehybridsearchturbonode:
+      type: boolean
+      ui:
+        label: 'Turbo Node'
+        inspector:
+          group: 'hybridsearch'

@@ -50,20 +50,34 @@ PHLUCorporateApp.controller('SearchCtrl', ['$scope', '$hybridsearch', '$hybridse
     );
 
     $scope.results = [];
+    $scope.liste = [];
 
     var search = new $hybridsearchObject(hybridsearch);
 
-    search.setQuery('siteSearch', $scope).$watch(function (i) {
-       $scope.results = i;
-    });
+    // search.setQuery('zutavern').$watch(function (i) {
+    //    $scope.results = i;
+    // });
+
+    // search.setQuery('siteSearch', $scope).$watch(function (i) {
+    //    $scope.results = i;
+    // });
 
       // search.setNodeType('phlu-corporate-contact').$watch(function (i) {
       //      $scope.results = i;
       // });
-
-      // search.setQuery('ict').setNodeType('phlu-corporate-contact').$watch(function (i) {
-      //      $scope.results = i;
+      //
+      // search.setQuery('nachrichten').$watch(function (i) {
+      //
+      //     console.log(i);
+      //
       // });
+
+    search.setQuery('siteSearch', $scope).$watch(function (i) {
+
+        $scope.results = i;
+
+
+    });
 
 
 }]);

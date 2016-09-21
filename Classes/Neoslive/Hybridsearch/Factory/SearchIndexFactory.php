@@ -360,6 +360,8 @@ class SearchIndexFactory
     {
 
         if ($this->creatingFullIndex === false) {
+            // set to false first and remove after (creating event call on clientside watchers)
+            $this->firebaseSet("index/$workspaceHash/$dimensionConfigurationHash" . "/" . urlencode($node->getIdentifier()),false);
             $this->firebaseDelete("index/$workspaceHash/$dimensionConfigurationHash" . "/" . urlencode($node->getIdentifier()));
         }
 

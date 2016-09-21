@@ -149,7 +149,6 @@
                             fields[v] = {boost: 1}
                         });
 
-                        console.log(self.getFilter().getAutocompletedKeywords());
 
                         angular.forEach(lunrSearch.search(self.getFilter().getQueryString() + " " + self.getFilter().getAutocompletedKeywords(), {
                             fields: fields,
@@ -215,23 +214,30 @@
 
 
                         angular.forEach(this.getFilter().getQueryKeywords(), function (value, keyword) {
-                            counter++;
-                            watchers.keywords[keyword] = self.getKeywords(keyword).$watch(function () {
 
-                                self.getKeywords(keyword).$loaded(function (data) {
+                            if (keyword.length > 2) {
 
+                                counter++;
+                                watchers.keywords[keyword] = self.getKeywords(keyword).$watch(function (d,a) {
 
-                                    angular.forEach(data, function (val, keywordsegment) {
+                                    self.getKeywords(keyword).$loaded(function (data) {
 
-                                        // keyword was found
-                                        if (keywordsegment.substring(0, keyword.length) === keyword) {
-                                            filter.addAutocompletedKeywords(keywordsegment);
-                                            watchers.index[keywordsegment] = self.getIndex(keywordsegment).$watch(function (obj) {
-                                                self.getIndex(keywordsegment).$loaded(function (data) {
-                                                    self.updateLocalIndex(keywordsegment, data);
+                                        angular.forEach(data, function (val, keywordsegment) {
+
+                                            // keyword was found
+                                            if (keywordsegment.substring(0, keyword.length) === keyword) {
+                                                filter.addAutocompletedKeywords(keywordsegment);
+                                                watchers.index[keywordsegment] = self.getIndex(keywordsegment).$watch(function (obj) {
+
+                                                    self.getIndex(keywordsegment).$loaded(function (data) {
+                                                        console.log(data);
+                                                        self.updateLocalIndex(keywordsegment, data);
+                                                    });
                                                 });
-                                            });
-                                        }
+                                            }
+
+
+                                        });
 
 
                                     });
@@ -239,8 +245,8 @@
 
                                 });
 
+                            }
 
-                            });
                         });
 
 
@@ -300,8 +306,7 @@
                         if (substr === '') {
                             substr = querysegment;
                         }
-
-                        var ref = hybridsearch.$firebase().database().ref().child("keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().startAt(substr).limitToFirst(10);
+                        var ref = hybridsearch.$firebase().database().ref().child("keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().startAt(substr).limitToFirst(1000);
                         return firebaseObject(ref);
                     },
                     /**
