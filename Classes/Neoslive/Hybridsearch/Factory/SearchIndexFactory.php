@@ -664,6 +664,7 @@ class SearchIndexFactory
             $data->html = $rendered;
         } else {
             $data->turbonode = false;
+            $data->html = $rendered;
         }
 
 
