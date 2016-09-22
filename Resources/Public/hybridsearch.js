@@ -217,7 +217,7 @@
 
                         angular.forEach(this.getFilter().getQueryKeywords(), function (value, keyword) {
 
-                            if (keyword.length > 2) {
+                            if (keyword.length > 2 || (keyword.length === 2 && isNaN(keyword) === false)) {
 
                                 counter++;
                                 watchers.keywords[keyword] = self.getKeywords(keyword).$watch(function (d, a) {
