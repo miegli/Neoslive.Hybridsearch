@@ -148,7 +148,7 @@
                         angular.forEach(lunrSearch.getFields(), function (v, k) {
                             fields[v] = {boost: 1}
                         });
-
+console.log(self.getFilter().getAutocompletedKeywords());
 
                         angular.forEach(lunrSearch.search(self.getFilter().getQueryString() + " " + self.getFilter().getAutocompletedKeywords(), {
                             fields: fields,
@@ -164,7 +164,7 @@
 
                                 if (items[hash] === undefined) {
                                     items[hash] = {
-                                        score: nodes[nodeId]['turbonode'] ? 999999999999999 : 0,
+                                        score: nodes[nodeId]['turbonode'] ? 1000 : 0,
                                         nodeType: nodes[nodeId].nodeType,
                                         nodes: {},
                                         node: nodes[nodeId]
@@ -217,7 +217,7 @@
 
                         angular.forEach(this.getFilter().getQueryKeywords(), function (value, keyword) {
 
-                            if (keyword.length > 2) {
+                            if (keyword.length > 2 || (keyword.length === 2 && isNaN(keyword) === false)) {
 
                                 counter++;
                                 watchers.keywords[keyword] = self.getKeywords(keyword).$watch(function (d, a) {
@@ -308,7 +308,7 @@
                         if (substr === '') {
                             substr = querysegment;
                         }
-                        var ref = hybridsearch.$firebase().database().ref().child("keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().startAt(substr).limitToFirst(1000);
+                        var ref = hybridsearch.$firebase().database().ref().child("keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().startAt(substr).limitToFirst(250);
                         return firebaseObject(ref);
                     },
                     /**
@@ -327,15 +327,15 @@
 
                         if (query === false && this.getFilter().getNodeType()) {
                             if (keyword === "") {
-                                query = ref.orderByChild("_nodetype" + keyword).equalTo(this.getFilter().getNodeType());
+                                query = ref.orderByChild("_nodetype").equalTo(this.getFilter().getNodeType());
                             } else {
-                                query = ref.orderByChild("_nodetype" + keyword).equalTo(this.getFilter().getNodeType()).limitToFirst(1000);
+                                query = ref.orderByChild("_nodetype" + keyword).equalTo(this.getFilter().getNodeType()).limitToFirst(250);
                             }
 
                         }
 
-                        if (query === false && keyword.length > 1) {
-                            query = ref.orderByChild(keyword).equalTo(1).limitToFirst(1000);
+                        if (query === false) {
+                            query = ref.orderByChild(keyword).equalTo(1).limitToFirst(250);
                         }
 
 
