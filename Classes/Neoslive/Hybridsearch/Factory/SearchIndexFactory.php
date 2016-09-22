@@ -13,9 +13,8 @@ namespace Neoslive\Hybridsearch\Factory;
 
 
 use TYPO3\Flow\Annotations as Flow;
-use TYPO3\Flow\Mvc\Controller\ActionController;
+use TYPO3\TYPO3CR\Domain\Model\NodeInterface;
 use TYPO3\Flow\Mvc\Controller\Arguments;
-use TYPO3\Neos\Controller\Service\NodesController;
 use TYPO3\Neos\Domain\Repository\SiteRepository;
 use TYPO3\Neos\Domain\Service\ContentContextFactory;
 use TYPO3\Neos\Domain\Service\TypoScriptService;
@@ -87,6 +86,10 @@ class SearchIndexFactory
     protected $contentDimensionCombinator;
 
 
+    /**
+     * @var mixed
+     */
+    protected $site;
 
 
     /**
@@ -212,6 +215,7 @@ class SearchIndexFactory
     {
 
         $this->creatingFullIndex = true;
+        $this->site = $site;
 
         foreach ($this->workspaceRepository->findAll() as $workspace) {
 
@@ -246,11 +250,27 @@ class SearchIndexFactory
             $workspace = $node->getWorkspace();
         }
 
+
         if ($node->isHidden() || $node->isRemoved()) {
             //$this->createIndex($node->getPath(), $workspace, null, true, $node);
             $this->removeIndex($node, $workspace);
         } else {
-            $this->generateSingleIndex($node, $workspace, $node->getNodeData()->getDimensionsHash());
+
+
+            if ($node->getNodeType()->isOfType('TYPO3.Neos:ContentCollection') || $node->getNodeType()->isOfType('TYPO3.Neos:Document')) {
+                $this->generateSingleIndex($node, $workspace, $node->getNodeData()->getDimensionsHash());
+            } else {
+                $collectionNode = $this->getClosestContentCollectionNode($node);
+                if ($collectionNode && $collectionNode->getParent()) {
+                    $this->generateIndex($collectionNode, $workspace, $node->getNodeData()->getDimensionValues(), '', true);
+                } else {
+                    $this->generateSingleIndex($node, $workspace, $node->getNodeData()->getDimensionsHash());
+                }
+
+
+            }
+
+
         }
 
 
@@ -365,80 +385,47 @@ class SearchIndexFactory
      * get rendered turbo node
      *
      * @param Node $node
+     * @param Node $parentnode
+     * @param Node $grandparentnode
      * @return string
      */
-    private function getRenderedTurboNode($node)
+    private function getRenderedNode($node)
     {
 
-//
-//
-//        $view = new \TYPO3\Neos\View\TypoScriptView();
-//
-//$view->assign('value',$node);
-//        \TYPO3\Flow\var_dump($view->render());
 
+        $this->site = $node->getContext()->getCurrentSite();
+        $context = $this->createContext('live', $node->getDimensions(), array(), $this->site);
 
+        /** @var Node $node */
+        $node = new Node(
+            $node->getNodeData(),
+            $context
+        );
 
-        $controllerContext = $this->buildControllerContext();
-
-        $typoScriptRuntime = $this->typoScriptService->createRuntime($node->getParent(), $controllerContext);
-
-        $typoScriptRuntime->setEnableContentCache(false);
-
-        $contentContext = $node->getContext();
-
-
-        $typoScriptRuntime->pushContextArray(array(
-            'node' => $node,
-            'documentNode' => $node,
-            'site' => $contentContext->getCurrentSiteNode(),
-            'fixturesDirectory' => __DIR__ . '/Fixtures'
-        ));
-
-
-        $httpRequest = \TYPO3\Flow\Http\Request::create(new \TYPO3\Flow\Http\Uri('http://neos.phlu.dev/'));
+        $documentNode = $this->getClosestDocumentNode($node);
+        $httpRequest = \TYPO3\Flow\Http\Request::create(new \TYPO3\Flow\Http\Uri('neos.dev'));
         $request = new \TYPO3\Flow\Mvc\ActionRequest($httpRequest);
         $request->setControllerActionName('show');
-        $request->setArgument('identifier',$node->getIdentifier());
+        $request->setArgument('node', $documentNode->getIdentifier());
+        $request->setControllerName('Frontend\Node');
+        $request->setControllerPackageKey('TYPO3.Neos');
+        $request->setFormat('html');
         $response = new \TYPO3\Flow\Http\Response();
         $arguments = new Arguments();
-
-        $controllerContext = new \TYPO3\Flow\Mvc\Controller\ControllerContext($request,$response,$arguments);
-
-
+        $controllerContext = new \TYPO3\Flow\Mvc\Controller\ControllerContext($request, $response, $arguments);
         $view = new \TYPO3\Neos\View\TypoScriptView();
-        $view->setControllerContext($controllerContext);
-        $view->assign('value',$node);
-        $view->setTypoScriptPath('rawContent');
 
-        \TYPO3\Flow\var_dump($view->render());
+
+        $view->setControllerContext($controllerContext);
+        $view->assign('value', $node);
+        $view->setTypoScriptPath('neosliveHybridsearchRawContent');
+
 
         return $view->render();
 
+
     }
 
-    /**
-     * @return \TYPO3\Flow\Mvc\Controller\ControllerContext
-     */
-    protected function buildControllerContext()
-    {
-        $httpRequest = \TYPO3\Flow\Http\Request::create(new \TYPO3\Flow\Http\Uri('http://foo.bar/bazfoo'));
-        $request = new \TYPO3\Flow\Mvc\ActionRequest($httpRequest);
-        $response = new \TYPO3\Flow\Http\Response();
-        /** @var \TYPO3\Flow\Mvc\Controller\Arguments $mockArguments */
-
-        $uriBuilder = new \TYPO3\Flow\Mvc\Routing\UriBuilder();
-
-        $arguments = new \TYPO3\Flow\Mvc\Controller\Arguments();
-
-        $controllerContext = new \TYPO3\Flow\Mvc\Controller\ControllerContext(
-            $request,
-            $response,
-            $arguments,
-            $uriBuilder
-        );
-        return $controllerContext;
-    }
 
     /**
      * Remove single index for given node
@@ -665,17 +652,22 @@ class SearchIndexFactory
         }
 
 
-        $data->identifier = $node->getNodeData()->getIdentifier();
-        $data->properties = $properties;
-        $data->nodeType = mb_strtolower(preg_replace("/[^A-z0-9]/", "-", $node->getNodeType()->getName()));
-
-
+        $rendered = $this->getRenderedNode($node);
 
         if ($node->getProperty('neoslivehybridsearchturbonode')) {
-            $data->turbonode = $this->getRenderedTurboNode($node);
+            $data->turbonode = true;
+            $data->html = $rendered;
         } else {
             $data->turbonode = false;
         }
+
+
+        $properties->rawcontent = $this->rawcontent($rendered);
+
+
+        $data->identifier = $node->getNodeData()->getIdentifier();
+        $data->properties = $properties;
+        $data->nodeType = mb_strtolower(preg_replace("/[^A-z0-9]/", "-", $node->getNodeType()->getName()));
 
 
         $data->grandParentNode = new \stdClass();
@@ -1067,9 +1059,11 @@ class SearchIndexFactory
     function createContext($workspaceName, $dimensions, $targetDimensions, $currentSite)
     {
 
+
         return $this->contentContextFactory->create(array(
             'workspaceName' => $workspaceName,
             'currentSite' => $currentSite,
+            'currentSiteNode' => $currentSite,
             'dimensions' => $dimensions,
             'targetDimensions' => $targetDimensions,
             'invisibleContentShown' => false,
@@ -1078,5 +1072,39 @@ class SearchIndexFactory
         ));
     }
 
+
+    /**
+     * @param html to raw text
+     * @return string
+     */
+    private function rawcontent($text)
+    {
+        return preg_replace("/[ ]{2,}/", " ", preg_replace("/\r|\n/", "", strip_tags($text)));
+
+    }
+
+    /**
+     * @param NodeInterface $node
+     * @return NodeInterface
+     */
+    protected function getClosestDocumentNode(NodeInterface $node)
+    {
+        while ($node !== null && !$node->getNodeType()->isOfType('TYPO3.Neos:Document')) {
+            $node = $node->getParent();
+        }
+        return $node;
+    }
+
+    /**
+     * @param NodeInterface $node
+     * @return NodeInterface
+     */
+    protected function getClosestContentCollectionNode(NodeInterface $node)
+    {
+        while ($node !== null && !$node->getNodeType()->isOfType('TYPO3.Neos:ContentCollection')) {
+            $node = $node->getParent();
+        }
+        return $node;
+    }
 
 }

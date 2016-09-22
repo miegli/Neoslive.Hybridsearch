@@ -1,3 +1,11 @@
+TYPO3:
+  Neos:
+    typoScript:
+      autoInclude:
+        'Neoslive.Hybridsearch': TRUE
+  Flow:
+    http:
+      baseUri: 'http://neos.phlu.dev/'
 Neoslive:
   Hybridsearch:
     Firebase:
@@ -6,8 +14,6 @@ Neoslive:
     Filter:
       GrantParentNodeTypeFilter: '[instanceof TYPO3.Neos:Document]'
       ParentNodeTypeFilter: '[instanceof TYPO3.Neos:Content]'
-      NodeTypeFilter: '[instanceof TYPO3.Neos:Node]'
-TYPO3:
-  Flow:
-    http:
-      baseUri: 'http://neos.phlu.ch'
+      NodeTypeFilter: '[instanceof TYPO3.Neos:Content]'
+
+
