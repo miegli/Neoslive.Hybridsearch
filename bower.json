@@ -2,6 +2,7 @@
   "name": "hybridsearch",
   "dependencies": {
     "angularfire": "*",
+    "angular-sanitize": "*",
     "elasticlunr.js": "*"
   }
 }

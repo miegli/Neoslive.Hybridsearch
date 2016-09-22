@@ -164,9 +164,10 @@
 
                                 if (items[hash] === undefined) {
                                     items[hash] = {
-                                        score: 0,
+                                        score: nodes[nodeId]['turbonode'] ? 999999999999999 : 0,
                                         nodeType: nodes[nodeId].nodeType,
-                                        nodes: {}
+                                        nodes: {},
+                                        node: nodes[nodeId]
                                     };
                                 }
 
@@ -184,6 +185,7 @@
                         angular.forEach(items, function (val, key) {
                             finalitems.push(val);
                         });
+
 
 
                         results.setResults(finalitems);
@@ -218,7 +220,7 @@
                             if (keyword.length > 2) {
 
                                 counter++;
-                                watchers.keywords[keyword] = self.getKeywords(keyword).$watch(function (d,a) {
+                                watchers.keywords[keyword] = self.getKeywords(keyword).$watch(function (d, a) {
 
                                     self.getKeywords(keyword).$loaded(function (data) {
 
@@ -230,7 +232,6 @@
                                                 watchers.index[keywordsegment] = self.getIndex(keywordsegment).$watch(function (obj) {
 
                                                     self.getIndex(keywordsegment).$loaded(function (data) {
-                                                        console.log(data);
                                                         self.updateLocalIndex(keywordsegment, data);
                                                     });
                                                 });
@@ -263,9 +264,10 @@
                                             var hash = val['_node']['hash'];
                                             if (items[hash] === undefined) {
                                                 items[hash] = {
-                                                    score: 0,
+                                                    score: val['_node']['turbonode'] ? 999999999999999 : 0,
                                                     nodeType: val['_nodetype'],
-                                                    nodes: {}
+                                                    nodes: {},
+                                                    node: val['_node']
                                                 };
                                             }
                                             items[hash].nodes[val['_node']['identifier']] = val['_node'];

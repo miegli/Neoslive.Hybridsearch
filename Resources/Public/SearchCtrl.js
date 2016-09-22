@@ -54,24 +54,6 @@ PHLUCorporateApp.controller('SearchCtrl', ['$scope', '$hybridsearch', '$hybridse
 
     var search = new $hybridsearchObject(hybridsearch);
 
-    // search.setQuery('zutavern').$watch(function (i) {
-    //    $scope.results = i;
-    // });
-
-    // search.setQuery('siteSearch', $scope).$watch(function (i) {
-    //    $scope.results = i;
-    // });
-
-      // search.setNodeType('phlu-corporate-contact').$watch(function (i) {
-      //      $scope.results = i;
-      // });
-      //
-      // search.setQuery('nachrichten').$watch(function (i) {
-      //
-      //     console.log(i);
-      //
-      // });
-
     search.setQuery('siteSearch', $scope).$watch(function (i) {
 
         $scope.results = i;

@@ -13,6 +13,7 @@ namespace Neoslive\Hybridsearch\Factory;
 
 
 use TYPO3\Flow\Annotations as Flow;
+use TYPO3\Flow\Error\Exception;
 use TYPO3\TYPO3CR\Domain\Model\NodeInterface;
 use TYPO3\Flow\Mvc\Controller\Arguments;
 use TYPO3\Neos\Domain\Repository\SiteRepository;
@@ -87,7 +88,7 @@ class SearchIndexFactory
 
 
     /**
-     * @var mixed
+     * @var Site
      */
     protected $site;
 
@@ -262,7 +263,8 @@ class SearchIndexFactory
             } else {
                 $collectionNode = $this->getClosestContentCollectionNode($node);
                 if ($collectionNode && $collectionNode->getParent()) {
-                    $this->generateIndex($collectionNode, $workspace, $node->getNodeData()->getDimensionValues(), '', true);
+                    $this->generateSingleIndex($node, $workspace, $node->getNodeData()->getDimensionsHash());
+                    $this->generateIndex($collectionNode, $workspace, $node->getNodeData()->getDimensionValues());
                 } else {
                     $this->generateSingleIndex($node, $workspace, $node->getNodeData()->getDimensionsHash());
                 }
@@ -343,10 +345,9 @@ class SearchIndexFactory
      * @param Workspace $workspace for generating index
      * @param array $dimensionConfiguration dimension configuration array
      * @param string $nodeTypeFilter If specified, only nodes with that node type are considered
-     * @param boolean $includingSelf If specified, indexing self node otherwise only children
      * @return void
      */
-    private function generateIndex($node, $workspace, $dimensionConfiguration, $nodeTypeFilter = '', $includingSelf = false)
+    private function generateIndex($node, $workspace, $dimensionConfiguration, $nodeTypeFilter = '')
     {
 
 
@@ -364,12 +365,6 @@ class SearchIndexFactory
 
         $flowQuery = new FlowQuery(array($node));
 
-
-        if ($includingSelf) {
-            $this->generateSingleIndex($node, $workspace, $dimensionConfigurationHash);
-        }
-
-
         foreach ($flowQuery->find($nodeTypeFilter) as $children) {
 
             /** @var Node $children */
@@ -385,8 +380,6 @@ class SearchIndexFactory
      * get rendered turbo node
      *
      * @param Node $node
-     * @param Node $parentnode
-     * @param Node $grandparentnode
      * @return string
      */
     private function getRenderedNode($node)
@@ -396,6 +389,11 @@ class SearchIndexFactory
         $this->site = $node->getContext()->getCurrentSite();
         $context = $this->createContext('live', $node->getDimensions(), array(), $this->site);
 
+        if (isset($this->settings['TypoScriptPaths'][$this->site->getSiteResourcesPackageKey()]) === false) {
+            return '';
+        }
+
+
         /** @var Node $node */
         $node = new Node(
             $node->getNodeData(),
@@ -403,26 +401,33 @@ class SearchIndexFactory
         );
 
         $documentNode = $this->getClosestDocumentNode($node);
-        $httpRequest = \TYPO3\Flow\Http\Request::create(new \TYPO3\Flow\Http\Uri('neos.dev'));
-        $request = new \TYPO3\Flow\Mvc\ActionRequest($httpRequest);
-        $request->setControllerActionName('show');
-        $request->setArgument('node', $documentNode->getIdentifier());
-        $request->setControllerName('Frontend\Node');
-        $request->setControllerPackageKey('TYPO3.Neos');
-        $request->setFormat('html');
-        $response = new \TYPO3\Flow\Http\Response();
-        $arguments = new Arguments();
-        $controllerContext = new \TYPO3\Flow\Mvc\Controller\ControllerContext($request, $response, $arguments);
-        $view = new \TYPO3\Neos\View\TypoScriptView();
+        if ($documentNode === null) {
+            return '';
+        }
 
+        try {
+            $httpRequest = \TYPO3\Flow\Http\Request::create(new \TYPO3\Flow\Http\Uri('neos.dev'));
+            $request = new \TYPO3\Flow\Mvc\ActionRequest($httpRequest);
+            $request->setControllerActionName('show');
+            $request->setArgument('node', $documentNode->getIdentifier());
+            $request->setControllerName('Frontend\Node');
+            $request->setControllerPackageKey('TYPO3.Neos');
+            $request->setFormat('html');
+            $response = new \TYPO3\Flow\Http\Response();
+            $arguments = new Arguments();
+            $controllerContext = new \TYPO3\Flow\Mvc\Controller\ControllerContext($request, $response, $arguments);
+            $view = new \TYPO3\Neos\View\TypoScriptView();
 
-        $view->setControllerContext($controllerContext);
-        $view->assign('value', $node);
-        $view->setTypoScriptPath('neosliveHybridsearchRawContent');
+            $view->setControllerContext($controllerContext);
+            $view->assign('value', $node);
+            $view->setTypoScriptPath($this->settings['TypoScriptPaths'][$this->site->getSiteResourcesPackageKey()]);
 
+            return $view->render();
 
-        return $view->render();
+        } catch (Exception $e) {
 
+            return '';
+        }
 
     }
 
