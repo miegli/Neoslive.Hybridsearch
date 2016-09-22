@@ -13,8 +13,12 @@ namespace Neoslive\Hybridsearch\Factory;
 
 
 use TYPO3\Flow\Annotations as Flow;
+use TYPO3\Flow\Mvc\Controller\ActionController;
+use TYPO3\Flow\Mvc\Controller\Arguments;
+use TYPO3\Neos\Controller\Service\NodesController;
 use TYPO3\Neos\Domain\Repository\SiteRepository;
 use TYPO3\Neos\Domain\Service\ContentContextFactory;
+use TYPO3\Neos\Domain\Service\TypoScriptService;
 use TYPO3\TYPO3CR\Domain\Model\Node;
 use TYPO3\Neos\Domain\Model\Site;
 use TYPO3\TYPO3CR\Domain\Model\Workspace;
@@ -27,6 +31,7 @@ use \ForceUTF8\Encoding;
 use Firebase\FirebaseLib;
 use TYPO3\Flow\Utility\Algorithms;
 use TYPO3\Flow\Core\Booting\Scripts;
+
 
 class SearchIndexFactory
 {
@@ -52,6 +57,13 @@ class SearchIndexFactory
 
     /**
      * @Flow\Inject
+     * @var TypoScriptService
+     */
+    protected $typoScriptService;
+
+
+    /**
+     * @Flow\Inject
      * @var SiteRepository
      */
     protected $siteRepository;
@@ -73,6 +85,8 @@ class SearchIndexFactory
      * @var ContentDimensionCombinator
      */
     protected $contentDimensionCombinator;
+
+
 
 
     /**
@@ -348,6 +362,85 @@ class SearchIndexFactory
 
 
     /**
+     * get rendered turbo node
+     *
+     * @param Node $node
+     * @return string
+     */
+    private function getRenderedTurboNode($node)
+    {
+
+//
+//
+//        $view = new \TYPO3\Neos\View\TypoScriptView();
+//
+//$view->assign('value',$node);
+//        \TYPO3\Flow\var_dump($view->render());
+
+
+
+        $controllerContext = $this->buildControllerContext();
+
+        $typoScriptRuntime = $this->typoScriptService->createRuntime($node->getParent(), $controllerContext);
+
+        $typoScriptRuntime->setEnableContentCache(false);
+
+        $contentContext = $node->getContext();
+
+
+        $typoScriptRuntime->pushContextArray(array(
+            'node' => $node,
+            'documentNode' => $node,
+            'site' => $contentContext->getCurrentSiteNode(),
+            'fixturesDirectory' => __DIR__ . '/Fixtures'
+        ));
+
+
+        $httpRequest = \TYPO3\Flow\Http\Request::create(new \TYPO3\Flow\Http\Uri('http://neos.phlu.dev/'));
+        $request = new \TYPO3\Flow\Mvc\ActionRequest($httpRequest);
+        $request->setControllerActionName('show');
+        $request->setArgument('identifier',$node->getIdentifier());
+        $response = new \TYPO3\Flow\Http\Response();
+        $arguments = new Arguments();
+
+        $controllerContext = new \TYPO3\Flow\Mvc\Controller\ControllerContext($request,$response,$arguments);
+
+
+        $view = new \TYPO3\Neos\View\TypoScriptView();
+        $view->setControllerContext($controllerContext);
+        $view->assign('value',$node);
+        $view->setTypoScriptPath('rawContent');
+
+        \TYPO3\Flow\var_dump($view->render());
+
+        return $view->render();
+
+    }
+
+    /**
+     * @return \TYPO3\Flow\Mvc\Controller\ControllerContext
+     */
+    protected function buildControllerContext()
+    {
+        $httpRequest = \TYPO3\Flow\Http\Request::create(new \TYPO3\Flow\Http\Uri('http://foo.bar/bazfoo'));
+        $request = new \TYPO3\Flow\Mvc\ActionRequest($httpRequest);
+        $response = new \TYPO3\Flow\Http\Response();
+        /** @var \TYPO3\Flow\Mvc\Controller\Arguments $mockArguments */
+
+        $uriBuilder = new \TYPO3\Flow\Mvc\Routing\UriBuilder();
+
+        $arguments = new \TYPO3\Flow\Mvc\Controller\Arguments();
+
+        $controllerContext = new \TYPO3\Flow\Mvc\Controller\ControllerContext(
+            $request,
+            $response,
+            $arguments,
+            $uriBuilder
+        );
+        return $controllerContext;
+    }
+
+    /**
      * Remove single index for given node
      *
      * @param Node $node
@@ -361,7 +454,7 @@ class SearchIndexFactory
 
         if ($this->creatingFullIndex === false) {
             // set to false first and remove after (creating event call on clientside watchers)
-            $this->firebaseSet("index/$workspaceHash/$dimensionConfigurationHash" . "/" . urlencode($node->getIdentifier()),false);
+            $this->firebaseSet("index/$workspaceHash/$dimensionConfigurationHash" . "/" . urlencode($node->getIdentifier()), false);
             $this->firebaseDelete("index/$workspaceHash/$dimensionConfigurationHash" . "/" . urlencode($node->getIdentifier()));
         }
 
@@ -575,6 +668,14 @@ class SearchIndexFactory
         $data->identifier = $node->getNodeData()->getIdentifier();
         $data->properties = $properties;
         $data->nodeType = mb_strtolower(preg_replace("/[^A-z0-9]/", "-", $node->getNodeType()->getName()));
+
+
+
+        if ($node->getProperty('neoslivehybridsearchturbonode')) {
+            $data->turbonode = $this->getRenderedTurboNode($node);
+        } else {
+            $data->turbonode = false;
+        }
 
 
         $data->grandParentNode = new \stdClass();
