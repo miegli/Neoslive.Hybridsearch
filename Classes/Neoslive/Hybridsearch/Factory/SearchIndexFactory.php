@@ -261,12 +261,33 @@ class SearchIndexFactory
             if ($node->getNodeType()->isOfType('TYPO3.Neos:ContentCollection') || $node->getNodeType()->isOfType('TYPO3.Neos:Document')) {
                 $this->generateSingleIndex($node, $workspace, $node->getNodeData()->getDimensionsHash());
             } else {
-                $collectionNode = $this->getClosestContentCollectionNode($node);
-                if ($collectionNode && $collectionNode->getParent()) {
-                    $this->generateSingleIndex($node, $workspace, $node->getNodeData()->getDimensionsHash());
-                    $this->generateIndex($collectionNode, $workspace, $node->getNodeData()->getDimensionValues());
+
+
+                $isvalid = true;
+                if (isset($this->settings['Filter']['NodeTypeFilter'])) {
+                    $flowQuery = new FlowQuery(array($node));
+                    if ($flowQuery->is($this->settings['Filter']['NodeTypeFilter']) === false) {
+                        $isvalid = false;
+                    }
+
+                    $collectionNode = $flowQuery->parent()->closest($this->settings['Filter']['NodeTypeFilter'])->get(0);
+
+
                 } else {
-                    $this->generateSingleIndex($node, $workspace, $node->getNodeData()->getDimensionsHash());
+                    $collectionNode = $this->getClosestContentCollectionNode($node);
+                }
+
+                if ($collectionNode) {
+                    if ($isvalid) {
+                        $this->generateSingleIndex($node, $workspace, $node->getNodeData()->getDimensionsHash());
+                    }
+                    $this->generateIndex($collectionNode, $workspace, $node->getNodeData()->getDimensionValues());
+
+                } else {
+
+                    if ($isvalid) {
+                        $this->generateSingleIndex($node, $workspace, $node->getNodeData()->getDimensionsHash());
+                    }
                 }
 
 
@@ -361,7 +382,7 @@ class SearchIndexFactory
 
 
         $dimensionConfigurationHash = $this->getDimensionConfiugurationHash($dimensionConfiguration);
-
+        $this->generateSingleIndex($node, $workspace, $dimensionConfigurationHash);
 
         $flowQuery = new FlowQuery(array($node));
 
@@ -406,7 +427,9 @@ class SearchIndexFactory
         }
 
         try {
-            $httpRequest = \TYPO3\Flow\Http\Request::create(new \TYPO3\Flow\Http\Uri('neos.dev'));
+
+
+            $httpRequest = \TYPO3\Flow\Http\Request::create(new \TYPO3\Flow\Http\Uri($this->site->getFirstActiveDomain()->getHostPattern()));
             $request = new \TYPO3\Flow\Mvc\ActionRequest($httpRequest);
             $request->setControllerActionName('show');
             $request->setArgument('node', $documentNode->getIdentifier());
@@ -463,6 +486,7 @@ class SearchIndexFactory
      */
     private function generateSingleIndex($node, $workspace, $dimensionConfigurationHash)
     {
+
 
         $workspaceHash = $this->getWorkspaceHash($workspace);
 
@@ -664,9 +688,7 @@ class SearchIndexFactory
             $data->html = $rendered;
         } else {
             $data->turbonode = false;
-            $data->html = $rendered;
         }
-
 
         $properties->rawcontent = $this->rawcontent($rendered);
 

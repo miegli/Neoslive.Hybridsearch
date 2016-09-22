@@ -14,7 +14,7 @@ Neoslive:
     Filter:
       GrantParentNodeTypeFilter: '[instanceof TYPO3.Neos:Document]'
       ParentNodeTypeFilter: '[instanceof TYPO3.Neos:Content]'
-      NodeTypeFilter: '[instanceof TYPO3.Neos:Content]'
+      NodeTypeFilter: '[instanceof Neoslive.Hybridsearch:Content]'
     TypoScriptPaths:
       PHLU.Corporate: 'neosliveHybridsearch'
 
