@@ -8,6 +8,7 @@ TYPO3:
       baseUri: 'http://neos.phlu.dev/'
 Neoslive:
   Hybridsearch:
+    Realtime: false
     Firebase:
       endpoint: 'https://phlu-f98dd.firebaseio.com'
       token: '4h2MfKKtGkpsBCg0tcxoRzvVnmiFapCv6L3UqfWZ'
@@ -16,6 +17,10 @@ Neoslive:
       ParentNodeTypeFilter: '[instanceof TYPO3.Neos:Content]'
       NodeTypeFilter: '[instanceof Neoslive.Hybridsearch:Content]'
     TypoScriptPaths:
-      PHLU.Corporate: 'neosliveHybridsearch'
+      'page':
+        PHLU.Corporate: 'neosliveHybridsearch'
+      'breadcrumb':
+        PHLU.Corporate: 'neosliveHybridsearchBreadcrumb'
+
 
 

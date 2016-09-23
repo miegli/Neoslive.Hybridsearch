@@ -148,9 +148,8 @@
                         angular.forEach(lunrSearch.getFields(), function (v, k) {
                             fields[v] = {boost: 1}
                         });
-console.log(self.getFilter().getAutocompletedKeywords());
-
-                        angular.forEach(lunrSearch.search(self.getFilter().getQueryString() + " " + self.getFilter().getAutocompletedKeywords(), {
+console.log(self.getFilter().getFullSearchQuery());
+                        angular.forEach(lunrSearch.search(self.getFilter().getFullSearchQuery(), {
                             fields: fields,
                             bool: "OR"
                         }), function (item) {
@@ -172,7 +171,7 @@ console.log(self.getFilter().getAutocompletedKeywords());
                                 }
 
 
-                                items[hash].score = items[hash].score + item.score;
+                                //items[hash].score = items[hash].score + (item.score/10);
                                 items[hash].nodes[nodeId] = nodes[nodeId];
 
 
@@ -185,7 +184,6 @@ console.log(self.getFilter().getAutocompletedKeywords());
                         angular.forEach(items, function (val, key) {
                             finalitems.push(val);
                         });
-
 
 
                         results.setResults(finalitems);
@@ -308,7 +306,7 @@ console.log(self.getFilter().getAutocompletedKeywords());
                         if (substr === '') {
                             substr = querysegment;
                         }
-                        var ref = hybridsearch.$firebase().database().ref().child("keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().startAt(substr).limitToFirst(250);
+                        var ref = hybridsearch.$firebase().database().ref().child("keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().startAt(substr).limitToFirst(500);
                         return firebaseObject(ref);
                     },
                     /**
@@ -329,13 +327,13 @@ console.log(self.getFilter().getAutocompletedKeywords());
                             if (keyword === "") {
                                 query = ref.orderByChild("_nodetype").equalTo(this.getFilter().getNodeType());
                             } else {
-                                query = ref.orderByChild("_nodetype" + keyword).equalTo(this.getFilter().getNodeType()).limitToFirst(250);
+                                query = ref.orderByChild("_nodetype" + keyword).equalTo(this.getFilter().getNodeType()).limitToFirst(500);
                             }
 
                         }
 
                         if (query === false) {
-                            query = ref.orderByChild(keyword).equalTo(1).limitToFirst(250);
+                            query = ref.orderByChild(keyword).equalTo(1).limitToFirst(500);
                         }
 
 
@@ -503,6 +501,27 @@ console.log(self.getFilter().getAutocompletedKeywords());
                     } else {
                         self.$$app.getFilter().setQuery(input);
                         self.$$app.setSearchIndex();
+                    }
+
+                    return this;
+
+                },
+
+                /**
+                 * @param string input as an additional query to search
+                 * @returns {HybridsearchObject}
+                 */
+                addAdditionalKeywords: function (input, scope=null) {
+
+                    var self = this;
+
+                    if (scope) {
+                        scope.$watch(input, function (searchInput) {
+                            self.$$app.getFilter().setAdditionalKeywords(searchInput);
+                        });
+
+                    } else {
+                        self.$$app.getFilter().addAdditionalKeywords(input);
                     }
 
                     return this;
@@ -685,11 +704,60 @@ console.log(self.getFilter().getAutocompletedKeywords());
                 },
 
                 /**
+                 * @param string additionalKeyword to search
+                 */
+                addAdditionalKeywords: function (additionalKeyword) {
+                    if (this.$$data.additionalKeywords == undefined) {
+                        this.$$data.additionalKeywords = '';
+                    }
+                    this.$$data.additionalKeywords += " " + additionalKeyword;
+                    return this;
+                },
+
+                /**
+                 * @param string additionalKeywords to search
+                 */
+                setAdditionalKeywords: function (additionalKeywords) {
+                    this.$$data.additionalKeywords = additionalKeywords;
+                    return this;
+                },
+
+                /**
                  * @returns string
                  */
-                getAutocompletedKeywords: function (autocompletedKeywords) {
+                getAutocompletedKeywords: function () {
                     return this.$$data.autocompletedKeywords;
 
+                },
+
+                /**
+                 * @returns string
+                 */
+                getAdditionalKeywords: function () {
+
+                    var terms = {};
+                    var termsstring = '';
+
+                    var s = this.$$data.additionalKeywords.replace(filterReg, " ");
+
+                    angular.forEach(s.split(" "), function (term) {
+                        term = term.replace(filterReg, "");
+                        if (term !== undefined && term.length > 0) terms[term] = term;
+                    });
+                    angular.forEach(terms, function (a,t) {
+                        termsstring = termsstring + " "+t;
+                    });
+
+                    return termsstring;
+
+
+                },
+
+                /**
+                 * @returns string
+                 */
+                getFullSearchQuery: function () {
+                    return this.getQueryString() + " " + this.getAutocompletedKeywords() + " " + this.getAdditionalKeywords()
                 },
 
                 /**

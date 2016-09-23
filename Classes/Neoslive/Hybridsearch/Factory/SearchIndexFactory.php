@@ -31,6 +31,8 @@ use \ForceUTF8\Encoding;
 use Firebase\FirebaseLib;
 use TYPO3\Flow\Utility\Algorithms;
 use TYPO3\Flow\Core\Booting\Scripts;
+use TYPO3\Neos\Service\LinkingService;
+use TYPO3\Neos\Domain\Service\SiteService;
 
 
 class SearchIndexFactory
@@ -85,6 +87,13 @@ class SearchIndexFactory
      * @var ContentDimensionCombinator
      */
     protected $contentDimensionCombinator;
+
+
+    /**
+     * @Flow\Inject
+     * @var LinkingService
+     */
+    protected $linkingService;
 
 
     /**
@@ -244,8 +253,26 @@ class SearchIndexFactory
      * @param Node $node
      * @param Workspace $workspace
      */
-    public function updateIndex($node, $workspace = null)
+    public function updateIndexRealtime($node, $workspace = null)
     {
+
+        if ($this->settings['Realtime']) {
+            $this->updateIndex($node, $workspace);
+        }
+
+
+    }
+
+    /**
+     * Update index for given node and target workspace
+     * @param Node $node
+     * @param Workspace $workspace
+     */
+    private function updateIndex($node, $workspace = null)
+    {
+
+        \TYPO3\Flow\var_dump($this->settings['Realtime']);
+        exit;
 
         if (!$workspace instanceof Workspace) {
             $workspace = $node->getWorkspace();
@@ -253,7 +280,6 @@ class SearchIndexFactory
 
 
         if ($node->isHidden() || $node->isRemoved()) {
-            //$this->createIndex($node->getPath(), $workspace, null, true, $node);
             $this->removeIndex($node, $workspace);
         }
 
@@ -390,64 +416,6 @@ class SearchIndexFactory
 
         }
 
-
-    }
-
-
-    /**
-     * get rendered turbo node
-     *
-     * @param Node $node
-     * @return string
-     */
-    private function getRenderedNode($node)
-    {
-
-
-        $this->site = $node->getContext()->getCurrentSite();
-        $context = $this->createContext('live', $node->getDimensions(), array(), $this->site);
-
-        if (isset($this->settings['TypoScriptPaths'][$this->site->getSiteResourcesPackageKey()]) === false) {
-            return '';
-        }
-
-
-        /** @var Node $node */
-        $node = new Node(
-            $node->getNodeData(),
-            $context
-        );
-
-        $documentNode = $this->getClosestDocumentNode($node);
-        if ($documentNode === null) {
-            return '';
-        }
-
-        try {
-
-
-            $httpRequest = \TYPO3\Flow\Http\Request::create(new \TYPO3\Flow\Http\Uri($this->site->getFirstActiveDomain()->getHostPattern()));
-            $request = new \TYPO3\Flow\Mvc\ActionRequest($httpRequest);
-            $request->setControllerActionName('show');
-            $request->setArgument('node', $documentNode->getIdentifier());
-            $request->setControllerName('Frontend\Node');
-            $request->setControllerPackageKey('TYPO3.Neos');
-            $request->setFormat('html');
-            $response = new \TYPO3\Flow\Http\Response();
-            $arguments = new Arguments();
-            $controllerContext = new \TYPO3\Flow\Mvc\Controller\ControllerContext($request, $response, $arguments);
-            $view = new \TYPO3\Neos\View\TypoScriptView();
-
-            $view->setControllerContext($controllerContext);
-            $view->assign('value', $node);
-            $view->setTypoScriptPath($this->settings['TypoScriptPaths'][$this->site->getSiteResourcesPackageKey()]);
-
-            return $view->render();
-
-        } catch (Exception $e) {
-
-            return '';
-        }
 
     }
 
@@ -665,15 +633,20 @@ class SearchIndexFactory
         $grandParentProperties = new \stdClass();
         $grandParentPropertiesText = '';
         if ($grandParentNode) {
+
+            $grandParentUri = $this->getNodeLink($grandParentNode);
+            $grandParentBreadcrumb = $this->getRenderedNode($grandParentNode, 'breadcrumb');
+
             foreach ($grandParentNode->getProperties() as $key => $val) {
                 if (gettype($val) === 'string') {
-
                     $k = mb_strtolower(preg_replace("/[^A-z]/", "-", $grandParentNode->getNodeType()->getName() . ":" . $key));
                     $grandParentProperties->$k = (Encoding::UTF8FixWin1252Chars($val));
                     $grandParentPropertiesText .= (Encoding::UTF8FixWin1252Chars($val)) . " ";
                 }
             }
 
+
+            $grandParentPropertiesText .= mb_strtolower(preg_replace("/[^A-z0-9]/", " ", $grandParentUri + $this->rawcontent($grandParentBreadcrumb)));
             $properties->grandparent = (Encoding::UTF8FixWin1252Chars($grandParentPropertiesText));
         }
 
@@ -696,6 +669,9 @@ class SearchIndexFactory
 
 
         $data->grandParentNode = new \stdClass();
+
+        $data->grandParentNode->breadcrumb = $grandParentNode ? $grandParentBreadcrumb : '';
+        $data->grandParentNode->uri = $grandParentNode ? $grandParentUri : '';
         $data->grandParentNode->identifier = $grandParentNode ? $grandParentNode->getIdentifier() : null;
         $data->grandParentNode->properties = $grandParentProperties;
         $data->grandParentNode->nodeType = $grandParentNode ? $grandParentNode->getNodeType()->getName() : '';
@@ -1131,5 +1107,128 @@ class SearchIndexFactory
         }
         return $node;
     }
+
+    /**
+     * @param NodeInterface $node
+     * @return NodeInterface
+     */
+    protected function getNodeLink(NodeInterface $node)
+    {
+
+        if ($node->getNodeType()->isOfType('TYPO3.Neos:Document') === false) {
+            $node = $this->getClosestDocumentNode($node);
+        }
+
+        $this->site = $node->getContext()->getCurrentSite();
+        $context = $this->createContext('live', $node->getDimensions(), array(), $this->site);
+
+        /** @var Node $node */
+        $node = new Node(
+            $node->getNodeData(),
+            $context
+        );
+
+        $basenode = $node;
+        while ($basenode !== null && $basenode->getParentPath() !== SiteService::SITES_ROOT_PATH && $basenode instanceof NodeInterface) {
+            if ($basenode->getParent()) {
+                $basenode = $basenode->getParent();
+            } else {
+                $basenode = null;
+            }
+        }
+
+        if ($basenode) {
+
+            $httpRequest = \TYPO3\Flow\Http\Request::create(new \TYPO3\Flow\Http\Uri($node->getContext()->getCurrentSite()->getFirstActiveDomain()->getHostPattern()));
+            $request = new \TYPO3\Flow\Mvc\ActionRequest($httpRequest);
+            $request->setControllerActionName('show');
+            $request->setControllerName('Frontend\Node');
+            $request->setControllerPackageKey('TYPO3.Neos');
+            $request->setFormat('html');
+            $response = new \TYPO3\Flow\Http\Response();
+            $arguments = new Arguments();
+            $controllerContext = new \TYPO3\Flow\Mvc\Controller\ControllerContext($request, $response, $arguments);
+
+            return $this->linkingService->createNodeUri(
+                $controllerContext,
+                $node,
+                $node,
+                null,
+                true
+            );
+
+        }
+
+        return '';
+
+    }
+
+
+    /**
+     * get rendered turbo node
+     *
+     * @param Node $node
+     * @param string page|breadcrumb
+     * @return string
+     */
+    private function getRenderedNode($node, $typoscriptPath = 'page')
+    {
+
+        $this->site = $node->getContext()->getCurrentSite();
+        $context = $this->createContext('live', $node->getDimensions(), array(), $this->site);
+
+        if (isset($this->settings['TypoScriptPaths'][$typoscriptPath][$this->site->getSiteResourcesPackageKey()]) === false) {
+            return '';
+        }
+
+
+        /** @var Node $node */
+        $node = new Node(
+            $node->getNodeData(),
+            $context
+        );
+
+        $basenode = $node;
+        while ($basenode !== null && $basenode->getParentPath() !== SiteService::SITES_ROOT_PATH && $basenode instanceof NodeInterface) {
+            if ($basenode->getParent()) {
+                $basenode = $basenode->getParent();
+            } else {
+                $basenode = null;
+            }
+        }
+
+
+        if ($basenode) {
+
+            try {
+
+
+                $httpRequest = \TYPO3\Flow\Http\Request::create(new \TYPO3\Flow\Http\Uri($this->site->getFirstActiveDomain()->getHostPattern()));
+                $request = new \TYPO3\Flow\Mvc\ActionRequest($httpRequest);
+                $request->setControllerActionName('show');
+                $request->setControllerName('Frontend\Node');
+                $request->setControllerPackageKey('TYPO3.Neos');
+                $request->setFormat('html');
+                $response = new \TYPO3\Flow\Http\Response();
+                $arguments = new Arguments();
+                $controllerContext = new \TYPO3\Flow\Mvc\Controller\ControllerContext($request, $response, $arguments);
+                $view = new \TYPO3\Neos\View\TypoScriptView();
+
+                $view->setControllerContext($controllerContext);
+                $view->assign('value', $node);
+                $view->setTypoScriptPath($this->settings['TypoScriptPaths'][$typoscriptPath][$this->site->getSiteResourcesPackageKey()]);
+
+                return $view->render();
+
+            } catch (Exception $e) {
+
+                return '';
+            }
+        }
+
+        return '';
+
+    }
+
 
 }

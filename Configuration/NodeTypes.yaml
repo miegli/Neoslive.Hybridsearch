@@ -24,39 +24,3 @@
         label: 'Turbo Node'
         inspector:
           group: 'hybridsearch'
-
-'PHLU.Corporate:Content.Page.HeaderDefault':
-  superTypes:
-    'Neoslive.Hybridsearch:Content': TRUE
-
-
-
-'PHLU.Corporate:Content.Page.TeaserDefault':
-  superTypes:
-    'Neoslive.Hybridsearch:Content': TRUE
-
-
-
-'PHLU.Corporate:Headline':
-  superTypes:
-    'Neoslive.Hybridsearch:Content': TRUE
-
-
-
-'PHLU.Corporate:Table':
-  superTypes:
-    'Neoslive.Hybridsearch:Content': TRUE
-
-
-
-'PHLU.Qmpilot.NodeTypes:File':
-  superTypes:
-    'Neoslive.Hybridsearch:Content': TRUE
-
-
-
-'PHLU.Corporate:Contact':
-  superTypes:
-    'Neoslive.Hybridsearch:Content': TRUE
-
-
