@@ -157,7 +157,7 @@
                      */
                     search: function () {
 
-                        var fields = {}, items = {}, self = this, finalitems = [];
+                        var fields = {}, items = {}, self = this, finalitems = [], turbonodes = {};
 
 
                         finalitems['all'] = [];
@@ -174,18 +174,18 @@
                         }), function (item) {
 
 
-
                             var nodeId = item.ref.substring(item.ref.indexOf("://") + 3);
 
-                            if (nodes[nodeId] !== undefined) {
+                            if (nodes[nodeId] !== undefined && nodes[nodeId]['turbonode'] !== true) {
 
-                                var nodeTypeLabel = nodeTypeLabels[nodes[nodeId].nodeType] !== undefined ?  nodeTypeLabels[nodes[nodeId].nodeType] : nodes[nodeId].nodeType;
+                                var nodeTypeLabel = nodeTypeLabels[nodes[nodeId].nodeType] !== undefined ? nodeTypeLabels[nodes[nodeId].nodeType] : nodes[nodeId].nodeType;
 
                                 var hash = nodes[nodeId].hash;
 
                                 if (items[nodeTypeLabel] === undefined) {
                                     items[nodeTypeLabel] = {};
                                 }
+
 
                                 if (items[nodeTypeLabel][hash] === undefined) {
                                     items[nodeTypeLabel][hash] = {
@@ -195,21 +195,19 @@
                                         node: nodes[nodeId]
                                     };
                                 }
-
-
-                                //items[hash].score = items[hash].score + (item.score/10);
                                 items[nodeTypeLabel][hash].nodes[nodeId] = nodes[nodeId];
 
-                                if (nodes[nodeId]['turbonode']) {
-                                    finalitems['turbonodes'].push({
-                                        score: item.score,
-                                        nodeType: nodes[nodeId].nodeType,
-                                        nodes: {},
-                                        node: nodes[nodeId]
-                                    });
-                                }
 
+                            }
 
+                            if (nodes[nodeId] !== undefined && nodes[nodeId]['turbonode'] && turbonodes[nodes[nodeId].hash] === undefined) {
+                                finalitems['turbonodes'].push({
+                                    score: item.score,
+                                    nodeType: nodes[nodeId].nodeType,
+                                    nodes: {},
+                                    node: nodes[nodeId]
+                                });
+                                turbonodes[nodes[nodeId].hash] = 1;
                             }
 
 

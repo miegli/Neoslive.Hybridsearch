@@ -282,37 +282,24 @@ class SearchIndexFactory
         }
 
 
-        if ($node->getNodeType()->isOfType('TYPO3.Neos:ContentCollection') || $node->getNodeType()->isOfType('TYPO3.Neos:Document')) {
-            $this->generateSingleIndex($node, $workspace, $node->getNodeData()->getDimensionsHash());
-        } else {
-
-
-            $isvalid = true;
-            if (isset($this->settings['Filter']['NodeTypeFilter'])) {
-                $flowQuery = new FlowQuery(array($node));
-                if ($flowQuery->is($this->settings['Filter']['NodeTypeFilter']) === false) {
-                    $isvalid = false;
-                }
-
-                $collectionNode = $flowQuery->parent()->closest($this->settings['Filter']['NodeTypeFilter'])->get(0);
-
-
-            } else {
-                $collectionNode = $this->getClosestContentCollectionNode($node);
+        $isvalid = true;
+        if (isset($this->settings['Filter']['NodeTypeFilter'])) {
+            $flowQuery = new FlowQuery(array($node));
+            if ($flowQuery->is($this->settings['Filter']['NodeTypeFilter']) === false) {
+                $isvalid = false;
             }
 
-            if ($collectionNode) {
-                if ($isvalid) {
-                    $this->generateSingleIndex($node, $workspace, $node->getNodeData()->getDimensionsHash());
+            if ($isvalid == false) {
+                $node = $flowQuery->parent()->closest($this->settings['Filter']['NodeTypeFilter'])->get(0);
+                if ($node) {
+                    $this->site = $node->getContext()->getCurrentSite();
+                    $this->createIndex($node->getPath(), $workspace, $this->site);
                 }
-                $this->generateIndex($collectionNode, $workspace, $node->getNodeData()->getDimensionValues());
-
             } else {
-
-                if ($isvalid) {
-                    $this->generateSingleIndex($node, $workspace, $node->getNodeData()->getDimensionsHash());
-                }
+                $this->site = $node->getContext()->getCurrentSite();
+                $this->createIndex($node->getPath(), $workspace, $this->site);
             }
+
 
 
         }
@@ -792,10 +779,12 @@ class SearchIndexFactory
 
         if (is_file($lockedfilename) === true) {
 
-            sleep(1);
-            if ($this->proceedcounter < 1000) {
+
+            if ($this->proceedcounter < 100) {
                 $this->proceedQueue();
             }
+
+            sleep(1);
 
         } else {
 
@@ -847,11 +836,10 @@ class SearchIndexFactory
 
             }
 
+            unlink($lockedfilename);
+
 
         }
-
-
-        unlink($lockedfilename);
 
 
     }

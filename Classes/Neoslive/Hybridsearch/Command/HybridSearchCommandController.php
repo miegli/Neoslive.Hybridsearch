@@ -23,6 +23,8 @@ class HybridSearchCommandController extends CommandController
 {
 
 
+
+
     /**
      * @Flow\Inject
      * @var SearchIndexFactory
@@ -46,20 +48,21 @@ class HybridSearchCommandController extends CommandController
      * @param string $workspacename Name of the workspace
      * @return void
      */
-    public function createFullIndexCommand($path,$site,$workspacename)
+    public function createFullIndexCommand($path, $site, $workspacename)
     {
-
 
 
         $site = $this->siteRepository->findOneByNodeName($site);
 
 
         if ($site === null) {
-        $this->outputLine('Error: No site for exporting found');
-        $this->quit(1);
+            $this->outputLine('Error: No site for exporting found');
+            $this->quit(1);
         }
 
-        $this->searchIndexFactory->createFullIndex($path,$site,$workspacename);
+
+        $this->searchIndexFactory->createFullIndex($path, $site, $workspacename);
+
 
     }
 
