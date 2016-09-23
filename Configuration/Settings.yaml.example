@@ -1,16 +1,21 @@
+TYPO3:
+  Neos:
+    typoScript:
+      autoInclude:
+        'Neoslive.Hybridsearch': TRUE
 Neoslive:
   Hybridsearch:
+    Realtime: true
     Firebase:
-      endpoint: 'https://**firebaseio.com'
+      endpoint: 'https://***-f98dd.firebaseio.com'
       token: '***'
-      path: '/search'
     Filter:
       GrantParentNodeTypeFilter: '[instanceof TYPO3.Neos:Document]'
       ParentNodeTypeFilter: '[instanceof TYPO3.Neos:Content]'
-      NodeTypeFilter: '[instanceof TYPO3.Neos:Node]'
-Flowpack:
-  JobQueue:
-    Common:
-      queues:
-        'neoslive-hybridsearch-queue':
-          className: 'Neoslive\Hybridsearch\Queue\SearchIndexQueue'
+      NodeTypeFilter: '[instanceof Neoslive.Hybridsearch:Content]'
+    TypoScriptPaths:
+      'page':
+        PHLU.Corporate: 'neosliveHybridsearch'
+      'breadcrumb':
+        PHLU.Corporate: 'neosliveHybridsearchBreadcrumb'
+
