@@ -48,7 +48,11 @@
                 var firebaseconfig = {
                     databaseURL: databaseUrl
                 };
-                firebase.initializeApp(firebaseconfig);
+                try {
+                    firebase.initializeApp(firebaseconfig);
+                } catch (e) {
+
+                }
 
 
                 // These are private config props and functions used internally
@@ -148,7 +152,7 @@
                         angular.forEach(lunrSearch.getFields(), function (v, k) {
                             fields[v] = {boost: 1}
                         });
-console.log(self.getFilter().getFullSearchQuery());
+
                         angular.forEach(lunrSearch.search(self.getFilter().getFullSearchQuery(), {
                             fields: fields,
                             bool: "OR"
@@ -744,8 +748,8 @@ console.log(self.getFilter().getFullSearchQuery());
                         term = term.replace(filterReg, "");
                         if (term !== undefined && term.length > 0) terms[term] = term;
                     });
-                    angular.forEach(terms, function (a,t) {
-                        termsstring = termsstring + " "+t;
+                    angular.forEach(terms, function (a, t) {
+                        termsstring = termsstring + " " + t;
                     });
 
                     return termsstring;
