@@ -5,7 +5,7 @@ TYPO3:
         'Neoslive.Hybridsearch': TRUE
 Neoslive:
   Hybridsearch:
-    Realtime: false
+    Realtime: true
     Firebase:
       endpoint: 'https://phlu-f98dd.firebaseio.com'
       token: '4h2MfKKtGkpsBCg0tcxoRzvVnmiFapCv6L3UqfWZ'

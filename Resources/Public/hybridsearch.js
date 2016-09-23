@@ -115,11 +115,12 @@
             function HybridsearchObject(hybridsearch) {
 
 
-                var results, filter, watchers, index, lunrSearch, nodes;
+                var results, filter, watchers, index, lunrSearch, nodes, nodeTypeLabels;
 
 
                 results = new $hybridsearchResultsObject();
                 filter = new $hybridsearchFilterObject();
+                nodeTypeLabels = {};
                 nodes = {};
                 index = {};
                 watchers = {};
@@ -136,6 +137,15 @@
 
 
                 this.$$app = {
+
+
+                    getNodeTypeLabels: function () {
+                        return nodeTypeLabels;
+                    },
+                    setNodeTypeLabels: function (labels) {
+                        nodeTypeLabels = labels;
+                    },
+
                     getResults: function () {
                         return results;
                     },
@@ -149,6 +159,11 @@
 
                         var fields = {}, items = {}, self = this, finalitems = [];
 
+
+                        finalitems['all'] = [];
+                        finalitems['nodetypes'] = {};
+                        finalitems['turbonodes'] = [];
+
                         angular.forEach(lunrSearch.getFields(), function (v, k) {
                             fields[v] = {boost: 1}
                         });
@@ -159,15 +174,22 @@
                         }), function (item) {
 
 
+
                             var nodeId = item.ref.substring(item.ref.indexOf("://") + 3);
 
                             if (nodes[nodeId] !== undefined) {
+
+                                var nodeTypeLabel = nodeTypeLabels[nodes[nodeId].nodeType] !== undefined ?  nodeTypeLabels[nodes[nodeId].nodeType] : nodes[nodeId].nodeType;
+
                                 var hash = nodes[nodeId].hash;
 
+                                if (items[nodeTypeLabel] === undefined) {
+                                    items[nodeTypeLabel] = {};
+                                }
 
-                                if (items[hash] === undefined) {
-                                    items[hash] = {
-                                        score: nodes[nodeId]['turbonode'] ? 1000 : 0,
+                                if (items[nodeTypeLabel][hash] === undefined) {
+                                    items[nodeTypeLabel][hash] = {
+                                        score: nodes[nodeId]['turbonode'] ? 1000 : item.score,
                                         nodeType: nodes[nodeId].nodeType,
                                         nodes: {},
                                         node: nodes[nodeId]
@@ -176,7 +198,16 @@
 
 
                                 //items[hash].score = items[hash].score + (item.score/10);
-                                items[hash].nodes[nodeId] = nodes[nodeId];
+                                items[nodeTypeLabel][hash].nodes[nodeId] = nodes[nodeId];
+
+                                if (nodes[nodeId]['turbonode']) {
+                                    finalitems['turbonodes'].push({
+                                        score: item.score,
+                                        nodeType: nodes[nodeId].nodeType,
+                                        nodes: {},
+                                        node: nodes[nodeId]
+                                    });
+                                }
 
 
                             }
@@ -184,9 +215,19 @@
 
                         });
 
+
                         // make propre array
+
+
                         angular.forEach(items, function (val, key) {
-                            finalitems.push(val);
+
+                            finalitems['nodetypes'][key] = [];
+
+                            angular.forEach(val, function (v, k) {
+                                finalitems['nodetypes'][key].push(v);
+                                finalitems['all'].push(v);
+                            });
+
                         });
 
 
@@ -264,15 +305,18 @@
                                         var items = {};
                                         angular.forEach(data, function (val, key) {
                                             var hash = val['_node']['hash'];
+                                            if (items[val['_nodetype']] === undefined) {
+                                                items[val['_nodetype']] = {};
+                                            }
                                             if (items[hash] === undefined) {
-                                                items[hash] = {
+                                                items[val['_nodetype']][hash] = {
                                                     score: val['_node']['turbonode'] ? 999999999999999 : 0,
                                                     nodeType: val['_nodetype'],
                                                     nodes: {},
                                                     node: val['_node']
                                                 };
                                             }
-                                            items[hash].nodes[val['_node']['identifier']] = val['_node'];
+                                            items[val['_nodetype']][hash].nodes[val['_node']['identifier']] = val['_node'];
 
 
                                         });
@@ -484,6 +528,7 @@
 
                 },
 
+
                 /**
                  * @param string input to search
                  * @param mixed scope null if is simple string otherwise scope required for binding data
@@ -509,6 +554,16 @@
 
                     return this;
 
+                },
+
+                /**
+                 * @param nodetypelabels
+                 * @returns {$hybridsearchResultsObject|*}
+                 */
+                setNodeTypeLabels: function (nodetypelabels) {
+                    var self = this;
+                    self.$$app.setNodeTypeLabels(nodetypelabels);
+                    return this;
                 },
 
                 /**

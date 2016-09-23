@@ -139,6 +139,7 @@ class SearchIndexFactory
 
 
     /**
+     * @Flow\InjectConfiguration(package="Neoslive.Hybridsearch")
      * @var array
      */
     protected $settings;
@@ -270,9 +271,6 @@ class SearchIndexFactory
      */
     private function updateIndex($node, $workspace = null)
     {
-
-        \TYPO3\Flow\var_dump($this->settings['Realtime']);
-        exit;
 
         if (!$workspace instanceof Workspace) {
             $workspace = $node->getWorkspace();
