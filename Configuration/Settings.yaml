@@ -3,9 +3,6 @@ TYPO3:
     typoScript:
       autoInclude:
         'Neoslive.Hybridsearch': TRUE
-  Flow:
-    http:
-      baseUri: 'http://neos.phlu.dev/'
 Neoslive:
   Hybridsearch:
     Realtime: false
