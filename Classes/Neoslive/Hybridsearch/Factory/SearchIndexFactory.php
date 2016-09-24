@@ -33,7 +33,7 @@ use TYPO3\Flow\Utility\Algorithms;
 use TYPO3\Flow\Core\Booting\Scripts;
 use TYPO3\Neos\Service\LinkingService;
 use TYPO3\Neos\Domain\Service\SiteService;
-
+use TYPO3\Flow\Cli\ConsoleOutput;
 
 class SearchIndexFactory
 {
@@ -43,6 +43,12 @@ class SearchIndexFactory
      * @var array
      */
     protected $flowSettings;
+
+    /**
+     * @var ConsoleOutput
+     * @Flow\Inject
+     */
+    protected $output;
 
     /**
      * @Flow\Inject
@@ -231,6 +237,10 @@ class SearchIndexFactory
         $this->creatingFullIndex = true;
         $this->site = $site;
 
+
+
+
+
         foreach ($this->workspaceRepository->findAll() as $workspace) {
 
             /** @var Workspace $workspace */
@@ -246,6 +256,8 @@ class SearchIndexFactory
                 $this->deleteWorkspace($workspace);
             }
         }
+
+
 
         $this->save();
 
@@ -337,6 +349,9 @@ class SearchIndexFactory
     {
 
 
+        $this->output->outputLine("create index for ".$path." and workspace ".$workspace->getName());
+
+
         if ($node !== null) {
 
             $this->generateIndex($node, $workspace, $node->getContext()->getDimensions(), '', $includingSelf);
@@ -396,13 +411,23 @@ class SearchIndexFactory
 
         $flowQuery = new FlowQuery(array($node));
 
-        foreach ($flowQuery->find($nodeTypeFilter) as $children) {
 
-            /** @var Node $children */
-            $this->generateSingleIndex($children, $workspace, $dimensionConfigurationHash);
+        $this->output->outputLine("generate nodes index for ".$node->getPath().", workspace ".$workspace->getName()." and dimension ".json_encode($dimensionConfiguration));
 
+        $children = $flowQuery->find($nodeTypeFilter);
+
+
+        if ($children->count()) {
+            $this->output->progressStart($children->count());
+            foreach ($children as $child) {
+                /** @var Node $children */
+                $this->generateSingleIndex($child, $workspace, $dimensionConfigurationHash);
+                $this->output->progressAdvance(1);
+
+            }
+
+            $this->output->progressFinish();
         }
-
 
     }
 
@@ -606,9 +631,13 @@ class SearchIndexFactory
             $grandParentNode = $documentNode;
         }
 
-
-        $uri = $this->getNodeLink($documentNode);
-        $breadcrumb = $this->getRenderedNode($documentNode, 'breadcrumb');
+        if ($documentNode) {
+            $uri = $this->getNodeLink($documentNode);
+            $breadcrumb = $this->getRenderedNode($documentNode, 'breadcrumb');
+        } else {
+            $uri = '';
+            $breadcrumb = '';
+        }
 
 
         $parentProperties = new \stdClass();
@@ -891,7 +920,10 @@ class SearchIndexFactory
 
 
         if ($this->creatingFullIndex) {
+
+            $this->output->outputLine("save .settings/rules");
             $this->firebase->set('.settings/rules', $this->getFirebaseRules($this->keywords));
+            $this->output->outputLine("save keywords (".count($this->keywords).")");
             $this->firebase->set('keywords', $this->keywords);
         } else {
 
@@ -909,6 +941,7 @@ class SearchIndexFactory
 
         $this->index = new \stdClass();
         $this->keywords = new \stdClass();
+
 
         Scripts::executeCommandAsync('hybridsearch:proceed', $this->flowSettings, array());
 
@@ -1005,6 +1038,9 @@ class SearchIndexFactory
     protected
     function deleteWorkspace($workspace)
     {
+
+
+        $this->output->outputLine("delete old index for workspace ".$workspace->getName());
 
         $this->firebase->delete('index/' . $workspace->getName());
         $this->firebase->delete('keywords/' . $workspace->getName());
