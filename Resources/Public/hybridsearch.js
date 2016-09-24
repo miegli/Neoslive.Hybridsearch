@@ -234,6 +234,19 @@
                     },
 
                     /**
+                     * @returns boolean
+                     */
+                    isFiltered: function (node) {
+
+                        if (node.properties.rawcontent.length < 1) {
+                            return false;
+                        }
+
+                        console.log(node);
+                        return false;
+                    },
+
+                    /**
                      * @returns mixed
                      */
                     setSearchIndex: function () {
@@ -445,6 +458,8 @@
                      */
                     addLocalIndex: function (keyword, data) {
 
+                        var self = this;
+
                         if (index[keyword] === undefined) {
                             index[keyword] = {};
                         }
@@ -452,23 +467,30 @@
                         angular.forEach(data, function (value, key) {
 
 
-                            nodes[value['_node']['identifier']] = value['_node'];
+                            if (self.isFiltered(value['_node']) === false) {
 
-                            if (value._node != undefined && value._node.properties != undefined) {
+                                nodes[value['_node']['identifier']] = value['_node'];
 
-                                var doc = value._node.properties;
+                                if (value._node != undefined && value._node.properties != undefined) {
 
-                                angular.forEach(value._node.properties, function (val, key) {
-                                    if (lunrSearch.getFields().indexOf(key) < 0) {
-                                        lunrSearch.addField(key);
-                                    }
-                                });
+                                    var doc = value._node.properties;
 
-                                doc.id = keyword + "://" + value._node.identifier;
-                                lunrSearch.addDoc(doc);
-                                index[keyword][doc.id] = keyword;
+                                    angular.forEach(value._node.properties, function (val, key) {
+                                        if (lunrSearch.getFields().indexOf(key) < 0) {
+                                            lunrSearch.addField(key);
+                                        }
+                                    });
+
+                                    doc.id = keyword + "://" + value._node.identifier;
+                                    lunrSearch.addDoc(doc);
+                                    index[keyword][doc.id] = keyword;
+
+                                }
 
                             }
+
+
+
 
 
                         });

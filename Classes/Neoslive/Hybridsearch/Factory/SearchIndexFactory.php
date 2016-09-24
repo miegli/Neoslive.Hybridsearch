@@ -176,6 +176,8 @@ class SearchIndexFactory
         $this->index = new \stdClass();
         $this->keywords = new \stdClass();
 
+        putenv('FLOW_REWRITEURLS=1');
+
     }
 
     /**
@@ -224,6 +226,7 @@ class SearchIndexFactory
      */
     public function createFullIndex($path, $site, $workspacename)
     {
+
 
         $this->creatingFullIndex = true;
         $this->site = $site;
@@ -299,7 +302,6 @@ class SearchIndexFactory
                 $this->site = $node->getContext()->getCurrentSite();
                 $this->createIndex($node->getPath(), $workspace, $this->site);
             }
-
 
 
         }
@@ -566,7 +568,7 @@ class SearchIndexFactory
             if (isset($this->settings['Filter']['GrantParentNodeTypeFilter'])) {
                 $grandParentNodeFilter = $this->settings['Filter']['GrantParentNodeTypeFilter'];
             } else {
-                $grandParentNodeFilter = '[instanceof TYPO3.Neos:Content]';
+                $grandParentNodeFilter = '[instanceof TYPO3.Neos:Document]';
             }
         }
 
@@ -592,13 +594,21 @@ class SearchIndexFactory
             }
         }
 
-        $data->hash = sha1(json_encode(array($node->getNodeType()->getName(), $properties)));
-
 
         $flowQuery = new FlowQuery(array($node));
 
         $parentNode = $flowQuery->parent()->closest($parentNodeFilter)->get(0);
         $grandParentNode = $flowQuery->closest($grandParentNodeFilter)->get(0);
+        $documentNode = $flowQuery->closest("[instanceof TYPO3.Neos:Document]")->get(0);
+
+
+        if ($grandParentNode === NULL) {
+            $grandParentNode = $documentNode;
+        }
+
+
+        $uri = $this->getNodeLink($documentNode);
+        $breadcrumb = $this->getRenderedNode($documentNode, 'breadcrumb');
 
 
         $parentProperties = new \stdClass();
@@ -615,12 +625,11 @@ class SearchIndexFactory
             $properties->parent = (Encoding::UTF8FixWin1252Chars($parentPropertiesText));
         }
 
+
         $grandParentProperties = new \stdClass();
         $grandParentPropertiesText = '';
         if ($grandParentNode) {
 
-            $grandParentUri = $this->getNodeLink($grandParentNode);
-            $grandParentBreadcrumb = $this->getRenderedNode($grandParentNode, 'breadcrumb');
 
             foreach ($grandParentNode->getProperties() as $key => $val) {
                 if (gettype($val) === 'string') {
@@ -631,7 +640,7 @@ class SearchIndexFactory
             }
 
 
-            $grandParentPropertiesText .= mb_strtolower(preg_replace("/[^A-z0-9]/", " ", $grandParentUri + $this->rawcontent($grandParentBreadcrumb)));
+            $grandParentPropertiesText .= mb_strtolower(preg_replace("/[^A-z0-9]/", " ", $uri + " " + $this->rawcontent($breadcrumb)));
             $properties->grandparent = (Encoding::UTF8FixWin1252Chars($grandParentPropertiesText));
         }
 
@@ -646,7 +655,10 @@ class SearchIndexFactory
         }
 
         $properties->rawcontent = $this->rawcontent($rendered);
-
+        $data->hash = sha1($properties->rawcontent);
+        $data->url = $uri;
+        $data->uri = parse_url($uri);
+        $data->breadcrumb = $breadcrumb;
 
         $data->identifier = $node->getNodeData()->getIdentifier();
         $data->properties = $properties;
@@ -655,11 +667,11 @@ class SearchIndexFactory
 
         $data->grandParentNode = new \stdClass();
 
-        $data->grandParentNode->breadcrumb = $grandParentNode ? $grandParentBreadcrumb : '';
-        $data->grandParentNode->uri = $grandParentNode ? $grandParentUri : '';
+
         $data->grandParentNode->identifier = $grandParentNode ? $grandParentNode->getIdentifier() : null;
         $data->grandParentNode->properties = $grandParentProperties;
         $data->grandParentNode->nodeType = $grandParentNode ? $grandParentNode->getNodeType()->getName() : '';
+
 
         if ($parentNode) {
             $data->parentNode = new \stdClass();
