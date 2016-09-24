@@ -238,9 +238,6 @@ class SearchIndexFactory
         $this->site = $site;
 
 
-
-
-
         foreach ($this->workspaceRepository->findAll() as $workspace) {
 
             /** @var Workspace $workspace */
@@ -256,7 +253,6 @@ class SearchIndexFactory
                 $this->deleteWorkspace($workspace);
             }
         }
-
 
 
         $this->save();
@@ -349,7 +345,7 @@ class SearchIndexFactory
     {
 
 
-        $this->output->outputLine("create index for ".$path." and workspace ".$workspace->getName());
+        $this->output->outputLine("create index for " . $path . " and workspace " . $workspace->getName());
 
 
         if ($node !== null) {
@@ -412,7 +408,7 @@ class SearchIndexFactory
         $flowQuery = new FlowQuery(array($node));
 
 
-        $this->output->outputLine("generate nodes index for ".$node->getPath().", workspace ".$workspace->getName()." and dimension ".json_encode($dimensionConfiguration));
+        $this->output->outputLine("generate nodes index for " . $node->getPath() . ", workspace " . $workspace->getName() . " and dimension " . json_encode($dimensionConfiguration));
 
         $children = $flowQuery->find($nodeTypeFilter);
 
@@ -609,13 +605,9 @@ class SearchIndexFactory
         $properties = new \stdClass();
         foreach ($node->getProperties() as $key => $val) {
 
-
-            if (gettype($val) === 'string') {
+            if (gettype($val) === 'string' || gettype($val) === 'integer') {
                 $k = mb_strtolower(preg_replace("/[^A-z0-9]/", "-", $node->getNodeType()->getName() . ":" . $key));
-                if (is_string($val) && strlen($val) > 0) {
-                    $properties->$k = strip_tags(Encoding::UTF8FixWin1252Chars($val));
-
-                }
+                $properties->$k = strip_tags(Encoding::UTF8FixWin1252Chars($val));
             }
         }
 
@@ -821,11 +813,16 @@ class SearchIndexFactory
         if (is_file($lockedfilename) === true) {
 
 
-            if ($this->proceedcounter < 100) {
+            if ($this->proceedcounter < 2) $this->output->outputLine('Queue is locked. Retrying...');
+            sleep(1);
+
+            if ($this->proceedcounter < (ini_get('max_execution_time') > 0 ? ini_get('max_execution_time') > 0 : 60)) {
                 $this->proceedQueue();
+            } else {
+                $this->output->outputLine('Queue is locked. Exit.');
+                exit;
             }
 
-            sleep(1);
 
         } else {
 
@@ -847,10 +844,17 @@ class SearchIndexFactory
 
 
             ksort($files);
+            $this->output->outputLine(count($files) . ' files found for proceeding');
 
 
             foreach ($files as $filecollection) {
+
+
                 foreach ($filecollection as $file) {
+
+
+                    $this->output->outputLine("uploading ".$file." (".filesize($file).")");
+
 
                     $content = json_decode(file_get_contents($file));
 
@@ -870,15 +874,18 @@ class SearchIndexFactory
                                 break;
                         }
                     }
+                    unlink($file);
+
+
                 }
 
 
-                unlink($file);
-
             }
 
-            unlink($lockedfilename);
 
+            if (is_file($lockedfilename)) {
+                unlink($lockedfilename);
+            }
 
         }
 
@@ -889,7 +896,8 @@ class SearchIndexFactory
      * Updates firebase rules for performance increase
      * @return void
      */
-    public function updateFireBaseRules()
+    public
+    function updateFireBaseRules()
     {
 
 
@@ -907,7 +915,8 @@ class SearchIndexFactory
      * @param mixed keywords
      * @return void
      */
-    protected function save()
+    protected
+    function save()
     {
 
 
@@ -923,8 +932,12 @@ class SearchIndexFactory
 
             $this->output->outputLine("save .settings/rules");
             $this->firebase->set('.settings/rules', $this->getFirebaseRules($this->keywords));
-            $this->output->outputLine("save keywords (".count($this->keywords).")");
+            $this->output->outputLine("save keywords");
             $this->firebase->set('keywords', $this->keywords);
+
+            $this->output->outputLine("add to queue for updating firebase endpoint " . $this->settings['Firebase']['endpoint']);
+            $this->proceedQueue();
+
         } else {
 
             foreach ($this->keywords as $workspace => $workspaceData) {
@@ -954,7 +967,8 @@ class SearchIndexFactory
      * @param mixed $keywords
      * @return array
      */
-    private function getFirebaseRules($keywords)
+    private
+    function getFirebaseRules($keywords)
     {
 
         $rules = array();
@@ -1002,7 +1016,8 @@ class SearchIndexFactory
      * @param array $skipKeywords
      * @return array
      */
-    public function getIndexByNode($node, $workspaceHash, $dimensionConfigurationHash, $skipKeywords = array())
+    public
+    function getIndexByNode($node, $workspaceHash, $dimensionConfigurationHash, $skipKeywords = array())
     {
 
 
@@ -1040,7 +1055,7 @@ class SearchIndexFactory
     {
 
 
-        $this->output->outputLine("delete old index for workspace ".$workspace->getName());
+        $this->output->outputLine("delete old index for workspace " . $workspace->getName());
 
         $this->firebase->delete('index/' . $workspace->getName());
         $this->firebase->delete('keywords/' . $workspace->getName());
@@ -1112,7 +1127,8 @@ class SearchIndexFactory
      * @param html to raw text
      * @return string
      */
-    private function rawcontent($text)
+    private
+    function rawcontent($text)
     {
         return preg_replace("/[ ]{2,}/", " ", preg_replace("/\r|\n/", "", strip_tags($text)));
 
@@ -1122,7 +1138,8 @@ class SearchIndexFactory
      * @param NodeInterface $node
      * @return NodeInterface
      */
-    protected function getClosestDocumentNode(NodeInterface $node)
+    protected
+    function getClosestDocumentNode(NodeInterface $node)
     {
         while ($node !== null && !$node->getNodeType()->isOfType('TYPO3.Neos:Document')) {
             $node = $node->getParent();
@@ -1134,7 +1151,8 @@ class SearchIndexFactory
      * @param NodeInterface $node
      * @return NodeInterface
      */
-    protected function getClosestContentCollectionNode(NodeInterface $node)
+    protected
+    function getClosestContentCollectionNode(NodeInterface $node)
     {
         while ($node !== null && !$node->getNodeType()->isOfType('TYPO3.Neos:ContentCollection')) {
             $node = $node->getParent();
@@ -1146,7 +1164,8 @@ class SearchIndexFactory
      * @param NodeInterface $node
      * @return NodeInterface
      */
-    protected function getNodeLink(NodeInterface $node)
+    protected
+    function getNodeLink(NodeInterface $node)
     {
 
         if ($node->getNodeType()->isOfType('TYPO3.Neos:Document') === false) {
@@ -1205,7 +1224,8 @@ class SearchIndexFactory
      * @param string page|breadcrumb
      * @return string
      */
-    private function getRenderedNode($node, $typoscriptPath = 'page')
+    private
+    function getRenderedNode($node, $typoscriptPath = 'page')
     {
 
         $this->site = $node->getContext()->getCurrentSite();

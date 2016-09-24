@@ -168,6 +168,8 @@
                             fields[v] = {boost: 1}
                         });
 
+                        console.log(self.getFilter().getFullSearchQuery());
+
                         angular.forEach(lunrSearch.search(self.getFilter().getFullSearchQuery(), {
                             fields: fields,
                             bool: "OR"
@@ -238,11 +240,11 @@
                      */
                     isFiltered: function (node) {
 
-                        if (node.properties.rawcontent.length < 1) {
-                            return false;
+                        if (node.properties.rawcontent.length < 2) {
+
+                            return true;
                         }
 
-                        console.log(node);
                         return false;
                     },
 
@@ -490,9 +492,6 @@
                             }
 
 
-
-
-
                         });
 
 
@@ -668,8 +667,73 @@
                  */
                 setResults: function (results) {
 
-                    this.$$data.results = results;
+                    this.$$data.results = this.getResultsPostFiltered(results);
                     this.executeCallbackMethod();
+
+
+                },
+
+                /**
+                 *
+                 * post processor filter out results with score lower than half of other similar nodes
+                 *
+                 * @param object
+                 * @returns void
+                 */
+                getResultsPostFiltered: function (results) {
+
+
+                    var scoreCounter = {};
+                    var filterNodesByScore = {};
+
+
+                    angular.forEach(results.nodetypes, function (result, key) {
+
+
+                        var maxnodesbyscore = result.length / 2;
+
+                        if (maxnodesbyscore > 1) {
+                            angular.forEach(result, function (item) {
+                                if (scoreCounter[item.nodeType] === undefined) {
+                                    scoreCounter[item.nodeType] = {};
+                                }
+                                scoreCounter[item.nodeType][item.score] = (scoreCounter[item.nodeType][item.score] == undefined ? 0 : scoreCounter[item.nodeType][item.score]) + 1;
+                                if (scoreCounter[item.nodeType][item.score] >= maxnodesbyscore) {
+                                    filterNodesByScore[item.nodeType] = item.score;
+                                }
+                            });
+                        }
+
+
+                    });
+
+
+                    // filter nodes outside score range
+                    angular.forEach(filterNodesByScore, function (score, nodeType) {
+
+
+                        angular.forEach(results.all, function (item, key) {
+                            if (nodeType === item.nodeType && item.score !== score) {
+                                results.all.splice(key, 1);
+                            }
+
+                        });
+
+                        angular.forEach(results.nodetypes, function (result, key) {
+                            angular.forEach(result, function (item, k) {
+
+                                if (filterNodesByScore[item.nodeType] !== undefined && item.score !== filterNodesByScore[item.nodeType]) {
+                                    results.nodetypes[key].splice(k, 1);
+                                }
+                            });
+                        });
+
+
+                    });
+
+                    console.log(filterNodesByScore);
+
+                    return results;
 
 
                 },
