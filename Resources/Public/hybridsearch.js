@@ -168,7 +168,6 @@
                             fields[v] = {boost: 1}
                         });
 
-                        console.log(self.getFilter().getFullSearchQuery());
 
                         angular.forEach(lunrSearch.search(self.getFilter().getFullSearchQuery(), {
                             fields: fields,
@@ -241,9 +240,13 @@
                     isFiltered: function (node) {
 
                         if (node.properties.rawcontent.length < 2) {
-
                             return true;
                         }
+
+                        if (this.getFilter().getNodePath().length > 0 && node.uri.path.substr(0, this.getFilter().getNodePath().length) != this.getFilter().getNodePath()) {
+                            return true;
+                        }
+
 
                         return false;
                     },
@@ -533,13 +536,38 @@
                     var self = this;
 
                     if (scope) {
-                        self.$$conf.scope.$watch(nodeType, function (filterNodeInput) {
-                            self.$$app.getFilter().setNodeType(searchInput);
+                        scope.$watch(nodeType, function (filterNodeInput) {
+                            self.$$app.getFilter().setNodeType(filterNodeInput);
                             self.$$app.setSearchIndex();
                         });
 
                     } else {
                         self.$$app.getFilter().setNodeType(nodeType);
+                        self.$$app.setSearchIndex();
+                    }
+
+                    return this;
+
+                },
+
+                /**
+                 * @param string nodePath to search only for
+                 * @param boolean scopevar false if is simple string  otherwise scope required for binding data
+                 * @returns {HybridsearchObject}
+                 */
+                setNodePath: function (nodePath, scope=null) {
+
+                    var self = this;
+
+                    if (scope) {
+
+                        scope.$watch(nodePath, function (filterNodeInput) {
+                            self.$$app.getFilter().setNodePath(filterNodeInput);
+                            self.$$app.setSearchIndex();
+                        });
+
+                    } else {
+                        self.$$app.getFilter().setNodePath(nodePath);
                         self.$$app.setSearchIndex();
                     }
 
@@ -690,7 +718,7 @@
                     angular.forEach(results.nodetypes, function (result, key) {
 
 
-                        var maxnodesbyscore = result.length / 2;
+                        var maxnodesbyscore = result.length / 3 * 2;
 
                         if (maxnodesbyscore > 1) {
                             angular.forEach(result, function (item) {
@@ -713,7 +741,7 @@
 
 
                         angular.forEach(results.all, function (item, key) {
-                            if (nodeType === item.nodeType && item.score !== score) {
+                            if (item.score < 100 && nodeType === item.nodeType && item.score !== score) {
                                 results.all.splice(key, 1);
                             }
 
@@ -722,7 +750,7 @@
                         angular.forEach(results.nodetypes, function (result, key) {
                             angular.forEach(result, function (item, k) {
 
-                                if (filterNodesByScore[item.nodeType] !== undefined && item.score !== filterNodesByScore[item.nodeType]) {
+                                if (item.score < 100 && filterNodesByScore[item.nodeType] !== undefined && item.score !== filterNodesByScore[item.nodeType]) {
                                     results.nodetypes[key].splice(k, 1);
                                 }
                             });
@@ -731,7 +759,6 @@
 
                     });
 
-                    console.log(filterNodesByScore);
 
                     return results;
 
@@ -822,6 +849,15 @@
                 },
 
                 /**
+                 * @param string nodePath to search only for
+                 * @returns HybridsearchObject
+                 */
+                setNodePath: function (nodePath) {
+                    this.$$data.nodePath = nodePath;
+                    return this;
+                },
+
+                /**
                  * @param string input to search
                  * @returns HybridsearchObject
                  */
@@ -908,6 +944,13 @@
                  */
                 getNodeType: function () {
                     return this.$$data.nodeType === undefined ? false : this.$$data.nodeType;
+                },
+
+                /**
+                 * @returns string
+                 */
+                getNodePath: function () {
+                    return this.$$data.nodePath === undefined ? false : this.$$data.nodePath;
                 },
 
                 /**
