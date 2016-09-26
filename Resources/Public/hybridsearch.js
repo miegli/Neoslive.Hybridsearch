@@ -115,15 +115,17 @@
             function HybridsearchObject(hybridsearch) {
 
 
-                var results, filter, watchers, index, lunrSearch, nodes, nodeTypeLabels;
+                var results, filter, watchers, references, index, lunrSearch, nodes, nodeTypeLabels, lastFilterHash;
 
 
                 results = new $hybridsearchResultsObject();
                 filter = new $hybridsearchFilterObject();
+                lastFilterHash = '';
                 nodeTypeLabels = {};
                 nodes = {};
                 index = {};
                 watchers = {};
+                references = {};
                 watchers.index = {};
                 watchers.keywords = {};
                 lunrSearch = elasticlunr(function () {
@@ -257,44 +259,59 @@
                     setSearchIndex: function () {
 
 
-                        var self = this, counter = 0;
-                        nodes = {};
-                        results.setResults([]);
-                        filter.setAutocompletedKeywords('');
-
-                        // unbind all previous defined keywords watchers
-                        angular.forEach(watchers.keywords, function (unbind, key) {
-                            unbind();
-                            delete watchers.keywords[key];
-                        });
-                        // unbind all previous defined index watchers
-                        angular.forEach(watchers.index, function (unbind, key) {
-                            unbind();
-                            delete watchers.index[key];
-                        });
+                        if (lastFilterHash != filter.getHash()) {
 
 
-                        angular.forEach(this.getFilter().getQueryKeywords(), function (value, keyword) {
+                            var self = this, counter = 0;
+                            nodes = {};
+                            results.setResults([]);
+                            filter.setAutocompletedKeywords('');
 
-                            if (keyword.length > 2 || (keyword.length === 2 && isNaN(keyword) === false)) {
+                            // unbind all previous defined keywords watchers
+                            angular.forEach(watchers.keywords, function (unbind, key) {
+                                unbind();
+                                delete watchers.keywords[key];
+                            });
+                            // unbind all previous defined index watchers
+                            angular.forEach(watchers.index, function (unbind, key) {
+                                unbind();
+                                delete watchers.index[key];
+                              });
 
-                                counter++;
-                                watchers.keywords[keyword] = self.getKeywords(keyword).$watch(function (d, a) {
 
-                                    self.getKeywords(keyword).$loaded(function (data) {
+                            angular.forEach(this.getFilter().getQueryKeywords(), function (value, keyword) {
 
-                                        angular.forEach(data, function (val, keywordsegment) {
+                                if (keyword.length > 2 || (keyword.length === 2 && isNaN(keyword) === false)) {
 
-                                            // keyword was found
-                                            if (keywordsegment.substring(0, keyword.length) === keyword) {
-                                                filter.addAutocompletedKeywords(keywordsegment);
-                                                watchers.index[keywordsegment] = self.getIndex(keywordsegment).$watch(function (obj) {
+                                    counter++;
+                                    watchers.keywords[keyword] = self.getKeywords(keyword).$watch(function (d, a) {
 
-                                                    self.getIndex(keywordsegment).$loaded(function (data) {
-                                                        self.updateLocalIndex(keywordsegment, data);
+
+
+                                        self.getKeywords(keyword).$loaded(function (data) {
+
+                                            angular.forEach(data, function (val, keywordsegment) {
+
+
+                                                if (references.keywords !== undefined && references.keywords[keywordsegment] !== undefined) {
+                                                    delete references.keywords[keywordsegment];
+                                                }
+
+                                                // keyword was found
+                                                if (keywordsegment.substring(0, keyword.length) === keyword) {
+                                                    filter.addAutocompletedKeywords(keywordsegment);
+                                                    watchers.index[keywordsegment] = self.getIndex(keywordsegment).$watch(function (obj, o) {
+
+                                                        references[keywordsegment].on("value",function(data) {
+                                                            self.updateLocalIndex(keywordsegment, data.val());
+                                                        });
+
+
                                                     });
-                                                });
-                                            }
+                                                }
+
+
+                                            });
 
 
                                         });
@@ -302,52 +319,51 @@
 
                                     });
 
+                                }
 
-                                });
-
-                            }
-
-                        });
+                            });
 
 
-                        if (counter == 0) {
-                            // get all nodes by types without keyword
-                            // don't process nodes over lunr search in this case
-                            if (self.getFilter().getNodeType()) {
-                                watchers.index["_"] = self.getIndex().$watch(function (obj) {
-                                    self.getIndex().$loaded(function (data) {
+                            if (counter == 0) {
+                                // get all nodes by types without keyword
+                                // don't process nodes over lunr search in this case
+                                if (self.getFilter().getNodeType()) {
+                                    watchers.index["_"] = self.getIndex().$watch(function (obj) {
+                                        self.getIndex().$loaded(function (data) {
 
-                                        var finalitems = [];
-                                        var items = {};
-                                        angular.forEach(data, function (val, key) {
-                                            var hash = val['_node']['hash'];
-                                            if (items[val['_nodetype']] === undefined) {
-                                                items[val['_nodetype']] = {};
-                                            }
-                                            if (items[hash] === undefined) {
-                                                items[val['_nodetype']][hash] = {
-                                                    score: val['_node']['turbonode'] ? 999999999999999 : 0,
-                                                    nodeType: val['_nodetype'],
-                                                    nodes: {},
-                                                    node: val['_node']
-                                                };
-                                            }
-                                            items[val['_nodetype']][hash].nodes[val['_node']['identifier']] = val['_node'];
+                                            var finalitems = [];
+                                            var items = {};
+                                            angular.forEach(data, function (val, key) {
+                                                var hash = val['_node']['hash'];
+                                                if (items[val['_nodetype']] === undefined) {
+                                                    items[val['_nodetype']] = {};
+                                                }
+                                                if (items[hash] === undefined) {
+                                                    items[val['_nodetype']][hash] = {
+                                                        score: val['_node']['turbonode'] ? 999999999999999 : 0,
+                                                        nodeType: val['_nodetype'],
+                                                        nodes: {},
+                                                        node: val['_node']
+                                                    };
+                                                }
+                                                items[val['_nodetype']][hash].nodes[val['_node']['identifier']] = val['_node'];
 
 
+                                            });
+                                            angular.forEach(items, function (val, key) {
+                                                finalitems.push(val);
+                                            });
+                                            results.setResults(finalitems);
                                         });
-                                        angular.forEach(items, function (val, key) {
-                                            finalitems.push(val);
-                                        });
-                                        results.setResults(finalitems);
                                     });
-                                });
 
+                                }
                             }
+
+
+                            this.cleanLocalIndex(watchers.keywords);
+                            lastFilterHash = filter.getHash();
                         }
-
-
-                        this.cleanLocalIndex(watchers.keywords);
 
 
                     },
@@ -379,6 +395,7 @@
                      */
                     getIndex: function (keyword) {
 
+                        var fbobject = {};
 
                         if (keyword === undefined) {
                             keyword = "";
@@ -391,18 +408,21 @@
                             if (keyword === "") {
                                 query = ref.orderByChild("_nodetype").equalTo(this.getFilter().getNodeType());
                             } else {
-                                query = ref.orderByChild("_nodetype" + keyword).equalTo(this.getFilter().getNodeType()).limitToFirst(500);
+                                query = ref.orderByChild("_nodetype" + keyword).equalTo(this.getFilter().getNodeType()).limitToFirst(250);
                             }
 
                         }
 
+
                         if (query === false) {
-                            query = ref.orderByChild(keyword).equalTo(1).limitToFirst(500);
+                            query = ref.orderByChild(keyword).equalTo(1).limitToFirst(100);
                         }
 
 
                         if (query) {
-                            return firebaseObject(query);
+                            fbobject = firebaseObject(query);
+                            references[keyword] = fbobject.$ref();
+                            return fbobject;
                         }
 
                         return null;
@@ -589,7 +609,6 @@
                         scope.$watch(input, function (searchInput) {
                             self.$$app.getFilter().setQuery(searchInput);
                             if (searchInput !== undefined) {
-
                                 self.$$app.setSearchIndex();
                             }
                         });
@@ -838,6 +857,13 @@
 
             HybridsearchFilterObject.prototype = {
 
+
+                /**
+                 * @returns string
+                 */
+                getHash: function () {
+                    return JSON.stringify(this.$$data);
+                },
 
                 /**
                  * @param string nodeType to search only for
