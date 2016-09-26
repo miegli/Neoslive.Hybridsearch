@@ -115,7 +115,7 @@
             function HybridsearchObject(hybridsearch) {
 
 
-                var results, filter, watchers, references, index, lunrSearch, nodes, nodeTypeLabels, lastFilterHash;
+                var results, filter, watchers, references, index, lunrSearch, nodes, nodeTypeLabels, lastFilterHash, propertiesBoost;
 
 
                 results = new $hybridsearchResultsObject();
@@ -144,8 +144,17 @@
                     getNodeTypeLabels: function () {
                         return nodeTypeLabels;
                     },
+                    getPropertiesBoost: function () {
+                        return propertiesBoost;
+                    },
+                    getBoost: function (property) {
+                        return propertiesBoost[property] ? propertiesBoost[property] : 10;
+                    },
                     setNodeTypeLabels: function (labels) {
                         nodeTypeLabels = labels;
+                    },
+                    setPropertiesBoost: function (boost) {
+                        propertiesBoost = boost;
                     },
 
                     getResults: function () {
@@ -166,8 +175,9 @@
                         finalitems['nodetypes'] = {};
                         finalitems['turbonodes'] = [];
 
+
                         angular.forEach(lunrSearch.getFields(), function (v, k) {
-                            fields[v] = {boost: 1}
+                            fields[v] = {boost: self.getBoost(v)}
                         });
 
 
@@ -658,6 +668,16 @@
                 setNodeTypeLabels: function (nodetypelabels) {
                     var self = this;
                     self.$$app.setNodeTypeLabels(nodetypelabels);
+                    return this;
+                },
+
+                /**
+                 * @param propertiesboost
+                 * @returns {$hybridsearchResultsObject|*}
+                 */
+                setPropertiesBoost: function (propertiesboost) {
+                    var self = this;
+                    self.$$app.setPropertiesBoost(propertiesboost);
                     return this;
                 },
 

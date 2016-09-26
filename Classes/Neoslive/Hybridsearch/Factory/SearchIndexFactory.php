@@ -583,7 +583,7 @@ class SearchIndexFactory
 
 
         $data = new \stdClass();
-
+        $data->nodeType = mb_strtolower(preg_replace("/[^A-z0-9]/", "-", $node->getNodeType()->getName()));
 
         if ($grandParentNodeFilter === '') {
             if (isset($this->settings['Filter']['GrantParentNodeTypeFilter'])) {
@@ -644,6 +644,8 @@ class SearchIndexFactory
             }
 
             $properties->parent = (Encoding::UTF8FixWin1252Chars($parentPropertiesText));
+            $p = $data->nodeType . "-parent";
+            $properties->$p = $properties->parent;
         }
 
 
@@ -663,6 +665,8 @@ class SearchIndexFactory
 
             $grandParentPropertiesText .= mb_strtolower(preg_replace("/[^A-z0-9]/", " ", $uri + " " + $this->rawcontent($breadcrumb)));
             $properties->grandparent = (Encoding::UTF8FixWin1252Chars($grandParentPropertiesText));
+            $p = $data->nodeType . "-grandparent";
+            $properties->$p = $properties->grandparent;
         }
 
 
@@ -683,7 +687,9 @@ class SearchIndexFactory
 
         $data->identifier = $node->getNodeData()->getIdentifier();
         $data->properties = $properties;
-        $data->nodeType = mb_strtolower(preg_replace("/[^A-z0-9]/", "-", $node->getNodeType()->getName()));
+
+        $p = $data->nodeType . "-rawcontent";
+        $properties->$p = $properties->rawcontent;
 
 
         $data->grandParentNode = new \stdClass();
@@ -853,7 +859,7 @@ class SearchIndexFactory
                 foreach ($filecollection as $file) {
 
 
-                    $this->output->outputLine("uploading ".$file." (".filesize($file).")");
+                    $this->output->outputLine("uploading " . $file . " (" . filesize($file) . ")");
 
 
                     $content = json_decode(file_get_contents($file));
