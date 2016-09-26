@@ -271,12 +271,15 @@
                             angular.forEach(watchers.keywords, function (unbind, key) {
                                 unbind();
                                 delete watchers.keywords[key];
+                                if (references.keywords !== undefined && references.keywords[key] !== undefined) {
+                                    delete references.keywords[key];
+                                }
                             });
                             // unbind all previous defined index watchers
                             angular.forEach(watchers.index, function (unbind, key) {
                                 unbind();
                                 delete watchers.index[key];
-                              });
+                            });
 
 
                             angular.forEach(this.getFilter().getQueryKeywords(), function (value, keyword) {
@@ -286,23 +289,28 @@
                                     counter++;
                                     watchers.keywords[keyword] = self.getKeywords(keyword).$watch(function (d, a) {
 
+                                        references[keyword].on("value", function (data) {
 
-
-                                        self.getKeywords(keyword).$loaded(function (data) {
-
-                                            angular.forEach(data, function (val, keywordsegment) {
-
+                                            angular.forEach(data.val(), function (val, keywordsegment) {
 
                                                 if (references.keywords !== undefined && references.keywords[keywordsegment] !== undefined) {
                                                     delete references.keywords[keywordsegment];
                                                 }
-
                                                 // keyword was found
-                                                if (keywordsegment.substring(0, keyword.length) === keyword) {
+                                                if (
+                                                    (keyword.length < 8 &&
+                                                        keywordsegment.substr(0, keyword.length) === keyword.substr(0, keyword.length)
+                                                    )
+                                                    ||
+                                                    (keyword.length >= 8 &&
+                                                        keywordsegment.substr(0, keyword.length - 4) === keyword.substr(0, keyword.length - 4)
+                                                    )
+
+                                                ) {
                                                     filter.addAutocompletedKeywords(keywordsegment);
                                                     watchers.index[keywordsegment] = self.getIndex(keywordsegment).$watch(function (obj, o) {
 
-                                                        references[keywordsegment].on("value",function(data) {
+                                                        references[keywordsegment].on("value", function (data) {
                                                             self.updateLocalIndex(keywordsegment, data.val());
                                                         });
 
@@ -382,12 +390,21 @@
                      */
                     getKeywords: function (querysegment) {
 
-                        var substr = querysegment.substring(0, querysegment.length - 2);
-                        if (substr === '') {
-                            substr = querysegment;
+
+                        if (querysegment.length >= 8) {
+                            var substr = querysegment.substring(0, querysegment.length - 3);
+                        } else {
+                            var substr = querysegment;
                         }
-                        var ref = hybridsearch.$firebase().database().ref().child("keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().startAt(substr).limitToFirst(500);
-                        return firebaseObject(ref);
+
+
+                        var ref = hybridsearch.$firebase().database().ref().child("keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().startAt(substr.toLowerCase()).limitToFirst(10);
+
+                        var fbobject = firebaseObject(ref);
+                        references[querysegment] = fbobject.$ref();
+                        return fbobject;
+
+
                     },
                     /**
                      * @param string keyword
@@ -488,6 +505,7 @@
                         if (index[keyword] === undefined) {
                             index[keyword] = {};
                         }
+
 
                         angular.forEach(data, function (value, key) {
 
@@ -603,14 +621,25 @@
                  */
                 setQuery: function (input, scope=null) {
 
-                    var self = this;
+                    var self = this, lastinterval = 0;
 
                     if (scope) {
+
+
                         scope.$watch(input, function (searchInput) {
-                            self.$$app.getFilter().setQuery(searchInput);
-                            if (searchInput !== undefined) {
-                                self.$$app.setSearchIndex();
+
+                            if (lastinterval) {
+                                clearTimeout(lastinterval);
                             }
+
+                            lastinterval = setTimeout(function () {
+                                self.$$app.getFilter().setQuery(scope[input]);
+                                if (searchInput !== undefined) {
+                                    self.$$app.setSearchIndex();
+                                }
+                            }, 500);
+
+
                         });
 
                     } else {
@@ -862,7 +891,9 @@
                  * @returns string
                  */
                 getHash: function () {
+
                     return JSON.stringify(this.$$data);
+
                 },
 
                 /**
@@ -940,6 +971,10 @@
                  */
                 getAdditionalKeywords: function () {
 
+                    if (this.$$data.additionalKeywords === undefined) {
+                        return '';
+                    }
+
                     var terms = {};
                     var termsstring = '';
 
@@ -962,7 +997,8 @@
                  * @returns string
                  */
                 getFullSearchQuery: function () {
-                    return this.getQueryString() + " " + this.getAutocompletedKeywords() + " " + this.getAdditionalKeywords()
+                    console.log(this.getAutocompletedKeywords() + " " + this.getAdditionalKeywords());
+                    return this.getAutocompletedKeywords() + " " + this.getAdditionalKeywords()
                 },
 
                 /**
@@ -1015,6 +1051,7 @@
                     var s = this.$$data.query.replace(filterReg, " ");
                     var t = s.replace(/([0-9])( )/i, '$1').replace(/([0-9]{2})/gi, '$1 ');
                     s = s + " " + t;
+                    s = s.toLowerCase();
 
                     angular.forEach(s.split(" "), function (term) {
                         term = term.replace(filterReg, "");
