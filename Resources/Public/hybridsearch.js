@@ -55,17 +55,11 @@
                 }
 
 
-                // These are private config props and functions used internally
-                // they are collected here to reduce clutter in console.log and forEach
                 this.$$conf = {
                     firebase: firebaseconfig,
                     workspace: workspace,
                     dimension: dimension
                 };
-
-                // this bit of magic makes $$conf non-enumerable and non-configurable
-                // and non-writable (its properties are still writable but the ref cannot be replaced)
-                // we redundantly assign it above so the IDE can relax
                 Object.defineProperty(this, '$$conf', {
                     value: this.$$conf
                 });
@@ -115,9 +109,9 @@
             function HybridsearchObject(hybridsearch) {
 
 
-                var results, filter, watchers, references, index, lunrSearch, nodes, nodeTypeLabels, lastFilterHash, propertiesBoost;
+                var results, filter, watchers, references, index, lunrSearch, nodes, nodeTypeLabels, lastFilterHash, propertiesBoost, isRunning;
 
-
+                isRunning = false;
                 results = new $hybridsearchResultsObject();
                 filter = new $hybridsearchFilterObject();
                 lastFilterHash = '';
@@ -141,8 +135,17 @@
                 this.$$app = {
 
 
+                    setIsRunning: function () {
+                        isRunning = true;
+                    },
+                    isRunning: function () {
+                        return isRunning;
+                    },
                     getNodeTypeLabels: function () {
                         return nodeTypeLabels;
+                    },
+                    getNodeTypeLabel: function (nodeType) {
+                        return nodeTypeLabels[nodeType] !== undefined ? nodeTypeLabels[nodeType] : nodeType;
                     },
                     getPropertiesBoost: function () {
                         return propertiesBoost;
@@ -151,6 +154,7 @@
                         return propertiesBoost[property] ? propertiesBoost[property] : 10;
                     },
                     setNodeTypeLabels: function (labels) {
+                        results.$$app.setNodeTypeLabels(labels);
                         nodeTypeLabels = labels;
                     },
                     setPropertiesBoost: function (boost) {
@@ -168,12 +172,12 @@
                      */
                     search: function () {
 
-                        var fields = {}, items = {}, self = this, finalitems = [], turbonodes = {};
+
+                        var fields = {}, items = {}, self = this, finalitems = [], turbonodes = {}, nodesId = {};
 
 
-                        finalitems['all'] = [];
-                        finalitems['nodetypes'] = {};
-                        finalitems['turbonodes'] = [];
+                        items['_nodes'] = [];
+                        items['_nodesTurbo'] = [];
 
 
                         angular.forEach(lunrSearch.getFields(), function (v, k) {
@@ -184,65 +188,64 @@
                         angular.forEach(lunrSearch.search(self.getFilter().getFullSearchQuery(), {
                             fields: fields,
                             bool: "OR"
-                        }), function (item) {
+                        }), function (item, c) {
 
 
                             var nodeId = item.ref.substring(item.ref.indexOf("://") + 3);
 
-                            if (nodes[nodeId] !== undefined && nodes[nodeId]['turbonode'] !== true) {
+                            if (nodes[nodeId] !== undefined) {
 
-                                var nodeTypeLabel = nodeTypeLabels[nodes[nodeId].nodeType] !== undefined ? nodeTypeLabels[nodes[nodeId].nodeType] : nodes[nodeId].nodeType;
-
-                                var hash = nodes[nodeId].hash;
-
-                                if (items[nodeTypeLabel] === undefined) {
-                                    items[nodeTypeLabel] = {};
+                                if (nodes[nodeId]['parentNode'] === undefined) {
+                                    nodes[nodeId]['parentNode'] = {};
+                                    nodes[nodeId]['parentNode']['identifier'] = nodeId;
                                 }
 
 
-                                if (items[nodeTypeLabel][hash] === undefined) {
-                                    items[nodeTypeLabel][hash] = {
-                                        score: nodes[nodeId]['turbonode'] ? 1000 : item.score,
-                                        nodeType: nodes[nodeId].nodeType,
-                                        nodes: {},
-                                        node: nodes[nodeId]
-                                    };
+                                if (nodes[nodeId] !== undefined && nodes[nodeId]['turbonode'] !== true) {
+
+                                    nodes[nodeId].score = item.score;
+                                    if (nodes[nodeId]['turbonode'] === true) {
+                                        items['_nodesTurbo'].push(nodes[nodeId]);
+                                    } else {
+                                        items['_nodes'].push(nodes[nodeId]);
+                                    }
+
+
+                                    var nodeTypeLabel = nodeTypeLabels[nodes[nodeId].nodeType] !== undefined ? nodeTypeLabels[nodes[nodeId].nodeType] : nodes[nodeId].nodeType;
+
+
+                                    if (items[nodeTypeLabel] === undefined) {
+                                        items[nodeTypeLabel] = {};
+                                    }
+
+
+                                    if (items[nodeTypeLabel][nodes[nodeId]['parentNode']['identifier']] === undefined) {
+                                        items[nodeTypeLabel][nodes[nodeId]['parentNode']['identifier']] = ({
+                                            score: nodes[nodeId]['turbonode'] ? 1000 : item.score,
+                                            nodeType: nodes[nodeId].nodeType,
+                                            group: nodes[nodeId]['parentNode'].properties !== undefined ? nodes[nodeId]['parentNode'] : nodes[nodeId]['grandParentNode'],
+                                            nodes: {}
+                                        });
+                                    }
+
+                                    nodes[nodeId].score = nodes[nodeId]['turbonode'] ? 1000 : item.score;
+                                    if (c > 1) {
+                                        items[nodeTypeLabel][nodes[nodeId]['parentNode']['identifier']]['score'] = items[nodeTypeLabel][nodes[nodeId]['parentNode']['identifier']]['score'] - nodes[nodeId].score * (1 / (c));
+                                    }
+
+                                    if (nodesId[nodes[nodeId].hash] === undefined) {
+                                        items[nodeTypeLabel][nodes[nodeId]['parentNode']['identifier']]['nodes'][nodeId] = (nodes[nodeId]);
+                                        nodesId[nodes[nodeId].hash] = true;
+                                    }
+
+
                                 }
-                                items[nodeTypeLabel][hash].nodes[nodeId] = nodes[nodeId];
-
-
                             }
-
-                            if (nodes[nodeId] !== undefined && nodes[nodeId]['turbonode'] && turbonodes[nodes[nodeId].hash] === undefined) {
-                                finalitems['turbonodes'].push({
-                                    score: item.score,
-                                    nodeType: nodes[nodeId].nodeType,
-                                    nodes: {},
-                                    node: nodes[nodeId]
-                                });
-                                turbonodes[nodes[nodeId].hash] = 1;
-                            }
-
 
                         });
 
+                        results.getApp().setResults(items);
 
-                        // make propre array
-
-
-                        angular.forEach(items, function (val, key) {
-
-                            finalitems['nodetypes'][key] = [];
-
-                            angular.forEach(val, function (v, k) {
-                                finalitems['nodetypes'][key].push(v);
-                                finalitems['all'].push(v);
-                            });
-
-                        });
-
-
-                        results.setResults(finalitems);
 
                     },
 
@@ -269,29 +272,26 @@
                     setSearchIndex: function () {
 
 
-                        if (lastFilterHash != filter.getHash()) {
+                        var self = this, counter = 0, lastinterval = false, updates = {};
+                        nodes = {};
+                        results.$$app.clearResults();
+                        filter.setAutocompletedKeywords('');
 
+                        // unbind all previous defined keywords watchers
+                        angular.forEach(watchers.keywords, function (unbind, key) {
+                            unbind();
+                            delete watchers.keywords[key];
+                            if (references.keywords !== undefined && references.keywords[key] !== undefined) {
+                                delete references.keywords[key];
+                            }
+                        });
+                        // unbind all previous defined index watchers
+                        angular.forEach(watchers.index, function (unbind, key) {
+                            unbind();
+                            delete watchers.index[key];
+                        });
 
-                            var self = this, counter = 0;
-                            nodes = {};
-                            results.setResults([]);
-                            filter.setAutocompletedKeywords('');
-
-                            // unbind all previous defined keywords watchers
-                            angular.forEach(watchers.keywords, function (unbind, key) {
-                                unbind();
-                                delete watchers.keywords[key];
-                                if (references.keywords !== undefined && references.keywords[key] !== undefined) {
-                                    delete references.keywords[key];
-                                }
-                            });
-                            // unbind all previous defined index watchers
-                            angular.forEach(watchers.index, function (unbind, key) {
-                                unbind();
-                                delete watchers.index[key];
-                            });
-
-
+                        if (this.isRunning() && filter.hasFilters() && lastFilterHash != filter.getHash()) {
                             angular.forEach(this.getFilter().getQueryKeywords(), function (value, keyword) {
 
                                 if (keyword.length > 2 || (keyword.length === 2 && isNaN(keyword) === false)) {
@@ -321,7 +321,18 @@
                                                     watchers.index[keywordsegment] = self.getIndex(keywordsegment).$watch(function (obj, o) {
 
                                                         references[keywordsegment].on("value", function (data) {
-                                                            self.updateLocalIndex(keywordsegment, data.val());
+
+                                                            updates[keywordsegment] = data.val();
+
+                                                            if (lastinterval) {
+                                                                clearTimeout(lastinterval);
+                                                            }
+
+                                                            lastinterval = setTimeout(function () {
+                                                                self.updateLocalIndex(updates);
+                                                                updates = {};
+                                                            }, 200);
+
                                                         });
 
 
@@ -380,9 +391,10 @@
 
 
                             this.cleanLocalIndex(watchers.keywords);
-                            lastFilterHash = filter.getHash();
+
                         }
 
+                        lastFilterHash = filter.getHash();
 
                     },
                     /**
@@ -471,14 +483,21 @@
 
                     },
                     /**
-                     * @param string keyword
                      * @param object data
                      * @returns void
                      */
-                    updateLocalIndex: function (keyword, data) {
-                        this.removeLocalIndex(keyword);
-                        this.addLocalIndex(keyword, data);
-                        this.search();
+                    updateLocalIndex: function (data) {
+
+                        var self = this;
+
+                        angular.forEach(data, function (val, keyword) {
+                            self.removeLocalIndex(keyword);
+                            self.addLocalIndex(keyword, val);
+                        });
+
+                        self.search();
+
+
                     },
                     /**
                      * @param string keyword
@@ -568,10 +587,22 @@
             HybridsearchObject.prototype = {
 
                 /**
-                 * @returns a promise which will resolve after the save is completed.
+                 * @returns  {HybridsearchObject}
                  */
                 $watch: function (callback) {
-                    this.$$app.getResults().setCallbackMethod(callback);
+                    this.$$app.getResults().getApp().setCallbackMethod(callback);
+                    return this;
+                },
+
+                /**
+                 * run search and perform queries
+                 *
+                 * @returns  {HybridsearchObject}
+                 */
+                run: function () {
+                    this.$$app.setIsRunning();
+                    this.$$app.setSearchIndex();
+
                 },
 
                 /**
@@ -647,7 +678,7 @@
                                 if (searchInput !== undefined) {
                                     self.$$app.setSearchIndex();
                                 }
-                            }, 500);
+                            }, 100);
 
 
                         });
@@ -729,24 +760,154 @@
              */
             function HybridsearchResultsObject() {
 
-                var results = {};
+                var nodeTypeLabels = {};
+
+
+                var DataObject = function () {
+
+                };
+
+                DataObject.prototype = {
+                    /**
+                     * @returns $$app
+                     */
+                    count: function () {
+                        return (this._nodes !== undefined ? this._nodes.length : 0) + (this._nodesTurbo !== undefined ? this._nodesTurbo.length : 0);
+                    }
+
+                };
+                var data = new DataObject();
 
 
                 if (!(this instanceof HybridsearchResultsObject)) {
                     return new HybridsearchResultsObject();
                 }
 
-                this.$$data = {
+
+                var self = this;
+
+                this.$$app = {
+
+                    setResults: function (results) {
+
+                        this.clearResults();
+                        angular.forEach(results, function (val, key) {
+                            data[key] = val;
+                        });
+                        this.executeCallbackMethod(self);
+
+                    },
+
+                    clearResults: function () {
+                        angular.forEach(data, function (val, key) {
+                            delete data[key];
+                        });
+                        this.executeCallbackMethod(self);
+                    },
+
+                    getResults: function () {
+                        return data;
+                    },
+
+
                     callbackMethod: function () {
                         return null;
+                    },
+
+                    /**
+                     * @returns {HybridsearchResultsObject}
+                     */
+                    setCallbackMethod: function (callback) {
+                        this.callbackMethod = callback;
+                        return this;
+
+                    },
+
+                    /**
+                     * @returns mixed
+                     */
+                    executeCallbackMethod: function (self) {
+
+                        this.callbackMethod(self);
+                    },
+
+
+                    getNodeTypeLabels: function () {
+                        return nodeTypeLabels;
+                    },
+                    getNodeTypeLabel: function (nodeType) {
+                        return nodeTypeLabels[nodeType] !== undefined ? nodeTypeLabels[nodeType] : nodeType;
+                    },
+                    setNodeTypeLabels: function (labels) {
+                        nodeTypeLabels = labels;
+                    },
+
+                    /**
+                     *
+                     * post processor filter out results with score lower than half of other similar nodes
+                     *
+                     * @param object
+                     * @returns void
+                     */
+                    getResultsPostFiltered: function (results) {
+
+                        var scoreCounter = {};
+                        var filterNodesByScore = {};
+
+
+                        angular.forEach(results.nodetypes, function (result, key) {
+
+
+                            var maxnodesbyscore = result.length / 3 * 2;
+
+                            if (maxnodesbyscore > 1) {
+                                angular.forEach(result, function (item) {
+                                    if (scoreCounter[item.nodeType] === undefined) {
+                                        scoreCounter[item.nodeType] = {};
+                                    }
+                                    scoreCounter[item.nodeType][item.score] = (scoreCounter[item.nodeType][item.score] == undefined ? 0 : scoreCounter[item.nodeType][item.score]) + 1;
+                                    if (scoreCounter[item.nodeType][item.score] >= maxnodesbyscore) {
+                                        filterNodesByScore[item.nodeType] = item.score;
+                                    }
+                                });
+                            }
+
+
+                        });
+
+
+                        // filter nodes outside score range
+                        angular.forEach(filterNodesByScore, function (score, nodeType) {
+
+
+                            angular.forEach(results.all, function (item, key) {
+                                if (item.score < 100 && nodeType === item.nodeType && item.score !== score) {
+                                    results.all.splice(key, 1);
+                                }
+
+                            });
+
+                            angular.forEach(results.nodetypes, function (result, key) {
+                                angular.forEach(result, function (item, k) {
+
+                                    if (item.score < 100 && filterNodesByScore[item.nodeType] !== undefined && item.score !== filterNodesByScore[item.nodeType]) {
+                                        results.nodetypes[key].splice(k, 1);
+                                    }
+                                });
+                            });
+
+
+                        });
+
+
+                        return results;
+
+
                     }
                 };
 
-                // this bit of magic makes $$data non-enumerable and non-configurable
-                // and non-writable (its properties are still writable but the ref cannot be replaced)
-                // we redundantly assign it above so the IDE can relax
-                Object.defineProperty(this, '$$data', {
-                    value: this.$$data
+                Object.defineProperty(this, '$$app', {
+                    value: this.$$app
                 });
 
 
@@ -757,99 +918,170 @@
 
             HybridsearchResultsObject.prototype = {
 
-                /**
-                 * @param object
-                 * @returns void
-                 */
-                setResults: function (results) {
 
-                    this.$$data.results = this.getResultsPostFiltered(results);
-                    this.executeCallbackMethod();
+                /**
+                 * @returns $$app
+                 */
+                getApp: function () {
+                    return this.$$app;
+                },
+
+                count: function () {
+                    return this.$$app.getResults().count();
+                },
+
+                countByNodeType: function (nodeType) {
+                    return this.$$app.getResults()[this.$$app.getNodeTypeLabel(nodeType)].length;
+                },
+
+                countByNodeTypeLabel: function (nodeTypeLabel) {
+
+                    return Object.keys(this.$$app.getResults()[nodeTypeLabel]).length;
+                },
+
+                /**
+                 * @returns {{DataObject}}
+                 */
+                val: function () {
+                    return this.$$app.getResults();
+                },
+
+                /**
+                 * @returns array
+                 */
+                getTurboNodes: function () {
+                    return this.val()._nodesTurbo;
+                },
+
+                /**
+                 * @returns array
+                 */
+                getNodes: function () {
+                    var nodes = [];
+                    var nodesIds = {};
+
+
+                    angular.forEach(this.val()._nodes, function (node, key) {
+                        if (nodesIds[node.hash] === undefined) {
+                            nodes.push(node);
+                        }
+                        nodesIds[node.hash] = true;
+                    });
+
+                    return nodes;
 
 
                 },
 
                 /**
-                 *
-                 * post processor filter out results with score lower than half of other similar nodes
-                 *
-                 * @param object
-                 * @returns void
+                 * @returns array
                  */
-                getResultsPostFiltered: function (results) {
+                getGroupedNodes: function () {
 
+                    var nodes = {};
 
-                    var scoreCounter = {};
-                    var filterNodesByScore = {};
+                    angular.forEach(this.val(), function (value, key) {
+                        if (key.substr(0, 1) !== '_') {
 
+                            var items = [];
 
-                    angular.forEach(results.nodetypes, function (result, key) {
+                            angular.forEach(value, function (v, k) {
+                                items.push(v);
+                            });
 
+                            nodes[key] = {label: key, value: items};
+                        }
+                    });
 
-                        var maxnodesbyscore = result.length / 3 * 2;
+                    return nodes;
 
-                        if (maxnodesbyscore > 1) {
-                            angular.forEach(result, function (item) {
-                                if (scoreCounter[item.nodeType] === undefined) {
-                                    scoreCounter[item.nodeType] = {};
-                                }
-                                scoreCounter[item.nodeType][item.score] = (scoreCounter[item.nodeType][item.score] == undefined ? 0 : scoreCounter[item.nodeType][item.score]) + 1;
-                                if (scoreCounter[item.nodeType][item.score] >= maxnodesbyscore) {
-                                    filterNodesByScore[item.nodeType] = item.score;
-                                }
+                },
+
+                /**
+                 * @returns array
+                 */
+                getGroupedNodesByNodeType: function (nodeType) {
+                    return this.$$app.getResults()[this.$$app.getNodeTypeLabel(nodeType)];
+                },
+
+                /**
+                 * @returns array
+                 */
+                getGroupedNodesByNodeTypeLabel: function (nodeTypeLabel) {
+                    return this.$$app.getResults()[nodeTypeLabel];
+                },
+
+                /**
+                 * @returns array
+                 */
+                getNodesByNodeType: function (nodeType) {
+                    var nodes = [];
+
+                    angular.forEach(this.val()._nodes, function (node, key) {
+                        if (node.nodeType === nodeType) {
+                            nodes.push(node);
+                        }
+                    });
+
+                    return nodes;
+                },
+
+                /**
+                 * @returns array
+                 */
+                getNodesByNodeTypeLabel: function (nodeTypeLabel) {
+                    var nodes = [];
+                    var self = this;
+
+                    angular.forEach(this.val()._nodes, function (node, key) {
+                        if (nodeTypeLabel === self.$$app.getNodeTypeLabel(node.nodeType)) {
+                            nodes.push(node);
+                        }
+                    });
+
+                    return nodes;
+                },
+
+                /**
+                 * @returns array
+                 */
+                getNodeTypes: function () {
+                    var self = this;
+                    var nodeTypes = [];
+                    angular.forEach(this.val(), function (result, key) {
+                        if (key.substr(0, 1) !== '_') {
+                            var kyz = Object.keys(result);
+                            nodeTypes.push({
+                                type: result[kyz[0]].nodeType,
+                                data: result[kyz[0]].group,
+                                count: self.countByNodeType(result[kyz[0]].nodeType),
+                            })
+
+                        }
+                    });
+
+                    return nodeTypes;
+                },
+
+                /**
+                 * @returns array
+                 */
+                getNodeGroupes: function () {
+                    var self = this;
+                    var nodeGroupes = [];
+                    var nodeGroup = {};
+                    angular.forEach(this.getNodeTypes(), function (result, key) {
+
+                        if (nodeGroup[self.$$app.getNodeTypeLabel(result.type)] === undefined) {
+                            nodeGroupes.push({
+                                count: self.countByNodeTypeLabel(self.$$app.getNodeTypeLabel(result.type)),
+                                label: self.$$app.getNodeTypeLabel(result.type)
                             });
                         }
-
-
+                        nodeGroup[self.$$app.getNodeTypeLabel(result.type)] = true;
                     });
 
-
-                    // filter nodes outside score range
-                    angular.forEach(filterNodesByScore, function (score, nodeType) {
-
-
-                        angular.forEach(results.all, function (item, key) {
-                            if (item.score < 100 && nodeType === item.nodeType && item.score !== score) {
-                                results.all.splice(key, 1);
-                            }
-
-                        });
-
-                        angular.forEach(results.nodetypes, function (result, key) {
-                            angular.forEach(result, function (item, k) {
-
-                                if (item.score < 100 && filterNodesByScore[item.nodeType] !== undefined && item.score !== filterNodesByScore[item.nodeType]) {
-                                    results.nodetypes[key].splice(k, 1);
-                                }
-                            });
-                        });
-
-
-                    });
-
-
-                    return results;
-
-
-                },
-
-                /**
-                 * @returns {HybridsearchResultsObject}
-                 */
-                setCallbackMethod: function (callback) {
-
-                    this.$$data.callbackMethod = callback;
-
-                    return this;
-
-                },
-
-                /**
-                 * @returns mixed
-                 */
-                executeCallbackMethod: function () {
-
-                    this.$$data.callbackMethod(this.$$data.results);
+                    return nodeGroupes;
                 }
 
             };
@@ -887,13 +1119,8 @@
                 }
 
 
-                // These are private config props and functions used internally
-                // they are collected here to reduce clutter in console.log and forEach
                 this.$$data = {};
 
-                // this bit of magic makes $$conf non-enumerable and non-configurable
-                // and non-writable (its properties are still writable but the ref cannot be replaced)
-                // we redundantly assign it above so the IDE can relax
                 Object.defineProperty(this, '$$data', {
                     value: this.$$data
                 });
@@ -913,6 +1140,23 @@
                 getHash: function () {
 
                     return JSON.stringify(this.$$data);
+
+                },
+
+                /**
+                 * @returns string
+                 */
+                hasFilters: function () {
+
+                    if (this.getQuery() != '') {
+                        return true;
+                    }
+
+                    if (this.getNodeType() != '') {
+                        return true;
+                    }
+
+                    return false;
 
                 },
 
@@ -1017,7 +1261,6 @@
                  * @returns string
                  */
                 getFullSearchQuery: function () {
-                    console.log(this.getAutocompletedKeywords() + " " + this.getAdditionalKeywords());
                     return this.getAutocompletedKeywords() + " " + this.getAdditionalKeywords()
                 },
 
