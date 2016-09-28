@@ -132,13 +132,14 @@
                 }
 
 
-                var HybridsearchResultsNode = function (nodeData) {
+                var HybridsearchResultsNode = function (nodeData, score) {
 
                     var self = this;
 
                     angular.forEach(nodeData, function (val, key) {
                         self[key] = val;
                     });
+                    self.score = score;
 
                 };
 
@@ -163,6 +164,13 @@
                      */
                     getScore: function () {
                         return this.score !== undefined ? this.score : 0;
+                    },
+
+                    /**
+                     * @returns float
+                     */
+                    addScore: function (score) {
+                        this.score = this.score + score;
                     },
 
                     /**
@@ -272,7 +280,7 @@
                     search: function () {
 
 
-                        var fields = {}, items = {}, self = this, finalitems = [], turbonodes = {}, nodesId = {};
+                        var fields = {}, items = {}, self = this, nodesFound = {};
 
 
                         items['_nodes'] = {};
@@ -286,40 +294,64 @@
 
 
                         angular.forEach(lunrSearch.search(self.getFilter().getFullSearchQuery(), {
-                            fields: fields,
-                            bool: "OR"
-                        }), function (item, c) {
+                                fields: fields,
+                                bool: "OR"
+                            }), function (item, c) {
 
 
-                            var nodeId = item.ref.substring(item.ref.indexOf("://") + 3), nodeTypeLabel;
+                                var nodeId = item.ref.substring(item.ref.indexOf("://") + 3), nodeTypeLabel;
+                                var skip = false;
 
-                            if (nodes[nodeId] !== undefined) {
+                                if (nodes[nodeId] !== undefined) {
 
 
-                                if (nodes[nodeId] !== undefined && nodes[nodeId]['turbonode'] !== true) {
+                                    if (nodes[nodeId] !== undefined && nodes[nodeId]['turbonode'] !== true) {
 
-                                    nodes[nodeId].score = item.score;
+                                        var hash = nodes[nodeId].hash;
+                                        var nodeTypeLabel = nodeTypeLabels[nodes[nodeId].nodeType] !== undefined ? nodeTypeLabels[nodes[nodeId].nodeType] : nodes[nodeId].nodeType;
 
-                                    if (nodes[nodeId]['turbonode'] === true) {
-                                        items['_nodesTurbo'][nodeId] = new HybridsearchResultsNode(nodes[nodeId]);
-                                    } else {
-                                        items['_nodes'][nodeId] = new HybridsearchResultsNode(nodes[nodeId]);
+                                        if (nodesFound[hash] !== undefined) {
+
+                                            if (items['_nodesTurbo'][hash] !== undefined) {
+                                                items['_nodesTurbo'][hash].addScore(item.score);
+                                            }
+                                            if (items['_nodes'][hash] !== undefined) {
+                                                items['_nodes'][hash].addScore(item.score);
+                                            }
+                                            if (items['_nodesByType'][nodeTypeLabel][hash] !== undefined) {
+                                                items['_nodesByType'][nodeTypeLabel][hash].addScore(item.score);
+                                            }
+                                            skip = true;
+                                        }
+
+
+                                        if (skip === false) {
+
+                                            if (nodes[nodeId]['turbonode'] === true) {
+                                                items['_nodesTurbo'][hash] = new HybridsearchResultsNode(nodes[nodeId], item.score);
+                                            } else {
+                                                items['_nodes'][hash] = new HybridsearchResultsNode(nodes[nodeId], item.score);
+                                            }
+
+
+                                            if (items['_nodesByType'][nodeTypeLabel] === undefined) {
+                                                items['_nodesByType'][nodeTypeLabel] = {};
+                                            }
+
+
+                                            items['_nodesByType'][nodeTypeLabel][hash] = new HybridsearchResultsNode(nodes[nodeId], item.score);
+                                        }
+
+                                        nodesFound[hash] = true;
+
                                     }
-
-                                    nodeTypeLabel = nodeTypeLabels[nodes[nodeId].nodeType] !== undefined ? nodeTypeLabels[nodes[nodeId].nodeType] : nodes[nodeId].nodeType;
-
-                                    if (items['_nodesByType'][nodeTypeLabel] === undefined) {
-                                        items['_nodesByType'][nodeTypeLabel] = {};
-                                    }
-
-
-                                    items['_nodesByType'][nodeTypeLabel][nodeId] = new HybridsearchResultsNode(nodes[nodeId]);
 
 
                                 }
-                            }
 
-                        });
+                            }
+                        );
+
 
                         results.getApp().setResults(items);
 
@@ -863,14 +895,14 @@
                  * @returns object
                  */
                 getNodes: function () {
-                    return this._nodes !== undefined ? this._nodes : {};
+                    return this._nodes !== undefined ? this._nodes : [];
                 }
 
             };
 
             var HybridsearchResultsGroupObject = function () {
 
-                this.items = {};
+                this.items = [];
 
 
             };
@@ -887,7 +919,7 @@
                 /**
                  * @returns object
                  */
-                get: function () {
+                getItems: function () {
                     return !this.items ? {} : this.items;
                 },
 
@@ -897,8 +929,18 @@
                 addItem: function (label, value) {
                     var item = new HybridsearchResultsDataObject();
                     item.label = label;
-                    item._nodes = value;
-                    this.items[label] = item;
+
+                    var sorteable = [];
+
+                    angular.forEach(value, function (v, k) {
+                        if (k !== 'group') {
+                            sorteable.push(v);
+                        }
+                    });
+
+                    item._nodes = sorteable;
+
+                    this.items.push(item)
                     return this;
                 }
 
@@ -939,9 +981,28 @@
 
                         this.clearResults();
 
+
                         angular.forEach(results, function (val, key) {
-                            self.$$data.results[key] = val;
+
+                            var sorteable = [];
+
+                            angular.forEach(val, function (v, k) {
+
+                                if (key === '_nodesByType') {
+                                    v.group = k;
+                                    sorteable.push(v);
+                                } else {
+                                    sorteable.push(v);
+                                }
+
+
+                            });
+
+                            self.$$data.results[key] = sorteable;
+
+
                         });
+
 
                         this.executeCallbackMethod(self);
 
@@ -1067,12 +1128,17 @@
                  * @returns array
                  */
                 getGrouped: function () {
+
                     var self = this;
+
+                    if (self.$$data.groups.count() > 0) {
+                        return self.$$data.groups;
+                    }
+
                     angular.forEach(this.getData()._nodesByType, function (result, key) {
-                        if (key.substr(0, 1) !== '_') {
-                            self.$$data.groups.addItem(key, result);
-                        }
+                        self.$$data.groups.addItem(result.group, result);
                     });
+
                     return self.$$data.groups;
                 },
 
