@@ -132,6 +132,105 @@
                 }
 
 
+                var HybridsearchResultsNode = function (nodeData) {
+
+                    var self = this;
+
+                    angular.forEach(nodeData, function (val, key) {
+                        self[key] = val;
+                    });
+
+                };
+
+                HybridsearchResultsNode.prototype = {
+
+                    /**
+                     * @returns string
+                     */
+                    getNodeType: function () {
+                        return this.nodeType !== undefined ? this.nodeType : '';
+                    },
+
+                    /**
+                     * @returns object
+                     */
+                    getProperties: function () {
+                        return this.properties;
+                    },
+
+                    /**
+                     * @returns float
+                     */
+                    getScore: function () {
+                        return this.score !== undefined ? this.score : 0;
+                    },
+
+                    /**
+                     * @returns boolean
+                     */
+                    isTurboNode: function () {
+                        return this.turbonode === undefined ? false : this.turbonode;
+                    },
+
+                    /**
+                     * @returns string
+                     */
+                    getProperty: function (property) {
+
+                        var value = '';
+
+                        if (this.properties[property] !== undefined) {
+                            return this.properties[property];
+                        }
+
+                        angular.forEach(this.properties, function (val, key) {
+                            if (value === '' && key.substr(key.length - property.length, property.length) === property) {
+                                value = val !== undefined ? val : '';
+                            }
+                        });
+
+                        return value;
+
+                    },
+
+                    /**
+                     * @returns string
+                     */
+                    getUrl: function () {
+                        return this.url === undefined ? '' : this.url;
+                    },
+
+                    /**
+                     * @returns string
+                     */
+                    getBreadcrumb: function () {
+                        return this.breadcrumb === undefined ? '' : this.breadcrumb;
+                    },
+
+                    /**
+                     * @returns string
+                     */
+                    getPreview: function () {
+                        return this.properties.rawcontent === undefined ? '' : this.properties.rawcontent;
+                    },
+
+                    /**
+                     * @returns {{HybridsearchResultsNode}}
+                     */
+                    getParent: function () {
+                        return this.parentNode ? new HybridsearchResultsNode(this.parentNode) : false;
+                    },
+
+                    /**
+                     * @returns {{HybridsearchResultsNode}}
+                     */
+                    getDocumentNode: function () {
+                        return this.grandParentNode ? new HybridsearchResultsNode(this.grandParentNode) : false;
+                    }
+
+                };
+
+
                 this.$$app = {
 
 
@@ -176,8 +275,9 @@
                         var fields = {}, items = {}, self = this, finalitems = [], turbonodes = {}, nodesId = {};
 
 
-                        items['_nodes'] = [];
-                        items['_nodesTurbo'] = [];
+                        items['_nodes'] = {};
+                        items['_nodesTurbo'] = {};
+                        items['_nodesByType'] = {};
 
 
                         angular.forEach(lunrSearch.getFields(), function (v, k) {
@@ -201,19 +301,19 @@
                                     nodes[nodeId].score = item.score;
 
                                     if (nodes[nodeId]['turbonode'] === true) {
-                                        items['_nodesTurbo'].push(nodes[nodeId]);
+                                        items['_nodesTurbo'][nodeId] = new HybridsearchResultsNode(nodes[nodeId]);
                                     } else {
-                                        items['_nodes'].push(nodes[nodeId]);
+                                        items['_nodes'][nodeId] = new HybridsearchResultsNode(nodes[nodeId]);
                                     }
 
                                     nodeTypeLabel = nodeTypeLabels[nodes[nodeId].nodeType] !== undefined ? nodeTypeLabels[nodes[nodeId].nodeType] : nodes[nodeId].nodeType;
 
-                                    if (items[nodeTypeLabel] === undefined) {
-                                        items[nodeTypeLabel] = [];
+                                    if (items['_nodesByType'][nodeTypeLabel] === undefined) {
+                                        items['_nodesByType'][nodeTypeLabel] = {};
                                     }
 
 
-                                    items[nodeTypeLabel].push(nodes[nodeId]);
+                                    items['_nodesByType'][nodeTypeLabel][nodeId] = new HybridsearchResultsNode(nodes[nodeId]);
 
 
                                 }
@@ -251,27 +351,31 @@
 
                         var self = this, counter = 0, lastinterval = false, updates = {};
                         nodes = {};
-                        results.$$app.clearResults();
-                        filter.setAutocompletedKeywords('');
 
-                        // unbind all previous defined keywords watchers
-                        angular.forEach(watchers.keywords, function (unbind, key) {
-                            unbind();
-                            delete watchers.keywords[key];
-                            if (references.keywords !== undefined && references.keywords[key] !== undefined) {
-                                delete references.keywords[key];
-                            }
-                        });
-                        // unbind all previous defined index watchers
-                        angular.forEach(watchers.index, function (unbind, key) {
-                            unbind();
-                            delete watchers.index[key];
-                        });
 
                         if (this.isRunning() && filter.hasFilters() && lastFilterHash != filter.getHash()) {
+
+                            // unbind all previous defined keywords watchers
+                            angular.forEach(watchers.keywords, function (unbind, key) {
+                                unbind();
+                                delete watchers.keywords[key];
+                                if (references.keywords !== undefined && references.keywords[key] !== undefined) {
+                                    delete references.keywords[key];
+                                }
+                            });
+                            // unbind all previous defined index watchers
+                            angular.forEach(watchers.index, function (unbind, key) {
+                                unbind();
+                                delete watchers.index[key];
+                            });
+
+                            results.$$app.clearResults();
+                            filter.setAutocompletedKeywords('');
+
+
                             angular.forEach(this.getFilter().getQueryKeywords(), function (value, keyword) {
 
-                                if (keyword.length > 2 || (keyword.length === 2 && isNaN(keyword) === false)) {
+                                if (keyword.length > 1) {
 
                                     counter++;
                                     watchers.keywords[keyword] = self.getKeywords(keyword).$watch(function (d, a) {
@@ -295,7 +399,9 @@
 
                                                 ) {
                                                     filter.addAutocompletedKeywords(keywordsegment);
+
                                                     watchers.index[keywordsegment] = self.getIndex(keywordsegment).$watch(function (obj, o) {
+
 
                                                         references[keywordsegment].on("value", function (data) {
 
@@ -472,6 +578,7 @@
                             self.addLocalIndex(keyword, val);
                         });
 
+
                         self.search();
 
 
@@ -567,7 +674,9 @@
                  * @returns  {HybridsearchObject}
                  */
                 $watch: function (callback) {
+
                     this.$$app.getResults().getApp().setCallbackMethod(callback);
+                    this.run();
                     return this;
                 },
 
@@ -655,7 +764,7 @@
                                 if (searchInput !== undefined) {
                                     self.$$app.setSearchIndex();
                                 }
-                            }, 100);
+                            }, 50);
 
 
                         });
@@ -730,6 +839,71 @@
 
         function () {
 
+            var HybridsearchResultsDataObject = function () {
+
+            };
+
+            HybridsearchResultsDataObject.prototype = {
+
+                /**
+                 * @returns integer
+                 */
+                count: function () {
+                    return !this._nodes ? 0 : Object.keys(this._nodes).length;
+                },
+
+                /**
+                 * @returns string
+                 */
+                getLabel: function () {
+                    return this.label !== undefined ? this.label : '';
+                },
+
+                /**
+                 * @returns object
+                 */
+                getNodes: function () {
+                    return this._nodes !== undefined ? this._nodes : {};
+                }
+
+            };
+
+            var HybridsearchResultsGroupObject = function () {
+
+                this.items = {};
+
+
+            };
+
+            HybridsearchResultsGroupObject.prototype = {
+
+                /**
+                 * @returns integer
+                 */
+                count: function () {
+                    return !this.items ? 0 : Object.keys(this.items).length;
+                },
+
+                /**
+                 * @returns object
+                 */
+                get: function () {
+                    return !this.items ? {} : this.items;
+                },
+
+                /**
+                 * @returns {{HybridsearchResultsGroupObject}}
+                 */
+                addItem: function (label, value) {
+                    var item = new HybridsearchResultsDataObject();
+                    item.label = label;
+                    item._nodes = value;
+                    this.items[label] = item;
+                    return this;
+                }
+
+            };
+
             /**
              * HybridsearchResultsObject.
              * @returns {HybridsearchResultsObject}
@@ -740,20 +914,9 @@
                 var nodeTypeLabels = {};
 
 
-                var DataObject = function () {
+                var HybridsearchResultsDataObject = function () {
 
                 };
-
-                DataObject.prototype = {
-                    /**
-                     * @returns $$app
-                     */
-                    count: function () {
-                        return (this._nodes !== undefined ? this._nodes.length : 0) + (this._nodesTurbo !== undefined ? this._nodesTurbo.length : 0);
-                    }
-
-                };
-                var data = new DataObject();
 
 
                 if (!(this instanceof HybridsearchResultsObject)) {
@@ -763,27 +926,34 @@
 
                 var self = this;
 
+
+                this.$$data = {
+                    results: new HybridsearchResultsDataObject(),
+                    groups: new HybridsearchResultsGroupObject()
+                };
+
                 this.$$app = {
+
 
                     setResults: function (results) {
 
                         this.clearResults();
+
                         angular.forEach(results, function (val, key) {
-                            data[key] = val;
+                            self.$$data.results[key] = val;
                         });
+
                         this.executeCallbackMethod(self);
 
                     },
 
                     clearResults: function () {
-                        angular.forEach(data, function (val, key) {
-                            delete data[key];
-                        });
-                        this.executeCallbackMethod(self);
+                        self.$$data.results = new HybridsearchResultsDataObject();
+                        self.$$data.groups = new HybridsearchResultsGroupObject();
                     },
 
-                    getResults: function () {
-                        return data;
+                    getResultsData: function () {
+                        return self.$$data.results;
                     },
 
 
@@ -804,87 +974,29 @@
                      * @returns mixed
                      */
                     executeCallbackMethod: function (self) {
-
                         this.callbackMethod(self);
                     },
-
 
                     getNodeTypeLabels: function () {
                         return nodeTypeLabels;
                     },
+
                     getNodeTypeLabel: function (nodeType) {
                         return nodeTypeLabels[nodeType] !== undefined ? nodeTypeLabels[nodeType] : nodeType;
                     },
+
                     setNodeTypeLabels: function (labels) {
                         nodeTypeLabels = labels;
-                    },
-
-                    /**
-                     *
-                     * post processor filter out results with score lower than half of other similar nodes
-                     *
-                     * @param object
-                     * @returns void
-                     */
-                    getResultsPostFiltered: function (results) {
-
-                        var scoreCounter = {};
-                        var filterNodesByScore = {};
-
-
-                        angular.forEach(results.nodetypes, function (result, key) {
-
-
-                            var maxnodesbyscore = result.length / 3 * 2;
-
-                            if (maxnodesbyscore > 1) {
-                                angular.forEach(result, function (item) {
-                                    if (scoreCounter[item.nodeType] === undefined) {
-                                        scoreCounter[item.nodeType] = {};
-                                    }
-                                    scoreCounter[item.nodeType][item.score] = (scoreCounter[item.nodeType][item.score] == undefined ? 0 : scoreCounter[item.nodeType][item.score]) + 1;
-                                    if (scoreCounter[item.nodeType][item.score] >= maxnodesbyscore) {
-                                        filterNodesByScore[item.nodeType] = item.score;
-                                    }
-                                });
-                            }
-
-
-                        });
-
-
-                        // filter nodes outside score range
-                        angular.forEach(filterNodesByScore, function (score, nodeType) {
-
-
-                            angular.forEach(results.all, function (item, key) {
-                                if (item.score < 100 && nodeType === item.nodeType && item.score !== score) {
-                                    results.all.splice(key, 1);
-                                }
-
-                            });
-
-                            angular.forEach(results.nodetypes, function (result, key) {
-                                angular.forEach(result, function (item, k) {
-
-                                    if (item.score < 100 && filterNodesByScore[item.nodeType] !== undefined && item.score !== filterNodesByScore[item.nodeType]) {
-                                        results.nodetypes[key].splice(k, 1);
-                                    }
-                                });
-                            });
-
-
-                        });
-
-
-                        return results;
-
-
                     }
+
                 };
+
 
                 Object.defineProperty(this, '$$app', {
                     value: this.$$app
+                });
+                Object.defineProperty(this, '$$data', {
+                    value: this.$$data
                 });
 
 
@@ -903,93 +1015,66 @@
                     return this.$$app;
                 },
 
-                count: function () {
-                    return this.$$app.getResults().count();
-                },
-
-                countByNodeType: function (nodeType) {
-                    return this.$$app.getResults()[this.$$app.getNodeTypeLabel(nodeType)].length;
-                },
-
-                countByNodeTypeLabel: function (nodeTypeLabel) {
-
-                    return Object.keys(this.$$app.getResults()[nodeTypeLabel]).length;
-                },
-
                 /**
                  * @returns {{DataObject}}
                  */
-                val: function () {
-                    return this.$$app.getResults();
+                getData: function () {
+                    return this.$$app.getResultsData();
+                },
+
+
+                count: function () {
+                    return !this.getNodes() ? 0 : Object.keys(this.$$app.getResultsData()._nodes).length;
+                },
+
+                countByNodeType: function (nodeType) {
+                    return !this.getNodesByNodeType(nodeType) ? 0 : Object.keys(this.getNodesByNodeType(nodeType)).length;
+                },
+
+                countByNodeTypeLabel: function (nodeTypeLabel) {
+                    return !this.getNodesByNodeTypeLabel(nodeTypeLabel) ? 0 : Object.keys(this.getNodesByNodeTypeLabel(nodeTypeLabel)).length;
                 },
 
                 /**
-                 * @returns array
+                 * @returns object
                  */
                 getTurboNodes: function () {
-                    return this.val()._nodesTurbo;
+                    return this.getData()._nodesTurbo === undefined ? null : this.getData()._nodesTurbo;
                 },
 
                 /**
-                 * @returns array
+                 * @returns object
                  */
                 getNodes: function () {
-                    return this.val()._nodes;
+                    return this.getData()._nodes === undefined ? null : this.getData()._nodes;
                 },
 
-
                 /**
-                 * @returns array
+                 * @returns object
                  */
                 getNodesByNodeType: function (nodeType) {
-                    var nodes = [];
-
-                    angular.forEach(this.val()._nodes, function (node, key) {
-                        if (node.nodeType === nodeType) {
-                            nodes.push(node);
-                        }
-                    });
-
-                    return nodes;
+                    return this.getData()._nodesByType[this.$$app.getNodeTypeLabel(nodeType)] === undefined ? null : this.getData()._nodesByType[this.$$app.getNodeTypeLabel(nodeType)];
                 },
 
                 /**
-                 * @returns array
+                 * @returns object
                  */
                 getNodesByNodeTypeLabel: function (nodeTypeLabel) {
-                    var nodes = [];
-                    var self = this;
-
-                    angular.forEach(this.val()._nodes, function (node, key) {
-                        if (nodeTypeLabel === self.$$app.getNodeTypeLabel(node.nodeType)) {
-                            nodes.push(node);
-                        }
-                    });
-
-                    return nodes;
+                    return this.getData()._nodesByType[nodeTypeLabel] === undefined ? null : this.getData()._nodesByType[nodeTypeLabel];
                 },
 
                 /**
                  * @returns array
                  */
-                getNodeTypes: function () {
+                getGrouped: function () {
                     var self = this;
-                    var nodeTypes = [];
-                    angular.forEach(this.val(), function (result, key) {
+                    angular.forEach(this.getData()._nodesByType, function (result, key) {
                         if (key.substr(0, 1) !== '_') {
-                            var kyz = Object.keys(result);
-                            nodeTypes.push({
-                                label: key,
-                                count: self.countByNodeType(result[kyz[0]].nodeType),
-                                nodes: self.getNodesByNodeTypeLabel(key)
-                            })
-
+                            self.$$data.groups.addItem(key, result);
                         }
                     });
-
-                    return nodeTypes;
+                    return self.$$data.groups;
                 },
-
 
 
             };
