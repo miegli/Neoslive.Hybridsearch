@@ -407,7 +407,7 @@
 
                             angular.forEach(this.getFilter().getQueryKeywords(), function (value, keyword) {
 
-                                if (keyword.length > 1) {
+                                if (keyword.length > 2 || (keyword.length === 2 && isNaN(keyword) === false)) {
 
                                     counter++;
                                     watchers.keywords[keyword] = self.getKeywords(keyword).$watch(function (d, a) {
@@ -796,7 +796,7 @@
                                 if (searchInput !== undefined) {
                                     self.$$app.setSearchIndex();
                                 }
-                            }, 50);
+                            }, 100);
 
 
                         });
