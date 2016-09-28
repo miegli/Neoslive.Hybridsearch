@@ -191,52 +191,29 @@
                         }), function (item, c) {
 
 
-                            var nodeId = item.ref.substring(item.ref.indexOf("://") + 3);
+                            var nodeId = item.ref.substring(item.ref.indexOf("://") + 3), nodeTypeLabel;
 
                             if (nodes[nodeId] !== undefined) {
-
-                                if (nodes[nodeId]['parentNode'] === undefined) {
-                                    nodes[nodeId]['parentNode'] = {};
-                                    nodes[nodeId]['parentNode']['identifier'] = nodeId;
-                                }
 
 
                                 if (nodes[nodeId] !== undefined && nodes[nodeId]['turbonode'] !== true) {
 
                                     nodes[nodeId].score = item.score;
+
                                     if (nodes[nodeId]['turbonode'] === true) {
                                         items['_nodesTurbo'].push(nodes[nodeId]);
                                     } else {
                                         items['_nodes'].push(nodes[nodeId]);
                                     }
 
-
-                                    var nodeTypeLabel = nodeTypeLabels[nodes[nodeId].nodeType] !== undefined ? nodeTypeLabels[nodes[nodeId].nodeType] : nodes[nodeId].nodeType;
-
+                                    nodeTypeLabel = nodeTypeLabels[nodes[nodeId].nodeType] !== undefined ? nodeTypeLabels[nodes[nodeId].nodeType] : nodes[nodeId].nodeType;
 
                                     if (items[nodeTypeLabel] === undefined) {
-                                        items[nodeTypeLabel] = {};
+                                        items[nodeTypeLabel] = [];
                                     }
 
 
-                                    if (items[nodeTypeLabel][nodes[nodeId]['parentNode']['identifier']] === undefined) {
-                                        items[nodeTypeLabel][nodes[nodeId]['parentNode']['identifier']] = ({
-                                            score: nodes[nodeId]['turbonode'] ? 1000 : item.score,
-                                            nodeType: nodes[nodeId].nodeType,
-                                            group: nodes[nodeId]['parentNode'].properties !== undefined ? nodes[nodeId]['parentNode'] : nodes[nodeId]['grandParentNode'],
-                                            nodes: {}
-                                        });
-                                    }
-
-                                    nodes[nodeId].score = nodes[nodeId]['turbonode'] ? 1000 : item.score;
-                                    if (c > 1) {
-                                        items[nodeTypeLabel][nodes[nodeId]['parentNode']['identifier']]['score'] = items[nodeTypeLabel][nodes[nodeId]['parentNode']['identifier']]['score'] - nodes[nodeId].score * (1 / (c));
-                                    }
-
-                                    if (nodesId[nodes[nodeId].hash] === undefined) {
-                                        items[nodeTypeLabel][nodes[nodeId]['parentNode']['identifier']]['nodes'][nodeId] = (nodes[nodeId]);
-                                        nodesId[nodes[nodeId].hash] = true;
-                                    }
+                                    items[nodeTypeLabel].push(nodes[nodeId]);
 
 
                                 }
@@ -957,59 +934,9 @@
                  * @returns array
                  */
                 getNodes: function () {
-                    var nodes = [];
-                    var nodesIds = {};
-
-
-                    angular.forEach(this.val()._nodes, function (node, key) {
-                        if (nodesIds[node.hash] === undefined) {
-                            nodes.push(node);
-                        }
-                        nodesIds[node.hash] = true;
-                    });
-
-                    return nodes;
-
-
+                    return this.val()._nodes;
                 },
 
-                /**
-                 * @returns array
-                 */
-                getGroupedNodes: function () {
-
-                    var nodes = {};
-
-                    angular.forEach(this.val(), function (value, key) {
-                        if (key.substr(0, 1) !== '_') {
-
-                            var items = [];
-
-                            angular.forEach(value, function (v, k) {
-                                items.push(v);
-                            });
-
-                            nodes[key] = {label: key, value: items};
-                        }
-                    });
-
-                    return nodes;
-
-                },
-
-                /**
-                 * @returns array
-                 */
-                getGroupedNodesByNodeType: function (nodeType) {
-                    return this.$$app.getResults()[this.$$app.getNodeTypeLabel(nodeType)];
-                },
-
-                /**
-                 * @returns array
-                 */
-                getGroupedNodesByNodeTypeLabel: function (nodeTypeLabel) {
-                    return this.$$app.getResults()[nodeTypeLabel];
-                },
 
                 /**
                  * @returns array
@@ -1052,9 +979,9 @@
                         if (key.substr(0, 1) !== '_') {
                             var kyz = Object.keys(result);
                             nodeTypes.push({
-                                type: result[kyz[0]].nodeType,
-                                data: result[kyz[0]].group,
+                                label: key,
                                 count: self.countByNodeType(result[kyz[0]].nodeType),
+                                nodes: self.getNodesByNodeTypeLabel(key)
                             })
 
                         }
@@ -1063,26 +990,7 @@
                     return nodeTypes;
                 },
 
-                /**
-                 * @returns array
-                 */
-                getNodeGroupes: function () {
-                    var self = this;
-                    var nodeGroupes = [];
-                    var nodeGroup = {};
-                    angular.forEach(this.getNodeTypes(), function (result, key) {
 
-                        if (nodeGroup[self.$$app.getNodeTypeLabel(result.type)] === undefined) {
-                            nodeGroupes.push({
-                                count: self.countByNodeTypeLabel(self.$$app.getNodeTypeLabel(result.type)),
-                                label: self.$$app.getNodeTypeLabel(result.type)
-                            });
-                        }
-                        nodeGroup[self.$$app.getNodeTypeLabel(result.type)] = true;
-                    });
-
-                    return nodeGroupes;
-                }
 
             };
 
