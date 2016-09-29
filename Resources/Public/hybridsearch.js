@@ -617,12 +617,8 @@
                      */
                     cleanLocalIndex: function (existingkeywords) {
 
-                        var self = this;
-
-                        angular.forEach(index, function (value, key) {
-                            if (existingkeywords[value] === undefined) {
-                                self.removeLocalIndex(value);
-                            }
+                        lunrSearch = elasticlunr(function () {
+                            this.setRef('id');
                         });
 
                     }
