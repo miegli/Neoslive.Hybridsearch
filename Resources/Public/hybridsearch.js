@@ -241,7 +241,6 @@
 
                 this.$$app = {
 
-
                     setIsRunning: function () {
                         isRunning = true;
                     },
@@ -407,65 +406,81 @@
 
                             angular.forEach(this.getFilter().getQueryKeywords(), function (value, keyword) {
 
-                                if (keyword.length > 2 || (keyword.length === 2 && isNaN(keyword) === false)) {
+                                    if (keyword.length > 2 || (keyword.length === 2 && isNaN(keyword) === false)) {
 
-                                    counter++;
-                                    watchers.keywords[keyword] = self.getKeywords(keyword).$watch(function (d, a) {
+                                        counter++;
+                                        watchers.keywords[keyword] = self.getKeywords(keyword).$watch(function (d, a) {
 
-                                        references[keyword].on("value", function (data) {
+                                                references[keyword].on("value", function (data) {
 
-                                            angular.forEach(data.val(), function (val, keywordsegment) {
+                                                    var isMatchExact = false;
 
-                                                if (references.keywords !== undefined && references.keywords[keywordsegment] !== undefined) {
-                                                    delete references.keywords[keywordsegment];
-                                                }
-                                                // keyword was found
-                                                if (
-                                                    (keyword.length < 8 &&
-                                                        keywordsegment.substr(0, keyword.length) === keyword.substr(0, keyword.length)
-                                                    )
-                                                    ||
-                                                    (keyword.length >= 8 &&
-                                                        keywordsegment.substr(0, keyword.length - 4) === keyword.substr(0, keyword.length - 4)
-                                                    )
-
-                                                ) {
-                                                    filter.addAutocompletedKeywords(keywordsegment);
-
-                                                    watchers.index[keywordsegment] = self.getIndex(keywordsegment).$watch(function (obj, o) {
+                                                    angular.forEach(data.val(), function (val, keywordsegment) {
 
 
-                                                        references[keywordsegment].on("value", function (data) {
+                                                        if (!isMatchExact) {
 
-                                                            updates[keywordsegment] = data.val();
 
-                                                            if (lastinterval) {
-                                                                clearTimeout(lastinterval);
+                                                            if (references.keywords !== undefined && references.keywords[keywordsegment] !== undefined) {
+                                                                delete references.keywords[keywordsegment];
+                                                            }
+                                                            // keyword was found
+                                                            if (
+                                                                (keyword.length < 8 &&
+                                                                    keywordsegment.substr(0, keyword.length) === keyword.substr(0, keyword.length)
+                                                                )
+                                                                ||
+                                                                (keyword.length >= 8 &&
+                                                                    keywordsegment.substr(0, keyword.length - 4) === keyword.substr(0, keyword.length - 4)
+                                                                )
+
+                                                            ) {
+                                                                filter.addAutocompletedKeywords(keywordsegment);
+
+                                                                watchers.index[keywordsegment] = self.getIndex(keywordsegment).$watch(function (obj, o) {
+
+
+                                                                    references[keywordsegment].on("value", function (data) {
+
+                                                                        updates[keywordsegment] = data.val();
+
+                                                                        if (lastinterval) {
+                                                                            clearTimeout(lastinterval);
+                                                                        }
+
+                                                                        lastinterval = setTimeout(function () {
+                                                                            self.updateLocalIndex(updates);
+                                                                            updates = {};
+                                                                        }, 100);
+
+                                                                    });
+
+
+                                                                });
                                                             }
 
-                                                            lastinterval = setTimeout(function () {
-                                                                self.updateLocalIndex(updates);
-                                                                updates = {};
-                                                            }, 200);
 
-                                                        });
+                                                        }
+
+
+                                                        if (keywordsegment == keyword) {
+                                                            isMatchExact = true;
+                                                        }
 
 
                                                     });
-                                                }
 
 
-                                            });
+                                                });
 
 
-                                        });
+                                            }
+                                        );
 
-
-                                    });
+                                    }
 
                                 }
-
-                            });
+                            );
 
 
                             if (counter == 0) {
@@ -520,7 +535,8 @@
 
                         var ref = hybridsearch.$firebase().database().ref().child("keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/" + querysegment);
                         return firebaseObject(ref);
-                    },
+                    }
+                    ,
                     /**
                      * @param string querysegment
                      * @returns {firebaseObject}
@@ -542,7 +558,8 @@
                         return fbobject;
 
 
-                    },
+                    }
+                    ,
                     /**
                      * @param string keyword
                      * @returns {firebaseObject}
@@ -581,7 +598,8 @@
 
                         return null;
 
-                    },
+                    }
+                    ,
                     /**
                      * @param array
                      * @returns void
@@ -596,7 +614,8 @@
                             }
                         });
 
-                    },
+                    }
+                    ,
                     /**
                      * @param object data
                      * @returns void
@@ -614,7 +633,8 @@
                         self.search();
 
 
-                    },
+                    }
+                    ,
                     /**
                      * @param string keyword
                      * @returns mixed
@@ -637,7 +657,8 @@
                         }
 
 
-                    },
+                    }
+                    ,
                     /**
                      * @param string keyword
                      * @param object data
@@ -683,12 +704,13 @@
 
                     }
 
-                };
+                }
+                ;
 
 
-                // this bit of magic makes $$conf non-enumerable and non-configurable
-                // and non-writable (its properties are still writable but the ref cannot be replaced)
-                // we redundantly assign it above so the IDE can relax
+// this bit of magic makes $$conf non-enumerable and non-configurable
+// and non-writable (its properties are still writable but the ref cannot be replaced)
+// we redundantly assign it above so the IDE can relax
                 Object.defineProperty(this, '$$conf', {
                     value: this.$$conf
                 });
@@ -856,10 +878,12 @@
 
             return HybridsearchObject;
         }
-    ]);
+    ])
+    ;
 
 
-})();
+})
+();
 
 
 (function () {
@@ -1035,7 +1059,9 @@
                      * @returns mixed
                      */
                     executeCallbackMethod: function (self) {
+
                         this.callbackMethod(self);
+
                     },
 
                     getNodeTypeLabels: function () {
