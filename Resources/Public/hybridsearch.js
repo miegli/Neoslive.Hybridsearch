@@ -304,7 +304,7 @@
                                 if (nodes[nodeId] !== undefined) {
 
 
-                                    if (nodes[nodeId] !== undefined && nodes[nodeId]['turbonode'] !== true) {
+                                    if (nodes[nodeId] !== undefined) {
 
                                         var hash = nodes[nodeId].hash;
                                         var nodeTypeLabel = nodeTypeLabels[nodes[nodeId].nodeType] !== undefined ? nodeTypeLabels[nodes[nodeId].nodeType] : nodes[nodeId].nodeType;
