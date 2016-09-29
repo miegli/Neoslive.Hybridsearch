@@ -290,7 +290,10 @@
                         if (!self.getFilter().getFullSearchQuery()) {
                             // return all nodes bco no query set
                             angular.forEach(nodes, function (node) {
-                                self.addNodeToSearchResult(node.identifier, 1, nodesFound, items);
+                                if (self.isFiltered(node) === false) {
+                                    self.addNodeToSearchResult(node.identifier, 1, nodesFound, items);
+                                }
+
                             });
 
 
@@ -385,16 +388,29 @@
                      */
                     isFiltered: function (node) {
 
-                        if (node.properties.rawcontent.length < 2) {
-                            return true;
-                        }
 
                         if (this.getFilter().getNodePath().length > 0 && node.uri.path.substr(0, this.getFilter().getNodePath().length) != this.getFilter().getNodePath()) {
                             return true;
                         }
 
+                        var propertyFiltered = Object.keys(this.getFilter().getPropertyFilters()).length > 0 ? true : false;
 
-                        return false;
+                        if (propertyFiltered) {
+                            var propertyNotFound = false;
+                            angular.forEach(this.getFilter().getPropertyFilters(), function (value, property) {
+
+                                if (propertyNotFound === false && node.properties[property] !== undefined) {
+                                    if (node.properties[property] === value) {
+                                        propertyFiltered = false;
+                                    } else {
+                                        propertyNotFound = true;
+                                    }
+                                }
+                            });
+                        }
+
+                        return propertyFiltered;
+
                     },
 
                     /**
@@ -404,110 +420,15 @@
 
 
                         var self = this, counter = 0, lastinterval = false, updates = {};
-                        nodes = {};
 
 
-                        if (this.isRunning() && filter.hasFilters()) {
 
 
-                            // unbind all previous defined keywords watchers
-                            angular.forEach(watchers.keywords, function (unbind, key) {
-                                unbind();
-                                delete watchers.keywords[key];
-                                if (references.keywords !== undefined && references.keywords[key] !== undefined) {
-                                    delete references.keywords[key];
-                                }
-                            });
-                            // unbind all previous defined index watchers
-                            angular.forEach(watchers.index, function (unbind, key) {
-                                unbind();
-                                delete watchers.index[key];
-                            });
 
-                            results.$$app.clearResults();
-                            filter.setAutocompletedKeywords('');
+                        if (Object.keys(this.getFilter().getQueryKeywords()).length == 0) {
 
-
-                            angular.forEach(this.getFilter().getQueryKeywords(), function (value, keyword) {
-
-                                    if (keyword.length > 2 || (keyword.length === 2 && isNaN(keyword) === false)) {
-
-                                        counter++;
-                                        watchers.keywords[keyword] = self.getKeywords(keyword).$watch(function () {
-
-                                                references[keyword].on("value", function (data) {
-
-                                                    var isMatchExact = false;
-
-                                                    angular.forEach(data.val(), function (val, keywordsegment) {
-
-
-                                                        if (!isMatchExact) {
-
-
-                                                            if (references.keywords !== undefined && references.keywords[keywordsegment] !== undefined) {
-                                                                delete references.keywords[keywordsegment];
-                                                            }
-                                                            // keyword was found
-                                                            if (
-                                                                (keyword.length < 8 &&
-                                                                    keywordsegment.substr(0, keyword.length) === keyword.substr(0, keyword.length)
-                                                                )
-                                                                ||
-                                                                (keyword.length >= 8 &&
-                                                                    keywordsegment.substr(0, keyword.length - 4) === keyword.substr(0, keyword.length - 4)
-                                                                )
-
-                                                            ) {
-                                                                filter.addAutocompletedKeywords(keywordsegment);
-
-                                                                watchers.index[keywordsegment] = self.getIndex(keywordsegment).$watch(function () {
-
-
-                                                                    references[keywordsegment].on("value", function (data) {
-
-                                                                        updates[keywordsegment] = data.val();
-
-                                                                        if (lastinterval) {
-                                                                            clearTimeout(lastinterval);
-                                                                        }
-
-                                                                        lastinterval = setTimeout(function () {
-                                                                            self.updateLocalIndex(updates);
-                                                                            updates = {};
-                                                                        }, 100);
-
-                                                                    });
-
-
-                                                                });
-                                                            }
-
-
-                                                        }
-
-
-                                                        if (keywordsegment == keyword) {
-                                                            isMatchExact = true;
-                                                        }
-
-
-                                                    });
-
-
-                                                });
-
-
-                                            }
-                                        );
-
-                                    }
-
-                                }
-                            );
-
-
-                            if (counter == 0) {
+                            if (lastFilterHash != filter.getHash()) {
+                                nodes = {};
                                 // get all nodes by types without keyword
                                 // don't process nodes over lunr search in this case
                                 if (self.getFilter().getNodeType()) {
@@ -528,13 +449,122 @@
 
                                     });
                                 }
+                            } else {
+                                self.search();
                             }
 
+                        } else {
 
-                            this.cleanLocalIndex(watchers.keywords);
 
+
+                            if (this.isRunning() && filter.hasFilters() && lastFilterHash != filter.getHash()) {
+
+
+                                nodes = {};
+
+                                // unbind all previous defined keywords watchers
+                                angular.forEach(watchers.keywords, function (unbind, key) {
+                                    unbind();
+                                    delete watchers.keywords[key];
+                                    if (references.keywords !== undefined && references.keywords[key] !== undefined) {
+                                        delete references.keywords[key];
+                                    }
+                                });
+                                // unbind all previous defined index watchers
+                                angular.forEach(watchers.index, function (unbind, key) {
+                                    unbind();
+                                    delete watchers.index[key];
+                                });
+
+                                results.$$app.clearResults();
+                                filter.setAutocompletedKeywords('');
+
+
+                                angular.forEach(this.getFilter().getQueryKeywords(), function (value, keyword) {
+
+                                        if (keyword.length > 2 || (keyword.length === 2 && isNaN(keyword) === false)) {
+
+                                            counter++;
+
+                                            watchers.keywords[keyword] = self.getKeywords(keyword).$watch(function () {
+
+                                                    references[keyword].on("value", function (data) {
+
+                                                        var isMatchExact = false;
+
+                                                        angular.forEach(data.val(), function (val, keywordsegment) {
+
+
+                                                            if (!isMatchExact) {
+
+
+                                                                if (references.keywords !== undefined && references.keywords[keywordsegment] !== undefined) {
+                                                                    delete references.keywords[keywordsegment];
+                                                                }
+                                                                // keyword was found
+                                                                if (
+                                                                    (keyword.length < 8 &&
+                                                                        keywordsegment.substr(0, keyword.length) === keyword.substr(0, keyword.length)
+                                                                    )
+                                                                    ||
+                                                                    (keyword.length >= 8 &&
+                                                                        keywordsegment.substr(0, keyword.length - 4) === keyword.substr(0, keyword.length - 4)
+                                                                    )
+
+                                                                ) {
+                                                                    filter.addAutocompletedKeywords(keywordsegment);
+
+                                                                    watchers.index[keywordsegment] = self.getIndex(keywordsegment).$watch(function () {
+
+
+                                                                        references[keywordsegment].on("value", function (data) {
+
+                                                                            updates[keywordsegment] = data.val();
+
+                                                                            if (lastinterval) {
+                                                                                clearTimeout(lastinterval);
+                                                                            }
+
+                                                                            lastinterval = setTimeout(function () {
+                                                                                self.updateLocalIndex(updates);
+                                                                                updates = {};
+                                                                            }, 100);
+
+                                                                        });
+
+
+                                                                    });
+                                                                }
+
+
+                                                            }
+
+
+                                                            if (keywordsegment == keyword) {
+                                                                isMatchExact = true;
+                                                            }
+
+
+                                                        });
+
+
+                                                    });
+
+                                                }
+                                            );
+
+                                        }
+
+                                    }
+                                );
+
+
+                                this.cleanLocalIndex(watchers.keywords);
+                            }
                         }
 
+
+                        lastFilterHash = filter.getHash();
 
                     },
                     /**
@@ -631,7 +661,6 @@
 
                         var self = this;
                         nodes = {};
-
                         if (self.getFilter().getFullSearchQuery()) {
                             // add to lunr search index
                             angular.forEach(data, function (val, keyword) {
@@ -646,6 +675,7 @@
                                     nodes[d['_node']['identifier']] = d['_node'];
                                 });
                             });
+
 
                         }
 
@@ -727,9 +757,6 @@
                 ;
 
 
-// this bit of magic makes $$conf non-enumerable and non-configurable
-// and non-writable (its properties are still writable but the ref cannot be replaced)
-// we redundantly assign it above so the IDE can relax
                 Object.defineProperty(this, '$$conf', {
                     value: this.$$conf
                 });
@@ -781,6 +808,31 @@
 
                     } else {
                         self.$$app.getFilter().setNodeType(nodeType);
+                        self.$$app.setSearchIndex();
+                    }
+
+                    return this;
+
+                },
+
+                /**
+                 * @param string property to search only for
+                 * @param string value that property must match
+                 * @param scope scopevar false if is simple string  otherwise scope required for binding data
+                 * @returns {HybridsearchObject}
+                 */
+                addPropertyFilter: function (property, value, scope=null) {
+
+                    var self = this;
+
+                    if (scope) {
+                        scope.$watch(value, function (v) {
+                            self.$$app.getFilter().addPropertyFilter(property, v);
+                            self.$$app.setSearchIndex();
+                        });
+
+                    } else {
+                        self.$$app.getFilter().addPropertyFilter(property, value);
                         self.$$app.setSearchIndex();
                     }
 
@@ -1244,8 +1296,12 @@
                  */
                 getHash: function () {
 
-                    return JSON.stringify(this.$$data);
+                    var hash = [];
 
+                    hash.push(this.$$data.query);
+                    hash.push(this.$$data.nodeType);
+
+                    return JSON.stringify(hash);
                 },
 
                 /**
@@ -1309,6 +1365,35 @@
                 },
 
                 /**
+                 * @param string property
+                 * @param string value
+                 * @returns HybridsearchObject
+                 */
+                addPropertyFilter: function (property, value) {
+                    if (this.$$data.propertyFilter == undefined) {
+                        this.$$data.propertyFilter = {};
+                    }
+                    this.$$data.propertyFilter[property] = value;
+                    return this;
+                },
+
+
+                /**
+                 * * @returns HybridsearchObject
+                 */
+                clearPropertyFilter: function () {
+                    this.$$data.propertyFilter = {};
+                    return this;
+                },
+
+                /**
+                 * * @returns HybridsearchObject
+                 */
+                getPropertyFilters: function () {
+                    return this.$$data.propertyFilter === undefined ? {} : this.$$data.propertyFilter;
+                },
+
+                /**
                  * @param string additionalKeyword to search
                  */
                 addAdditionalKeywords: function (additionalKeyword) {
@@ -1325,14 +1410,6 @@
                 setAdditionalKeywords: function (additionalKeywords) {
                     this.$$data.additionalKeywords = additionalKeywords;
                     return this;
-                },
-
-                /**
-                 * @returns string
-                 */
-                getAutocompletedKeywords: function () {
-                    return this.$$data.autocompletedKeywords;
-
                 },
 
                 /**
@@ -1365,7 +1442,22 @@
                 /**
                  * @returns string
                  */
+                getAutocompletedKeywords: function () {
+                    return this.$$data.autocompletedKeywords;
+
+                },
+
+                /**
+                 * @returns string
+                 */
                 getFullSearchQuery: function () {
+                    if (this.getAutocompletedKeywords() === undefined) {
+                        return false;
+                    }
+                    if (this.getAdditionalKeywords() === undefined) {
+                        return false;
+                    }
+
                     var q = this.getAutocompletedKeywords() + " " + this.getAdditionalKeywords();
                     return q.length > 1 ? q : false;
                 },
