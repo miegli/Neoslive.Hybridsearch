@@ -1,6 +1,20 @@
-/*!
- * Neoslive hybridsaearch.
+/**
+ * @license Neoslive.Hybridsearch Copyright (c) 2016, Michael Egli All Rights Reserved.
+ * Available via the MIT or new BSD license.
+ * see: https://github.com/miegli/Neoslive.Hybridsearch for details
  *
+ * Hybridsearch
+ * Version 1.0.0
+ * Copyright 2016 Michael Egli
+ * All Rights Reserved.
+ * Use, reproduction, distribution, and modification of this code is subject to the terms and
+ * conditions of the MIT license, available at http://www.opensource.org/licenses/mit-license.php
+ *
+ * Author: Michael Egli
+ * Project: https://github.com/miegli/Neoslive.Hybridsearch
+ *
+ *
+ * @private
  */
 (function (exports) {
     "use strict";
@@ -21,22 +35,28 @@
 (function () {
     'use strict';
     /**
-     *
+     * @private
+     * @module Angular main module
+     * @returns {hybridsearch}
      */
     angular.module('hybridsearch').factory('$hybridsearch', ['$hybridsearchObject',
 
-        function ($hybridsearchObject) {
-
+        function () {
 
             /**
-             * Hybridsearch.
-             * @param string databaseUrl
-             * @param string workspace
-             * @param string dimension
-             * @returns {HybridsearchObject}
-             * @constructor
+             * @class Hybridsearch
+             * @param databaseURL {string} databaseURL, google firebase realtime database endpoint
+             * @param workspace {string} workspace, identifier of the workspace to use from indexed datebase
+             * @param dimension {string} dimension, hash of the dimension configuration to use form indexed database
+             * @example
+             * var hybridSearch = new $hybridsearchObject(
+             *  'https://<DATABASE_NAME>.firebaseio.com',
+             *  'live',
+             *  'fb11fdde869d0a8fcfe00a2fd35c031d'
+             * ));
+             * @returns {Hybridsearch} used for HybridsearchObject constructor.
              */
-            function Hybridsearch(databaseUrl, workspace, dimension) {
+            function Hybridsearch(databaseURL, workspace, dimension) {
 
 
                 if (!(this instanceof Hybridsearch)) {
@@ -46,12 +66,12 @@
 
                 // Initialize the Firebase SDK
                 var firebaseconfig = {
-                    databaseURL: databaseUrl
+                    databaseURL: databaseURL
                 };
                 try {
                     firebase.initializeApp(firebaseconfig);
                 } catch (e) {
-
+                    // firebase was initizalized before
                 }
 
 
@@ -70,16 +90,15 @@
             Hybridsearch.prototype = {
 
                 /**
-                 * @returns a promise which will resolve after the save is completed.
+                 * @private
+                 * @returns Firebase App
                  */
                 $firebase: function () {
-                    var self = this;
-
                     return firebase;
                 }
 
 
-            }
+            };
 
 
             return Hybridsearch;
@@ -93,21 +112,36 @@
 (function () {
     'use strict';
     /**
-     *
+     * @private
+     * @module Angular main module
+     * @returns {hybridsearch}
      */
     angular.module('hybridsearch.common').factory('$hybridsearchObject', ['$firebaseObject', '$hybridsearchResultsObject', '$hybridsearchFilterObject',
 
-        function (firebaseObject, $hybridsearchResultsObject, $hybridsearchFilterObject) {
-
+        /**
+         * @private
+         * @param firebaseObject
+         * @param $hybridsearchResultsObject
+         * @param $hybridsearchFilterObject
+         * @returns {HybridsearchObject}
+         */
+            function (firebaseObject, $hybridsearchResultsObject, $hybridsearchFilterObject) {
 
             /**
-             * HybridsearchObject.
-             * @param $hybridsearch hybridsearch object
-             * @returns {HybridsearchObject}
-             * @constructor
+             * @example
+             * var hybridSearch = new HybridsearchObject(
+             *  'https://<DATABASE_NAME>.firebaseio.com',
+             *  'live',
+             *  'fb11fdde869d0a8fcfe00a2fd35c031d'
+             * ));
+             * var mySearch = new HybridsearchObject(hybridSearch);
+             *      mySearch.setQuery("Foo").addPropertyFilter('title', 'Foo').setNodeType('bar').$watch(function (data) {
+             *        console.log(data);
+             *      });
+             * @param {Hybridsearch} Hybridsearch see Hybridsearch constructor
+             * @constructor HybridsearchObject
              */
-            function HybridsearchObject(hybridsearch) {
-
+            var HybridsearchObject = function (hybridsearch) {
 
                 var results, filter, references, index, lunrSearch, nodes, nodeTypeLabels, lastFilterHash, propertiesBoost, isRunning;
 
@@ -127,11 +161,12 @@
                 });
 
 
-                if (!(this instanceof HybridsearchObject)) {
-                    return new HybridsearchObject();
-                }
-
-
+                /**
+                 *
+                 * @param nodeData {object|array} Nodes properties.
+                 * @param score {float} computed Relevance score.
+                 * @constructor
+                 */
                 var HybridsearchResultsNode = function (nodeData, score) {
 
                     var self = this;
@@ -146,27 +181,31 @@
                 HybridsearchResultsNode.prototype = {
 
                     /**
-                     * @returns string
+                     * NodeType.
+                     * @returns {string} nodeType
                      */
                     getNodeType: function () {
                         return this.nodeType !== undefined ? this.nodeType : '';
                     },
 
                     /**
-                     * @returns object
+                     * Properties.
+                     * @returns {object}
                      */
                     getProperties: function () {
                         return this.properties;
                     },
 
                     /**
-                     * @returns float
+                     * Relevance score of search result.
+                     * @returns {float}
                      */
                     getScore: function () {
                         return this.score !== undefined ? this.score : 0;
                     },
 
                     /**
+                     * @private
                      * @returns float
                      */
                     addScore: function (score) {
@@ -174,14 +213,17 @@
                     },
 
                     /**
-                     * @returns boolean
+                     * Is result a turbo node or not.
+                     * @returns {boolean}
                      */
                     isTurboNode: function () {
                         return this.turbonode === undefined ? false : this.turbonode;
                     },
 
                     /**
-                     * @returns string
+                     * Get property.
+                     * @param {string} property Get single property from node data.
+                     * @returns {mixed}
                      */
                     getProperty: function (property) {
 
@@ -202,35 +244,40 @@
                     },
 
                     /**
-                     * @returns string
+                     * Url if its a document node.
+                     * @returns {string}
                      */
                     getUrl: function () {
                         return this.url === undefined ? '' : this.url;
                     },
 
                     /**
-                     * @returns string
+                     * Breadcrumb if its a document node.
+                     * @returns {string}
                      */
                     getBreadcrumb: function () {
                         return this.breadcrumb === undefined ? '' : this.breadcrumb;
                     },
 
                     /**
-                     * @returns string
+                     * Preview html content of node.
+                     * @returns {string}
                      */
                     getPreview: function () {
                         return this.properties.rawcontent === undefined ? '' : this.properties.rawcontent;
                     },
 
                     /**
-                     * @returns {{HybridsearchResultsNode}}
+                     * Parent node.
+                     * @returns {HybridsearchResultsNode}
                      */
                     getParent: function () {
                         return this.parentNode ? new HybridsearchResultsNode(this.parentNode) : false;
                     },
 
                     /**
-                     * @returns {{HybridsearchResultsNode}}
+                     * Nearest Document node.
+                     * @returns {HybridsearchResultsNode}
                      */
                     getDocumentNode: function () {
                         return this.grandParentNode ? new HybridsearchResultsNode(this.grandParentNode) : false;
@@ -241,39 +288,80 @@
 
                 this.$$app = {
 
+                    /**
+                     * @private
+                     */
                     setIsRunning: function () {
                         isRunning = true;
                     },
+                    /**
+                     * @private
+                     * @returns {boolean}
+                     */
                     isRunning: function () {
                         return isRunning;
                     },
+                    /**
+                     * @private
+                     * @returns {{}|*}
+                     */
                     getNodeTypeLabels: function () {
                         return nodeTypeLabels;
                     },
+                    /**
+                     * @private
+                     * @param nodeType
+                     * @returns {*}
+                     */
                     getNodeTypeLabel: function (nodeType) {
                         return nodeTypeLabels[nodeType] !== undefined ? nodeTypeLabels[nodeType] : nodeType;
                     },
+                    /**
+                     * @private
+                     * @returns {*}
+                     */
                     getPropertiesBoost: function () {
                         return propertiesBoost;
                     },
+                    /**
+                     * @private
+                     * @param property
+                     * @returns {number}
+                     */
                     getBoost: function (property) {
                         return propertiesBoost[property] ? propertiesBoost[property] : 10;
                     },
+                    /**
+                     * @private
+                     * @param labels
+                     */
                     setNodeTypeLabels: function (labels) {
                         results.$$app.setNodeTypeLabels(labels);
                         nodeTypeLabels = labels;
                     },
+                    /**
+                     * @private
+                     * @param boost
+                     */
                     setPropertiesBoost: function (boost) {
                         propertiesBoost = boost;
                     },
-
+                    /**
+                     * @private
+                     * @returns {hybridsearchResultsObject}
+                     */
                     getResults: function () {
                         return results;
                     },
+                    /**
+                     * @private
+                     * @returns {hybridsearchFilterObject}
+                     */
                     getFilter: function () {
                         return filter;
                     },
                     /**
+                     * @private
                      * @returns mixed
                      */
                     search: function () {
@@ -335,6 +423,7 @@
 
 
                     /**
+                     * @private
                      * @param integer nodeId
                      * @param float score relevance
                      * @param array nodesFound list
@@ -384,6 +473,7 @@
 
 
                     /**
+                     * @private
                      * @returns boolean
                      */
                     isFiltered: function (node) {
@@ -414,6 +504,7 @@
                     },
 
                     /**
+                     * @private
                      * @returns mixed
                      */
                     setSearchIndex: function () {
@@ -429,11 +520,11 @@
                                 nodes = {};
                                 // get all nodes by types without keyword
                                 // don't process nodes over lunr search in this case
-                                    self.getIndex().on("value", function (data) {
-                                        updates[self.getFilter().getNodeType()] = data.val();
-                                            self.updateLocalIndex(updates);
-                                            updates = {};
-                                    });
+                                self.getIndex().on("value", function (data) {
+                                    updates[self.getFilter().getNodeType()] = data.val();
+                                    self.updateLocalIndex(updates);
+                                    updates = {};
+                                });
 
                             } else {
                                 self.search();
@@ -444,18 +535,15 @@
 
                             if (this.isRunning() && filter.hasFilters() && lastFilterHash != filter.getHash()) {
 
-
                                 nodes = {};
 
-                                angular.forEach(references.keywords, function (ref, keyword) {
-
+                                angular.forEach(references.keywords, function (ref) {
                                     ref.off('value');
                                 });
 
-                                angular.forEach(references.index, function (ref, keyword) {
+                                angular.forEach(references.index, function (ref) {
                                     ref.off('value');
                                 });
-
 
                                 results.$$app.clearResults();
                                 filter.setAutocompletedKeywords('');
@@ -533,7 +621,6 @@
                                 );
 
 
-
                             }
                         }
 
@@ -542,6 +629,7 @@
 
                     },
                     /**
+                     * @private
                      * @param string querysegment
                      * @returns {firebaseObject}
                      */
@@ -552,6 +640,7 @@
                     }
                     ,
                     /**
+                     * @private
                      * @param string querysegment
                      * @returns {firebaseObject}
                      */
@@ -575,6 +664,7 @@
                     }
                     ,
                     /**
+                     * @private
                      * @param string keyword
                      * @returns {firebaseObject}
                      */
@@ -625,6 +715,7 @@
                     }
                     ,
                     /**
+                     * @private
                      * @param array
                      * @returns void
                      */
@@ -637,6 +728,7 @@
                     }
                     ,
                     /**
+                     * @private
                      * @param object data
                      * @returns void
                      */
@@ -668,6 +760,7 @@
                     }
                     ,
                     /**
+                     * @private
                      * @param string keyword
                      * @returns mixed
                      */
@@ -692,6 +785,7 @@
                     }
                     ,
                     /**
+                     * @private
                      * @param string keyword
                      * @param object data
                      * @returns mixed
@@ -736,8 +830,7 @@
 
                     }
 
-                }
-                ;
+                };
 
 
                 Object.defineProperty(this, '$$conf', {
@@ -748,13 +841,22 @@
                 });
 
 
-            }
+            };
 
 
             HybridsearchObject.prototype = {
 
                 /**
-                 * @returns  {HybridsearchObject}
+                 * @param {function} callback method called whenever results are loaded
+                 * @example
+                 *   .$watch(function (data) {
+                 *           $scope.result = data;
+                 *           setTimeout(function () {
+                 *               $scope.$digest();
+                 *           }, 10);
+                 *   });
+                 *
+                 * @returns {HybridsearchObject}
                  */
                 $watch: function (callback) {
 
@@ -764,8 +866,8 @@
                 },
 
                 /**
+                 * @private
                  * run search and perform queries
-                 *
                  * @returns  {HybridsearchObject}
                  */
                 run: function () {
@@ -775,8 +877,8 @@
                 },
 
                 /**
-                 * @param string nodeType to search only for
-                 * @param boolean scopevar false if is simple string  otherwise scope required for binding data
+                 * @param {string} nodeType to search only for
+                 * @param {scope} scope false if is simple string otherwise angular scope required for binding data
                  * @returns {HybridsearchObject}
                  */
                 setNodeType: function (nodeType, scope=null) {
@@ -799,9 +901,10 @@
                 },
 
                 /**
-                 * @param string property to search only for
-                 * @param string value that property must match
-                 * @param scope scopevar false if is simple string  otherwise scope required for binding data
+                 * Adds a property filter to the query.
+                 * @param {string} property to search only for
+                 * @param {string} value that property must match
+                 * @param {scope} scope false if is simple string otherwise angular scope required for binding data
                  * @returns {HybridsearchObject}
                  */
                 addPropertyFilter: function (property, value, scope=null) {
@@ -824,8 +927,9 @@
                 },
 
                 /**
-                 * @param string nodePath to search only for
-                 * @param boolean scopevar false if is simple string  otherwise scope required for binding data
+                 * Sets a node path filter.
+                 * @param {string} nodePath to search only for
+                 * @param {scope} scope false if is simple string otherwise angular scope required for binding data
                  * @returns {HybridsearchObject}
                  */
                 setNodePath: function (nodePath, scope=null) {
@@ -851,8 +955,9 @@
 
 
                 /**
-                 * @param string input to search
-                 * @param mixed scope null if is simple string otherwise scope required for binding data
+                 * Sets a search string to the query.
+                 * @param {string} search string
+                 * @param {scope} scope false if is simple string otherwise angular scope required for binding data
                  * @returns {HybridsearchObject}
                  */
                 setQuery: function (input, scope=null) {
@@ -888,7 +993,16 @@
                 },
 
                 /**
-                 * @param nodetypelabels
+                 * Sets node type labels.
+                 * @param {object} nodetypelabels
+                 * @example var nodetypelabels = {
+                 *        'nodeType': 'Label',
+                 *        'corporate-contact': 'Contacts',
+                 *        'corporate-headline': 'Pages',
+                 *        'corporate-onepage': 'Pages',
+                 *        'corporate-table': 'Pages',
+                 *        'corporate-file': 'Files'
+                 *    }
                  * @returns {$hybridsearchResultsObject|*}
                  */
                 setNodeTypeLabels: function (nodetypelabels) {
@@ -898,7 +1012,18 @@
                 },
 
                 /**
-                 * @param propertiesboost
+                 * Sets property boost.
+                 * @param {object} propertiesboost
+                 * @example var propertiesboost = {
+                 *        'nodeType-propertyname': 1,
+                 *        'corporate-contact-lastname': 10,
+                 *        'corporate-contact-firstname': 10,
+                 *        'corporate-contact-email': 50,
+                 *        'corporate-headline-text': 60,
+                 *        'corporate-onepage-text': 1,
+                 *        'corporate-table-text': 1,
+                 *        'corporate-file-title': 3'
+                 *    }
                  * @returns {$hybridsearchResultsObject|*}
                  */
                 setPropertiesBoost: function (propertiesboost) {
@@ -908,7 +1033,8 @@
                 },
 
                 /**
-                 * @param string input as an additional query to search
+                 * @param {string} add hidden keyword uses in search query.
+                 * @param {scope} scope false if is simple string otherwise angular scope required for binding data
                  * @returns {HybridsearchObject}
                  */
                 addAdditionalKeywords: function (input, scope=null) {
@@ -928,13 +1054,12 @@
 
                 }
 
-            }
+            };
 
 
             return HybridsearchObject;
         }
-    ])
-    ;
+    ]);
 
 
 })
@@ -944,12 +1069,18 @@
 (function () {
     'use strict';
     /**
-     *
+     * @private
+     * @module Angular results module
+     * @returns {HybridsearchResultsObject}
      */
     angular.module('hybridsearch.results').factory('$hybridsearchResultsObject', [
 
         function () {
 
+            /**
+             * HybridsearchResultsDataObject
+             * @constructor
+             */
             var HybridsearchResultsDataObject = function () {
 
             };
@@ -957,21 +1088,25 @@
             HybridsearchResultsDataObject.prototype = {
 
                 /**
-                 * @returns integer
+                 * Get number of search results in this group.
+                 * @returns {integer} Search results length.
                  */
                 count: function () {
                     return !this._nodes ? 0 : Object.keys(this._nodes).length;
                 },
 
                 /**
-                 * @returns string
+                 * Get groups label.
+                 * @returns {string} Group label
                  */
                 getLabel: function () {
                     return this.label !== undefined ? this.label : '';
                 },
 
+
                 /**
-                 * @returns object
+                 * Get all nodes for this group from current search result.
+                 * @returns {array} collection of {HybridsearchResultsNode}
                  */
                 getNodes: function () {
                     return this._nodes !== undefined ? this._nodes : [];
@@ -979,6 +1114,10 @@
 
             };
 
+            /**
+             * HybridsearchResultsGroupObject
+             * @constructor
+             */
             var HybridsearchResultsGroupObject = function () {
 
                 this.items = [];
@@ -989,20 +1128,23 @@
             HybridsearchResultsGroupObject.prototype = {
 
                 /**
-                 * @returns integer
+                 * Get number of search results.
+                 * @returns {integer} Search results length.
                  */
                 count: function () {
                     return !this.items ? 0 : Object.keys(this.items).length;
                 },
 
                 /**
-                 * @returns object
+                 * Get group collection.
+                 * @returns {array} collection of {HybridsearchResultsDataObject}
                  */
                 getItems: function () {
                     return !this.items ? {} : this.items;
                 },
 
                 /**
+                 * @private
                  * @returns {{HybridsearchResultsGroupObject}}
                  */
                 addItem: function (label, value) {
@@ -1019,14 +1161,14 @@
 
                     item._nodes = sorteable;
 
-                    this.items.push(item)
+                    this.items.push(item);
                     return this;
                 }
 
             };
 
             /**
-             * HybridsearchResultsObject.
+             * Return the search results as {HybridsearchResultsObject}.
              * @returns {HybridsearchResultsObject}
              * @constructor
              */
@@ -1034,7 +1176,10 @@
 
                 var nodeTypeLabels = {};
 
-
+                /**
+                 * HybridsearchResultsDataObject
+                 * @constructor
+                 */
                 var HybridsearchResultsDataObject = function () {
 
                 };
@@ -1055,7 +1200,10 @@
 
                 this.$$app = {
 
-
+                    /**
+                     * @private
+                     * @param results
+                     */
                     setResults: function (results) {
 
                         this.clearResults();
@@ -1086,22 +1234,31 @@
                         this.executeCallbackMethod(self);
 
                     },
-
+                    /**
+                     * @private
+                     */
                     clearResults: function () {
                         self.$$data.results = new HybridsearchResultsDataObject();
                         self.$$data.groups = new HybridsearchResultsGroupObject();
                     },
-
+                    /**
+                     * @private
+                     * @returns {HybridsearchResultsDataObject|*}
+                     */
                     getResultsData: function () {
                         return self.$$data.results;
                     },
 
-
+                    /**
+                     * @private
+                     * @returns {null}
+                     */
                     callbackMethod: function () {
                         return null;
                     },
 
                     /**
+                     * @private
                      * @returns {HybridsearchResultsObject}
                      */
                     setCallbackMethod: function (callback) {
@@ -1111,6 +1268,7 @@
                     },
 
                     /**
+                     * @private
                      * @returns mixed
                      */
                     executeCallbackMethod: function (self) {
@@ -1151,6 +1309,7 @@
 
 
                 /**
+                 * @private
                  * @returns $$app
                  */
                 getApp: function () {
@@ -1158,55 +1317,76 @@
                 },
 
                 /**
+                 * @private
                  * @returns {{DataObject}}
                  */
                 getData: function () {
                     return this.$$app.getResultsData();
                 },
 
-
+                /**
+                 * Get number of search results.
+                 * @returns {integer} Search results length.
+                 */
                 count: function () {
                     return !this.getNodes() ? 0 : Object.keys(this.$$app.getResultsData()._nodes).length;
                 },
-
+                /**
+                 *
+                 * Get number of search results by given node type..
+                 * @param {string} nodeType
+                 * @returns {integer} Search results length.
+                 */
                 countByNodeType: function (nodeType) {
                     return !this.getNodesByNodeType(nodeType) ? 0 : Object.keys(this.getNodesByNodeType(nodeType)).length;
                 },
-
+                /**
+                 *
+                 * Get number of search results by given node type label.
+                 * @param {string} nodeTypeLabel
+                 * @returns {integer} Search results length.
+                 */
                 countByNodeTypeLabel: function (nodeTypeLabel) {
                     return !this.getNodesByNodeTypeLabel(nodeTypeLabel) ? 0 : Object.keys(this.getNodesByNodeTypeLabel(nodeTypeLabel)).length;
                 },
 
                 /**
-                 * @returns object
+                 * Get all turbonodes from current search result.
+                 * @returns {array} collection of {HybridsearchResultsNode}
                  */
                 getTurboNodes: function () {
                     return this.getData()._nodesTurbo === undefined ? null : this.getData()._nodesTurbo;
                 },
 
                 /**
-                 * @returns object
+                 * Get all nodes from current search result.
+                 * @returns {array} collection of {HybridsearchResultsNode}
                  */
                 getNodes: function () {
                     return this.getData()._nodes === undefined ? null : this.getData()._nodes;
                 },
 
                 /**
-                 * @returns object
+                 * Get all nodes by given nodeType from current search result.
+                 * @param {string} nodeType
+                 * @returns {array} collection of {HybridsearchResultsNode}
                  */
                 getNodesByNodeType: function (nodeType) {
                     return this.getData()._nodesByType[this.$$app.getNodeTypeLabel(nodeType)] === undefined ? null : this.getData()._nodesByType[this.$$app.getNodeTypeLabel(nodeType)];
                 },
 
                 /**
-                 * @returns object
+                 * Get all nodes by given nodeTypeLabel from current search result.
+                 * @param {string} nodeTypeLabel
+                 * @returns {array} collection of {HybridsearchResultsNode}
                  */
                 getNodesByNodeTypeLabel: function (nodeTypeLabel) {
                     return this.getData()._nodesByType[nodeTypeLabel] === undefined ? null : this.getData()._nodesByType[nodeTypeLabel];
                 },
 
                 /**
-                 * @returns array
+                 * Get alle nodes from current search result a grouped object.
+                 * @returns {HybridsearchResultsGroupObject}
                  */
                 getGrouped: function () {
 
@@ -1237,7 +1417,7 @@
 (function () {
     'use strict';
     /**
-     *
+     * @private
      */
     angular.module('hybridsearch.filter').factory('$hybridsearchFilterObject', [
 
@@ -1248,6 +1428,7 @@
 
             /**
              * HybridsearchFilterObject.
+             * @private
              * @returns {HybridsearchFilterObject}
              * @constructor
              */
