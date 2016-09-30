@@ -109,7 +109,7 @@
             function HybridsearchObject(hybridsearch) {
 
 
-                var results, filter, watchers, references, index, lunrSearch, nodes, nodeTypeLabels, lastFilterHash, propertiesBoost, isRunning;
+                var results, filter, references, index, lunrSearch, nodes, nodeTypeLabels, lastFilterHash, propertiesBoost, isRunning;
 
                 isRunning = false;
                 results = new $hybridsearchResultsObject();
@@ -118,10 +118,10 @@
                 nodeTypeLabels = {};
                 nodes = {};
                 index = {};
-                watchers = {};
-                references = {};
-                watchers.index = {};
-                watchers.keywords = {};
+                references = {
+                    keywords: {},
+                    index: {}
+                };
                 lunrSearch = elasticlunr(function () {
                     this.setRef('id');
                 });
@@ -422,33 +422,19 @@
                         var self = this, counter = 0, lastinterval = false, updates = {};
 
 
-
-
-
-                        if (Object.keys(this.getFilter().getQueryKeywords()).length == 0) {
+                        if (this.getFilter().getNodeType()) {
 
                             if (lastFilterHash != filter.getHash()) {
+
                                 nodes = {};
                                 // get all nodes by types without keyword
                                 // don't process nodes over lunr search in this case
-                                if (self.getFilter().getNodeType()) {
-                                    watchers.index[self.getFilter().getNodeType()] = self.getIndex().$watch(function (data) {
-
-                                        references[self.getFilter().getNodeType()].on("value", function (data) {
-                                            updates[self.getFilter().getNodeType()] = data.val();
-                                            if (lastinterval) {
-                                                clearTimeout(lastinterval);
-                                            }
-                                            lastinterval = setTimeout(function () {
-                                                self.updateLocalIndex(updates);
-                                                updates = {};
-                                            }, 10);
-
-                                        });
-
-
+                                    self.getIndex().on("value", function (data) {
+                                        updates[self.getFilter().getNodeType()] = data.val();
+                                            self.updateLocalIndex(updates);
+                                            updates = {};
                                     });
-                                }
+
                             } else {
                                 self.search();
                             }
@@ -456,28 +442,24 @@
                         } else {
 
 
-
                             if (this.isRunning() && filter.hasFilters() && lastFilterHash != filter.getHash()) {
 
 
                                 nodes = {};
 
-                                // unbind all previous defined keywords watchers
-                                angular.forEach(watchers.keywords, function (unbind, key) {
-                                    unbind();
-                                    delete watchers.keywords[key];
-                                    if (references.keywords !== undefined && references.keywords[key] !== undefined) {
-                                        delete references.keywords[key];
-                                    }
+                                angular.forEach(references.keywords, function (ref, keyword) {
+
+                                    ref.off('value');
                                 });
-                                // unbind all previous defined index watchers
-                                angular.forEach(watchers.index, function (unbind, key) {
-                                    unbind();
-                                    delete watchers.index[key];
+
+                                angular.forEach(references.index, function (ref, keyword) {
+                                    ref.off('value');
                                 });
+
 
                                 results.$$app.clearResults();
                                 filter.setAutocompletedKeywords('');
+                                this.cleanLocalIndex();
 
 
                                 angular.forEach(this.getFilter().getQueryKeywords(), function (value, keyword) {
@@ -485,73 +467,65 @@
                                         if (keyword.length > 2 || (keyword.length === 2 && isNaN(keyword) === false)) {
 
                                             counter++;
-
-                                            watchers.keywords[keyword] = self.getKeywords(keyword).$watch(function () {
-
-                                                    references[keyword].on("value", function (data) {
-
-                                                        var isMatchExact = false;
-
-                                                        angular.forEach(data.val(), function (val, keywordsegment) {
+                                            self.getKeywords(keyword);
 
 
-                                                            if (!isMatchExact) {
+                                            references.keywords[keyword].on("value", function (data) {
+
+                                                var isMatchExact = false;
+
+                                                angular.forEach(data.val(), function (val, keywordsegment) {
 
 
-                                                                if (references.keywords !== undefined && references.keywords[keywordsegment] !== undefined) {
-                                                                    delete references.keywords[keywordsegment];
-                                                                }
-                                                                // keyword was found
-                                                                if (
-                                                                    (keyword.length < 8 &&
-                                                                        keywordsegment.substr(0, keyword.length) === keyword.substr(0, keyword.length)
-                                                                    )
-                                                                    ||
-                                                                    (keyword.length >= 8 &&
-                                                                        keywordsegment.substr(0, keyword.length - 4) === keyword.substr(0, keyword.length - 4)
-                                                                    )
+                                                    if (!isMatchExact) {
 
-                                                                ) {
-                                                                    filter.addAutocompletedKeywords(keywordsegment);
+                                                        // keyword was found
+                                                        if (
+                                                            (keyword.length < 8 &&
+                                                                keywordsegment.substr(0, keyword.length) === keyword.substr(0, keyword.length)
+                                                            )
+                                                            ||
+                                                            (keyword.length >= 8 &&
+                                                                keywordsegment.substr(0, keyword.length - 4) === keyword.substr(0, keyword.length - 4)
+                                                            )
 
-                                                                    watchers.index[keywordsegment] = self.getIndex(keywordsegment).$watch(function () {
+                                                        ) {
+                                                            filter.addAutocompletedKeywords(keywordsegment);
+                                                            self.getIndex(keywordsegment);
 
 
-                                                                        references[keywordsegment].on("value", function (data) {
+                                                            references.index[keywordsegment].on("value", function (data) {
 
-                                                                            updates[keywordsegment] = data.val();
+                                                                updates[keywordsegment] = data.val();
 
-                                                                            if (lastinterval) {
-                                                                                clearTimeout(lastinterval);
-                                                                            }
-
-                                                                            lastinterval = setTimeout(function () {
-                                                                                self.updateLocalIndex(updates);
-                                                                                updates = {};
-                                                                            }, 100);
-
-                                                                        });
-
-
-                                                                    });
+                                                                if (lastinterval) {
+                                                                    clearTimeout(lastinterval);
                                                                 }
 
+                                                                lastinterval = setTimeout(function () {
+                                                                    self.updateLocalIndex(updates);
+                                                                    updates = {};
+                                                                }, 100);
 
-                                                            }
-
-
-                                                            if (keywordsegment == keyword) {
-                                                                isMatchExact = true;
-                                                            }
-
-
-                                                        });
+                                                            });
 
 
-                                                    });
+                                                        }
 
-                                                }
-                                            );
+
+                                                    }
+
+
+                                                    if (keywordsegment == keyword) {
+                                                        isMatchExact = true;
+                                                    }
+
+
+                                                });
+
+
+                                            });
+
 
                                         }
 
@@ -559,7 +533,7 @@
                                 );
 
 
-                                this.cleanLocalIndex(watchers.keywords);
+
                             }
                         }
 
@@ -594,7 +568,7 @@
                         var ref = hybridsearch.$firebase().database().ref().child("keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().startAt(substr.toLowerCase()).limitToFirst(10);
 
                         var fbobject = firebaseObject(ref);
-                        references[querysegment] = fbobject.$ref();
+                        references.keywords[querysegment] = fbobject.$ref();
                         return fbobject;
 
 
@@ -609,8 +583,9 @@
                         var fbobject = {};
 
                         if (keyword === undefined) {
-                            keyword = "";
+                            keyword = this.getFilter().getQuery() ? this.getFilter().getQuery() : '';
                         }
+
 
                         var ref = hybridsearch.$firebase().database().ref().child("index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension);
                         var query = false;
@@ -620,6 +595,8 @@
                                 query = ref.orderByChild("_nodetype").equalTo(this.getFilter().getNodeType());
                                 keyword = this.getFilter().getNodeType();
                             } else {
+
+
                                 query = ref.orderByChild("_nodetype" + keyword).equalTo(this.getFilter().getNodeType()).limitToFirst(250);
                             }
 
@@ -633,8 +610,14 @@
 
                         if (query) {
                             fbobject = firebaseObject(query);
-                            references[keyword] = fbobject.$ref();
-                            return fbobject;
+
+                            if (keyword === "") {
+                                references.index['all'] = fbobject.$ref();
+                            } else {
+                                references.index[keyword] = fbobject.$ref();
+                            }
+
+                            return fbobject.$ref();
                         }
 
                         return null;
@@ -645,7 +628,7 @@
                      * @param array
                      * @returns void
                      */
-                    cleanLocalIndex: function (existingkeywords) {
+                    cleanLocalIndex: function () {
 
                         lunrSearch = elasticlunr(function () {
                             this.setRef('id');
