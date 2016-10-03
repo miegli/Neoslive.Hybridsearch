@@ -907,15 +907,15 @@ class SearchIndexFactory
 
                         switch ($content->method) {
                             case 'update':
-                                $this->output->outputLine($this->firebase->update($content->path, $content->data));
+                                $this->firebase->update($content->path, $content->data);
                                 break;
 
                             case 'delete':
-                                $this->output->outputLine($this->firebase->delete($content->path));
+                                $this->firebase->delete($content->path);
                                 break;
 
                             case 'set':
-                                $this->output->outputLine($this->firebase->set($content->path, $content->data));
+                                $this->firebase->set($content->path, $content->data);
                                 break;
                         }
                     }
@@ -1318,11 +1318,20 @@ class SearchIndexFactory
                 $httpRequest = \TYPO3\Flow\Http\Request::create(new \TYPO3\Flow\Http\Uri($this->site->getFirstActiveDomain()->getHostPattern()));
                 $this->baseUri = ($this->site->getFirstActiveDomain()->getScheme() == '' ? 'http://' : $this->site->getFirstActiveDomain()->getScheme()) . $this->site->getFirstActiveDomain()->getHostPattern() . ($this->site->getFirstActiveDomain()->getPort() == '' ? '' : ':' . $this->site->getFirstActiveDomain()->getPort());
                 $request = new \TYPO3\Flow\Mvc\ActionRequest($httpRequest);
-                $context = new \TYPO3\Flow\Security\Context;
-                \TYPO3\Flow\Reflection\ObjectAccess::setProperty($context, 'request', $request);
 
-                $requestHandlerInterface = new HttpRequestHandler($httpRequest);
-                \TYPO3\Flow\Reflection\ObjectAccess::setProperty($this->bootstrap, 'activeRequestHandler', $requestHandlerInterface);
+
+                $requestHandler = $this->bootstrap->getActiveRequestHandler();
+
+
+                if ($requestHandler instanceof \TYPO3\Flow\Http\RequestHandler === false) {
+
+                    // simulate security context
+                    $context = new \TYPO3\Flow\Security\Context;
+                    \TYPO3\Flow\Reflection\ObjectAccess::setProperty($context, 'request', $request);
+                    $requestHandlerInterface = new HttpRequestHandler($httpRequest);
+                    \TYPO3\Flow\Reflection\ObjectAccess::setProperty($this->bootstrap, 'activeRequestHandler', $requestHandlerInterface);
+
+                }
 
 
                 $request->setControllerActionName('show');
@@ -1332,6 +1341,7 @@ class SearchIndexFactory
                 $response = new \TYPO3\Flow\Http\Response();
                 $arguments = new Arguments();
                 $controllerContext = new \TYPO3\Flow\Mvc\Controller\ControllerContext($request, $response, $arguments);
+
 
                 $this->view = new \TYPO3\Neos\View\TypoScriptView();
                 $this->view->setControllerContext($controllerContext);
