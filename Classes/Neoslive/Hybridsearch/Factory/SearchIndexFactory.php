@@ -13,6 +13,7 @@ namespace Neoslive\Hybridsearch\Factory;
 
 
 use TYPO3\Flow\Annotations as Flow;
+use TYPO3\Flow\Configuration\ConfigurationManager;
 use TYPO3\Flow\Error\Exception;
 use TYPO3\TYPO3CR\Domain\Model\NodeInterface;
 use TYPO3\Flow\Mvc\Controller\Arguments;
@@ -34,6 +35,11 @@ use TYPO3\Flow\Core\Booting\Scripts;
 use TYPO3\Neos\Service\LinkingService;
 use TYPO3\Neos\Domain\Service\SiteService;
 use TYPO3\Flow\Cli\ConsoleOutput;
+use TYPO3\Flow\Mvc\ActionRequest;
+use TYPO3\TypoScript\View\TypoScriptView;
+use TYPO3\Flow\Core\Bootstrap;
+use Neoslive\Hybridsearch\Request\HttpRequestHandler;
+
 
 class SearchIndexFactory
 {
@@ -43,6 +49,20 @@ class SearchIndexFactory
      * @var array
      */
     protected $flowSettings;
+
+
+    /**
+     * @Flow\InjectConfiguration(package="TYPO3.Flow", path="http.baseUri")
+     * @var string
+     */
+    protected $baseUri;
+
+
+    /**
+     * @var ConfigurationManager
+     * @Flow\Inject
+     */
+    protected $configurationManager;
 
     /**
      * @var ConsoleOutput
@@ -69,6 +89,16 @@ class SearchIndexFactory
      */
     protected $typoScriptService;
 
+    /**
+     * @var \TYPO3\Neos\View\TypoScriptView
+     */
+    protected $view;
+
+    /**
+     * @var ActionRequest
+     * @Flow\Transient
+     */
+    protected $request;
 
     /**
      * @Flow\Inject
@@ -86,6 +116,13 @@ class SearchIndexFactory
      * @var ContentContextFactory
      */
     protected $contentContextFactory;
+
+
+    /**
+     * @Flow\Inject
+     * @var Bootstrap
+     */
+    protected $bootstrap;
 
 
     /**
@@ -558,6 +595,7 @@ class SearchIndexFactory
         foreach ($words as $w) {
             if (strlen($w) > 1) {
                 $w = Encoding::UTF8FixWin1252Chars($w);
+                $w = preg_replace('#[^\w()/.%\-&]#', "", $w);
                 $keywords->$w = 1;
 
                 $a = "_nodetype" . $w;
@@ -584,6 +622,7 @@ class SearchIndexFactory
 
         $data = new \stdClass();
         $data->nodeType = mb_strtolower(preg_replace("/[^A-z0-9]/", "-", $node->getNodeType()->getName()));
+
 
         if ($grandParentNodeFilter === '') {
             if (isset($this->settings['Filter']['GrantParentNodeTypeFilter'])) {
@@ -680,7 +719,7 @@ class SearchIndexFactory
         }
 
         $properties->rawcontent = $this->rawcontent($rendered);
-        $data->hash = sha1($properties->rawcontent);
+        $data->hash = ($properties->rawcontent !== '' ? sha1($properties->rawcontent) : $node->getNodeData()->getIdentifier());
         $data->url = $uri;
         $data->uri = parse_url($uri);
         $data->breadcrumb = $breadcrumb;
@@ -868,15 +907,15 @@ class SearchIndexFactory
 
                         switch ($content->method) {
                             case 'update':
-                                $this->firebase->update($content->path, $content->data);
+                                $this->output->outputLine($this->firebase->update($content->path, $content->data));
                                 break;
 
                             case 'delete':
-                                $this->firebase->delete($content->path);
+                                $this->output->outputLine($this->firebase->delete($content->path));
                                 break;
 
                             case 'set':
-                                $this->firebase->set($content->path, $content->data);
+                                $this->output->outputLine($this->firebase->set($content->path, $content->data));
                                 break;
                         }
                     }
@@ -939,6 +978,7 @@ class SearchIndexFactory
             $this->output->outputLine("save .settings/rules");
             $this->firebase->set('.settings/rules', $this->getFirebaseRules($this->keywords));
             $this->output->outputLine("save keywords");
+
             $this->firebase->set('keywords', $this->keywords);
 
             $this->output->outputLine("add to queue for updating firebase endpoint " . $this->settings['Firebase']['endpoint']);
@@ -1248,23 +1288,43 @@ class SearchIndexFactory
             $context
         );
 
-        $basenode = $node;
-        while ($basenode !== null && $basenode->getParentPath() !== SiteService::SITES_ROOT_PATH && $basenode instanceof NodeInterface) {
-            if ($basenode->getParent()) {
-                $basenode = $basenode->getParent();
-            } else {
-                $basenode = null;
-            }
+
+        $view = $this->getView();
+
+        if ($view) {
+            $view->assign('value', $node);
+            $view->setTypoScriptPath($this->settings['TypoScriptPaths'][$typoscriptPath][$this->site->getSiteResourcesPackageKey()]);
+            return $view->render();
+
+        } else {
+            return '';
         }
 
 
-        if ($basenode) {
+    }
 
-            try {
+    /**
+     * @return TypoScriptView
+     */
+    private function getView()
+    {
+
+
+        if ($this->view == NULL) {
+
+            if ($this->site) {
 
 
                 $httpRequest = \TYPO3\Flow\Http\Request::create(new \TYPO3\Flow\Http\Uri($this->site->getFirstActiveDomain()->getHostPattern()));
+                $this->baseUri = ($this->site->getFirstActiveDomain()->getScheme() == '' ? 'http://' : $this->site->getFirstActiveDomain()->getScheme()) . $this->site->getFirstActiveDomain()->getHostPattern() . ($this->site->getFirstActiveDomain()->getPort() == '' ? '' : ':' . $this->site->getFirstActiveDomain()->getPort());
                 $request = new \TYPO3\Flow\Mvc\ActionRequest($httpRequest);
+                $context = new \TYPO3\Flow\Security\Context;
+                \TYPO3\Flow\Reflection\ObjectAccess::setProperty($context, 'request', $request);
+
+                $requestHandlerInterface = new HttpRequestHandler($httpRequest);
+                \TYPO3\Flow\Reflection\ObjectAccess::setProperty($this->bootstrap, 'activeRequestHandler', $requestHandlerInterface);
+
+
                 $request->setControllerActionName('show');
                 $request->setControllerName('Frontend\Node');
                 $request->setControllerPackageKey('TYPO3.Neos');
@@ -1272,21 +1332,14 @@ class SearchIndexFactory
                 $response = new \TYPO3\Flow\Http\Response();
                 $arguments = new Arguments();
                 $controllerContext = new \TYPO3\Flow\Mvc\Controller\ControllerContext($request, $response, $arguments);
-                $view = new \TYPO3\Neos\View\TypoScriptView();
 
-                $view->setControllerContext($controllerContext);
-                $view->assign('value', $node);
-                $view->setTypoScriptPath($this->settings['TypoScriptPaths'][$typoscriptPath][$this->site->getSiteResourcesPackageKey()]);
+                $this->view = new \TYPO3\Neos\View\TypoScriptView();
+                $this->view->setControllerContext($controllerContext);
 
-                return $view->render();
-
-            } catch (Exception $e) {
-
-                return '';
             }
         }
 
-        return '';
+        return $this->view;
 
     }
 
