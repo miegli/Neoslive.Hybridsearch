@@ -318,8 +318,12 @@ class SearchIndexFactory
 
                                 $node = $this->nodeDataRepository->findOneByIdentifier($identifier, $workspace);
                                 if ($node) {
-                                    $this->firebase->set("index/" . $workspace->getName() . "/" . $dimension . "/" . $node->getIdentifier() . "/__sync", 0);
+                                    $this->firebase->update("index/" . $workspace->getName() . "/" . $dimension . "/" . $node->getIdentifier() . "/__sync", 0);
                                     $this->createIndex($node->getPath(), $workspace, $this->getSiteByContextPath($node->getContextPath()), true);
+                                } else {
+                                    // remove index for non existing node
+                                    $this->firebase->delete("index/" . $workspace->getName() . "/" . $dimension . "/" . $identifier);
+
                                 }
                             }
                         }
@@ -847,8 +851,8 @@ class SearchIndexFactory
     public function firebaseUpdate($path, $data)
     {
 
-
-        $this->addToQueue($path, $data, 'update');
+        $this->firebase->update($path, $data);
+        //$this->addToQueue($path, $data, 'update');
 
     }
 
@@ -873,7 +877,8 @@ class SearchIndexFactory
     public function firebaseDelete($path)
     {
 
-        $this->addToQueue($path, null, 'delete');
+        $this->firebase->delete($path);
+        //$this->addToQueue($path, null, 'delete');
 
 
     }
