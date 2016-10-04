@@ -298,6 +298,55 @@ class SearchIndexFactory
 
 
     /**
+     * Update index
+     */
+    public function sync()
+    {
+
+        foreach (json_decode($this->firebase->get('index', array('shallow' => 'true'))) as $workspaceName => $workspacevalue) {
+
+            $workspace = $this->workspaceRepository->findByIdentifier($workspaceName);
+            if ($workspace) {
+                $dimensions = json_decode($this->firebase->get('index/' . $workspaceName, array('shallow' => 'true')));
+
+                if ($dimensions) {
+                    foreach ($dimensions as $dimension => $dimensionvalue) {
+
+                        $nodes = json_decode($this->firebase->get('index/' . $workspaceName . "/" . $dimension, array('orderBy' => '"__sync"', 'startAt' => 1, 'limitToFirst' => 100)));
+                        if ($nodes) {
+                            foreach ($nodes as $identifier => $nodeIndex) {
+
+                                $node = $this->nodeDataRepository->findOneByIdentifier($identifier, $workspace);
+                                if ($node) {
+                                    $this->firebase->set("index/" . $workspace->getName() . "/" . $dimension . "/" . $node->getIdentifier() . "/__sync", 0);
+                                    $this->createIndex($node->getPath(), $workspace, $this->getSiteByContextPath($node->getContextPath()), true);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        $this->save();
+
+    }
+
+
+    /**
+     * Get site from context path
+     * @param string $contextPath
+     */
+    private function getSiteByContextPath($contextPath)
+    {
+
+        $p = explode("/", $contextPath, 4);
+        return $this->siteRepository->findOneByNodeName($p[2]);
+
+
+    }
+
+    /**
      * Update index for given node and target workspace
      * @param Node $node
      * @param Workspace $workspace
@@ -306,9 +355,14 @@ class SearchIndexFactory
     {
 
         if ($this->settings['Realtime']) {
-            $this->updateIndex($node, $workspace);
-        }
 
+            if ($node->isRemoved() || $node->isHidden()) {
+                $this->firebase->delete("index/" . $workspace->getName() . "/" . $node->getNodeData()->getDimensionsHash() . "/" . $node->getIdentifier());
+            } else {
+                $this->firebase->set("index/" . $workspace->getName() . "/" . $node->getNodeData()->getDimensionsHash() . "/" . $node->getIdentifier() . "/__sync", time());
+                Scripts::executeCommandAsync('hybridsearch:sync', $this->flowSettings, array());
+            }
+        }
 
     }
 
@@ -333,9 +387,13 @@ class SearchIndexFactory
         $isvalid = true;
         if (isset($this->settings['Filter']['NodeTypeFilter'])) {
             $flowQuery = new FlowQuery(array($node));
+
+
             if ($flowQuery->is($this->settings['Filter']['NodeTypeFilter']) === false) {
                 $isvalid = false;
             }
+
+            \TYPO3\Flow\var_dump($node->getNodeType()->getName(), $this->settings['Filter']['NodeTypeFilter']);
 
             if ($isvalid == false) {
                 $node = $flowQuery->parent()->closest($this->settings['Filter']['NodeTypeFilter'])->get(0);
@@ -376,9 +434,10 @@ class SearchIndexFactory
      * @param Site $site neos site
      * @param boolean $includingSelf If specified, indexing self node otherwise only children
      * @param Node $node
+     * @param string $dimensionHash
      * @return void
      */
-    public function createIndex($path, $workspace, $site = null, $includingSelf = false, $node = null)
+    public function createIndex($path, $workspace, $site = null, $includingSelf = false, $node = null, $dimensionHash = false)
     {
 
 
@@ -532,6 +591,7 @@ class SearchIndexFactory
             $keywords = $this->generateSearchIndexFromProperties($indexData->properties, $indexData->nodeType);
             $keywords->_node = $indexData;
             $keywords->_nodetype = $indexData->nodeType;
+            $keywords->__sync = 0;
 
 
             foreach ($keywords as $keyword => $val) {

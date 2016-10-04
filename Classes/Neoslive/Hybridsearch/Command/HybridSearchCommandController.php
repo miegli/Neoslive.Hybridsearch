@@ -68,6 +68,22 @@ class HybridSearchCommandController extends CommandController
 
 
     /**
+     * Synchronize indexes
+     *
+     * This command updates index from all local changes
+     *
+     * @return void
+     */
+    public function syncCommand()
+
+    {
+
+        $this->searchIndexFactory->sync();
+
+
+    }
+
+    /**
      * Proceed index asynchronous
      *
      * This command proceeds index queue
