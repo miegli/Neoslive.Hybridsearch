@@ -469,9 +469,8 @@ class SearchIndexFactory
                     $context
                 );
 
+
                 $this->generateIndex($node, $workspace, $dimensionConfiguration, '', $includingSelf);
-
-
             }
 
         }
@@ -503,12 +502,16 @@ class SearchIndexFactory
 
 
         $dimensionConfigurationHash = $this->getDimensionConfiugurationHash($dimensionConfiguration);
-        $this->generateSingleIndex($node, $workspace, $dimensionConfigurationHash);
-
-        $flowQuery = new FlowQuery(array($node));
 
 
         $this->output->outputLine("generate nodes index for " . $node->getPath() . ", workspace " . $workspace->getName() . " and dimension " . json_encode($dimensionConfiguration));
+
+
+        $flowQuery = new FlowQuery(array($node));
+        if ($flowQuery->is($this->settings['Filter']['NodeTypeFilter']) === true) {
+            $this->generateSingleIndex($node, $workspace, $dimensionConfigurationHash);
+        }
+
 
         $children = $flowQuery->find($nodeTypeFilter);
 
@@ -850,9 +853,7 @@ class SearchIndexFactory
      */
     public function firebaseUpdate($path, $data)
     {
-
-        $this->firebase->update($path, $data);
-        //$this->addToQueue($path, $data, 'update');
+        $this->addToQueue($path, $data, 'update');
 
     }
 
@@ -1030,15 +1031,15 @@ class SearchIndexFactory
     {
 
 
-        // patch index data all in one request
-        foreach ($this->index as $workspace => $workspaceData) {
-            foreach ($workspaceData as $dimension => $dimensionData) {
-                $this->firebaseUpdate("index/" . $workspace . "/" . $dimension, $dimensionData);
-            }
-        }
-
-
         if ($this->creatingFullIndex) {
+
+
+            // patch index data all in one request
+            foreach ($this->index as $workspace => $workspaceData) {
+                foreach ($workspaceData as $dimension => $dimensionData) {
+                    $this->firebaseUpdate("index/" . $workspace . "/" . $dimension, $dimensionData);
+                }
+            }
 
             $this->output->outputLine("save .settings/rules");
             $this->firebase->set('.settings/rules', $this->getFirebaseRules($this->keywords));
@@ -1051,10 +1052,18 @@ class SearchIndexFactory
 
         } else {
 
+
+            // patch index data all in one request
+            foreach ($this->index as $workspace => $workspaceData) {
+                foreach ($workspaceData as $dimension => $dimensionData) {
+                    $this->firebase->update("index/" . $workspace . "/" . $dimension, $dimensionData);
+                }
+            }
+
             foreach ($this->keywords as $workspace => $workspaceData) {
 
                 foreach ($workspaceData as $dimension => $dimensionData) {
-                    $this->firebaseUpdate("keywords/$workspace/$dimension", $dimensionData);
+                    $this->firebase->update("keywords/$workspace/$dimension", $dimensionData);
                 }
 
             }
