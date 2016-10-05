@@ -556,10 +556,8 @@
                                         if (keyword.length > 2 || (keyword.length === 2 && isNaN(keyword) === false)) {
 
                                             counter++;
-                                            self.getKeywords(keyword);
 
-
-                                            references.keywords[keyword].on("value", function (data) {
+                                            self.getKeywords(keyword).on("value", function (data) {
 
                                                 var isMatchExact = false;
 
@@ -636,8 +634,7 @@
                      */
                     getKeyword: function (querysegment) {
 
-                        var ref = hybridsearch.$firebase().database().ref().child("keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/" + querysegment);
-                        return firebaseObject(ref);
+                        return hybridsearch.$firebase().database().ref().child("keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/" + querysegment);
                     }
                     ,
                     /**
@@ -647,21 +644,13 @@
                      */
                     getKeywords: function (querysegment) {
 
-
                         if (querysegment.length >= 8) {
                             var substr = querysegment.substring(0, querysegment.length - 3);
                         } else {
                             var substr = querysegment;
                         }
 
-
-                        var ref = hybridsearch.$firebase().database().ref().child("keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().startAt(substr.toLowerCase()).limitToFirst(10);
-
-                        var fbobject = firebaseObject(ref);
-                        references.keywords[querysegment] = fbobject.$ref();
-                        return fbobject;
-
-
+                        return hybridsearch.$firebase().database().ref().child("keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().startAt(substr.toLowerCase()).limitToFirst(10);
                     }
                     ,
                     /**
