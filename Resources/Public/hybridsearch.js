@@ -143,7 +143,7 @@
              */
             var HybridsearchObject = function (hybridsearch) {
 
-                var results, filter, references, index, lunrSearch, nodes, nodeTypeLabels, lastFilterHash, propertiesBoost, isRunning;
+                var results, filter, index, lunrSearch, nodes, nodeTypeLabels, lastFilterHash, propertiesBoost, isRunning;
 
                 isRunning = false;
                 results = new $hybridsearchResultsObject();
@@ -152,10 +152,6 @@
                 nodeTypeLabels = {};
                 nodes = {};
                 index = {};
-                references = {
-                    keywords: {},
-                    index: {}
-                };
                 lunrSearch = elasticlunr(function () {
                     this.setRef('id');
                 });
@@ -538,13 +534,6 @@
 
                                 nodes = {};
 
-                                angular.forEach(references.keywords, function (ref) {
-                                    ref.off('value');
-                                });
-
-                                angular.forEach(references.index, function (ref) {
-                                    ref.off('value');
-                                });
 
                                 results.$$app.clearResults();
                                 filter.setAutocompletedKeywords('');
@@ -578,10 +567,9 @@
 
                                                         ) {
                                                             filter.addAutocompletedKeywords(keywordsegment);
-                                                            self.getIndex(keywordsegment);
 
 
-                                                            references.index[keywordsegment].on("value", function (data) {
+                                                            self.getIndex(keywordsegment).on("value", function (data) {
 
                                                                 updates[keywordsegment] = data.val();
 
@@ -649,7 +637,7 @@
                         } else {
                             var substr = querysegment;
                         }
-
+                        console.log(querysegment, 'segment');
                         return hybridsearch.$firebase().database().ref().child("keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().startAt(substr.toLowerCase()).limitToFirst(10);
                     }
                     ,
@@ -660,12 +648,12 @@
                      */
                     getIndex: function (keyword) {
 
-                        var fbobject = {};
+
+                        console.log(keyword);
 
                         if (keyword === undefined) {
                             keyword = this.getFilter().getQuery() ? this.getFilter().getQuery() : '';
                         }
-
 
                         var ref = hybridsearch.$firebase().database().ref().child("index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension);
                         var query = false;
@@ -675,8 +663,6 @@
                                 query = ref.orderByChild("_nodetype").equalTo(this.getFilter().getNodeType());
                                 keyword = this.getFilter().getNodeType();
                             } else {
-
-
                                 query = ref.orderByChild("_nodetype" + keyword).equalTo(this.getFilter().getNodeType()).limitToFirst(250);
                             }
 
@@ -687,20 +673,7 @@
                             query = ref.orderByChild(keyword).equalTo(1).limitToFirst(100);
                         }
 
-
-                        if (query) {
-                            fbobject = firebaseObject(query);
-
-                            if (keyword === "") {
-                                references.index['all'] = fbobject.$ref();
-                            } else {
-                                references.index[keyword] = fbobject.$ref();
-                            }
-
-                            return fbobject.$ref();
-                        }
-
-                        return null;
+                        return query;
 
                     }
                     ,
