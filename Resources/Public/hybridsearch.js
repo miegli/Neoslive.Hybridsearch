@@ -520,7 +520,6 @@
                                 self.getIndex().on("value", function (data) {
                                     updates[self.getFilter().getNodeType()] = data.val();
                                     self.updateLocalIndex(updates);
-                                    updates = {};
                                 });
 
                             } else {
@@ -539,6 +538,12 @@
                                 filter.setAutocompletedKeywords('');
                                 this.cleanLocalIndex();
 
+                                // unbind index watcher
+                                angular.forEach(index, function (unbind) {
+                                     unbind.off();
+                                });
+                                index = {};
+
 
                                 angular.forEach(this.getFilter().getQueryKeywords(), function (value, keyword) {
 
@@ -546,7 +551,7 @@
 
                                             counter++;
 
-                                            self.getKeywords(keyword).on("value", function (data) {
+                                            self.getKeywords(keyword).once("value", function (data) {
 
                                                 var isMatchExact = false;
 
@@ -567,23 +572,22 @@
 
                                                         ) {
                                                             filter.addAutocompletedKeywords(keywordsegment);
+                                                            if (index[keywordsegment] === undefined) {
+                                                                self.getIndex(keywordsegment).on("value", function (data) {
+                                                                    if (data !== undefined) {
+                                                                        updates[keywordsegment] = data.val();
+                                                                        self.updateLocalIndex(updates);
+                                                                        // if (lastinterval) {
+                                                                        //     clearTimeout(lastinterval);
+                                                                        // }
+                                                                        // lastinterval = setTimeout(function () {
+                                                                        //     self.updateLocalIndex(updates);
+                                                                        //     updates = {};
+                                                                        // }, 200);
 
-
-                                                            self.getIndex(keywordsegment).on("value", function (data) {
-
-                                                                updates[keywordsegment] = data.val();
-
-                                                                if (lastinterval) {
-                                                                    clearTimeout(lastinterval);
-                                                                }
-
-                                                                lastinterval = setTimeout(function () {
-                                                                    self.updateLocalIndex(updates);
-                                                                    updates = {};
-                                                                }, 100);
-
-                                                            });
-
+                                                                    }
+                                                                });
+                                                            }
 
                                                         }
 
@@ -637,7 +641,7 @@
                         } else {
                             var substr = querysegment;
                         }
-                        console.log(querysegment, 'segment');
+
                         return hybridsearch.$firebase().database().ref().child("keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().startAt(substr.toLowerCase()).limitToFirst(10);
                     }
                     ,
@@ -648,8 +652,6 @@
                      */
                     getIndex: function (keyword) {
 
-
-                        console.log(keyword);
 
                         if (keyword === undefined) {
                             keyword = this.getFilter().getQuery() ? this.getFilter().getQuery() : '';
@@ -672,6 +674,8 @@
                         if (query === false) {
                             query = ref.orderByChild(keyword).equalTo(1).limitToFirst(100);
                         }
+
+                        index[keyword] = query;
 
                         return query;
 
@@ -699,12 +703,17 @@
 
                         var self = this;
                         nodes = {};
+
                         if (self.getFilter().getFullSearchQuery()) {
+
                             // add to lunr search index
                             angular.forEach(data, function (val, keyword) {
-                                self.removeLocalIndex(keyword);
+                                self.cleanLocalIndex();
+                                //self.removeLocalIndex(keyword);
                                 self.addLocalIndex(keyword, val);
                             });
+
+
                         } else {
 
                             // add to local index
@@ -739,12 +748,6 @@
                         });
 
 
-                        try {
-                            delete index[keyword];
-                        } catch (e) {
-                        }
-
-
                     }
                     ,
                     /**
@@ -756,10 +759,6 @@
                     addLocalIndex: function (keyword, data) {
 
                         var self = this;
-
-                        if (index[keyword] === undefined) {
-                            index[keyword] = {};
-                        }
 
 
                         angular.forEach(data, function (value, key) {
@@ -781,8 +780,6 @@
 
                                     doc.id = keyword + "://" + value._node.identifier;
                                     lunrSearch.addDoc(doc);
-                                    index[keyword][doc.id] = keyword;
-
                                 }
 
                             }
@@ -932,16 +929,20 @@
 
                         scope.$watch(input, function (searchInput) {
 
-                            if (lastinterval) {
-                                clearTimeout(lastinterval);
-                            }
 
-                            lastinterval = setTimeout(function () {
-                                self.$$app.getFilter().setQuery(scope[input]);
-                                if (searchInput !== undefined) {
-                                    self.$$app.setSearchIndex();
-                                }
-                            }, 100);
+                            self.$$app.getFilter().setQuery(scope[input]);
+                            self.$$app.setSearchIndex();
+
+                            // if (lastinterval) {
+                            //     clearTimeout(lastinterval);
+                            // }
+                            //
+                            // lastinterval = setTimeout(function () {
+                            //     self.$$app.getFilter().setQuery(scope[input]);
+                            //     if (searchInput !== undefined) {
+                            //         self.$$app.setSearchIndex();
+                            //     }
+                            // }, 100);
 
 
                         });
