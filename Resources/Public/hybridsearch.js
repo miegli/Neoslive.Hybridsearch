@@ -436,6 +436,11 @@
                         var hash = nodes[nodeId].hash;
                         var nodeTypeLabel = nodeTypeLabels[nodes[nodeId].nodeType] !== undefined ? nodeTypeLabels[nodes[nodeId].nodeType] : nodes[nodeId].nodeType;
 
+
+                        if (items['_nodesByType'][nodeTypeLabel] === undefined) {
+                            items['_nodesByType'][nodeTypeLabel] = {};
+                        }
+
                         if (nodesFound[hash] !== undefined) {
 
                             if (items['_nodesTurbo'][hash] !== undefined) {
@@ -447,6 +452,7 @@
                             if (items['_nodesByType'][nodeTypeLabel][hash] !== undefined) {
                                 items['_nodesByType'][nodeTypeLabel][hash].addScore(score);
                             }
+
                             skip = true;
                         }
 
@@ -457,11 +463,6 @@
                                 items['_nodesTurbo'][hash] = new HybridsearchResultsNode(nodes[nodeId], score);
                             } else {
                                 items['_nodes'][hash] = new HybridsearchResultsNode(nodes[nodeId], score);
-                            }
-
-
-                            if (items['_nodesByType'][nodeTypeLabel] === undefined) {
-                                items['_nodesByType'][nodeTypeLabel] = {};
                             }
 
 

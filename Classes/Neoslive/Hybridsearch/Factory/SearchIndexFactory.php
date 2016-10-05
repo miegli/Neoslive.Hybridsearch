@@ -317,6 +317,7 @@ class SearchIndexFactory
 
         $this->save();
         $this->proceedQueue();
+        $this->updateFireBaseRules();
 
     }
 
@@ -388,8 +389,19 @@ class SearchIndexFactory
                 $this->firebase->delete("index/" . $workspace->getName() . "/" . $node->getNodeData()->getDimensionsHash() . "/" . $node->getIdentifier());
             } else {
                 $this->firebase->set("index/" . $workspace->getName() . "/" . $node->getNodeData()->getDimensionsHash() . "/" . $node->getIdentifier() . "/__sync", time());
-                Scripts::executeCommandAsync('hybridsearch:sync', $this->flowSettings, array());
             }
+        }
+
+    }
+
+    /**
+     * Sync index
+     */
+    public function syncIndexRealtime()
+    {
+
+        if ($this->settings['Realtime']) {
+            Scripts::executeCommandAsync('hybridsearch:sync', $this->flowSettings, array());
         }
 
     }
@@ -700,7 +712,7 @@ class SearchIndexFactory
         foreach ($words as $w) {
             if (strlen($w) > 1) {
                 $w = Encoding::UTF8FixWin1252Chars($w);
-                $w = preg_replace('#[^\w()/.%\-&]#', "", $w);
+                $w = preg_replace('#[^\w()/.%\-&üöäÜÖÄ]#', "", $w);
                 $keywords->$w = 1;
 
                 $a = "_nodetype" . $w;
@@ -1087,46 +1099,29 @@ class SearchIndexFactory
     {
 
 
-        if ($this->creatingFullIndex) {
-
-
-            // patch index data all in one request
-            foreach ($this->index as $workspace => $workspaceData) {
-                foreach ($workspaceData as $dimension => $dimensionData) {
+        // patch index data all in one request
+        foreach ($this->index as $workspace => $workspaceData) {
+            foreach ($workspaceData as $dimension => $dimensionData) {
+                if ($this->creatingFullIndex) {
                     $this->firebaseUpdate("index/" . $workspace . "/" . $dimension, $dimensionData);
-                }
-            }
-
-            $this->output->outputLine("");
-            $this->output->outputLine("save .settings/rules");
-            $this->firebase->update('.settings/rules', $this->getFirebaseRules($this->keywords));
-            $this->output->outputLine("save keywords");
-
-            $this->firebase->update('keywords', $this->keywords);
-
-            $this->output->outputLine("add to queue for updating firebase endpoint " . $this->settings['Firebase']['endpoint']);
-
-
-        } else {
-
-
-            // patch index data all in one request
-            foreach ($this->index as $workspace => $workspaceData) {
-                foreach ($workspaceData as $dimension => $dimensionData) {
+                } else {
                     $this->firebase->update("index/" . $workspace . "/" . $dimension, $dimensionData);
                 }
             }
+        }
 
-            foreach ($this->keywords as $workspace => $workspaceData) {
+        foreach ($this->keywords as $workspace => $workspaceData) {
 
-                foreach ($workspaceData as $dimension => $dimensionData) {
+            foreach ($workspaceData as $dimension => $dimensionData) {
+                if ($this->creatingFullIndex) {
+                    $this->firebaseUpdate("keywords/$workspace/$dimension", $dimensionData);
+                } else {
                     $this->firebase->update("keywords/$workspace/$dimension", $dimensionData);
                 }
-
             }
 
-
         }
+
 
         unset($this->index);
         unset($this->keywords);
@@ -1149,28 +1144,30 @@ class SearchIndexFactory
 
         $rules = array();
 
-        foreach ($keywords as $dimension => $val) {
-            if (isset($rules['index'][$dimension]) === false) {
-                $rules['index'][$dimension] = array();
-            }
-            foreach ($val as $k => $v) {
-                if (isset($rules['index'][$dimension][$k]) === false) {
-                    $rules['index'][$dimension][$k] = array();
-                    $rules['index'][$dimension][$k]['.indexOn'] = array();
+        if (count($keywords)) {
+            foreach ($keywords as $dimension => $val) {
+                if (isset($rules['index'][$dimension]) === false) {
+                    $rules['index'][$dimension] = array();
                 }
+                foreach ($val as $k => $v) {
+                    if (isset($rules['index'][$dimension][$k]) === false) {
+                        $rules['index'][$dimension][$k] = array();
+                        $rules['index'][$dimension][$k]['.indexOn'] = array();
+                    }
 
 
-                if (is_array($v)) {
-                    foreach (array_keys($v) as $key) {
-                        array_push($rules['index'][$dimension][$k]['.indexOn'], (string)strval($key));
+                    if (is_array($v)) {
+                        foreach (array_keys($v) as $key) {
+                            array_push($rules['index'][$dimension][$k]['.indexOn'], (string)strval($key));
+                        }
+                    } else {
+                        foreach (get_object_vars($v) as $key => $value) {
+                            array_push($rules['index'][$dimension][$k]['.indexOn'], (string)strval($key));
+                        }
                     }
-                } else {
-                    foreach (get_object_vars($v) as $key => $value) {
-                        array_push($rules['index'][$dimension][$k]['.indexOn'], (string)strval($key));
-                    }
+
+
                 }
-
-
             }
         }
 
