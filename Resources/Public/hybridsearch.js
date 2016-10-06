@@ -158,6 +158,16 @@
 
 
                 /**
+                 * init ga data
+                 */
+                hybridsearch.$firebase().database().ref().child("ga").orderByChild("url").equalTo('http://neos.phlu.dev/ueber-uns.html').limitToFirst(1).once('value', function (data) {
+                    angular.forEach(data.val(), function (val, key) {
+                        filter.setGa(val);
+                    });
+                });
+
+
+                /**
                  *
                  * @param nodeData {object|array} Nodes properties.
                  * @param score {float} computed Relevance score.
@@ -1674,6 +1684,22 @@
                 },
 
                 /**
+                 * @returns mixed
+                 */
+                getGa: function () {
+                    return this.$$data.ga;
+
+                },
+
+                /**
+                 * sets ga data
+                 * @returns mixed
+                 */
+                setGa: function (ga) {
+                    this.$$data.ga = ga;
+                },
+
+                /**
                  * @returns string
                  */
                 getFullSearchQuery: function () {
@@ -1684,8 +1710,13 @@
                         return false;
                     }
 
-                    var q = this.getAutocompletedKeywords() + " " + this.getAdditionalKeywords();
+                    var d = new Date();
+                    var q = this.getAutocompletedKeywords() + " " + this.getAdditionalKeywords() + " " + "trendingHour" + d.getHours() + " " + this.getGa().userGender + " " + this.getGa().userAgeBracket;
+
+                    console.log(q);
+
                     return q.length > 1 ? q : false;
+
                 },
 
                 /**

@@ -169,6 +169,12 @@ class SearchIndexFactory
     /**
      * @var \stdClass
      */
+    protected $ga;
+
+
+    /**
+     * @var \stdClass
+     */
     protected $index;
 
 
@@ -245,6 +251,7 @@ class SearchIndexFactory
 
         $this->index = new \stdClass();
         $this->keywords = new \stdClass();
+        $this->ga = new \stdClass();
 
         putenv('FLOW_REWRITEURLS=1');
 
@@ -390,6 +397,7 @@ class SearchIndexFactory
     public function updateIndexRealtime($node, $workspace = null)
     {
 
+
         if ($this->settings['Realtime']) {
 
             if ($node->isRemoved() || $node->isHidden()) {
@@ -440,7 +448,6 @@ class SearchIndexFactory
                 $isvalid = false;
             }
 
-            \TYPO3\Flow\var_dump($node->getNodeType()->getName(), $this->settings['Filter']['NodeTypeFilter']);
 
             if ($isvalid == false) {
                 $node = $flowQuery->parent()->closest($this->settings['Filter']['NodeTypeFilter'])->get(0);
@@ -654,6 +661,17 @@ class SearchIndexFactory
             $keywords->__sync = 0;
 
 
+            if (isset($indexData->properties->__google)) {
+
+                $this->ga->$identifier = array(
+                    'userGender' => $indexData->properties->__userGender,
+                    'userAgeBracket' => $indexData->properties->__userAgeBracket,
+                    'url' => $indexData->url
+                );
+
+            }
+
+
             foreach ($keywords as $keyword => $val) {
                 $this->keywords->$workspaceHash->$dimensionConfigurationHash[strval($keyword)] = 1;
             }
@@ -861,9 +879,10 @@ class SearchIndexFactory
 
         if ($this->creatingFullIndex && $data->url !== '') {
             $gaData = $this->googleAnalyticsFactory->getGaDataByDestinationPage($data->uri['host'], $data->uri['path']);
-            $data->__userGender = $gaData['userGender'];
-            $data->__userAgeBracket = $gaData['userAgeBracket'];
-            $properties->google = $gaData['keywords'];
+            $properties->__google = $gaData['keywords'];
+            $properties->__userGender = $gaData['userGender'];
+            $properties->__userAgeBracket = $gaData['userAgeBracket'];
+            $properties->__trendingHour = $gaData['trending'];
 
         }
 
@@ -1138,11 +1157,21 @@ class SearchIndexFactory
         }
 
 
+        if ($this->creatingFullIndex) {
+            $this->firebaseUpdate("ga", $this->ga);
+        } else {
+            $this->firebase->update("ga", $this->ga);
+        }
+
+
         unset($this->index);
         unset($this->keywords);
+        unset($this->ga);
+
 
         $this->index = new \stdClass();
         $this->keywords = new \stdClass();
+        $this->ga = new \stdClass();
         gc_collect_cycles();
 
     }
@@ -1186,10 +1215,12 @@ class SearchIndexFactory
             }
         }
 
+
         return array(
             'rules' => array(
                 '.read' => true,
-                'index' => current($rules)
+                'index' => current($rules),
+                'ga' => array('.indexOn' => 'url')
             )
         );
 
@@ -1428,7 +1459,8 @@ class SearchIndexFactory
     /**
      * @return TypoScriptView
      */
-    private function getView()
+    private
+    function getView()
     {
 
 

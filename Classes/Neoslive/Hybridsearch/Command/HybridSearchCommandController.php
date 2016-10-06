@@ -85,10 +85,21 @@ class HybridSearchCommandController extends CommandController
     public function syncCommand()
 
     {
-
-        $this->googleAnalyticsFactory->getGaDataByNode();
         $this->searchIndexFactory->sync();
 
+    }
+
+    /**
+     * Synchronize indexes
+     *
+     * This command updates index from all local changes
+     *
+     * @return void
+     */
+    public function testCommand()
+
+    {
+        $this->googleAnalyticsFactory->getGaDataByDestinationPage('test','test');
 
     }
 
