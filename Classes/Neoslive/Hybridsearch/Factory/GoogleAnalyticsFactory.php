@@ -45,6 +45,11 @@ class GoogleAnalyticsFactory
     protected $gaData;
 
     /**
+     * @var boolean
+     */
+    protected $gaDataLoaded = false;
+
+    /**
      * @var array
      */
     protected $gaDataMappings;
@@ -112,6 +117,7 @@ class GoogleAnalyticsFactory
             }
         }
 
+        $this->gaDataLoaded = true;
 
     }
 
@@ -306,7 +312,7 @@ class GoogleAnalyticsFactory
     {
 
 
-        if (count($this->gaData) === 0) {
+        if ($this->gaDataLoaded === false && count($this->gaData) === 0) {
             $this->load();
         }
 
