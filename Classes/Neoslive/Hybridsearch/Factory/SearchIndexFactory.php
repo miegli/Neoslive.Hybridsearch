@@ -859,7 +859,7 @@ class SearchIndexFactory
         $data->uri = parse_url($uri);
 
 
-        if ($data->url !== '') {
+        if ($this->creatingFullIndex && $data->url !== '') {
             $gaData = $this->googleAnalyticsFactory->getGaDataByDestinationPage($data->uri['host'], $data->uri['path']);
             $data->__userGender = $gaData['userGender'];
             $data->__userAgeBracket = $gaData['userAgeBracket'];

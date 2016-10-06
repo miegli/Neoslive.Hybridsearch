@@ -13,7 +13,6 @@ namespace Neoslive\Hybridsearch\Factory;
 
 
 use TYPO3\Flow\Annotations as Flow;
-use TYPO3\TYPO3CR\Domain\Model\Node;
 
 class GoogleAnalyticsFactory
 {
@@ -83,7 +82,7 @@ class GoogleAnalyticsFactory
             'dimensions' => 'ga:keyword,ga:searchDestinationPage,ga:userGender,ga:userAgeBracket',
             'sort' => '-ga:searchDestinationPage',
             'filters' => 'ga:timeOnPage>450',
-            'max-results' => '200'
+            'max-results' => '20000'
         );
 
         foreach ($analytics->data_ga->get(

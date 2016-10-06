@@ -80,6 +80,30 @@ Adds a property filter to the query.
 
 Returns **HybridsearchObject** 
 
+## setAgeFilter
+
+Adds an ange filter to the query. Show only nodes, that are visited mostly by given age bracket
+
+**Parameters**
+
+-   `string`  18-24,25-34,35-44,45-54,55-64,65+]
+-   `value`  
+-   `scope` **scope** false if is simple string otherwise angular scope required for binding data
+
+Returns **HybridsearchObject** 
+
+## setGenderFilter
+
+Adds a gender filter to the query. Show only nodes, that are visited mostly by given gender
+
+**Parameters**
+
+-   `male` **string** |female
+-   `value`  
+-   `scope` **scope** false if is simple string otherwise angular scope required for binding data
+
+Returns **HybridsearchObject** 
+
 ## setNodePath
 
 Sets a node path filter.

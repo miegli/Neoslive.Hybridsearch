@@ -496,6 +496,19 @@
                             });
                         }
 
+                        if (propertyFiltered === false && this.getFilter().getAgeFilter() != '') {
+                            if (this.getFilter().getPropertyFilters() != node.__userAgeBracket) {
+                                return false;
+                            }
+                        }
+
+                        if (propertyFiltered === false && this.getFilter().getGenderFilter() != '') {
+                            if (this.getFilter().getGenderFilter() != node.__userGender) {
+                                return false;
+                            }
+                        }
+
+
                         return propertyFiltered;
 
                     },
@@ -879,6 +892,56 @@
 
                     } else {
                         self.$$app.getFilter().addPropertyFilter(property, value);
+                        self.$$app.setSearchIndex();
+                    }
+
+                    return this;
+
+                },
+
+                /**
+                 * Adds a gender filter to the query. Show only nodes, that are visited mostly by given gender
+                 * @param {string} male|female
+                 * @param {scope} scope false if is simple string otherwise angular scope required for binding data
+                 * @returns {HybridsearchObject}
+                 */
+                setGenderFilter: function (value, scope=null) {
+
+                    var self = this;
+
+                    if (scope) {
+                        scope.$watch(value, function (v) {
+                            self.$$app.getFilter().setGenderFilter(v);
+                            self.$$app.setSearchIndex();
+                        });
+
+                    } else {
+                        self.$$app.getFilter().setGenderFilter(value);
+                        self.$$app.setSearchIndex();
+                    }
+
+                    return this;
+
+                },
+
+                /**
+                 * Adds an ange filter to the query. Show only nodes, that are visited mostly by given age bracket
+                 * @param {string} [18-24,25-34,35-44,45-54,55-64,65+]
+                 * @param {scope} scope false if is simple string otherwise angular scope required for binding data
+                 * @returns {HybridsearchObject}
+                 */
+                setAgeFilter: function (value, scope=null) {
+
+                    var self = this;
+
+                    if (scope) {
+                        scope.$watch(value, function (v) {
+                            self.$$app.getFilter().setAgeFilter(v);
+                            self.$$app.setSearchIndex();
+                        });
+
+                    } else {
+                        self.$$app.getFilter().setAgeFilter(value);
                         self.$$app.setSearchIndex();
                     }
 
@@ -1502,6 +1565,30 @@
                     return this;
                 },
 
+                /**
+                 * @param string value
+                 * @returns HybridsearchObject
+                 */
+                setAgeFilter: function (value) {
+                    if (this.$$data.ageFilter == undefined) {
+                        this.$$data.ageFilter = {};
+                    }
+                    this.$$data.ageFilter = value;
+                    return this;
+                },
+
+                /**
+                 * @param string value
+                 * @returns HybridsearchObject
+                 */
+                setGenderFilter: function (value) {
+                    if (this.$$data.genderFilter == undefined) {
+                        this.$$data.genderFilter = {};
+                    }
+                    this.$$data.genderFilter = value;
+                    return this;
+                },
+
 
                 /**
                  * * @returns HybridsearchObject
@@ -1516,6 +1603,20 @@
                  */
                 getPropertyFilters: function () {
                     return this.$$data.propertyFilter === undefined ? {} : this.$$data.propertyFilter;
+                },
+
+                /**
+                 * * @returns HybridsearchObject
+                 */
+                getGenderFilter: function () {
+                    return this.$$data.genderFilter === undefined ? '' : this.$$data.genderFilter;
+                },
+
+                /**
+                 * * @returns HybridsearchObject
+                 */
+                getAgeFilter: function () {
+                    return this.$$data.ageFilter === undefined ? '' : this.$$data.ageFilter;
                 },
 
                 /**
