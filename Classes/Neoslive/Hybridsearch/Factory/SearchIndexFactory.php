@@ -42,7 +42,7 @@ use TYPO3\Flow\Mvc\ActionRequest;
 use TYPO3\TypoScript\View\TypoScriptView;
 use TYPO3\Flow\Core\Bootstrap;
 use Neoslive\Hybridsearch\Request\HttpRequestHandler;
-
+use Neoslive\Hybridsearch\Factory\GoogleAnalyticsFactory;
 
 class SearchIndexFactory
 {
@@ -66,6 +66,13 @@ class SearchIndexFactory
      * @Flow\Inject
      */
     protected $configurationManager;
+
+    /**
+     * @var GoogleAnalyticsFactory
+     * @Flow\Inject
+     */
+    protected $googleAnalyticsFactory;
+
 
     /**
      * @var ConsoleOutput
@@ -637,6 +644,8 @@ class SearchIndexFactory
 
 
             $indexData = $this->convertNodeToSearchIndexResult($node);
+
+
             $identifier = $indexData->identifier;
 
             $keywords = $this->generateSearchIndexFromProperties($indexData->properties, $indexData->nodeType);
@@ -848,17 +857,23 @@ class SearchIndexFactory
         $data->hash = ($properties->rawcontent !== '' ? sha1($properties->rawcontent) : $node->getNodeData()->getIdentifier());
         $data->url = $uri;
         $data->uri = parse_url($uri);
-        $data->breadcrumb = $breadcrumb;
 
+
+        if ($data->url !== '') {
+            $gaData = $this->googleAnalyticsFactory->getGaDataByDestinationPage($data->uri['host'], $data->uri['path']);
+            $data->__userGender = $gaData['userGender'];
+            $data->__userAgeBracket = $gaData['userAgeBracket'];
+            $properties->google = $gaData['keywords'];
+
+        }
+
+        $data->breadcrumb = $breadcrumb;
         $data->identifier = $node->getNodeData()->getIdentifier();
         $data->properties = $properties;
 
         $p = $data->nodeType . "-rawcontent";
         $properties->$p = $properties->rawcontent;
-
-
         $data->grandParentNode = new \stdClass();
-
 
         $data->grandParentNode->identifier = $grandParentNode ? $grandParentNode->getIdentifier() : null;
         $data->grandParentNode->properties = $grandParentProperties;

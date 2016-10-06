@@ -540,7 +540,7 @@
 
                                 // unbind index watcher
                                 angular.forEach(index, function (unbind) {
-                                     unbind.off();
+                                    unbind.off();
                                 });
                                 index = {};
 
@@ -930,19 +930,16 @@
                         scope.$watch(input, function (searchInput) {
 
 
-                            self.$$app.getFilter().setQuery(scope[input]);
-                            self.$$app.setSearchIndex();
+                            if (lastinterval) {
+                                clearTimeout(lastinterval);
+                            }
 
-                            // if (lastinterval) {
-                            //     clearTimeout(lastinterval);
-                            // }
-                            //
-                            // lastinterval = setTimeout(function () {
-                            //     self.$$app.getFilter().setQuery(scope[input]);
-                            //     if (searchInput !== undefined) {
-                            //         self.$$app.setSearchIndex();
-                            //     }
-                            // }, 100);
+                            lastinterval = setTimeout(function () {
+                                self.$$app.getFilter().setQuery(scope[input]);
+                                if (searchInput !== undefined) {
+                                    self.$$app.setSearchIndex();
+                                }
+                            }, 20);
 
 
                         });

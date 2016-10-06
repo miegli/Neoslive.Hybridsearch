@@ -11,6 +11,7 @@ namespace Neoslive\Hybridsearch\Command;
  * source code.
  */
 
+use Neoslive\Hybridsearch\Factory\GoogleAnalyticsFactory;
 use Neoslive\Hybridsearch\Factory\SearchIndexFactory;
 use TYPO3\Flow\Annotations as Flow;
 use TYPO3\Flow\Cli\CommandController;
@@ -30,6 +31,13 @@ class HybridSearchCommandController extends CommandController
      * @var SearchIndexFactory
      */
     protected $searchIndexFactory;
+
+
+    /**
+     * @Flow\Inject
+     * @var GoogleAnalyticsFactory
+     */
+    protected $googleAnalyticsFactory;
 
 
     /**
@@ -78,6 +86,7 @@ class HybridSearchCommandController extends CommandController
 
     {
 
+        $this->googleAnalyticsFactory->getGaDataByNode();
         $this->searchIndexFactory->sync();
 
 
