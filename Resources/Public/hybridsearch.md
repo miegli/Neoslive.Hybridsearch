@@ -86,8 +86,7 @@ Adds an ange filter to the query. Show only nodes, that are visited mostly by gi
 
 **Parameters**
 
--   `string`  18-24,25-34,35-44,45-54,55-64,65+]
--   `value`  
+-   `age` **string** [18-24,25-34,35-44,45-54,55-64,65+]
 -   `scope` **scope** false if is simple string otherwise angular scope required for binding data
 
 Returns **HybridsearchObject** 
@@ -98,8 +97,7 @@ Adds a gender filter to the query. Show only nodes, that are visited mostly by g
 
 **Parameters**
 
--   `male` **string** |female
--   `value`  
+-   `gender` **string** male|female
 -   `scope` **scope** false if is simple string otherwise angular scope required for binding data
 
 Returns **HybridsearchObject** 

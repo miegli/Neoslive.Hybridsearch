@@ -901,22 +901,22 @@
 
                 /**
                  * Adds a gender filter to the query. Show only nodes, that are visited mostly by given gender
-                 * @param {string} male|female
+                 * @param {string} gender male|female
                  * @param {scope} scope false if is simple string otherwise angular scope required for binding data
                  * @returns {HybridsearchObject}
                  */
-                setGenderFilter: function (value, scope=null) {
+                setGenderFilter: function (gender, scope=null) {
 
                     var self = this;
 
                     if (scope) {
-                        scope.$watch(value, function (v) {
+                        scope.$watch(gender, function (v) {
                             self.$$app.getFilter().setGenderFilter(v);
                             self.$$app.setSearchIndex();
                         });
 
                     } else {
-                        self.$$app.getFilter().setGenderFilter(value);
+                        self.$$app.getFilter().setGenderFilter(gender);
                         self.$$app.setSearchIndex();
                     }
 
@@ -926,22 +926,22 @@
 
                 /**
                  * Adds an ange filter to the query. Show only nodes, that are visited mostly by given age bracket
-                 * @param {string} [18-24,25-34,35-44,45-54,55-64,65+]
+                 * @param {string} age [18-24,25-34,35-44,45-54,55-64,65+]
                  * @param {scope} scope false if is simple string otherwise angular scope required for binding data
                  * @returns {HybridsearchObject}
                  */
-                setAgeFilter: function (value, scope=null) {
+                setAgeFilter: function (age, scope=null) {
 
                     var self = this;
 
                     if (scope) {
-                        scope.$watch(value, function (v) {
+                        scope.$watch(age, function (v) {
                             self.$$app.getFilter().setAgeFilter(v);
                             self.$$app.setSearchIndex();
                         });
 
                     } else {
-                        self.$$app.getFilter().setAgeFilter(value);
+                        self.$$app.getFilter().setAgeFilter(age);
                         self.$$app.setSearchIndex();
                     }
 
