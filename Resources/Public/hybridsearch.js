@@ -160,11 +160,13 @@
                 /**
                  * init ga data
                  */
-                hybridsearch.$firebase().database().ref().child("ga").orderByChild("url").equalTo('http://neos.phlu.dev/ueber-uns.html').limitToFirst(1).once('value', function (data) {
-                    angular.forEach(data.val(), function (val, key) {
-                        filter.setGa(val);
+                if (filter.getGa() === undefined) {
+                    hybridsearch.$firebase().database().ref().child("ga").orderByChild("url").equalTo(location.href).limitToFirst(1).once('value', function (data) {
+                        angular.forEach(data.val(), function (val, key) {
+                            filter.setGa(val);
+                        });
                     });
-                });
+                }
 
 
                 /**
