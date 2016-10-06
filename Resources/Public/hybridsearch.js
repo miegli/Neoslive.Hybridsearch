@@ -160,11 +160,13 @@
                 /**
                  * init ga data
                  */
-                hybridsearch.$firebase().database().ref().child("ga").orderByChild("url").equalTo('http://neos.phlu.dev/ueber-uns.html').limitToFirst(1).once('value', function (data) {
-                    angular.forEach(data.val(), function (val, key) {
-                        filter.setGa(val);
+                if (filter.getGa() === undefined) {
+                    hybridsearch.$firebase().database().ref().child("ga").orderByChild("url").equalTo(location.href).limitToFirst(1).once('value', function (data) {
+                        angular.forEach(data.val(), function (val, key) {
+                            filter.setGa(val);
+                        });
                     });
-                });
+                }
 
 
                 /**
@@ -1684,10 +1686,20 @@
                 },
 
                 /**
+                 * @param string property
                  * @returns mixed
                  */
-                getGa: function () {
-                    return this.$$data.ga;
+                getGa: function (property=false) {
+                    if (property === false) {
+                        return this.$$data.ga;
+                    } else {
+                        if (this.$$data.ga === undefined || this.$$data.ga[property] === undefined) {
+                            return null;
+                        } else {
+                            return this.$$data.ga[property];
+                        }
+                    }
+
 
                 },
 
@@ -1711,7 +1723,7 @@
                     }
 
                     var d = new Date();
-                    var q = this.getAutocompletedKeywords() + " " + this.getAdditionalKeywords() + " " + "trendingHour" + d.getHours() + " " + this.getGa().userGender + " " + this.getGa().userAgeBracket;
+                    var q = this.getAutocompletedKeywords() + " " + this.getAdditionalKeywords() + " " + "trendingHour" + d.getHours() + " " + (this.getGa('userGender') ? this.getGa('userGender') : '') + " " + (this.getGa('userAgeBracket') ? this.getGa('userAgeBracket') : '');
 
                     console.log(q);
 
