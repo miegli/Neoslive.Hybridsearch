@@ -162,7 +162,7 @@
                  */
                 if (filter.getGa() === undefined) {
                     hybridsearch.$firebase().database().ref().child("ga").orderByChild("url").equalTo(location.href).limitToFirst(1).once('value', function (data) {
-                        angular.forEach(data.val(), function (val, key) {
+                        angular.forEach(data.val(), function (val) {
                             filter.setGa(val);
                         });
                     });
@@ -1723,7 +1723,7 @@
                     }
 
                     var d = new Date();
-                    var q = this.getAutocompletedKeywords() + " " + this.getAdditionalKeywords() + " " + "trendingHour" + d.getHours() + " " + (this.getGa('userGender') ? this.getGa('userGender') : '') + " " + (this.getGa('userAgeBracket') ? this.getGa('userAgeBracket') : '');
+                    var q = this.getAutocompletedKeywords() + " " + this.getAdditionalKeywords() + " " + "trendingHour" + d.getHours() + " " + (this.getGa('userGender') ? this.getGa('userGender') : '') + " " + (this.getGa('userGender') ? this.getGa('userAgeBracket') : '');
 
                     console.log(q);
 
