@@ -1723,7 +1723,7 @@
                     }
 
                     var d = new Date();
-                    var q = this.getAutocompletedKeywords() + " " + this.getAdditionalKeywords() + " " + "trendingHour" + d.getHours() + " " + (this.getGa('userGender') ? this.getGa('userGender') : '') + " " + (this.getGa('userGender') ? this.getGa('userAgeBracket') : '');
+                    var q = this.getAutocompletedKeywords() + " " + this.getAdditionalKeywords() + " " + "trendingRating trendingHour" + d.getHours() + " " + (this.getGa('userGender') ? this.getGa('userGender') : '') + " " + (this.getGa('userGender') ? this.getGa('userAgeBracket') : '');
 
                     console.log(q);
 
