@@ -369,7 +369,7 @@ class GoogleAnalyticsFactory
         if (isset($this->gaData[$host][$page])) {
             $data['userGender'] = isset($this->gaDataMappings['userGender'][$this->gaData[$host][$page]['userGender']]) ? $this->gaDataMappings['userGender'][$this->gaData[$host][$page]['userGender']] : null;
             $data['userAgeBracket'] = isset($this->gaDataMappings['userAgeBracket'][$this->gaData[$host][$page]['userAgeBracket']]) ? $this->gaDataMappings['userAgeBracket'][$this->gaData[$host][$page]['userAgeBracket']] : null;
-            $data['trendingHour'] = isset($this->gaData[$host][$page]['trendingHour']) ? $this->gaData[$host][$page]['trendingHour'] : null;
+            $data['trendingHour'] = isset($this->gaDataMappings['trendingHour'][$this->gaData[$host][$page]['trendingHour']]) ? $this->gaDataMappings['trendingHour'][$this->gaData[$host][$page]['trendingHour']] : null;
             $data['trendingRating'] = isset($this->gaData[$host][$page]['trendingRating']) ? $this->gaData[$host][$page]['trendingRating'] : null;
             $data['keywords'] = isset($this->gaData[$host][$page]['keywords']) ? $this->gaData[$host][$page]['keywords'] : null;
         }

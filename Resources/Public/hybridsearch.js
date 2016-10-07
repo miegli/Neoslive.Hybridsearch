@@ -1014,7 +1014,7 @@
                                 if (searchInput !== undefined) {
                                     self.$$app.setSearchIndex();
                                 }
-                            }, 20);
+                            }, 100);
 
 
                         });
