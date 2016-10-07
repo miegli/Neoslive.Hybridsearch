@@ -1860,6 +1860,9 @@
                     magicreplacements[string.replace(/k/, "c")] = true;
                     magicreplacements[string.replace(/ck/, "ch")] = true;
                     magicreplacements[string.replace(/ch/, "ck")] = true;
+                    magicreplacements[string.replace(/k/, "ck")] = true;
+                    magicreplacements[string.replace(/ck/, "k")] = true;
+                    magicreplacements[string.replace(/ch/, "k")] = true;
                     magicreplacements[string.replace(/cc/, "c")] = true;
                     magicreplacements[string.replace(/c/, "cc")] = true;
                     magicreplacements[string.replace(/è/, "e")] = true;
@@ -1872,6 +1875,11 @@
                     magicreplacements[string.replace(/z/, "s")] = true;
                     magicreplacements[string.replace(/tz/, "z")] = true;
                     magicreplacements[string.replace(/z/, "tz")] = true;
+                    magicreplacements[string.replace(/rr/, "r")] = true;
+                    magicreplacements[string.replace(/r/, "rr")] = true;
+                    magicreplacements[string.replace(/tz/, "z")] = true;
+                    magicreplacements[string.replace(/z/, "tz")] = true;
+
                     magicreplacements[string.substr(0,string.length-1)] = true;
 
                     return magicreplacements;
