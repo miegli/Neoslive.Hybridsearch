@@ -1847,6 +1847,7 @@
                     magicreplacements[string.replace(/nn/, "n")] = true;
                     magicreplacements[string.replace(/th/, "t")] = true;
                     magicreplacements[string.replace(/t/, "th")] = true;
+                    magicreplacements[string.replace(/t/, "d")] = true;
                     magicreplacements[string.replace(/e/, "i")] = true;
                     magicreplacements[string.replace(/i/, "e")] = true;
                     magicreplacements[string.replace(/w/, "v")] = true;
