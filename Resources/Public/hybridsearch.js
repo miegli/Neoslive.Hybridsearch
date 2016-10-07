@@ -440,6 +440,11 @@
                         var hash = nodes[nodeId].hash;
                         var nodeTypeLabel = nodeTypeLabels[nodes[nodeId].nodeType] !== undefined ? nodeTypeLabels[nodes[nodeId].nodeType] : nodes[nodeId].nodeType;
 
+                        // filter out minimal scored nodes
+                        if (this.getFilter().getFullSearchQuery() && score < 1) {
+                            return false;
+                        }
+
 
                         if (items['_nodesByType'][nodeTypeLabel] === undefined) {
                             items['_nodesByType'][nodeTypeLabel] = {};
@@ -482,7 +487,6 @@
                      * @returns boolean
                      */
                     isFiltered: function (node) {
-
 
                         if (this.getFilter().getNodePath().length > 0 && node.uri.path.substr(0, this.getFilter().getNodePath().length) != this.getFilter().getNodePath()) {
                             return true;
@@ -1886,6 +1890,10 @@
                     magicreplacements[string.replace(/ü/, "üe")] = true;
                     magicreplacements[string.replace(/oo/, "o")] = true;
                     magicreplacements[string.replace(/o/, "oo")] = true;
+                    magicreplacements[string.replace(/ie/, "i")] = true;
+                    magicreplacements[string.replace(/i/, "ie")] = true;
+                    magicreplacements[string.replace(/ch/, "k")] = true;
+                    magicreplacements[string.replace(/k/, "ch")] = true;
 
                     magicreplacements[string.substr(0,string.length-1)] = true;
 
