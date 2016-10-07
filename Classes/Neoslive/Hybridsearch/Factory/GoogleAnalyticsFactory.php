@@ -326,10 +326,11 @@ class GoogleAnalyticsFactory
 
 
         if (isset($this->gaData[$host][$page])) {
-            $data['userGender'] = $this->gaDataMappings['userGender'][$this->gaData[$host][$page]['userGender']];
-            $data['userAgeBracket'] = $this->gaDataMappings['userAgeBracket'][$this->gaData[$host][$page]['userAgeBracket']];
-            $data['trending'] = $this->gaDataMappings['trending'][$this->gaData[$host][$page]['trending']];
-            $data['keywords'] = $this->gaData[$host][$page]['keywords'];
+            $data['userGender'] = isset($this->gaDataMappings['userGender'][$this->gaData[$host][$page]['userGender']]) ? $this->gaDataMappings['userGender'][$this->gaData[$host][$page]['userGender']] : $this->gaDataMappings['userGender'];
+            $data['userAgeBracket'] = isset($this->gaDataMappings['userAgeBracket'][$this->gaData[$host][$page]['userAgeBracket']]) ? $this->gaDataMappings['userAgeBracket'][$this->gaData[$host][$page]['userAgeBracket']] : $this->gaDataMappings['userAgeBracket'];
+            $data['userGender'] = isset($this->gaDataMappings['userGender'][$this->gaData[$host][$page]['userGender']]) ? $this->gaDataMappings['userGender'][$this->gaData[$host][$page]['userGender']] : $this->gaDataMappings['userGender'];
+            $data['trending'] = isset($this->gaData[$host][$page]['trending']) ? $this->gaData[$host][$page]['trending'] : '';
+            $data['keywords'] = isset($this->gaData[$host][$page]['keywords']) ? $this->gaData[$host][$page]['keywords'] : '';
         }
 
         return $data;
