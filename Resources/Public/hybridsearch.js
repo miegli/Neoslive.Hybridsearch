@@ -537,7 +537,6 @@
 
                         searchTimer = setTimeout(function () {
 
-
                             if (self.getFilter().getNodeType()) {
 
                                 if (lastFilterHash != filter.getHash()) {
@@ -572,8 +571,12 @@
                                     });
                                     index = {};
 
+                                    var isMatchExact = {};
 
                                     angular.forEach(self.getFilter().getQueryKeywords(), function (value, keyword) {
+
+                                            isMatchExact[keyword] = false;
+
 
                                             if (keyword.length > 2 || (keyword.length === 2 && isNaN(keyword) === false)) {
 
@@ -581,24 +584,23 @@
 
                                                 self.getKeywords(keyword).once("value", function (data) {
 
-                                                    var isMatchExact = false;
 
                                                     angular.forEach(data.val(), function (val, keywordsegment) {
 
-
-                                                        if (!isMatchExact) {
+                                                        if (!isMatchExact[keyword]) {
 
                                                             // keyword was found
                                                             if (
-                                                                (keyword.length < 8 &&
-                                                                    keywordsegment.substr(0, keyword.length) === keyword.substr(0, keyword.length)
-                                                                )
+
+                                                                filter.$$data.magickeywords.search(" " + keywordsegment + "") >= 0
                                                                 ||
-                                                                (keyword.length >= 8 &&
-                                                                    keywordsegment.substr(0, keyword.length - 4) === keyword.substr(0, keyword.length - 4)
-                                                                )
+                                                                keyword == keywordsegment
+                                                                ||
+                                                                filter.$$data.magickeywords.search(" " + keywordsegment.substr(0, 6) + "") >= 0
 
                                                             ) {
+
+
                                                                 filter.addAutocompletedKeywords(keywordsegment);
                                                                 if (index[keywordsegment] === undefined) {
                                                                     self.getIndex(keywordsegment).on("value", function (data) {
@@ -609,7 +611,6 @@
                                                                             }
                                                                             lastinterval = setTimeout(function () {
                                                                                 self.updateLocalIndex(updates);
-                                                                                updates = {};
                                                                             }, 50);
 
                                                                         }
@@ -623,7 +624,7 @@
 
 
                                                         if (keywordsegment == keyword) {
-                                                            // isMatchExact = true;
+                                                            isMatchExact[keyword] = true;
                                                         }
 
 
@@ -1720,7 +1721,7 @@
                     }
 
                     var d = new Date();
-                    var q = this.getAutocompletedKeywords() + " " + this.getAdditionalKeywords() + " " + "trendingRating trendingHour" + d.getHours() + " " + (this.getGa('userGender') ? this.getGa('userGender') : '') + " " + (this.getGa('userGender') ? this.getGa('userAgeBracket') : '');
+                    var q = this.$$data.magickeywords + " " + this.getAutocompletedKeywords() + " " + this.getAdditionalKeywords() + " " + "trendingRating trendingHour" + d.getHours() + " " + (this.getGa('userGender') ? this.getGa('userGender') : '') + " " + (this.getGa('userGender') ? this.getGa('userAgeBracket') : '');
 
                     console.log(q);
 
@@ -1785,7 +1786,95 @@
                         if (term.length > 0) keywords[term] = true;
                     });
 
-                    return keywords;
+                    return this.getMagicQuery(keywords);
+
+                },
+
+                /**
+                 * @param object keywords
+                 * @returns object
+                 */
+                getMagicQuery: function (keywords) {
+
+                    var magickeywords = {};
+                    var self = this;
+
+                    angular.forEach(keywords, function (k, term) {
+
+                        magickeywords[term] = true;
+                        angular.forEach(self.getMagicReplacements(term), function (a, t) {
+                            magickeywords[t] = true;
+                        });
+
+
+                    });
+
+                    self.$$data.magickeywords = ' ';
+                    angular.forEach(magickeywords, function (k, term) {
+                        self.$$data.magickeywords += term + ' ';
+                    });
+                    self.$$data.magickeywords += ' ';
+
+
+                    return magickeywords;
+
+                },
+
+                /**
+                 * @param string
+                 * @returns object
+                 */
+                getMagicReplacements: function (string) {
+
+                    var magicreplacements = {};
+
+                    magicreplacements[string.replace(/ll/, "l")] = true;
+                    magicreplacements[string.replace(/l/, "ll")] = true;
+                    magicreplacements[string.replace(/pp/, "p")] = true;
+                    magicreplacements[string.replace(/p/, "pp")] = true;
+                    magicreplacements[string.replace(/ph/, "f")] = true;
+                    magicreplacements[string.replace(/f/, "ph")] = true;
+                    magicreplacements[string.replace(/ü/, "ue")] = true;
+                    magicreplacements[string.replace(/ä/, "ae")] = true;
+                    magicreplacements[string.replace(/d/, "t")] = true;
+                    magicreplacements[string.replace(/ss/, "s")] = true;
+                    magicreplacements[string.replace(/s/, "ss")] = true;
+                    magicreplacements[string.replace(/tt/, "t")] = true;
+                    magicreplacements[string.replace(/t/, "tt")] = true;
+                    magicreplacements[string.replace(/m/, "mm")] = true;
+                    magicreplacements[string.replace(/mm/, "m")] = true;
+                    magicreplacements[string.replace(/n/, "nn")] = true;
+                    magicreplacements[string.replace(/nn/, "n")] = true;
+                    magicreplacements[string.replace(/th/, "t")] = true;
+                    magicreplacements[string.replace(/t/, "th")] = true;
+                    magicreplacements[string.replace(/e/, "i")] = true;
+                    magicreplacements[string.replace(/i/, "e")] = true;
+                    magicreplacements[string.replace(/w/, "v")] = true;
+                    magicreplacements[string.replace(/v/, "w")] = true;
+                    magicreplacements[string.replace(/h/, "")] = true;
+                    magicreplacements[string.replace(/a/, "o")] = true;
+                    magicreplacements[string.replace(/o/, "a")] = true;
+                    magicreplacements[string.replace(/p/, "b")] = true;
+                    magicreplacements[string.replace(/b/, "p")] = true;
+                    magicreplacements[string.replace(/c/, "k")] = true;
+                    magicreplacements[string.replace(/k/, "c")] = true;
+                    magicreplacements[string.replace(/ck/, "ch")] = true;
+                    magicreplacements[string.replace(/ch/, "ck")] = true;
+                    magicreplacements[string.replace(/cc/, "c")] = true;
+                    magicreplacements[string.replace(/c/, "cc")] = true;
+                    magicreplacements[string.replace(/è/, "e")] = true;
+                    magicreplacements[string.replace(/é/, "e")] = true;
+                    magicreplacements[string.replace(/e/, "è")] = true;
+                    magicreplacements[string.replace(/gg/, "g")] = true;
+                    magicreplacements[string.replace(/s/, "hs")] = true;
+                    magicreplacements[string.replace(/o/, "ö")] = true;
+                    magicreplacements[string.replace(/e/, "é")] = true;
+                    magicreplacements[string.replace(/z/, "s")] = true;
+                    magicreplacements[string.replace(/tz/, "z")] = true;
+                    magicreplacements[string.replace(/z/, "tz")] = true;
+                    magicreplacements[string.substr(0,string.length-1)] = true;
+
+                    return magicreplacements;
 
                 }
 
