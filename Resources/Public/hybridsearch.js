@@ -1883,6 +1883,8 @@
                     magicreplacements[string.replace(/f/, "ff")] = true;
                     magicreplacements[string.replace(/üe/, "ü")] = true;
                     magicreplacements[string.replace(/ü/, "üe")] = true;
+                    magicreplacements[string.replace(/oo/, "o")] = true;
+                    magicreplacements[string.replace(/o/, "oo")] = true;
 
                     magicreplacements[string.substr(0,string.length-1)] = true;
 
