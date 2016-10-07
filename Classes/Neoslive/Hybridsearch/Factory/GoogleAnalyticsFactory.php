@@ -140,7 +140,7 @@ class GoogleAnalyticsFactory
          */
         $result = $analytics->data_ga->get(
             'ga:' . $reportId,
-            'yesterday',
+            '30daysAgo',
             'today',
             'ga:users',
             array(
