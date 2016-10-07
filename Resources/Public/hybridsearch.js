@@ -1879,6 +1879,8 @@
                     magicreplacements[string.replace(/r/, "rr")] = true;
                     magicreplacements[string.replace(/tz/, "z")] = true;
                     magicreplacements[string.replace(/z/, "tz")] = true;
+                    magicreplacements[string.replace(/ff/, "f")] = true;
+                    magicreplacements[string.replace(/f/, "ff")] = true;
 
                     magicreplacements[string.substr(0,string.length-1)] = true;
 
