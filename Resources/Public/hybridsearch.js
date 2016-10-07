@@ -407,11 +407,7 @@
                                     fields: fields,
                                     bool: "OR"
                                 }), function (item) {
-
-
                                     var nodeId = item.ref.substring(item.ref.indexOf("://") + 3), nodeTypeLabel;
-
-
                                     if (nodes[nodeId] !== undefined) {
                                         if (nodes[nodeId] !== undefined) {
                                             self.addNodeToSearchResult(nodeId, item.score, nodesFound, items);
@@ -601,14 +597,13 @@
                                                                 self.getIndex(keywordsegment).on("value", function (data) {
                                                                     if (data !== undefined) {
                                                                         updates[keywordsegment] = data.val();
-                                                                        self.updateLocalIndex(updates);
-                                                                        // if (lastinterval) {
-                                                                        //     clearTimeout(lastinterval);
-                                                                        // }
-                                                                        // lastinterval = setTimeout(function () {
-                                                                        //     self.updateLocalIndex(updates);
-                                                                        //     updates = {};
-                                                                        // }, 200);
+                                                                        if (lastinterval) {
+                                                                            clearTimeout(lastinterval);
+                                                                        }
+                                                                        lastinterval = setTimeout(function () {
+                                                                            self.updateLocalIndex(updates);
+                                                                            updates = {};
+                                                                        }, 50);
 
                                                                     }
                                                                 });
@@ -621,7 +616,7 @@
 
 
                                                     if (keywordsegment == keyword) {
-                                                        isMatchExact = true;
+                                                       // isMatchExact = true;
                                                     }
 
 
@@ -731,9 +726,11 @@
 
                         if (self.getFilter().getFullSearchQuery()) {
 
+
                             // add to lunr search index
+                            self.cleanLocalIndex();
+
                             angular.forEach(data, function (val, keyword) {
-                                self.cleanLocalIndex();
                                 //self.removeLocalIndex(keyword);
                                 self.addLocalIndex(keyword, val);
                             });
