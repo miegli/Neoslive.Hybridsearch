@@ -12,6 +12,7 @@ namespace Neoslive\Hybridsearch\Factory;
  */
 
 
+use org\bovigo\vfs\vfsStreamWrapperAlreadyRegisteredTestCase;
 use TYPO3\Flow\Cli\ConsoleOutput;
 use TYPO3\Flow\Annotations as Flow;
 
@@ -73,30 +74,30 @@ class GoogleAnalyticsFactory
         $this->gaDataMappings['userAgeBracket']['55-64'] = 'userAgeBracket55';
         $this->gaDataMappings['userAgeBracket']['65+'] = 'userAgeBracket65';
 
-        $this->gaDataMappings['trending']['01'] = 'trendingHour1';
-        $this->gaDataMappings['trending']['02'] = 'trendingHour2';
-        $this->gaDataMappings['trending']['03'] = 'trendingHour3';
-        $this->gaDataMappings['trending']['04'] = 'trendingHour4';
-        $this->gaDataMappings['trending']['05'] = 'trendingHour5';
-        $this->gaDataMappings['trending']['06'] = 'trendingHour6';
-        $this->gaDataMappings['trending']['07'] = 'trendingHour7';
-        $this->gaDataMappings['trending']['08'] = 'trendingHour8';
-        $this->gaDataMappings['trending']['09'] = 'trendingHour9';
-        $this->gaDataMappings['trending']['10'] = 'trendingHour10';
-        $this->gaDataMappings['trending']['11'] = 'trendingHour11';
-        $this->gaDataMappings['trending']['12'] = 'trendingHour12';
-        $this->gaDataMappings['trending']['13'] = 'trendingHour13';
-        $this->gaDataMappings['trending']['14'] = 'trendingHour14';
-        $this->gaDataMappings['trending']['15'] = 'trendingHour15';
-        $this->gaDataMappings['trending']['16'] = 'trendingHour16';
-        $this->gaDataMappings['trending']['17'] = 'trendingHour17';
-        $this->gaDataMappings['trending']['18'] = 'trendingHour18';
-        $this->gaDataMappings['trending']['19'] = 'trendingHour19';
-        $this->gaDataMappings['trending']['20'] = 'trendingHour20';
-        $this->gaDataMappings['trending']['21'] = 'trendingHour21';
-        $this->gaDataMappings['trending']['22'] = 'trendingHour22';
-        $this->gaDataMappings['trending']['23'] = 'trendingHour23';
-        $this->gaDataMappings['trending']['24'] = 'trendingHour24';
+        $this->gaDataMappings['trendingHour']['01'] = 'trendingHour1';
+        $this->gaDataMappings['trendingHour']['02'] = 'trendingHour2';
+        $this->gaDataMappings['trendingHour']['03'] = 'trendingHour3';
+        $this->gaDataMappings['trendingHour']['04'] = 'trendingHour4';
+        $this->gaDataMappings['trendingHour']['05'] = 'trendingHour5';
+        $this->gaDataMappings['trendingHour']['06'] = 'trendingHour6';
+        $this->gaDataMappings['trendingHour']['07'] = 'trendingHour7';
+        $this->gaDataMappings['trendingHour']['08'] = 'trendingHour8';
+        $this->gaDataMappings['trendingHour']['09'] = 'trendingHour9';
+        $this->gaDataMappings['trendingHour']['10'] = 'trendingHour10';
+        $this->gaDataMappings['trendingHour']['11'] = 'trendingHour11';
+        $this->gaDataMappings['trendingHour']['12'] = 'trendingHour12';
+        $this->gaDataMappings['trendingHour']['13'] = 'trendingHour13';
+        $this->gaDataMappings['trendingHour']['14'] = 'trendingHour14';
+        $this->gaDataMappings['trendingHour']['15'] = 'trendingHour15';
+        $this->gaDataMappings['trendingHour']['16'] = 'trendingHour16';
+        $this->gaDataMappings['trendingHour']['17'] = 'trendingHour17';
+        $this->gaDataMappings['trendingHour']['18'] = 'trendingHour18';
+        $this->gaDataMappings['trendingHour']['19'] = 'trendingHour19';
+        $this->gaDataMappings['trendingHour']['20'] = 'trendingHour20';
+        $this->gaDataMappings['trendingHour']['21'] = 'trendingHour21';
+        $this->gaDataMappings['trendingHour']['22'] = 'trendingHour22';
+        $this->gaDataMappings['trendingHour']['23'] = 'trendingHour23';
+        $this->gaDataMappings['trendingHour']['24'] = 'trendingHour24';
 
 
         if (isset($this->settings['Google']['AuthJsonFile']) && is_file($this->settings['Google']['AuthJsonFile'])) {
@@ -149,6 +150,7 @@ class GoogleAnalyticsFactory
                 'max-results' => '2000000'
             ));
 
+
         if ($result->getTotalResults() > 0) {
             $columns = $result->getColumnHeaders();
 
@@ -158,20 +160,34 @@ class GoogleAnalyticsFactory
                 $columnMapping[$column['name']] = $k;
             }
 
-
             foreach ($result->getRows() as $row) {
+
                 if (isset($this->gaData[$host][$row[$columnMapping['ga:searchDestinationPage']]]) === false) {
                     $this->gaData[$host][$row[$columnMapping['ga:searchDestinationPage']]] = array(
                         'userGender' => array(),
                         'userAgeBracket' => array(),
-                        'trending' => array(),
+                        'trendingHour' => array(),
+                        'trendingRating' => 0,
                         'keywords' => '');
                 }
 
-                if (isset($this->gaData[$host][$row[$columnMapping['ga:searchDestinationPage']]]['trending'][$row[$columnMapping['ga:hour']]]) === false) {
-                    $this->gaData[$host][$row[$columnMapping['ga:searchDestinationPage']]]['trending'][$row[$columnMapping['ga:hour']]] = 0;
+                /*
+                 * Get trendings by hour
+                 */
+                if (isset($this->gaData[$host][$row[$columnMapping['ga:searchDestinationPage']]]['trendingHour'][$row[$columnMapping['ga:hour']]]) === false) {
+                    $this->gaData[$host][$row[$columnMapping['ga:searchDestinationPage']]]['trendingHour'][$row[$columnMapping['ga:hour']]] = 0;
                 }
-                $this->gaData[$host][$row[$columnMapping['ga:searchDestinationPage']]]['trending'][$row[$columnMapping['ga:hour']]] = $this->gaData[$host][$row[$columnMapping['ga:searchDestinationPage']]]['trending'][$row[$columnMapping['ga:hour']]] + 1;
+                $this->gaData[$host][$row[$columnMapping['ga:searchDestinationPage']]]['trendingHour'][$row[$columnMapping['ga:hour']]] = $this->gaData[$host][$row[$columnMapping['ga:searchDestinationPage']]]['trendingHour'][$row[$columnMapping['ga:hour']]] + 1;
+
+
+                /*
+                 * Get trendings overall
+                 */
+                if (isset($this->gaData[$host][$row[$columnMapping['ga:searchDestinationPage']]]['trendingRating']) === false) {
+                    $this->gaData[$host][$row[$columnMapping['ga:searchDestinationPage']]]['trendingRating'] = 0;
+                }
+                $this->gaData[$host][$row[$columnMapping['ga:searchDestinationPage']]]['trendingRating'] = $this->gaData[$host][$row[$columnMapping['ga:searchDestinationPage']]]['trendingRating'] + $row[$columnMapping['ga:users']];
+
 
             }
         }
@@ -205,7 +221,7 @@ class GoogleAnalyticsFactory
                     $this->gaData[$host][$row[$columnMapping['ga:searchDestinationPage']]] = array(
                         'userGender' => array(),
                         'userAgeBracket' => array(),
-                        'trending' => array(),
+                        'trendingRating' => array(),
                         'keywords' => '');
                 }
                 // keywords
@@ -248,7 +264,7 @@ class GoogleAnalyticsFactory
                     $this->gaData[$host][$row[$columnMapping['ga:searchDestinationPage']]] = array(
                         'userGender' => array(),
                         'userAgeBracket' => array(),
-                        'trending' => array(),
+                        'trendingRating' => array(),
                         'keywords' => '');
                 }
 
@@ -270,6 +286,29 @@ class GoogleAnalyticsFactory
         }
 
         if (count($this->gaData)) {
+
+            /**
+             * pre-calculate frequencies
+             */
+            $trendingcount = array();
+            foreach ($this->gaData[$host] as $path => $data) {
+                $trendingcount[$path] = $data['trendingRating'];
+            }
+            arsort($trendingcount);
+            $c = 0;
+            $a = count($trendingcount);
+            foreach ($trendingcount as $key => &$val) {
+                $c++;
+                if ($c < $a / 10) {
+                    $val = "trendingRatingA";
+                } else if ($c < $a / 10 * 5) {
+                    $val = "trendingRatingB";
+                } else {
+                    $val = "trendingRatingC";
+                }
+            }
+
+
             /**
              * calculate frequencies
              */
@@ -284,16 +323,17 @@ class GoogleAnalyticsFactory
                 $data['userAgeBracket'] = (string)key($data['userAgeBracket']);
 
                 // most trending hour
-                arsort($data['trending']);
-                $data['trending'] = (string)key($data['trending']);
+                arsort($data['trendingHour']);
+                $data['trendingHour'] = (string)key($data['trendingHour']);
 
+                // trending raating
+                $data['trendingRating'] = (string)$trendingcount[$path];
 
                 // most frequent keywords
                 if (is_array($data['keywords'])) {
                     arsort($data['keywords']);
                     $data['keywords'] = (string)key(array_slice($data['keywords'], 0, 1)) . " " . (string)key(array_slice($data['keywords'], 1, 1)) . " " . (string)key(array_slice($data['keywords'], 2, 1));
                 }
-
             }
         }
 
@@ -319,18 +359,19 @@ class GoogleAnalyticsFactory
         $data = array(
             'userGender' => '',
             'userAgeBracket' => '',
-            'trending' => '',
+            'trendingRating' => '',
+            'trendingHour' => '',
             'keywords' => '',
-            'path' => $host . "//" . $page
+            'path' => $host . $page
         );
 
 
         if (isset($this->gaData[$host][$page])) {
-            $data['userGender'] = isset($this->gaDataMappings['userGender'][$this->gaData[$host][$page]['userGender']]) ? $this->gaDataMappings['userGender'][$this->gaData[$host][$page]['userGender']] : $this->gaDataMappings['userGender'];
-            $data['userAgeBracket'] = isset($this->gaDataMappings['userAgeBracket'][$this->gaData[$host][$page]['userAgeBracket']]) ? $this->gaDataMappings['userAgeBracket'][$this->gaData[$host][$page]['userAgeBracket']] : $this->gaDataMappings['userAgeBracket'];
-            $data['userGender'] = isset($this->gaDataMappings['userGender'][$this->gaData[$host][$page]['userGender']]) ? $this->gaDataMappings['userGender'][$this->gaData[$host][$page]['userGender']] : $this->gaDataMappings['userGender'];
-            $data['trending'] = isset($this->gaData[$host][$page]['trending']) ? $this->gaData[$host][$page]['trending'] : '';
-            $data['keywords'] = isset($this->gaData[$host][$page]['keywords']) ? $this->gaData[$host][$page]['keywords'] : '';
+            $data['userGender'] = isset($this->gaDataMappings['userGender'][$this->gaData[$host][$page]['userGender']]) ? $this->gaDataMappings['userGender'][$this->gaData[$host][$page]['userGender']] : null;
+            $data['userAgeBracket'] = isset($this->gaDataMappings['userAgeBracket'][$this->gaData[$host][$page]['userAgeBracket']]) ? $this->gaDataMappings['userAgeBracket'][$this->gaData[$host][$page]['userAgeBracket']] : null;
+            $data['trendingHour'] = isset($this->gaData[$host][$page]['trendingHour']) ? $this->gaData[$host][$page]['trendingHour'] : null;
+            $data['trendingRating'] = isset($this->gaData[$host][$page]['trendingRating']) ? $this->gaData[$host][$page]['trendingRating'] : null;
+            $data['keywords'] = isset($this->gaData[$host][$page]['keywords']) ? $this->gaData[$host][$page]['keywords'] : null;
         }
 
         return $data;

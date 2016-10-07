@@ -99,7 +99,8 @@ class HybridSearchCommandController extends CommandController
     public function testCommand()
 
     {
-        $this->googleAnalyticsFactory->getGaDataByDestinationPage('test','test');
+
+        \TYPO3\Flow\var_dump($this->googleAnalyticsFactory->getGaDataByDestinationPage('phlu.ch.phlu-eduweb5.nine.ch','/studium.html'));
 
     }
 

@@ -882,8 +882,11 @@ class SearchIndexFactory
             $properties->__google = $gaData['keywords'];
             $properties->__userGender = $gaData['userGender'];
             $properties->__userAgeBracket = $gaData['userAgeBracket'];
-            $properties->__trendingHour = $gaData['trending'];
-
+            $properties->__trendingHour = $gaData['trendingHour'];
+            if ($gaData['trendingRating']) {
+                $t = "__".$gaData['trendingRating'];
+                $properties->$t = 'trendingRating';
+            }
         }
 
         $data->breadcrumb = $breadcrumb;
