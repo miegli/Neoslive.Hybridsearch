@@ -315,29 +315,28 @@ class GoogleAnalyticsFactory
             foreach ($this->gaData[$host] as $path => &$data) {
 
                 // most frequent users gender
-                if (is_array($data['userGender'])) {
+                if (isset($data['userGender']) && is_array($data['userGender'])) {
                     arsort($data['userGender']);
                     $data['userGender'] = (string)key($data['userGender']);
                 }
 
                 // most frequent users age
-                if (is_array($data['userAgeBracket'])) {
+                if (isset($data['userAgeBracket']) && is_array($data['userAgeBracket'])) {
                     arsort($data['userAgeBracket']);
                     $data['userAgeBracket'] = (string)key($data['userAgeBracket']);
                 }
 
                 // most trending hour
-                if (is_array($data['trendingHour'])) {
+                if (isset($data['trendingHour']) && is_array($data['trendingHour'])) {
                     arsort($data['trendingHour']);
                     $data['trendingHour'] = (string)key($data['trendingHour']);
                 }
-
 
                 // trending raating
                 $data['trendingRating'] = (string)$trendingcount[$path];
 
                 // most frequent keywords
-                if (is_array($data['keywords'])) {
+                if (isset($data['keywords']) && is_array($data['keywords'])) {
                     arsort($data['keywords']);
                     $data['keywords'] = (string)key(array_slice($data['keywords'], 0, 1)) . " " . (string)key(array_slice($data['keywords'], 1, 1)) . " " . (string)key(array_slice($data['keywords'], 2, 1));
                 }
