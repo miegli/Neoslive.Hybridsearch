@@ -315,16 +315,23 @@ class GoogleAnalyticsFactory
             foreach ($this->gaData[$host] as $path => &$data) {
 
                 // most frequent users gender
-                arsort($data['userGender']);
-                $data['userGender'] = (string)key($data['userGender']);
+                if (is_array($data['userGender'])) {
+                    arsort($data['userGender']);
+                    $data['userGender'] = (string)key($data['userGender']);
+                }
 
                 // most frequent users age
-                arsort($data['userAgeBracket']);
-                $data['userAgeBracket'] = (string)key($data['userAgeBracket']);
+                if (is_array($data['userAgeBracket'])) {
+                    arsort($data['userAgeBracket']);
+                    $data['userAgeBracket'] = (string)key($data['userAgeBracket']);
+                }
 
                 // most trending hour
-                arsort($data['trendingHour']);
-                $data['trendingHour'] = (string)key($data['trendingHour']);
+                if (is_array($data['trendingHour'])) {
+                    arsort($data['trendingHour']);
+                    $data['trendingHour'] = (string)key($data['trendingHour']);
+                }
+
 
                 // trending raating
                 $data['trendingRating'] = (string)$trendingcount[$path];
