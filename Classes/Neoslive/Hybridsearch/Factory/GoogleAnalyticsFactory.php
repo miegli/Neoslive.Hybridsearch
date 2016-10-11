@@ -11,8 +11,6 @@ namespace Neoslive\Hybridsearch\Factory;
  * source code.
  */
 
-
-use org\bovigo\vfs\vfsStreamWrapperAlreadyRegisteredTestCase;
 use TYPO3\Flow\Cli\ConsoleOutput;
 use TYPO3\Flow\Annotations as Flow;
 

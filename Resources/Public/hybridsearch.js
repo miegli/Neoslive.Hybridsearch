@@ -143,12 +143,12 @@
              */
             var HybridsearchObject = function (hybridsearch) {
 
-                var results, filter, index, lunrSearch, nodes, nodeTypeLabels, lastFilterHash, propertiesBoost, isRunning, searchTimer;
+                var results, filter, index, lunrSearch, nodes, nodeTypeLabels, lastFilterHash, propertiesBoost, isRunning, searchTimer, searchTimerTimestamp;
 
                 isRunning = false;
+                searchTimerTimestamp = Date.now();
                 results = new $hybridsearchResultsObject();
                 filter = new $hybridsearchFilterObject();
-                lastFilterHash = '';
                 nodeTypeLabels = {};
                 nodes = {};
                 index = {};
@@ -299,6 +299,11 @@
                     /**
                      * @private
                      */
+                    searchTimerInterval: false,
+
+                    /**
+                     * @private
+                     */
                     setIsRunning: function () {
                         isRunning = true;
                     },
@@ -377,7 +382,6 @@
 
                         var fields = {}, items = {}, self = this, nodesFound = {};
 
-
                         items['_nodes'] = {};
                         items['_nodesTurbo'] = {};
                         items['_nodesByType'] = {};
@@ -397,23 +401,24 @@
 
 
                             // execute query search
-
                             angular.forEach(lunrSearch.getFields(), function (v, k) {
                                 fields[v] = {boost: self.getBoost(v)}
                             });
 
 
+
+                            console.log(self.getFilter().getFullSearchQuery());
+
                             angular.forEach(lunrSearch.search(self.getFilter().getFullSearchQuery(), {
                                     fields: fields,
                                     bool: "OR"
                                 }), function (item) {
-                                    var nodeId = item.ref.substring(item.ref.indexOf("://") + 3), nodeTypeLabel;
-                                    if (nodes[nodeId] !== undefined) {
-                                        if (nodes[nodeId] !== undefined) {
-                                            self.addNodeToSearchResult(nodeId, item.score, nodesFound, items);
+
+                                    if (nodes[item.ref] !== undefined) {
+                                        if (nodes[item.ref] !== undefined) {
+                                            self.addNodeToSearchResult(item.ref, item.score, nodesFound, items);
                                         }
                                     }
-
                                 }
                             );
 
@@ -421,7 +426,6 @@
 
 
                         results.getApp().setResults(items);
-
 
                     },
 
@@ -532,125 +536,130 @@
                     setSearchIndex: function () {
 
 
+                        var searchTimerDelta = Date.now() - searchTimerTimestamp;
+
+                        if (searchTimerDelta > 1000) {
+                            searchTimerDelta = 10;
+                        }
+
+
                         if (searchTimer) {
                             clearTimeout(searchTimer);
                         }
 
-
-                        var self = this, counter = 0, lastinterval = false, updates = {};
+                        var self = this;
 
                         searchTimer = setTimeout(function () {
 
-                            if (self.getFilter().getNodeType()) {
+                            // if (self.getFilter().getNodeType()) {
 
-                                if (lastFilterHash != filter.getHash()) {
+                            // if (lastFilterHash != filter.getHash()) {
 
-                                    nodes = {};
-                                    // get all nodes by types without keyword
-                                    // don't process nodes over lunr search in this case
-                                    self.getIndex().on("value", function (data) {
-                                        updates[self.getFilter().getNodeType()] = data.val();
-                                        self.updateLocalIndex(updates);
-                                    });
+                            // nodes = {};
+                            // get all nodes by types without keyword
+                            // don't process nodes over lunr search in this case
+                            //  self.getIndex().on("value", function (data) {
+                            //      updates[self.getFilter().getNodeType()] = data.val();
+                            //     self.updateLocalIndex(updates);
 
-                                } else {
-                                    self.search();
-                                }
+                            // });
 
-                            } else {
+                            // } else {
 
+                            // }
 
-                                if (self.isRunning() && filter.hasFilters() && lastFilterHash != filter.getHash()) {
-
-                                    nodes = {};
+                            // } else {
 
 
-                                    results.$$app.clearResults();
-                                    filter.setAutocompletedKeywords('');
-                                    self.cleanLocalIndex();
+                            if (self.isRunning() && filter.hasFilters()) {
 
-                                    // unbind index watcher
-                                    angular.forEach(index, function (unbind) {
-                                        unbind.off();
-                                    });
-                                    index = {};
-
-                                    var isMatchExact = {};
-
-                                    angular.forEach(self.getFilter().getQueryKeywords(), function (value, keyword) {
-
-                                            isMatchExact[keyword] = false;
+                                nodes = {};
 
 
-                                            if (keyword.length > 2 || (keyword.length === 2 && isNaN(keyword) === false)) {
+                                results.$$app.clearResults();
+                                filter.setAutocompletedKeywords('');
+                                self.cleanLocalIndex();
 
-                                                counter++;
+                                // unbind index watcher
+                                angular.forEach(index, function (unbind) {
+                                    unbind.off();
+                                });
+                                index = {};
 
-                                                self.getKeywords(keyword).once("value", function (data) {
-
-
-                                                    angular.forEach(data.val(), function (val, keywordsegment) {
-
-                                                        if (!isMatchExact[keyword]) {
-
-                                                            // keyword was found
-                                                            if (
-
-                                                                filter.$$data.magickeywords.search(" " + keywordsegment + "") >= 0
-                                                                ||
-                                                                keyword == keywordsegment
-                                                                ||
-                                                                filter.$$data.magickeywords.search(" " + keywordsegment.substr(0, 6) + "") >= 0
-
-                                                            ) {
+                                var isMatchExact = {};
 
 
-                                                                filter.addAutocompletedKeywords(keywordsegment);
-                                                                if (index[keywordsegment] === undefined) {
-                                                                    self.getIndex(keywordsegment).on("value", function (data) {
-                                                                        if (data !== undefined) {
-                                                                            updates[keywordsegment] = data.val();
-                                                                            if (lastinterval) {
-                                                                                clearTimeout(lastinterval);
-                                                                            }
-                                                                            lastinterval = setTimeout(function () {
-                                                                                self.updateLocalIndex(updates);
-                                                                            }, 50);
+                                angular.forEach(self.getFilter().getQueryKeywords(), function (keyword) {
 
-                                                                        }
-                                                                    });
-                                                                }
+                                        isMatchExact[keyword] = false;
 
+                                        if (keyword.length > 2 || (keyword.length === 2 && isNaN(keyword) === false)) {
+
+
+
+
+                                            self.getKeywords(keyword).once("value", function (data) {
+
+
+                                                angular.forEach(data.val(), function (val, keywordsegment) {
+
+                                                    if (!isMatchExact[keyword]) {
+
+                                                        // keyword was found
+                                                        if (
+
+                                                            filter.$$data.magickeywords.search(" " + keywordsegment + "") >= 0
+                                                            ||
+                                                            keyword == keywordsegment
+                                                            ||
+                                                            filter.$$data.magickeywords.search(" " + keywordsegment.substr(0, 6) + "") >= 0
+
+                                                        ) {
+
+
+                                                            filter.addAutocompletedKeywords(keywordsegment);
+                                                            if (index[keywordsegment] === undefined) {
+                                                                self.getIndex(keywordsegment).on("value", function (data) {
+                                                                    if (data !== undefined) {
+                                                                        self.updateLocalIndex(data.val());
+                                                                    }
+                                                                });
                                                             }
 
-
                                                         }
 
 
-                                                        if (keywordsegment == keyword) {
-                                                            isMatchExact[keyword] = true;
-                                                        }
+                                                    }
 
 
-                                                    });
+                                                    if (keywordsegment == keyword) {
+                                                        isMatchExact[keyword] = true;
+                                                    }
 
 
                                                 });
 
 
-                                            }
+                                            });
+
 
                                         }
-                                    );
+
+                                    }
+                                );
 
 
-                                }
                             }
+                            //  }
 
 
-                            lastFilterHash = filter.getHash();
+                            // lastFilterHash = filter.getHash();
 
-                        }, 100);
+
+                        }, searchTimerDelta);
+
+
+                        searchTimerTimestamp = Date.now();
 
 
                     },
@@ -723,6 +732,9 @@
                      */
                     cleanLocalIndex: function () {
 
+
+                        nodes = {};
+
                         lunrSearch = elasticlunr(function () {
                             this.setRef('id');
                         });
@@ -736,28 +748,28 @@
                      */
                     updateLocalIndex: function (data) {
 
+
                         var self = this;
-                        nodes = {};
+
 
                         if (self.getFilter().getFullSearchQuery()) {
 
 
                             // add to lunr search index
-                            self.cleanLocalIndex();
+                            //self.cleanLocalIndex();
+                            self.addLocalIndex(data);
 
-                            angular.forEach(data, function (val, keyword) {
-                                //self.removeLocalIndex(keyword);
-                                self.addLocalIndex(keyword, val);
-                            });
+                            // angular.forEach(data, function (val, keyword) {
+                            //     //self.removeLocalIndex(keyword);
+                            //     self.addLocalIndex(keyword, val);
+                            // });
 
 
                         } else {
 
                             // add to local index
                             angular.forEach(data, function (value) {
-                                angular.forEach(value, function (d) {
-                                    nodes[d['_node']['identifier']] = d['_node'];
-                                });
+                                nodes[value['_node']['identifier']] = value['_node'];
                             });
 
 
@@ -793,7 +805,7 @@
                      * @param object data
                      * @returns mixed
                      */
-                    addLocalIndex: function (keyword, data) {
+                    addLocalIndex: function (data) {
 
                         var self = this;
 
@@ -815,7 +827,7 @@
                                         }
                                     });
 
-                                    doc.id = keyword + "://" + value._node.identifier;
+                                    doc.id = value._node.identifier;
                                     lunrSearch.addDoc(doc);
                                 }
 
@@ -868,10 +880,12 @@
                  * @returns  {HybridsearchObject}
                  */
                 run: function () {
+
                     this.$$app.setIsRunning();
                     this.$$app.setSearchIndex();
 
                 },
+
 
                 /**
                  * @param {string} nodeType to search only for
@@ -1271,6 +1285,8 @@
 
                         this.executeCallbackMethod(self);
 
+                        return self;
+
                     },
                     /**
                      * @private
@@ -1361,7 +1377,14 @@
                 getData: function () {
                     return this.$$app.getResultsData();
                 },
-
+                /**
+                 *
+                 * Get hash of results
+                 * @returns {string} Search results hash
+                 */
+                getHash: function () {
+                    return Sha1.hash(JSON.stringify(this.$$data));
+                },
                 /**
                  * Get number of search results.
                  * @returns {integer} Search results length.
@@ -1503,7 +1526,7 @@
                     hash.push(this.$$data.query);
                     hash.push(this.$$data.nodeType);
 
-                    return JSON.stringify(hash);
+                    return Sha1.hash(JSON.stringify(hash));
                 },
 
                 /**
@@ -1725,9 +1748,9 @@
                     }
 
                     var d = new Date();
-                    var q = this.$$data.magickeywords + " " + this.getAutocompletedKeywords() + " " + this.getAdditionalKeywords() + " " + "trendingRating trendingHour" + d.getHours() + " " + (this.getGa('userGender') ? this.getGa('userGender') : '') + " " + (this.getGa('userGender') ? this.getGa('userAgeBracket') : '');
 
-                    console.log(q);
+                    var q = this.$$data.magickeywords + " " + this.getAutocompletedKeywords() + " " + this.getAdditionalKeywords() + " " + " trendingHour" + d.getHours() + " " + (this.getGa('userGender') ? this.getGa('userGender') : '') + " " + (this.getGa('userGender') ? this.getGa('userAgeBracket') : '');
+
 
                     return q.length > 1 ? q : false;
 
@@ -1790,6 +1813,7 @@
                         if (term.length > 0) keywords[term] = true;
                     });
 
+
                     return this.getMagicQuery(keywords);
 
                 },
@@ -1800,27 +1824,27 @@
                  */
                 getMagicQuery: function (keywords) {
 
-                    var magickeywords = {};
+                    var magickeywords = [];
                     var self = this;
 
                     angular.forEach(keywords, function (k, term) {
 
                         magickeywords[term] = true;
                         angular.forEach(self.getMagicReplacements(term), function (a, t) {
-                            magickeywords[t] = true;
+                            magickeywords.push(t);
                         });
 
 
                     });
 
                     self.$$data.magickeywords = ' ';
-                    angular.forEach(magickeywords, function (k, term) {
+                    angular.forEach(magickeywords, function (term) {
                         self.$$data.magickeywords += term + ' ';
                     });
                     self.$$data.magickeywords += ' ';
 
 
-                    return magickeywords;
+                    return magickeywords.sort();
 
                 },
 
@@ -1895,7 +1919,7 @@
                     magicreplacements[string.replace(/ch/, "k")] = true;
                     magicreplacements[string.replace(/k/, "ch")] = true;
 
-                    magicreplacements[string.substr(0,string.length-1)] = true;
+                    magicreplacements[string.substr(0, string.length - 1)] = true;
 
                     return magicreplacements;
 
@@ -1911,3 +1935,174 @@
 
 
 })();
+
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  */
+/*  SHA-1 implementation in JavaScript                  (c) Chris Veness 2002-2014 / MIT Licence  */
+/*                                                                                                */
+/*  - see http://csrc.nist.gov/groups/ST/toolkit/secure_hashing.html                              */
+/*        http://csrc.nist.gov/groups/ST/toolkit/examples.html                                    */
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  */
+
+'use strict';
+
+
+/**
+ * SHA-1 hash function reference implementation.
+ *
+ * @namespace
+ */
+var Sha1 = {};
+
+
+/**
+ * Generates SHA-1 hash of string.
+ *
+ * @param   {string} msg - (Unicode) string to be hashed.
+ * @returns {string} Hash of msg as hex character string.
+ */
+Sha1.hash = function (msg) {
+    // convert string to UTF-8, as SHA only deals with byte-streams
+    msg = msg.utf8Encode();
+
+    // constants [§4.2.1]
+    var K = [0x5a827999, 0x6ed9eba1, 0x8f1bbcdc, 0xca62c1d6];
+
+    // PREPROCESSING
+
+    msg += String.fromCharCode(0x80);  // add trailing '1' bit (+ 0's padding) to string [§5.1.1]
+
+    // convert string msg into 512-bit/16-integer blocks arrays of ints [§5.2.1]
+    var l = msg.length / 4 + 2; // length (in 32-bit integers) of msg + ‘1’ + appended length
+    var N = Math.ceil(l / 16);  // number of 16-integer-blocks required to hold 'l' ints
+    var M = new Array(N);
+
+    for (var i = 0; i < N; i++) {
+        M[i] = new Array(16);
+        for (var j = 0; j < 16; j++) {  // encode 4 chars per integer, big-endian encoding
+            M[i][j] = (msg.charCodeAt(i * 64 + j * 4) << 24) | (msg.charCodeAt(i * 64 + j * 4 + 1) << 16) |
+                (msg.charCodeAt(i * 64 + j * 4 + 2) << 8) | (msg.charCodeAt(i * 64 + j * 4 + 3));
+        } // note running off the end of msg is ok 'cos bitwise ops on NaN return 0
+    }
+    // add length (in bits) into final pair of 32-bit integers (big-endian) [§5.1.1]
+    // note: most significant word would be (len-1)*8 >>> 32, but since JS converts
+    // bitwise-op args to 32 bits, we need to simulate this by arithmetic operators
+    M[N - 1][14] = ((msg.length - 1) * 8) / Math.pow(2, 32);
+    M[N - 1][14] = Math.floor(M[N - 1][14]);
+    M[N - 1][15] = ((msg.length - 1) * 8) & 0xffffffff;
+
+    // set initial hash value [§5.3.1]
+    var H0 = 0x67452301;
+    var H1 = 0xefcdab89;
+    var H2 = 0x98badcfe;
+    var H3 = 0x10325476;
+    var H4 = 0xc3d2e1f0;
+
+    // HASH COMPUTATION [§6.1.2]
+
+    var W = new Array(80);
+    var a, b, c, d, e;
+    for (var i = 0; i < N; i++) {
+
+        // 1 - prepare message schedule 'W'
+        for (var t = 0; t < 16; t++) W[t] = M[i][t];
+        for (var t = 16; t < 80; t++) W[t] = Sha1.ROTL(W[t - 3] ^ W[t - 8] ^ W[t - 14] ^ W[t - 16], 1);
+
+        // 2 - initialise five working variables a, b, c, d, e with previous hash value
+        a = H0;
+        b = H1;
+        c = H2;
+        d = H3;
+        e = H4;
+
+        // 3 - main loop
+        for (var t = 0; t < 80; t++) {
+            var s = Math.floor(t / 20); // seq for blocks of 'f' functions and 'K' constants
+            var T = (Sha1.ROTL(a, 5) + Sha1.f(s, b, c, d) + e + K[s] + W[t]) & 0xffffffff;
+            e = d;
+            d = c;
+            c = Sha1.ROTL(b, 30);
+            b = a;
+            a = T;
+        }
+
+        // 4 - compute the new intermediate hash value (note 'addition modulo 2^32')
+        H0 = (H0 + a) & 0xffffffff;
+        H1 = (H1 + b) & 0xffffffff;
+        H2 = (H2 + c) & 0xffffffff;
+        H3 = (H3 + d) & 0xffffffff;
+        H4 = (H4 + e) & 0xffffffff;
+    }
+
+    return Sha1.toHexStr(H0) + Sha1.toHexStr(H1) + Sha1.toHexStr(H2) +
+        Sha1.toHexStr(H3) + Sha1.toHexStr(H4);
+};
+
+
+/**
+ * Function 'f' [§4.1.1].
+ * @private
+ */
+Sha1.f = function (s, x, y, z) {
+    switch (s) {
+        case 0:
+            return (x & y) ^ (~x & z);           // Ch()
+        case 1:
+            return x ^ y ^ z;                 // Parity()
+        case 2:
+            return (x & y) ^ (x & z) ^ (y & z);  // Maj()
+        case 3:
+            return x ^ y ^ z;                 // Parity()
+    }
+};
+
+/**
+ * Rotates left (circular left shift) value x by n positions [§3.2.5].
+ * @private
+ */
+Sha1.ROTL = function (x, n) {
+    return (x << n) | (x >>> (32 - n));
+};
+
+
+/**
+ * Hexadecimal representation of a number.
+ * @private
+ */
+Sha1.toHexStr = function (n) {
+    // note can't use toString(16) as it is implementation-dependant,
+    // and in IE returns signed numbers when used on full words
+    var s = '', v;
+    for (var i = 7; i >= 0; i--) {
+        v = (n >>> (i * 4)) & 0xf;
+        s += v.toString(16);
+    }
+    return s;
+};
+
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  */
+
+
+/** Extend String object with method to encode multi-byte string to utf8
+ *  - monsur.hossa.in/2012/07/20/utf-8-in-javascript.html */
+if (typeof String.prototype.utf8Encode == 'undefined') {
+    String.prototype.utf8Encode = function () {
+        return unescape(encodeURIComponent(this));
+    };
+}
+
+/** Extend String object with method to decode utf8 string to multi-byte */
+if (typeof String.prototype.utf8Decode == 'undefined') {
+    String.prototype.utf8Decode = function () {
+        try {
+            return decodeURIComponent(escape(this));
+        } catch (e) {
+            return this; // invalid UTF-8? return as-is
+        }
+    };
+}
+
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  */
+if (typeof module != 'undefined' && module.exports) module.exports = Sha1; // CommonJs export
