@@ -731,6 +731,7 @@
 
 
                         nodes = {};
+                        this.getFilter().setAutocompletedKeywords('');
 
                         lunrSearch = elasticlunr(function () {
                             this.setRef('id');
