@@ -406,7 +406,6 @@
                             });
 
 
-
                             console.log(self.getFilter().getFullSearchQuery());
 
                             angular.forEach(lunrSearch.search(self.getFilter().getFullSearchQuery(), {
@@ -594,8 +593,6 @@
                                         isMatchExact[keyword] = false;
 
                                         if (keyword.length > 2 || (keyword.length === 2 && isNaN(keyword) === false)) {
-
-
 
 
                                             self.getKeywords(keyword).once("value", function (data) {
@@ -1856,70 +1853,45 @@
 
                     var magicreplacements = {};
 
-                    magicreplacements[string.replace(/ll/, "l")] = true;
-                    magicreplacements[string.replace(/l/, "ll")] = true;
-                    magicreplacements[string.replace(/pp/, "p")] = true;
-                    magicreplacements[string.replace(/p/, "pp")] = true;
-                    magicreplacements[string.replace(/ph/, "f")] = true;
-                    magicreplacements[string.replace(/f/, "ph")] = true;
-                    magicreplacements[string.replace(/ü/, "ue")] = true;
-                    magicreplacements[string.replace(/ä/, "ae")] = true;
-                    magicreplacements[string.replace(/d/, "t")] = true;
-                    magicreplacements[string.replace(/ss/, "s")] = true;
-                    magicreplacements[string.replace(/s/, "ss")] = true;
-                    magicreplacements[string.replace(/tt/, "t")] = true;
-                    magicreplacements[string.replace(/t/, "tt")] = true;
-                    magicreplacements[string.replace(/m/, "mm")] = true;
-                    magicreplacements[string.replace(/mm/, "m")] = true;
-                    magicreplacements[string.replace(/n/, "nn")] = true;
-                    magicreplacements[string.replace(/nn/, "n")] = true;
-                    magicreplacements[string.replace(/th/, "t")] = true;
-                    magicreplacements[string.replace(/t/, "th")] = true;
-                    magicreplacements[string.replace(/t/, "d")] = true;
-                    magicreplacements[string.replace(/e/, "i")] = true;
-                    magicreplacements[string.replace(/i/, "e")] = true;
-                    magicreplacements[string.replace(/w/, "v")] = true;
-                    magicreplacements[string.replace(/v/, "w")] = true;
-                    magicreplacements[string.replace(/h/, "")] = true;
-                    magicreplacements[string.replace(/a/, "o")] = true;
-                    magicreplacements[string.replace(/o/, "a")] = true;
-                    magicreplacements[string.replace(/p/, "b")] = true;
-                    magicreplacements[string.replace(/b/, "p")] = true;
-                    magicreplacements[string.replace(/c/, "k")] = true;
-                    magicreplacements[string.replace(/k/, "c")] = true;
-                    magicreplacements[string.replace(/ck/, "ch")] = true;
-                    magicreplacements[string.replace(/ch/, "ck")] = true;
-                    magicreplacements[string.replace(/k/, "ck")] = true;
-                    magicreplacements[string.replace(/ck/, "k")] = true;
-                    magicreplacements[string.replace(/ch/, "k")] = true;
-                    magicreplacements[string.replace(/cc/, "c")] = true;
-                    magicreplacements[string.replace(/c/, "cc")] = true;
-                    magicreplacements[string.replace(/è/, "e")] = true;
-                    magicreplacements[string.replace(/é/, "e")] = true;
-                    magicreplacements[string.replace(/e/, "è")] = true;
-                    magicreplacements[string.replace(/gg/, "g")] = true;
-                    magicreplacements[string.replace(/s/, "hs")] = true;
-                    magicreplacements[string.replace(/o/, "ö")] = true;
-                    magicreplacements[string.replace(/e/, "é")] = true;
-                    magicreplacements[string.replace(/z/, "s")] = true;
-                    magicreplacements[string.replace(/tz/, "z")] = true;
-                    magicreplacements[string.replace(/z/, "tz")] = true;
-                    magicreplacements[string.replace(/rr/, "r")] = true;
-                    magicreplacements[string.replace(/r/, "rr")] = true;
-                    magicreplacements[string.replace(/tz/, "z")] = true;
-                    magicreplacements[string.replace(/z/, "tz")] = true;
-                    magicreplacements[string.replace(/ff/, "f")] = true;
-                    magicreplacements[string.replace(/f/, "ff")] = true;
-                    magicreplacements[string.replace(/üe/, "ü")] = true;
-                    magicreplacements[string.replace(/ü/, "üe")] = true;
-                    magicreplacements[string.replace(/oo/, "o")] = true;
-                    magicreplacements[string.replace(/o/, "oo")] = true;
-                    magicreplacements[string.replace(/ie/, "i")] = true;
-                    magicreplacements[string.replace(/i/, "ie")] = true;
-                    magicreplacements[string.replace(/ch/, "k")] = true;
-                    magicreplacements[string.replace(/k/, "ch")] = true;
+                    // keep original term
+                    magicreplacements[string] = true;
 
+                    // get shorter term
                     magicreplacements[string.substr(0, string.length - 1)] = true;
+
+                    // double consonants
+                    var d = string.replace(/([bcdfghjklmnpqrstvwxyz])\1+/, "$1");
+                    magicreplacements[d] = true;
+                    magicreplacements[d.replace(/(.*)([bcdfghjklmnpqrstvwxyz])([^bcdfghjklmnpqrstvwxyz]*)/, "$1$2$2$3").replace(/([bcdfghjklmnpqrstvwxyz])\3+/, "$1$1")] = true;
+                    magicreplacements[d.replace(/(.*)([bcdfghjklmnpqrstvwxyz])([^bcdfghjklmnpqrstvwxyz]*)([bcdfghjklmnpqrstvwxyz])([^bcdfghjklmnpqrstvwxyz]*)/, "$1$2$2$3$4$4$5").replace(/([bcdfghjklmnpqrstvwxyz])\3+/, "$1$1")] = true;
+
+                    // common typo errors
+                    magicreplacements[d.replace(/th/, "t")] = true;
+                    magicreplacements[d.replace(/t/, "th")] = true;
+                    magicreplacements[d.replace(/(.*)ph(.*)/, "$1f$2")] = true;
+                    magicreplacements[d.replace(/(.*)f(.*)/, "$1ph$2")] = true;
+                    magicreplacements[d.replace(/(.*)tz(.*)/, "$1t$2")] = true;
+                    magicreplacements[d.replace(/(.*)t(.*)/, "$1tz$2")] = true;
+                    magicreplacements[d.replace(/(.*)rm(.*)/, "$1m$2")] = true;
+                    magicreplacements[d.replace(/(.*)m(.*)/, "$1rm$2")] = true;
+                    magicreplacements[d.replace(/(.*)th(.*)/, "$1t$2")] = true;
+                    magicreplacements[d.replace(/(.*)t(.*)/, "$1th$2")] = true;
+                    magicreplacements[d.replace(/(.*)a(.*)/, "$1ia$2")] = true;
+                    magicreplacements[d.replace(/(.*)ai(.*)/, "$1a$2")] = true;
+                    magicreplacements[d.replace(/(.*)rd(.*)/, "$1d$2")] = true;
+                    magicreplacements[d.replace(/(.*)d(.*)/, "$1rd$2")] = true;
+                    magicreplacements[d.replace(/(.*)t(.*)/, "$1d$2")] = true;
+                    magicreplacements[d.replace(/(.*)d(.*)/, "$1t$2")] = true;
+                    magicreplacements[d.replace(/(.*)k(.*)/, "$1x$2")] = true;
+                    magicreplacements[d.replace(/(.*)x(.*)/, "$1k$2")] = true;
+                    magicreplacements[d.replace(/(.*)k(.*)/, "$1c$2")] = true;
+                    magicreplacements[d.replace(/(.*)c(.*)/, "$1k$2")] = true;
+                    magicreplacements[d.replace(/(.*)ck(.*)/, "$1k$2")] = true;
+                    magicreplacements[d.replace(/(.*)ck(.*)/, "$1ch$2")] = true;
+                    magicreplacements[d.replace(/(.*)ch(.*)/, "$1ck$2")] = true;
+                    magicreplacements[d.replace(/(.*)ie(.*)/, "$1i$2")] = true;
+                    magicreplacements[d.replace(/(.*)i(.*)/, "$1ie$2")] = true;
+
 
                     return magicreplacements;
 
