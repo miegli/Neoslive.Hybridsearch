@@ -443,15 +443,15 @@
 
                         if (nodesFound[hash] !== undefined) {
 
-                            if (items['_nodesTurbo'][hash] !== undefined) {
-                                items['_nodesTurbo'][hash].addScore(score);
-                            }
-                            if (items['_nodes'][hash] !== undefined) {
-                                items['_nodes'][hash].addScore(score);
-                            }
-                            if (items['_nodesByType'][nodeTypeLabel][hash] !== undefined) {
-                                items['_nodesByType'][nodeTypeLabel][hash].addScore(score);
-                            }
+                            // if (items['_nodesTurbo'][hash] !== undefined) {
+                            //   //  items['_nodesTurbo'][hash].addScore(score);
+                            // }
+                            // if (items['_nodes'][hash] !== undefined) {
+                            //  //   items['_nodes'][hash].addScore(score);
+                            // }
+                            // if (items['_nodesByType'][nodeTypeLabel][hash] !== undefined) {
+                            //    // items['_nodesByType'][nodeTypeLabel][hash].addScore(score);
+                            // }
 
                             skip = true;
                         }
@@ -654,12 +654,10 @@
                                 var uniquarray = [];
 
                                 angular.forEach(lastSearchInstance.$$data.keywords, function (keyword) {
-
-                                    if (uniqueobject[keyword] === undefined) {
+                                    if (uniqueobject[keyword] === undefined && query.search(" " + keyword.substr(0, 3)) >= 0) {
                                         uniquarray.push(keyword);
                                     }
                                     uniqueobject[keyword] = true;
-
                                 });
 
 
@@ -706,15 +704,23 @@
                     getKeywords: function (querysegment, instance = false) {
 
 
-                        var substr = querysegment.toLowerCase();
-                        if (substr.length > 8) {
-                            substr = substr.substr(0, substr.length - 3);
+                        var substrStart = querysegment.toLowerCase();
+                        var substrEnd = substrStart;
+                        if (substrStart.length > 8) {
+                            substrStart = substrStart.substr(0, substrStart.length - 3);
                         }
-                        var query = " " + this.getFilter().getQuery() + " ";
+
 
                         instance.$$data.running++;
 
-                        instance.$$data.promises[querysegment] = hybridsearch.$firebase().database().ref().child("keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().startAt(substr).limitToFirst(10).on("value", function (data) {
+                        if (parseInt(substrEnd) > 0) {
+                            var ref = hybridsearch.$firebase().database().ref().child("keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().equalTo(substrEnd).limitToFirst(1);
+                        } else {
+                            var ref = hybridsearch.$firebase().database().ref().child("keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().startAt(substrStart).limitToFirst(10);
+                        }
+
+                        instance.$$data.promises[querysegment] = ref.on("value", function (data) {
+
 
                             if (data !== undefined) {
                                 angular.forEach(data.val(), function (v, k) {
@@ -1528,6 +1534,12 @@
 
             var filterReg = /[^0-9a-zA-ZöäüÖÄÜ]/g;
 
+
+            var defaultStopWords = [
+                "a", "ab", "aber", "ach", "acht", "achte", "achten", "achter", "achtes", "ag", "alle", "allein", "allem", "allen", "aller", "allerdings", "alles", "allgemeinen", "als", "also", "am", "an", "andere", "anderen", "andern", "anders", "au", "auch", "auf", "aus", "ausser", "ausserdem", "außer", "außerdem", "b", "bald", "bei", "beide", "beiden", "beim", "beispiel", "bekannt", "bereits", "besonders", "besser", "besten", "bin", "bis", "bisher", "bist", "c", "d", "d.h", "da", "dabei", "dadurch", "dafür", "dagegen", "daher", "dahin", "dahinter", "damals", "damit", "danach", "daneben", "dank", "dann", "daran", "darauf", "daraus", "darf", "darfst", "darin", "darum", "darunter", "darüber", "das", "dasein", "daselbst", "dass", "dasselbe", "davon", "davor", "dazu", "dazwischen", "daß", "dein", "deine", "deinem", "deiner", "dem", "dementsprechend", "demgegenüber", "demgemäss", "demgemäß", "demselben", "demzufolge", "den", "denen", "denn", "denselben", "der", "deren", "derjenige", "derjenigen", "dermassen", "dermaßen", "derselbe", "derselben", "des", "deshalb", "desselben", "dessen", "deswegen", "dich", "die", "diejenige", "diejenigen", "dies", "diese", "dieselbe", "dieselben", "diesem", "diesen", "dieser", "dieses", "dir", "doch", "dort", "drei", "drin", "dritte", "dritten", "dritter", "drittes", "du", "durch", "durchaus", "durfte", "durften", "dürfen", "dürft", "e", "eben", "ebenso", "ehrlich", "ei", "ei,", "eigen", "eigene", "eigenen", "eigener", "eigenes", "ein", "einander", "eine", "einem", "einen", "einer", "eines", "einige", "einigen", "einiger", "einiges", "einmal", "eins", "elf", "en", "ende", "endlich", "entweder", "er", "erst", "erste", "ersten", "erster", "erstes", "es", "etwa", "etwas", "euch", "euer", "eure", "f", "folgende", "früher", "fünf", "fünfte", "fünften", "fünfter", "fünftes", "für", "g", "gab", "ganz", "ganze", "ganzen", "ganzer", "ganzes", "gar", "gedurft", "gegen", "gegenüber", "gehabt", "gehen", "geht", "gekannt", "gekonnt", "gemacht", "gemocht", "gemusst", "genug", "gerade", "gern", "gesagt", "geschweige", "gewesen", "gewollt", "geworden", "gibt", "ging", "gleich", "gott", "gross", "grosse", "grossen", "grosser", "grosses", "groß", "große", "großen", "großer", "großes", "gut", "gute", "guter", "gutes", "h", "habe", "haben", "habt", "hast", "hat", "hatte", "hatten", "hattest", "hattet", "heisst", "her", "heute", "hier", "hin", "hinter", "hoch", "hätte", "hätten", "i", "ich", "ihm", "ihn", "ihnen", "ihr", "ihre", "ihrem", "ihren", "ihrer", "ihres", "im", "immer", "in", "indem", "infolgedessen", "ins", "irgend", "ist", "j", "ja", "jahr", "jahre", "jahren", "je", "jede", "jedem", "jeden", "jeder", "jedermann", "jedermanns", "jedes", "jedoch", "jemand", "jemandem", "jemanden", "jene", "jenem", "jenen", "jener", "jenes", "jetzt", "k", "kam", "kann", "kannst", "kaum", "kein", "keine", "keinem", "keinen", "keiner", "kleine", "kleinen", "kleiner", "kleines", "kommen", "kommt", "konnte", "konnten", "kurz", "können", "könnt", "könnte", "l", "lang", "lange", "leicht", "leide", "lieber", "los", "m", "machen", "macht", "machte", "mag", "magst", "mahn", "mal", "man", "manche", "manchem", "manchen", "mancher", "manches", "mann", "mehr", "mein", "meine", "meinem", "meinen", "meiner", "meines", "mensch", "menschen", "mich", "mir", "mit", "mittel", "mochte", "mochten", "morgen", "muss", "musst", "musste", "mussten", "muß", "mußt", "möchte", "mögen", "möglich", "mögt", "müssen", "müsst", "müßt", "n", "na", "nach", "nachdem", "nahm", "natürlich", "neben", "nein", "neue", "neuen", "neun", "neunte", "neunten", "neunter", "neuntes", "nicht", "nichts", "nie", "niemand", "niemandem", "niemanden", "noch", "nun", "nur", "o", "ob", "oben", "oder", "offen", "oft", "ohne", "p", "q", "r", "recht", "rechte", "rechten", "rechter", "rechtes", "richtig", "rund", "s", "sa", "sache", "sagt", "sagte", "sah", "satt", "schlecht", "schon", "sechs", "sechste", "sechsten", "sechster", "sechstes", "sehr", "sei", "seid", "seien", "sein", "seine", "seinem", "seinen", "seiner", "seines", "seit", "seitdem", "selbst", "sich", "sie", "sieben", "siebente", "siebenten", "siebenter", "siebentes", "sind", "so", "solang", "solche", "solchem", "solchen", "solcher", "solches", "soll", "sollen", "sollst", "sollt", "sollte", "sollten", "sondern", "sonst", "soweit", "sowie", "später", "startseite", "statt", "steht", "suche", "t", "tag", "tage", "tagen", "tat", "teil", "tel", "tritt", "trotzdem", "tun", "u", "uhr", "um", "und", "und?", "uns", "unser", "unsere", "unserer", "unter", "v", "vergangenen", "viel", "viele", "vielem", "vielen", "vielleicht", "vier", "vierte", "vierten", "vierter", "viertes", "vom", "von", "vor", "w", "wahr", "wann", "war", "waren", "wart", "warum", "was", "wegen", "weil", "weit", "weiter", "weitere", "weiteren", "weiteres", "welche", "welchem", "welchen", "welcher", "welches", "wem", "wen", "wenig", "wenige", "weniger", "weniges", "wenigstens", "wenn", "wer", "werde", "werden", "werdet", "weshalb", "wessen", "wie", "wieder", "wieso", "will", "willst", "wir", "wird", "wirklich", "wirst", "wissen", "wo", "wohl", "wollen", "wollt", "wollte", "wollten", "worden", "wurde", "wurden", "während", "währenddem", "währenddessen", "wäre", "würde", "würden", "x", "y", "z", "z.b", "zehn", "zehnte", "zehnten", "zehnter", "zehntes", "zeit", "zu", "zuerst", "zugleich", "zum", "zunächst", "zur", "zurück", "zusammen", "zwanzig", "zwar", "zwei", "zweite", "zweiten", "zweiter", "zweites", "zwischen", "zwölf", "über", "überhaupt", "übrigens"
+            ];
+
+
             /**
              * HybridsearchFilterObject.
              * @private
@@ -1760,19 +1772,7 @@
                  */
                 isBlockedKeyword: function (keyword) {
 
-                    if (keyword == "zudem") {
-                        return true;
-                    }
-                    if (keyword == "zug") {
-                        return true;
-                    }
-                    if (keyword == "zum") {
-                        return true;
-                    }
-                    if (keyword == "zur") {
-                        return true;
-                    }
-                    if (keyword == "zwei") {
+                    if (defaultStopWords.indexOf(keyword) >= 0) {
                         return true;
                     }
 
@@ -1850,6 +1850,7 @@
                         uniqueobject[keyword] = true;
 
                     });
+
 
                     return uniquarray.join(" ");
 
