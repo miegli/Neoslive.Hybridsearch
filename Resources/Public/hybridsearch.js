@@ -917,6 +917,7 @@
 
                     this.$$app.getResults().getApp().setCallbackMethod(callback);
                     this.run();
+
                     return this;
                 },
 
@@ -1305,6 +1306,7 @@
                      */
                     setResults: function (results) {
 
+
                         this.clearResults();
 
 
@@ -1430,7 +1432,7 @@
                  * @returns {string} Search results hash
                  */
                 getHash: function () {
-                    return Sha1.hash(JSON.stringify(this.$$data));
+                    return Sha1.hash(JSON.stringify(this.$$data.results));
                 },
                 /**
                  * Get number of search results.
