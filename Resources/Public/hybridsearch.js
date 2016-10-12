@@ -143,799 +143,822 @@
              */
             var HybridsearchObject = function (hybridsearch) {
 
-                var results, filter, index, lunrSearch, nodes, nodeTypeLabels, propertiesBoost, isRunning, searchInstancesInterval, lastSearchInstance;
+                    var results, filter, index, lunrSearch, nodes, nodeTypeLabels, propertiesBoost, isRunning, searchInstancesInterval, lastSearchInstance;
 
-                isRunning = false;
-                searchInstancesInterval = false;
-                lastSearchInstance = false;
-                results = new $hybridsearchResultsObject();
-                filter = new $hybridsearchFilterObject();
-                nodeTypeLabels = {};
-                nodes = {};
-                index = {};
-                lunrSearch = elasticlunr(function () {
-                    this.setRef('id');
-                });
-
-
-                /**
-                 * init ga data
-                 */
-                if (filter.getGa() === undefined) {
-                    hybridsearch.$firebase().database().ref().child("ga").orderByChild("url").equalTo(location.href).limitToFirst(1).once('value', function (data) {
-                        angular.forEach(data.val(), function (val) {
-                            filter.setGa(val);
-                        });
+                    isRunning = false;
+                    searchInstancesInterval = false;
+                    lastSearchInstance = false;
+                    results = new $hybridsearchResultsObject();
+                    filter = new $hybridsearchFilterObject();
+                    nodeTypeLabels = {};
+                    nodes = {};
+                    index = {};
+                    lunrSearch = elasticlunr(function () {
+                        this.setRef('id');
                     });
-                }
 
-
-                /**
-                 *
-                 * @param nodeData {object|array} Nodes properties.
-                 * @param score {float} computed Relevance score.
-                 * @constructor
-                 */
-                var HybridsearchResultsNode = function (nodeData, score) {
-
-                    var self = this;
-
-                    angular.forEach(nodeData, function (val, key) {
-                        self[key] = val;
-                    });
-                    self.score = score;
-
-                };
-
-                HybridsearchResultsNode.prototype = {
 
                     /**
-                     * NodeType.
-                     * @returns {string} nodeType
+                     * init ga data
                      */
-                    getNodeType: function () {
-                        return this.nodeType !== undefined ? this.nodeType : '';
-                    },
-
-                    /**
-                     * Properties.
-                     * @returns {object}
-                     */
-                    getProperties: function () {
-                        return this.properties;
-                    },
-
-                    /**
-                     * Relevance score of search result.
-                     * @returns {float}
-                     */
-                    getScore: function () {
-                        return this.score !== undefined ? this.score : 0;
-                    },
-
-                    /**
-                     * @private
-                     * @returns float
-                     */
-                    addScore: function (score) {
-                        this.score = this.score + score;
-                    },
-
-                    /**
-                     * Is result a turbo node or not.
-                     * @returns {boolean}
-                     */
-                    isTurboNode: function () {
-                        return this.turbonode === undefined ? false : this.turbonode;
-                    },
-
-                    /**
-                     * Get property.
-                     * @param {string} property Get single property from node data.
-                     * @returns {mixed}
-                     */
-                    getProperty: function (property) {
-
-                        var value = '';
-
-                        if (this.properties[property] !== undefined) {
-                            return this.properties[property];
-                        }
-
-                        angular.forEach(this.properties, function (val, key) {
-                            if (value === '' && key.substr(key.length - property.length, property.length) === property) {
-                                value = val !== undefined ? val : '';
-                            }
+                    if (filter.getGa() === undefined) {
+                        hybridsearch.$firebase().database().ref().child("ga").orderByChild("url").equalTo(location.href).limitToFirst(1).once('value', function (data) {
+                            angular.forEach(data.val(), function (val) {
+                                filter.setGa(val);
+                            });
                         });
-
-                        return value;
-
-                    },
-
-                    /**
-                     * Url if its a document node.
-                     * @returns {string}
-                     */
-                    getUrl: function () {
-                        return this.url === undefined ? '' : this.url;
-                    },
-
-                    /**
-                     * Breadcrumb if its a document node.
-                     * @returns {string}
-                     */
-                    getBreadcrumb: function () {
-                        return this.breadcrumb === undefined ? '' : this.breadcrumb;
-                    },
-
-                    /**
-                     * Preview html content of node.
-                     * @returns {string}
-                     */
-                    getPreview: function () {
-                        return this.properties.rawcontent === undefined ? '' : this.properties.rawcontent;
-                    },
-
-                    /**
-                     * Parent node.
-                     * @returns {HybridsearchResultsNode}
-                     */
-                    getParent: function () {
-                        return this.parentNode ? new HybridsearchResultsNode(this.parentNode) : false;
-                    },
-
-                    /**
-                     * Nearest Document node.
-                     * @returns {HybridsearchResultsNode}
-                     */
-                    getDocumentNode: function () {
-                        return this.grandParentNode ? new HybridsearchResultsNode(this.grandParentNode) : false;
                     }
 
-                };
-
-
-                this.$$app = {
 
                     /**
-                     * @private
+                     *
+                     * @param nodeData {object|array} Nodes properties.
+                     * @param score {float} computed Relevance score.
+                     * @constructor
                      */
-                    setIsRunning: function () {
-                        isRunning = true;
-                    },
-                    /**
-                     * @private
-                     * @returns {boolean}
-                     */
-                    isRunning: function () {
-                        return isRunning;
-                    },
-                    /**
-                     * @private
-                     * @returns {{}|*}
-                     */
-                    getNodeTypeLabels: function () {
-                        return nodeTypeLabels;
-                    },
-                    /**
-                     * @private
-                     * @param nodeType
-                     * @returns {*}
-                     */
-                    getNodeTypeLabel: function (nodeType) {
-                        return nodeTypeLabels[nodeType] !== undefined ? nodeTypeLabels[nodeType] : nodeType;
-                    },
-                    /**
-                     * @private
-                     * @returns {*}
-                     */
-                    getPropertiesBoost: function () {
-                        return propertiesBoost;
-                    },
-                    /**
-                     * @private
-                     * @param property
-                     * @returns {number}
-                     */
-                    getBoost: function (property) {
-                        return propertiesBoost[property] ? propertiesBoost[property] : 10;
-                    },
-                    /**
-                     * @private
-                     * @param labels
-                     */
-                    setNodeTypeLabels: function (labels) {
-                        results.$$app.setNodeTypeLabels(labels);
-                        nodeTypeLabels = labels;
-                    },
-                    /**
-                     * @private
-                     * @param boost
-                     */
-                    setPropertiesBoost: function (boost) {
-                        propertiesBoost = boost;
-                    },
-                    /**
-                     * @private
-                     * @returns {hybridsearchResultsObject}
-                     */
-                    getResults: function () {
-                        return results;
-                    },
-                    /**
-                     * @private
-                     * @returns {hybridsearchFilterObject}
-                     */
-                    getFilter: function () {
-                        return filter;
-                    },
-                    /**
-                     * @private
-                     * @returns mixed
-                     */
-                    search: function () {
-
-
-                        var fields = {}, items = {}, self = this, nodesFound = {};
-
-                        items['_nodes'] = {};
-                        items['_nodesTurbo'] = {};
-                        items['_nodesByType'] = {};
-
-
-                        if (!self.getFilter().getFullSearchQuery()) {
-                            // return all nodes bco no query set
-                            angular.forEach(nodes, function (node) {
-                                if (self.isFiltered(node) === false) {
-                                    self.addNodeToSearchResult(node.identifier, 1, nodesFound, items);
-                                }
-
-                            });
-
-
-                        } else {
-
-
-                            // execute query search
-                            angular.forEach(lunrSearch.getFields(), function (v, k) {
-                                fields[v] = {boost: self.getBoost(v)}
-                            });
-
-                            angular.forEach(lunrSearch.search(filter.getFinalSearchQuery(lastSearchInstance), {
-                                    fields: fields,
-                                    bool: "OR"
-                                }), function (item) {
-
-                                    if (nodes[item.ref] !== undefined) {
-                                        self.addNodeToSearchResult(item.ref, item.score, nodesFound, items);
-                                    }
-
-                                }
-                            );
-
-                        }
-
-
-                        results.getApp().setResults(items);
-
-                    },
-
-
-                    /**
-                     * @private
-                     * @param integer nodeId
-                     * @param float score relevance
-                     * @param array nodesFound list
-                     * @param array items list
-                     * @returns boolean
-                     */
-                    addNodeToSearchResult: function (nodeId, score, nodesFound, items) {
-
-                        var skip = false;
-                        var hash = nodes[nodeId].hash;
-                        var nodeTypeLabel = nodeTypeLabels[nodes[nodeId].nodeType] !== undefined ? nodeTypeLabels[nodes[nodeId].nodeType] : nodes[nodeId].nodeType;
-
-
-                        if (items['_nodesByType'][nodeTypeLabel] === undefined) {
-                            items['_nodesByType'][nodeTypeLabel] = {};
-                        }
-
-
-                        if (nodesFound[hash] !== undefined) {
-
-                            // if (items['_nodesTurbo'][hash] !== undefined) {
-                            //   //  items['_nodesTurbo'][hash].addScore(score);
-                            // }
-                            // if (items['_nodes'][hash] !== undefined) {
-                            //  //   items['_nodes'][hash].addScore(score);
-                            // }
-                            // if (items['_nodesByType'][nodeTypeLabel][hash] !== undefined) {
-                            //    // items['_nodesByType'][nodeTypeLabel][hash].addScore(score);
-                            // }
-
-                            skip = true;
-                        }
-
-
-                        if (skip === false) {
-
-                            if (nodes[nodeId]['turbonode'] === true) {
-                                items['_nodesTurbo'][hash] = new HybridsearchResultsNode(nodes[nodeId], score);
-                            } else {
-                                items['_nodes'][hash] = new HybridsearchResultsNode(nodes[nodeId], score);
-                            }
-
-
-                            items['_nodesByType'][nodeTypeLabel][hash] = new HybridsearchResultsNode(nodes[nodeId], score);
-                        }
-
-                        nodesFound[hash] = true;
-                    },
-
-
-                    /**
-                     * @private
-                     * @returns boolean
-                     */
-                    isFiltered: function (node) {
-
-                        if (this.getFilter().getNodePath().length > 0 && node.uri.path.substr(0, this.getFilter().getNodePath().length) != this.getFilter().getNodePath()) {
-                            return true;
-                        }
-
-                        var propertyFiltered = Object.keys(this.getFilter().getPropertyFilters()).length > 0 ? true : false;
-
-                        if (propertyFiltered) {
-                            var propertyNotFound = false;
-                            angular.forEach(this.getFilter().getPropertyFilters(), function (value, property) {
-
-                                if (propertyNotFound === false && node.properties[property] !== undefined) {
-                                    if (node.properties[property] === value) {
-                                        propertyFiltered = false;
-                                    } else {
-                                        propertyNotFound = true;
-                                    }
-                                }
-                            });
-                        }
-
-                        if (propertyFiltered === false && this.getFilter().getAgeFilter() != '') {
-                            if (this.getFilter().getPropertyFilters() != node.__userAgeBracket) {
-                                return false;
-                            }
-                        }
-
-                        if (propertyFiltered === false && this.getFilter().getGenderFilter() != '') {
-                            if (this.getFilter().getGenderFilter() != node.__userGender) {
-                                return false;
-                            }
-                        }
-
-
-                        return propertyFiltered;
-
-                    },
-
-
-                    /**
-                     * @private
-                     * @returns mixed
-                     */
-                    setSearchIndex: function () {
+                    var HybridsearchResultsNode = function (nodeData, score) {
 
                         var self = this;
 
-
-                        if (self.isRunning() && filter.hasFilters()) {
-
-
-                            if (lastSearchInstance) {
-                                // cancel old requests
-                                angular.forEach(lastSearchInstance.$$data.promises, function (unbind) {
-                                    unbind();
-                                });
-                                lastSearchInstance = null;
-                                lastSearchInstance = {};
-                            }
-
-                            if (searchInstancesInterval) {
-                                clearInterval(searchInstancesInterval);
-                            }
-
-                            results.$$app.clearResults();
-                            self.cleanLocalIndex();
-
-                            var keywords = self.getFilter().getQueryKeywords();
-                            var searchIndex = new this.SearchIndexInstance(self, keywords);
-                            lastSearchInstance = searchIndex.getIndex();
-
-                            var counter = 0;
-                            searchInstancesInterval = setInterval(function () {
-                                counter++;
-                                if (lastSearchInstance.$$data.canceled === true || counter > 15000 || lastSearchInstance.$$data.proceeded.length >= lastSearchInstance.$$data.running) {
-                                    clearInterval(searchInstancesInterval);
-                                    lastSearchInstance.execute(self, lastSearchInstance);
-                                }
-                            }, 10);
-
-                        }
-
-                    },
-
-                    /**
-                     * @private
-                     * @returns mixed
-                     */
-                    SearchIndexInstance: function (self, keywords) {
-
-
-                        // if (searchTimer) {
-                        //     clearTimeout(searchTimer);
-                        // }
-
-
-                        //  searchTimer = setTimeout(function () {
-
-                        // if (self.getFilter().getNodeType()) {
-
-                        // if (lastFilterHash != filter.getHash()) {
-
-                        // nodes = {};
-                        // get all nodes by types without keyword
-                        // don't process nodes over lunr search in this case
-                        //  self.getIndex().on("value", function (data) {
-                        //      updates[self.getFilter().getNodeType()] = data.val();
-                        //     self.updateLocalIndex(updates);
-
-                        // });
-
-                        // } else {
-
-                        // }
-
-                        // } else {
-
-
-                        this.$$data = {
-                            keywords: [],
-                            running: 0,
-                            proceeded: [],
-                            canceled: false,
-                            promises: {}
-                        };
-
-                        Object.defineProperty(this, '$$data', {
-                            value: this.$$data
+                        angular.forEach(nodeData, function (val, key) {
+                            self[key] = val;
                         });
+                        self.score = score;
+
+                    };
+
+                    HybridsearchResultsNode.prototype = {
 
                         /**
-                         * Run search.
-                         * @returns {SearchIndexInstance} SearchIndexInstance
+                         * NodeType.
+                         * @returns {string} nodeType
                          */
-                        this.getIndex = function () {
+                        getNodeType: function () {
+                            return this.nodeType !== undefined ? this.nodeType : '';
+                        },
 
-                            var instance = this;
+                        /**
+                         * Properties.
+                         * @returns {object}
+                         */
+                        getProperties: function () {
+                            return this.properties;
+                        },
 
-                            angular.forEach(keywords, function (keyword) {
-                                if (keyword.length > 2 || (keyword.length === 2 && isNaN(keyword) === false)) {
-                                    self.getKeywords(keyword, instance);
+                        /**
+                         * Relevance score of search result.
+                         * @returns {float}
+                         */
+                        getScore: function () {
+                            return this.score !== undefined ? this.score : 0;
+                        },
+
+                        /**
+                         * @private
+                         * @returns float
+                         */
+                        addScore: function (score) {
+                            this.score = this.score + score;
+                        },
+
+                        /**
+                         * Is result a turbo node or not.
+                         * @returns {boolean}
+                         */
+                        isTurboNode: function () {
+                            return this.turbonode === undefined ? false : this.turbonode;
+                        },
+
+                        /**
+                         * Get property.
+                         * @param {string} property Get single property from node data.
+                         * @returns {mixed}
+                         */
+                        getProperty: function (property) {
+
+                            var value = '';
+
+                            if (this.properties[property] !== undefined) {
+                                return this.properties[property];
+                            }
+
+                            angular.forEach(this.properties, function (val, key) {
+                                if (value === '' && key.substr(key.length - property.length, property.length) === property) {
+                                    value = val !== undefined ? val : '';
                                 }
                             });
 
-
-                            return instance;
-
+                            return value;
 
                         },
 
-                            /**
-                             * execute search.
-                             * @returns {SearchIndexInstance} SearchIndexInstance
-                             */
-                            this.execute = function (self, lastSearchInstance) {
+                        /**
+                         * Url if its a document node.
+                         * @returns {string}
+                         */
+                        getUrl: function () {
+                            return this.url === undefined ? '' : this.url;
+                        },
+
+                        /**
+                         * Breadcrumb if its a document node.
+                         * @returns {string}
+                         */
+                        getBreadcrumb: function () {
+                            return this.breadcrumb === undefined ? '' : this.breadcrumb;
+                        },
+
+                        /**
+                         * Preview html content of node.
+                         * @returns {string}
+                         */
+                        getPreview: function () {
+                            return this.properties.rawcontent === undefined ? '' : this.properties.rawcontent;
+                        },
+
+                        /**
+                         * Parent node.
+                         * @returns {HybridsearchResultsNode}
+                         */
+                        getParent: function () {
+                            return this.parentNode ? new HybridsearchResultsNode(this.parentNode) : false;
+                        },
+
+                        /**
+                         * Nearest Document node.
+                         * @returns {HybridsearchResultsNode}
+                         */
+                        getDocumentNode: function () {
+                            return this.grandParentNode ? new HybridsearchResultsNode(this.grandParentNode) : false;
+                        }
+
+                    };
 
 
-                                var matchexact = [];
-                                var query = " " + filter.getQuery() + " ";
+                    this.$$app = {
+
+                        /**
+                         * @private
+                         */
+                        setIsRunning: function () {
+                            isRunning = true;
+                        },
+                        /**
+                         * @private
+                         * @returns {boolean}
+                         */
+                        isRunning: function () {
+                            return isRunning;
+                        },
+                        /**
+                         * @private
+                         * @returns {{}|*}
+                         */
+                        getNodeTypeLabels: function () {
+                            return nodeTypeLabels;
+                        },
+                        /**
+                         * @private
+                         * @param nodeType
+                         * @returns {*}
+                         */
+                        getNodeTypeLabel: function (nodeType) {
+                            return nodeTypeLabels[nodeType] !== undefined ? nodeTypeLabels[nodeType] : nodeType;
+                        },
+                        /**
+                         * @private
+                         * @returns {*}
+                         */
+                        getPropertiesBoost: function () {
+                            return propertiesBoost;
+                        },
+                        /**
+                         * @private
+                         * @param property
+                         * @returns {number}
+                         */
+                        getBoost: function (property) {
+                            return propertiesBoost[property] ? propertiesBoost[property] : 10;
+                        },
+                        /**
+                         * @private
+                         * @param labels
+                         */
+                        setNodeTypeLabels: function (labels) {
+                            results.$$app.setNodeTypeLabels(labels);
+                            nodeTypeLabels = labels;
+                        },
+                        /**
+                         * @private
+                         * @param boost
+                         */
+                        setPropertiesBoost: function (boost) {
+                            propertiesBoost = boost;
+                        },
+                        /**
+                         * @private
+                         * @returns {hybridsearchResultsObject}
+                         */
+                        getResults: function () {
+                            return results;
+                        },
+                        /**
+                         * @private
+                         * @returns {hybridsearchFilterObject}
+                         */
+                        getFilter: function () {
+                            return filter;
+                        },
+                        /**
+                         * @private
+                         * @returns mixed
+                         */
+                        search: function () {
 
 
-                                angular.forEach(lastSearchInstance.$$data.keywords, function (v, k) {
+                            var fields = {}, items = {}, self = this, nodesFound = {};
 
-                                    if (v == query || query.search(" " + v + " ") >= 0 || (
-                                        v.length > 6 && query.search(" " + v.substr(0, 6)) >= 0 )
-                                    ) {
-                                        matchexact.push(v);
+                            items['_nodes'] = {};
+                            items['_nodesTurbo'] = {};
+                            items['_nodesByType'] = {};
+
+
+                            if (!self.getFilter().getFullSearchQuery()) {
+                                // return all nodes bco no query set
+                                angular.forEach(nodes, function (node) {
+                                    if (self.isFiltered(node) === false) {
+                                        self.addNodeToSearchResult(node.identifier, 1, nodesFound, items);
                                     }
 
                                 });
 
 
-                                if (matchexact.length) {
-                                    matchexact.sort();
-                                    lastSearchInstance.$$data.keywords = matchexact;
+                            } else {
+
+
+                                // execute query search
+                                angular.forEach(lunrSearch.getFields(), function (v, k) {
+                                    fields[v] = {boost: self.getBoost(v)}
+                                });
+
+                                angular.forEach(lunrSearch.search(filter.getFinalSearchQuery(lastSearchInstance), {
+                                        fields: fields,
+                                        bool: "OR"
+                                    }), function (item) {
+
+                                        if (nodes[item.ref] !== undefined) {
+                                            self.addNodeToSearchResult(item.ref, item.score, nodesFound, items);
+                                        }
+
+                                    }
+                                );
+
+                            }
+
+
+                            results.getApp().setResults(items);
+
+                        },
+
+
+                        /**
+                         * @private
+                         * @param integer nodeId
+                         * @param float score relevance
+                         * @param array nodesFound list
+                         * @param array items list
+                         * @returns boolean
+                         */
+                        addNodeToSearchResult: function (nodeId, score, nodesFound, items) {
+
+                            var skip = false;
+                            var hash = nodes[nodeId].hash;
+                            var nodeTypeLabel = nodeTypeLabels[nodes[nodeId].nodeType] !== undefined ? nodeTypeLabels[nodes[nodeId].nodeType] : nodes[nodeId].nodeType;
+
+
+                            if (items['_nodesByType'][nodeTypeLabel] === undefined) {
+                                items['_nodesByType'][nodeTypeLabel] = {};
+                            }
+
+
+                            if (nodesFound[hash] !== undefined) {
+
+                                // if (items['_nodesTurbo'][hash] !== undefined) {
+                                //   //  items['_nodesTurbo'][hash].addScore(score);
+                                // }
+                                // if (items['_nodes'][hash] !== undefined) {
+                                //  //   items['_nodes'][hash].addScore(score);
+                                // }
+                                // if (items['_nodesByType'][nodeTypeLabel][hash] !== undefined) {
+                                //    // items['_nodesByType'][nodeTypeLabel][hash].addScore(score);
+                                // }
+
+                                skip = true;
+                            }
+
+
+                            if (skip === false) {
+
+                                if (nodes[nodeId]['turbonode'] === true) {
+                                    items['_nodesTurbo'][hash] = new HybridsearchResultsNode(nodes[nodeId], score);
+                                } else {
+                                    items['_nodes'][hash] = new HybridsearchResultsNode(nodes[nodeId], score);
+                                }
+
+
+                                items['_nodesByType'][nodeTypeLabel][hash] = new HybridsearchResultsNode(nodes[nodeId], score);
+                            }
+
+                            nodesFound[hash] = true;
+                        },
+
+
+                        /**
+                         * @private
+                         * @returns boolean
+                         */
+                        isFiltered: function (node) {
+
+                            if (this.getFilter().getNodePath().length > 0 && node.uri.path.substr(0, this.getFilter().getNodePath().length) != this.getFilter().getNodePath()) {
+                                return true;
+                            }
+
+                            var propertyFiltered = Object.keys(this.getFilter().getPropertyFilters()).length > 0 ? true : false;
+
+                            if (propertyFiltered) {
+                                var propertyNotFound = false;
+                                angular.forEach(this.getFilter().getPropertyFilters(), function (value, property) {
+
+                                    if (propertyNotFound === false && node.properties[property] !== undefined) {
+                                        if (node.properties[property] === value) {
+                                            propertyFiltered = false;
+                                        } else {
+                                            propertyNotFound = true;
+                                        }
+                                    }
+                                });
+                            }
+
+                            if (propertyFiltered === false && this.getFilter().getAgeFilter() != '') {
+                                if (this.getFilter().getPropertyFilters() != node.__userAgeBracket) {
+                                    return false;
+                                }
+                            }
+
+                            if (propertyFiltered === false && this.getFilter().getGenderFilter() != '') {
+                                if (this.getFilter().getGenderFilter() != node.__userGender) {
+                                    return false;
+                                }
+                            }
+
+
+                            return propertyFiltered;
+
+                        },
+
+
+                        /**
+                         * @private
+                         * @returns mixed
+                         */
+                        setSearchIndex: function () {
+
+                            var self = this;
+
+
+                            if (self.isRunning() && filter.hasFilters()) {
+
+
+                                if (lastSearchInstance) {
+                                    // cancel old requests
+                                    angular.forEach(lastSearchInstance.$$data.promises, function (unbind) {
+                                        unbind();
+                                    });
+                                    lastSearchInstance = null;
+                                    lastSearchInstance = {};
+                                }
+
+                                if (searchInstancesInterval) {
+                                    clearInterval(searchInstancesInterval);
+                                }
+
+                                results.$$app.clearResults();
+                                self.cleanLocalIndex();
+
+                                var keywords = self.getFilter().getQueryKeywords();
+                                var searchIndex = new this.SearchIndexInstance(self, keywords);
+                                lastSearchInstance = searchIndex.getIndex();
+
+                                var counter = 0;
+                                searchInstancesInterval = setInterval(function () {
+                                    counter++;
+                                    if (lastSearchInstance.$$data.canceled === true || counter > 15000 || lastSearchInstance.$$data.proceeded.length >= lastSearchInstance.$$data.running) {
+                                        clearInterval(searchInstancesInterval);
+                                        lastSearchInstance.execute(self, lastSearchInstance);
+                                    }
+                                }, 10);
+
+                            }
+
+                        },
+
+                        /**
+                         * @private
+                         * @returns mixed
+                         */
+                        SearchIndexInstance: function (self, keywords) {
+
+
+                            // if (searchTimer) {
+                            //     clearTimeout(searchTimer);
+                            // }
+
+
+                            //  searchTimer = setTimeout(function () {
+
+                            // if (self.getFilter().getNodeType()) {
+
+                            // if (lastFilterHash != filter.getHash()) {
+
+                            // nodes = {};
+                            // get all nodes by types without keyword
+                            // don't process nodes over lunr search in this case
+                            //  self.getIndex().on("value", function (data) {
+                            //      updates[self.getFilter().getNodeType()] = data.val();
+                            //     self.updateLocalIndex(updates);
+
+                            // });
+
+                            // } else {
+
+                            // }
+
+                            // } else {
+
+
+                            this.$$data = {
+                                keywords: [],
+                                running: 0,
+                                proceeded: [],
+                                canceled: false,
+                                promises: {}
+                            };
+
+                            Object.defineProperty(this, '$$data', {
+                                value: this.$$data
+                            });
+
+                            /**
+                             * Run search.
+                             * @returns {SearchIndexInstance} SearchIndexInstance
+                             */
+                            this.getIndex = function () {
+
+                                var instance = this;
+
+                                angular.forEach(keywords, function (keyword) {
+                                    if (keyword.length > 2 || (keyword.length === 2 && isNaN(keyword) === false)) {
+                                        self.getKeywords(keyword, instance);
+                                    }
+                                });
+
+
+                                return instance;
+
+
+                            },
+
+                                /**
+                                 * execute search.
+                                 * @returns {SearchIndexInstance} SearchIndexInstance
+                                 */
+                                this.execute = function (self, lastSearchInstance) {
+
+
+                                    var matchexact = [];
+                                    var query = " " + filter.getQuery() + " ";
+
+
+                                    angular.forEach(lastSearchInstance.$$data.keywords, function (v, k) {
+
+                                        if (v == query || query.search(" " + v + " ") >= 0 || (
+                                            v.length > 6 && query.search(" " + v.substr(0, 6)) >= 0 )
+                                        ) {
+                                            matchexact.push(v);
+                                        }
+
+                                    });
+
+
+                                    if (matchexact.length) {
+                                        matchexact.sort();
+                                        lastSearchInstance.$$data.keywords = matchexact;
+
+                                    }
+
+                                    // get unique
+                                    var uniqueobject = {};
+                                    var uniquarray = [];
+
+                                    angular.forEach(lastSearchInstance.$$data.keywords, function (keyword) {
+                                        if (uniqueobject[keyword] === undefined) {
+                                            uniquarray.push(keyword);
+                                        }
+                                        uniqueobject[keyword] = true;
+                                    });
+
+
+                                    // reduce more based on subterm
+                                    var uniqueobject = {};
+                                    var uniquarrayfinal = [];
+
+                                    angular.forEach(lastSearchInstance.$$data.keywords, function (keyword) {
+                                        if (uniqueobject[keyword.substr(0, 6)] === undefined) {
+                                            uniqueobject[keyword.substr(0, 6)] = {};
+                                        }
+                                        uniqueobject[keyword.substr(0, 6)][keyword] = keyword;
+                                    });
+
+
+                                    angular.forEach(uniqueobject, function (short, key) {
+
+                                        var match = false;
+                                        angular.forEach(short, function (term) {
+                                            if (query.search(" " + term + " ") >= 0) {
+                                                match = term;
+                                            }
+                                        });
+
+                                        if (match) {
+                                            uniquarrayfinal.push(match);
+                                        } else {
+                                            angular.forEach(short, function (term) {
+
+                                                if (query.search(" " + term.substr(0, 3)) > -1) {
+                                                    uniquarrayfinal.push(term);
+                                                }
+
+                                            });
+                                        }
+
+                                    });
+
+
+                                    if (uniquarrayfinal.length === 0) {
+                                        self.getResults().$$data.notfound = true;
+                                        if (self.getResults().$$data.notfoundtimeout !== undefined) {
+                                            clearTimeout(self.getResults().$$data.notfoundtimeout);
+                                        }
+                                        self.getResults().$$data.notfoundtimeout = setTimeout(function () {
+                                                self.getResults().getApp().executeCallbackMethod(self.getResults());
+                                            },2000
+                                        )
+                                        ;
+
+                                    }
+                                    else {
+                                        self.getResults().$$data.notfound = false;
+                                    }
+
+                                    angular.forEach(uniquarrayfinal, function (keyword) {
+                                        self.getIndex(keyword).on("value", function (data) {
+                                            if (self.getFilter().isBlockedKeyword(keyword) === false) {
+                                                filter.addAutocompletedKeywords(keyword);
+                                                self.updateLocalIndex(data.val());
+                                            }
+
+                                        });
+                                    });
+
+                                    return this;
+                                }
+                            ;
+
+
+                            //  }
+
+
+                            // }, searchTimerDelta);
+
+
+                        }
+
+                        ,
+                        /**
+                         * @private
+                         * @param string querysegment
+                         * @returns {firebaseObject}
+                         */
+                        getKeyword: function (querysegment) {
+
+                            return hybridsearch.$firebase().database().ref().child("keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/" + querysegment);
+                        }
+
+                        ,
+                        /**
+                         * @private
+                         * @param string querysegment
+                         * @param {object}
+                         * @param boolean synchronous
+                         * @returns {firebaseObject}
+                         */
+                        getKeywords: function (querysegment, instance = false) {
+
+
+                            var substrStart = querysegment.toLowerCase();
+                            var substrEnd = substrStart;
+                            if (substrStart.length > 8) {
+                                substrStart = substrStart.substr(0, substrStart.length - 3);
+                            }
+
+
+                            instance.$$data.running++;
+
+                            if (parseInt(substrEnd) > 0) {
+                                var ref = hybridsearch.$firebase().database().ref().child("keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().equalTo(substrEnd).limitToFirst(1);
+                            } else {
+                                var ref = hybridsearch.$firebase().database().ref().child("keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().startAt(substrStart).limitToFirst(5);
+                            }
+
+                            instance.$$data.promises[querysegment] = ref.on("value", function (data) {
+
+
+                                if (data !== undefined) {
+                                    angular.forEach(data.val(), function (v, k) {
+                                        instance.$$data.keywords.push(k);
+                                    });
+                                }
+
+                                instance.$$data.proceeded.push(1);
+
+                            });
+
+
+                        }
+                        ,
+                        /**
+                         * @private
+                         * @param string keyword
+                         * @returns {firebaseObject}
+                         */
+                        getIndex: function (keyword) {
+
+
+                            if (keyword === undefined) {
+                                keyword = this.getFilter().getQuery() ? this.getFilter().getQuery() : '';
+                            }
+
+                            var ref = hybridsearch.$firebase().database().ref().child("index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension);
+                            var query = false;
+
+                            if (query === false && this.getFilter().getNodeType()) {
+                                if (keyword === "") {
+                                    query = ref.orderByChild("_nodetype").equalTo(this.getFilter().getNodeType());
+                                    keyword = this.getFilter().getNodeType();
+                                } else {
+                                    query = ref.orderByChild("_nodetype" + keyword).equalTo(this.getFilter().getNodeType()).limitToFirst(250);
+                                }
+
+                            }
+
+
+                            if (query === false) {
+                                query = ref.orderByChild(keyword).equalTo(1).limitToFirst(100);
+                            }
+
+                            index[keyword] = query;
+
+                            return query;
+
+                        }
+                        ,
+                        /**
+                         * @private
+                         * @param array
+                         * @returns void
+                         */
+                        cleanLocalIndex: function () {
+
+                            nodes = {};
+                            this.getFilter().setAutocompletedKeywords('');
+
+                            lunrSearch = elasticlunr(function () {
+                                this.setRef('id');
+                            });
+
+                        }
+                        ,
+                        /**
+                         * @private
+                         * @param object data
+                         * @returns void
+                         */
+                        updateLocalIndex: function (data) {
+
+
+                            var self = this;
+
+
+                            if (self.getFilter().getFullSearchQuery()) {
+
+
+                                // add to lunr search index
+                                //self.cleanLocalIndex();
+                                self.addLocalIndex(data);
+
+                                // angular.forEach(data, function (val, keyword) {
+                                //     //self.removeLocalIndex(keyword);
+                                //     self.addLocalIndex(keyword, val);
+                                // });
+
+
+                            } else {
+
+                                // add to local index
+                                angular.forEach(data, function (value) {
+                                    nodes[value['_node']['identifier']] = value['_node'];
+                                });
+
+
+                            }
+
+                            self.search();
+
+
+                        }
+                        ,
+                        /**
+                         * @private
+                         * @param string keyword
+                         * @returns mixed
+                         */
+                        removeLocalIndex: function (values) {
+
+                            var keyword = false;
+                            angular.forEach(values, function (key, doc) {
+
+                                if (lunrSearch.documentStore.hasDoc(doc)) {
+                                    lunrSearch.documentStore.removeDoc(doc);
+                                }
+                                keyword = key;
+                            });
+
+
+                        }
+                        ,
+                        /**
+                         * @private
+                         * @param string keyword
+                         * @param object data
+                         * @returns mixed
+                         */
+                        addLocalIndex: function (data) {
+
+                            var self = this;
+
+
+                            angular.forEach(data, function (value, key) {
+
+
+                                if (self.isFiltered(value['_node']) === false) {
+
+                                    nodes[value['_node']['identifier']] = value['_node'];
+
+                                    if (value._node != undefined && value._node.properties != undefined) {
+
+                                        var doc = value._node.properties;
+
+                                        angular.forEach(value._node.properties, function (val, key) {
+                                            if (lunrSearch.getFields().indexOf(key) < 0) {
+                                                lunrSearch.addField(key);
+                                            }
+                                        });
+
+                                        doc.id = value._node.identifier;
+                                        lunrSearch.addDoc(doc);
+                                    }
 
                                 }
 
-                                // get unique
-                                var uniqueobject = {};
-                                var uniquarray = [];
 
-                                angular.forEach(lastSearchInstance.$$data.keywords, function (keyword) {
-                                    if (uniqueobject[keyword] === undefined) {
-                                        uniquarray.push(keyword);
-                                    }
-                                    uniqueobject[keyword] = true;
-                                });
-
-
-                                // reduce more based on subterm
-                                var uniqueobject = {};
-                                var uniquarrayfinal = [];
-
-                                angular.forEach(lastSearchInstance.$$data.keywords, function (keyword) {
-                                    if (uniqueobject[keyword.substr(0, 6)] === undefined) {
-                                        uniqueobject[keyword.substr(0, 6)] = {};
-                                    }
-                                    uniqueobject[keyword.substr(0, 6)][keyword] = keyword;
-                                });
-
-
-                                angular.forEach(uniqueobject, function (short, key) {
-
-                                    var match = false;
-                                    angular.forEach(short, function (term) {
-                                        if (query.search(" " + term + " ") >= 0) {
-                                            match = term;
-                                        }
-                                    });
-
-                                    if (match) {
-                                        uniquarrayfinal.push(match);
-                                    } else {
-                                        angular.forEach(short, function (term) {
-                                            uniquarrayfinal.push(term);
-                                        });
-                                    }
-
-                                });
-
-
-                                angular.forEach(uniquarrayfinal, function (keyword) {
-                                    self.getIndex(keyword).on("value", function (data) {
-                                        if (self.getFilter().isBlockedKeyword(keyword) === false) {
-                                            filter.addAutocompletedKeywords(keyword);
-                                            self.updateLocalIndex(data.val());
-                                        }
-
-                                    });
-                                });
-
-                                return this;
-                            };
-
-
-                        //  }
-
-
-                        // }, searchTimerDelta);
-
-
-                    }
-
-                    ,
-                    /**
-                     * @private
-                     * @param string querysegment
-                     * @returns {firebaseObject}
-                     */
-                    getKeyword: function (querysegment) {
-
-                        return hybridsearch.$firebase().database().ref().child("keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/" + querysegment);
-                    }
-                    ,
-                    /**
-                     * @private
-                     * @param string querysegment
-                     * @param {object}
-                     * @param boolean synchronous
-                     * @returns {firebaseObject}
-                     */
-                    getKeywords: function (querysegment, instance = false) {
-
-
-                        var substrStart = querysegment.toLowerCase();
-                        var substrEnd = substrStart;
-                        if (substrStart.length > 8) {
-                            substrStart = substrStart.substr(0, substrStart.length - 3);
-                        }
-
-
-                        instance.$$data.running++;
-
-                        if (parseInt(substrEnd) > 0) {
-                            var ref = hybridsearch.$firebase().database().ref().child("keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().equalTo(substrEnd).limitToFirst(1);
-                        } else {
-                            var ref = hybridsearch.$firebase().database().ref().child("keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().startAt(substrStart).limitToFirst(5);
-                        }
-
-                        instance.$$data.promises[querysegment] = ref.on("value", function (data) {
-
-
-                            if (data !== undefined) {
-                                angular.forEach(data.val(), function (v, k) {
-                                    instance.$$data.keywords.push(k);
-                                });
-                            }
-
-                            instance.$$data.proceeded.push(1);
-
-                        });
-
-
-                    }
-                    ,
-                    /**
-                     * @private
-                     * @param string keyword
-                     * @returns {firebaseObject}
-                     */
-                    getIndex: function (keyword) {
-
-
-                        if (keyword === undefined) {
-                            keyword = this.getFilter().getQuery() ? this.getFilter().getQuery() : '';
-                        }
-
-                        var ref = hybridsearch.$firebase().database().ref().child("index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension);
-                        var query = false;
-
-                        if (query === false && this.getFilter().getNodeType()) {
-                            if (keyword === "") {
-                                query = ref.orderByChild("_nodetype").equalTo(this.getFilter().getNodeType());
-                                keyword = this.getFilter().getNodeType();
-                            } else {
-                                query = ref.orderByChild("_nodetype" + keyword).equalTo(this.getFilter().getNodeType()).limitToFirst(250);
-                            }
-
-                        }
-
-
-                        if (query === false) {
-                            query = ref.orderByChild(keyword).equalTo(1).limitToFirst(100);
-                        }
-
-                        index[keyword] = query;
-
-                        return query;
-
-                    }
-                    ,
-                    /**
-                     * @private
-                     * @param array
-                     * @returns void
-                     */
-                    cleanLocalIndex: function () {
-
-                        nodes = {};
-                        this.getFilter().setAutocompletedKeywords('');
-
-                        lunrSearch = elasticlunr(function () {
-                            this.setRef('id');
-                        });
-
-                    }
-                    ,
-                    /**
-                     * @private
-                     * @param object data
-                     * @returns void
-                     */
-                    updateLocalIndex: function (data) {
-
-
-                        var self = this;
-
-
-                        if (self.getFilter().getFullSearchQuery()) {
-
-
-                            // add to lunr search index
-                            //self.cleanLocalIndex();
-                            self.addLocalIndex(data);
-
-                            // angular.forEach(data, function (val, keyword) {
-                            //     //self.removeLocalIndex(keyword);
-                            //     self.addLocalIndex(keyword, val);
-                            // });
-
-
-                        } else {
-
-                            // add to local index
-                            angular.forEach(data, function (value) {
-                                nodes[value['_node']['identifier']] = value['_node'];
                             });
 
 
                         }
 
-                        self.search();
+                    };
 
 
-                    }
-                    ,
-                    /**
-                     * @private
-                     * @param string keyword
-                     * @returns mixed
-                     */
-                    removeLocalIndex: function (values) {
-
-                        var keyword = false;
-                        angular.forEach(values, function (key, doc) {
-
-                            if (lunrSearch.documentStore.hasDoc(doc)) {
-                                lunrSearch.documentStore.removeDoc(doc);
-                            }
-                            keyword = key;
-                        });
+                    Object.defineProperty(this, '$$conf', {
+                        value: this.$$conf
+                    });
+                    Object.defineProperty(this, '$$app', {
+                        value: this.$$app
+                    });
 
 
-                    }
-                    ,
-                    /**
-                     * @private
-                     * @param string keyword
-                     * @param object data
-                     * @returns mixed
-                     */
-                    addLocalIndex: function (data) {
-
-                        var self = this;
-
-
-                        angular.forEach(data, function (value, key) {
-
-
-                            if (self.isFiltered(value['_node']) === false) {
-
-                                nodes[value['_node']['identifier']] = value['_node'];
-
-                                if (value._node != undefined && value._node.properties != undefined) {
-
-                                    var doc = value._node.properties;
-
-                                    angular.forEach(value._node.properties, function (val, key) {
-                                        if (lunrSearch.getFields().indexOf(key) < 0) {
-                                            lunrSearch.addField(key);
-                                        }
-                                    });
-
-                                    doc.id = value._node.identifier;
-                                    lunrSearch.addDoc(doc);
-                                }
-
-                            }
-
-
-                        });
-
-
-                    }
-
-                };
-
-
-                Object.defineProperty(this, '$$conf', {
-                    value: this.$$conf
-                });
-                Object.defineProperty(this, '$$app', {
-                    value: this.$$app
-                });
-
-
-            };
+                }
+                ;
 
 
             HybridsearchObject.prototype = {
@@ -1334,7 +1357,8 @@
 
                 this.$$data = {
                     results: new HybridsearchResultsDataObject(),
-                    groups: new HybridsearchResultsGroupObject()
+                    groups: new HybridsearchResultsGroupObject(),
+                    notfound: null,
                 };
 
                 this.$$app = {
@@ -1382,6 +1406,7 @@
                     clearResults: function () {
                         self.$$data.results = new HybridsearchResultsDataObject();
                         self.$$data.groups = new HybridsearchResultsGroupObject();
+                        self.$$data.notfound = null;
                     },
                     /**
                      * @private
@@ -1479,6 +1504,13 @@
                  */
                 count: function () {
                     return !this.getNodes() ? 0 : Object.keys(this.$$app.getResultsData()._nodes).length;
+                },
+                /**
+                 * Returns true if given query can't result anyhing
+                 * @returns {boolean} True if query is matching nothing
+                 */
+                nothingFound: function () {
+                    return this.$$data.notfound === true ? true : false;
                 },
                 /**
                  *
