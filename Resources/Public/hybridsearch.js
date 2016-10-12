@@ -401,19 +401,15 @@
                                 fields[v] = {boost: self.getBoost(v)}
                             });
 
-                            console.log(lunrSearch.documentStore.docs);
-
-
-                            angular.forEach(lunrSearch.search(self.getFilter().getFullSearchQuery(), {
+                            angular.forEach(lunrSearch.search(filter.getFinalSearchQuery(lastSearchInstance), {
                                     fields: fields,
                                     bool: "OR"
                                 }), function (item) {
 
                                     if (nodes[item.ref] !== undefined) {
-                                        if (nodes[item.ref] !== undefined) {
-                                            self.addNodeToSearchResult(item.ref, item.score, nodesFound, items);
-                                        }
+                                        self.addNodeToSearchResult(item.ref, item.score, nodesFound, items);
                                     }
+
                                 }
                             );
 
@@ -439,15 +435,11 @@
                         var hash = nodes[nodeId].hash;
                         var nodeTypeLabel = nodeTypeLabels[nodes[nodeId].nodeType] !== undefined ? nodeTypeLabels[nodes[nodeId].nodeType] : nodes[nodeId].nodeType;
 
-                        // filter out minimal scored nodes
-                        if (this.getFilter().getFullSearchQuery() && score < 1) {
-                            return false;
-                        }
-
 
                         if (items['_nodesByType'][nodeTypeLabel] === undefined) {
                             items['_nodesByType'][nodeTypeLabel] = {};
                         }
+
 
                         if (nodesFound[hash] !== undefined) {
 
@@ -539,8 +531,8 @@
 
                             if (lastSearchInstance) {
                                 // cancel old requests
-                                angular.forEach(lastSearchInstance.$$data.cancel, function (cancel) {
-                                    cancel();
+                                angular.forEach(lastSearchInstance.$$data.promises, function (unbind) {
+                                    unbind();
                                 });
                                 lastSearchInstance = null;
                                 lastSearchInstance = {};
@@ -560,9 +552,9 @@
                             var counter = 0;
                             searchInstancesInterval = setInterval(function () {
                                 counter++;
-                                if (counter > 15000 || lastSearchInstance.$$data.proceeded.length >= lastSearchInstance.$$data.running) {
+                                if (lastSearchInstance.$$data.canceled === true || counter > 15000 || lastSearchInstance.$$data.proceeded.length >= lastSearchInstance.$$data.running) {
                                     clearInterval(searchInstancesInterval);
-                                    lastSearchInstance.execute(self);
+                                    lastSearchInstance.execute(self, lastSearchInstance);
                                 }
                             }, 10);
 
@@ -608,7 +600,7 @@
                             keywords: [],
                             running: 0,
                             proceeded: [],
-                            cancel: {},
+                            canceled: false,
                             promises: {}
                         };
 
@@ -626,8 +618,7 @@
 
                             angular.forEach(keywords, function (keyword) {
                                 if (keyword.length > 2 || (keyword.length === 2 && isNaN(keyword) === false)) {
-                                    instance.$$data.running++;
-                                    self.getKeywords(keyword, instance, true);
+                                    self.getKeywords(keyword, instance);
                                 }
                             });
 
@@ -641,27 +632,45 @@
                              * execute search.
                              * @returns {SearchIndexInstance} SearchIndexInstance
                              */
-                            this.execute = function (self) {
-
-                                var s = " " + filter.$$data.magickeywords;
-
-                                angular.forEach(this.$$data.keywords, function (keyword) {
+                            this.execute = function (self, lastSearchInstance) {
 
 
-                                    if (
-                                        s.search(" " + keyword + "") >= 0
-                                        ||
-                                        s.search(" " + keyword.substr(0, 6) + "") >= 0
+                                var matchexact = [];
+                                var query = " " + filter.getQuery() + " ";
+                                //
 
-                                    ) {
+                                angular.forEach(lastSearchInstance.$$data.keywords, function (v, k) {
+                                    if (v == query || query.search(" " + v + " ") >= 0 || query.search(" " + v + " ") >= 0 || ( v.length > 6 && query.search(" " + v.substr(0, v.length - 3)) >= 0 )) {
+                                        matchexact.push(v);
+                                    }
+                                });
 
-                                        self.getIndex(keyword).on("value", function (data) {
+                                if (matchexact.length) {
+                                    lastSearchInstance.$$data.keywords = matchexact;
+                                }
+
+                                // get unique
+                                var uniqueobject = {};
+                                var uniquarray = [];
+
+                                angular.forEach(lastSearchInstance.$$data.keywords, function (keyword) {
+
+                                    if (uniqueobject[keyword] === undefined) {
+                                        uniquarray.push(keyword);
+                                    }
+                                    uniqueobject[keyword] = true;
+
+                                });
+
+
+                                angular.forEach(uniquarray, function (keyword) {
+                                    self.getIndex(keyword).on("value", function (data) {
+                                        if (self.getFilter().isBlockedKeyword(keyword) === false) {
                                             filter.addAutocompletedKeywords(keyword);
                                             self.updateLocalIndex(data.val());
-                                        });
+                                        }
 
-                                    }
-
+                                    });
                                 });
 
                                 return this;
@@ -694,49 +703,30 @@
                      * @param boolean synchronous
                      * @returns {firebaseObject}
                      */
-                    getKeywords: function (querysegment, instance = false, synchronous=false) {
+                    getKeywords: function (querysegment, instance = false) {
 
 
                         var substr = querysegment.toLowerCase();
-
-                        if (synchronous) {
-
-
-                            var keyWordUri = hybridsearch.$$conf.firebase.databaseURL + "/keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/" + substr + ".json";
-                            var canceller = $q.defer();
-                            var cancel = function(reason){
-                                canceller.resolve(reason);
-                            };
-
-                            instance.$$data.promises[querysegment] = $http.get(keyWordUri).success(function (response) {
-                                if (response !== null) {
-                                    var keywordsUri = hybridsearch.$$conf.firebase.databaseURL + "/keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/.json" + "?limitToFirst=10&orderBy=\"$key\"&startAt=\"" + substr + "\"";
-                                    instance.$$data.promises[querysegment] = $http.get(keywordsUri).success(function (response) {
-
-                                        if (response !== null) {
-                                            angular.forEach(response, function (v, k) {
-                                                instance.$$data.keywords.push(k);
-                                            });
-                                            instance.$$data.proceeded.push(1);
-                                        } else {
-                                            instance.$$data.proceeded.push(1);
-                                        }
-
-                                        instance.$$data.cancel[querysegment] = cancel;
-
-
-                                    });
-                                } else {
-                                    instance.$$data.proceeded.push(1);
-                                }
-
-                                instance.$$data.cancel[querysegment] = cancel;
-
-                            });
-
-                        } else {
-                            return hybridsearch.$firebase().database().ref().child("keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().startAt(substr).limitToFirst(10);
+                        if (substr.length > 8) {
+                            substr = substr.substr(0, substr.length - 3);
                         }
+                        var query = " " + this.getFilter().getQuery() + " ";
+
+                        instance.$$data.running++;
+
+                        instance.$$data.promises[querysegment] = hybridsearch.$firebase().database().ref().child("keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().startAt(substr).limitToFirst(10).on("value", function (data) {
+
+                            if (data !== undefined) {
+                                angular.forEach(data.val(), function (v, k) {
+                                    instance.$$data.keywords.push(k);
+                                });
+                            }
+
+                            instance.$$data.proceeded.push(1);
+
+                        });
+
+
                     }
                     ,
                     /**
@@ -1762,6 +1752,33 @@
 
                 },
 
+
+                /**
+                 * @private
+                 * @param string keyword
+                 * @returns boolean
+                 */
+                isBlockedKeyword: function (keyword) {
+
+                    if (keyword == "zudem") {
+                        return true;
+                    }
+                    if (keyword == "zug") {
+                        return true;
+                    }
+                    if (keyword == "zum") {
+                        return true;
+                    }
+                    if (keyword == "zur") {
+                        return true;
+                    }
+                    if (keyword == "zwei") {
+                        return true;
+                    }
+
+                    return false;
+                },
+
                 /**
                  * @param string property
                  * @returns mixed
@@ -1799,12 +1816,43 @@
                         return false;
                     }
 
-                    var d = new Date();
 
-                    var q = this.$$data.magickeywords + "  " + this.getAutocompletedKeywords() + "  " + this.getAdditionalKeywords() + "  " + " trendingHour" + d.getHours() + " " + (this.getGa('userGender') ? this.getGa('userGender') : '') + " " + (this.getGa('userGender') ? this.getGa('userAgeBracket') : '');
+                    var q = this.$$data.magickeywords + "  " + this.getAutocompletedKeywords() + "  " + this.getAdditionalKeywords();
 
 
                     return q.length > 1 ? q : false;
+
+                },
+
+                /**
+                 * @returns string
+                 */
+                getFinalSearchQuery: function (lastSearchInstance) {
+
+
+                    // restrict search query to current request
+                    var d = new Date();
+                    var self = this;
+
+                    var term = lastSearchInstance.$$data.keywords.join(" ") + " trendingHour" + d.getHours() + " " + (this.getGa('userGender') ? this.getGa('userGender') : '') + " " + (this.getGa('userGender') ? this.getGa('userAgeBracket') : '')
+                    var terms = term.split(" ");
+
+
+                    // get unique
+                    var uniqueobject = {};
+                    var uniquarray = [];
+
+                    angular.forEach(terms, function (keyword) {
+
+                        if (uniqueobject[keyword] === undefined && self.isBlockedKeyword(keyword) === false) {
+                            uniquarray.push(keyword);
+                        }
+                        uniqueobject[keyword] = true;
+
+                    });
+
+                    return uniquarray.join(" ");
+
 
                 },
 
@@ -1914,43 +1962,48 @@
                     // keep original term
                     magicreplacements[string] = true;
 
-                    // // get shorter term
-                    // magicreplacements[string.substr(0, string.length - 1)] = true;
-                    //
-                    // // double consonants
-                    // var d = string.replace(/([bcdfghjklmnpqrstvwxyz])\1+/, "$1");
-                    // magicreplacements[d] = true;
-                    // magicreplacements[d.replace(/(.*)([bcdfghjklmnpqrstvwxyz])([^bcdfghjklmnpqrstvwxyz]*)/, "$1$2$2$3").replace(/([bcdfghjklmnpqrstvwxyz])\3+/, "$1$1")] = true;
-                    // magicreplacements[d.replace(/(.*)([bcdfghjklmnpqrstvwxyz])([^bcdfghjklmnpqrstvwxyz]*)([bcdfghjklmnpqrstvwxyz])([^bcdfghjklmnpqrstvwxyz]*)/, "$1$2$2$3$4$4$5").replace(/([bcdfghjklmnpqrstvwxyz])\3+/, "$1$1")] = true;
-                    //
-                    // // common typo errors
-                    // magicreplacements[d.replace(/th/, "t")] = true;
-                    // magicreplacements[d.replace(/t/, "th")] = true;
-                    // magicreplacements[d.replace(/(.*)ph(.*)/, "$1f$2")] = true;
-                    // magicreplacements[d.replace(/(.*)f(.*)/, "$1ph$2")] = true;
-                    // magicreplacements[d.replace(/(.*)tz(.*)/, "$1t$2")] = true;
-                    // magicreplacements[d.replace(/(.*)t(.*)/, "$1tz$2")] = true;
-                    // magicreplacements[d.replace(/(.*)rm(.*)/, "$1m$2")] = true;
-                    // magicreplacements[d.replace(/(.*)m(.*)/, "$1rm$2")] = true;
-                    // magicreplacements[d.replace(/(.*)th(.*)/, "$1t$2")] = true;
-                    // magicreplacements[d.replace(/(.*)t(.*)/, "$1th$2")] = true;
-                    // magicreplacements[d.replace(/(.*)a(.*)/, "$1ia$2")] = true;
-                    // magicreplacements[d.replace(/(.*)ai(.*)/, "$1a$2")] = true;
-                    // magicreplacements[d.replace(/(.*)rd(.*)/, "$1d$2")] = true;
-                    // magicreplacements[d.replace(/(.*)d(.*)/, "$1rd$2")] = true;
-                    // magicreplacements[d.replace(/(.*)t(.*)/, "$1d$2")] = true;
-                    // magicreplacements[d.replace(/(.*)d(.*)/, "$1t$2")] = true;
-                    // magicreplacements[d.replace(/(.*)k(.*)/, "$1x$2")] = true;
-                    // magicreplacements[d.replace(/(.*)x(.*)/, "$1k$2")] = true;
-                    // magicreplacements[d.replace(/(.*)k(.*)/, "$1c$2")] = true;
-                    // magicreplacements[d.replace(/(.*)c(.*)/, "$1k$2")] = true;
-                    // magicreplacements[d.replace(/(.*)ck(.*)/, "$1k$2")] = true;
-                    // magicreplacements[d.replace(/(.*)ck(.*)/, "$1ch$2")] = true;
-                    // magicreplacements[d.replace(/(.*)ch(.*)/, "$1ck$2")] = true;
-                    // magicreplacements[d.replace(/(.*)ie(.*)/, "$1i$2")] = true;
-                    // magicreplacements[d.replace(/(.*)i(.*)/, "$1ie$2")] = true;
-                    // magicreplacements[d.replace(/(.*)v(.*)/, "$1w$2")] = true;
-                    // magicreplacements[d.replace(/(.*)w(.*)/, "$1v$2")] = true;
+
+                    if (string.length > 5) {
+                        // double consonants
+                        var d = string.replace(/([bcdfghjklmnpqrstvwxyz])\1+/, "$1");
+
+                        magicreplacements[d.replace(/(.*)([bcdfghjklmnpqrstvwxyz])([^bcdfghjklmnpqrstvwxyz]*)/, "$1$2$2$3").replace(/([bcdfghjklmnpqrstvwxyz])\3+/, "$1$1")] = true;
+                        magicreplacements[d.replace(/(.*)([bcdfghjklmnpqrstvwxyz])([^bcdfghjklmnpqrstvwxyz]*)([bcdfghjklmnpqrstvwxyz])([^bcdfghjklmnpqrstvwxyz]*)/, "$1$2$2$3$4$4$5").replace(/([bcdfghjklmnpqrstvwxyz])\3+/, "$1$1")] = true;
+
+                        // common typo errors
+                        magicreplacements[d.replace(/th/, "t")] = true;
+                        magicreplacements[d.replace(/t/, "th")] = true;
+
+                        magicreplacements[d.replace(/üe/, "ü")] = true;
+                        magicreplacements[d.replace(/ü/, "üe")] = true;
+
+                        magicreplacements[d.replace(/(.*)ph(.*)/, "$1f$2")] = true;
+                        magicreplacements[d.replace(/(.*)f(.*)/, "$1ph$2")] = true;
+                        magicreplacements[d.replace(/(.*)tz(.*)/, "$1t$2")] = true;
+                        magicreplacements[d.replace(/(.*)t(.*)/, "$1tz$2")] = true;
+                        magicreplacements[d.replace(/(.*)rm(.*)/, "$1m$2")] = true;
+                        magicreplacements[d.replace(/(.*)m(.*)/, "$1rm$2")] = true;
+                        magicreplacements[d.replace(/(.*)th(.*)/, "$1t$2")] = true;
+                        magicreplacements[d.replace(/(.*)t(.*)/, "$1th$2")] = true;
+                        magicreplacements[d.replace(/(.*)a(.*)/, "$1ia$2")] = true;
+                        magicreplacements[d.replace(/(.*)ai(.*)/, "$1a$2")] = true;
+                        magicreplacements[d.replace(/(.*)rd(.*)/, "$1d$2")] = true;
+                        magicreplacements[d.replace(/(.*)d(.*)/, "$1rd$2")] = true;
+                        magicreplacements[d.replace(/(.*)t(.*)/, "$1d$2")] = true;
+                        magicreplacements[d.replace(/(.*)d(.*)/, "$1t$2")] = true;
+                        magicreplacements[d.replace(/(.*)k(.*)/, "$1x$2")] = true;
+                        magicreplacements[d.replace(/(.*)x(.*)/, "$1k$2")] = true;
+                        magicreplacements[d.replace(/(.*)k(.*)/, "$1c$2")] = true;
+                        magicreplacements[d.replace(/(.*)c(.*)/, "$1k$2")] = true;
+                        magicreplacements[d.replace(/(.*)ck(.*)/, "$1k$2")] = true;
+                        magicreplacements[d.replace(/(.*)ck(.*)/, "$1ch$2")] = true;
+                        magicreplacements[d.replace(/(.*)ch(.*)/, "$1ck$2")] = true;
+                        magicreplacements[d.replace(/(.*)ie(.*)/, "$1i$2")] = true;
+                        magicreplacements[d.replace(/(.*)i(.*)/, "$1ie$2")] = true;
+                        magicreplacements[d.replace(/(.*)v(.*)/, "$1w$2")] = true;
+                        magicreplacements[d.replace(/(.*)w(.*)/, "$1v$2")] = true;
+
+                    }
 
 
                     return magicreplacements;
