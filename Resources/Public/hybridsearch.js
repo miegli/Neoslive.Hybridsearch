@@ -637,16 +637,23 @@
 
                                 var matchexact = [];
                                 var query = " " + filter.getQuery() + " ";
-                                //
+
 
                                 angular.forEach(lastSearchInstance.$$data.keywords, function (v, k) {
-                                    if (v == query || query.search(" " + v + " ") >= 0 || query.search(" " + v + " ") >= 0 || ( v.length > 6 && query.search(" " + v.substr(0, v.length - 3)) >= 0 )) {
+
+                                    if (v == query || query.search(" " + v + " ") >= 0 || (
+                                        v.length > 6 && query.search(" " + v.substr(0, 6)) >= 0 )
+                                    ) {
                                         matchexact.push(v);
                                     }
+
                                 });
 
+
                                 if (matchexact.length) {
+                                    matchexact.sort();
                                     lastSearchInstance.$$data.keywords = matchexact;
+
                                 }
 
                                 // get unique
@@ -654,14 +661,46 @@
                                 var uniquarray = [];
 
                                 angular.forEach(lastSearchInstance.$$data.keywords, function (keyword) {
-                                    if (uniqueobject[keyword] === undefined && query.search(" " + keyword.substr(0, 3)) >= 0) {
+                                    if (uniqueobject[keyword] === undefined) {
                                         uniquarray.push(keyword);
                                     }
                                     uniqueobject[keyword] = true;
                                 });
 
 
-                                angular.forEach(uniquarray, function (keyword) {
+                                // reduce more based on subterm
+                                var uniqueobject = {};
+                                var uniquarrayfinal = [];
+
+                                angular.forEach(lastSearchInstance.$$data.keywords, function (keyword) {
+                                    if (uniqueobject[keyword.substr(0, 6)] === undefined) {
+                                        uniqueobject[keyword.substr(0, 6)] = {};
+                                    }
+                                    uniqueobject[keyword.substr(0, 6)][keyword] = keyword;
+                                });
+
+
+                                angular.forEach(uniqueobject, function (short, key) {
+
+                                    var match = false;
+                                    angular.forEach(short, function (term) {
+                                        if (query.search(" " + term + " ") >= 0) {
+                                            match = term;
+                                        }
+                                    });
+
+                                    if (match) {
+                                        uniquarrayfinal.push(match);
+                                    } else {
+                                        angular.forEach(short, function (term) {
+                                            uniquarrayfinal.push(term);
+                                        });
+                                    }
+
+                                });
+
+
+                                angular.forEach(uniquarrayfinal, function (keyword) {
                                     self.getIndex(keyword).on("value", function (data) {
                                         if (self.getFilter().isBlockedKeyword(keyword) === false) {
                                             filter.addAutocompletedKeywords(keyword);
@@ -716,7 +755,7 @@
                         if (parseInt(substrEnd) > 0) {
                             var ref = hybridsearch.$firebase().database().ref().child("keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().equalTo(substrEnd).limitToFirst(1);
                         } else {
-                            var ref = hybridsearch.$firebase().database().ref().child("keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().startAt(substrStart).limitToFirst(10);
+                            var ref = hybridsearch.$firebase().database().ref().child("keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().startAt(substrStart).limitToFirst(5);
                         }
 
                         instance.$$data.promises[querysegment] = ref.on("value", function (data) {
