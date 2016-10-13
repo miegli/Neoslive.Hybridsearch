@@ -238,6 +238,11 @@
 
                             var value = '';
 
+                            if (this.properties == undefined) {
+                                return value;
+                            }
+
+
                             if (this.properties[property] !== undefined) {
                                 return this.properties[property];
                             }
@@ -479,6 +484,10 @@
                          */
                         isFiltered: function (node) {
 
+                            if (node.properties.rawcontent == ' ' || node.properties.rawcontent == '') {
+                                return true;
+                            }
+
                             if (this.getFilter().getNodePath().length > 0 && node.uri.path.substr(0, this.getFilter().getNodePath().length) != this.getFilter().getNodePath()) {
                                 return true;
                             }
@@ -711,7 +720,7 @@
                                         }
                                         self.getResults().$$data.notfoundtimeout = setTimeout(function () {
                                                 self.getResults().getApp().executeCallbackMethod(self.getResults());
-                                            },2000
+                                            }, 2000
                                         )
                                         ;
 
@@ -733,12 +742,6 @@
                                     return this;
                                 }
                             ;
-
-
-                            //  }
-
-
-                            // }, searchTimerDelta);
 
 
                         }
@@ -1511,6 +1514,14 @@
                  */
                 nothingFound: function () {
                     return this.$$data.notfound === true ? true : false;
+                },
+                /**
+                 *
+                 * Get number of turbo nodes
+                 * @returns {integer} Search results length.
+                 */
+                countTurboNodes: function () {
+                    return this.getTurboNodes() ? this.getTurboNodes().length : 0;
                 },
                 /**
                  *

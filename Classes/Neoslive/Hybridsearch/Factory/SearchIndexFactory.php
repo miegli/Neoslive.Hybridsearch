@@ -16,8 +16,12 @@ use TYPO3\Flow\Annotations as Flow;
 use TYPO3\Flow\Configuration\ConfigurationManager;
 use TYPO3\Flow\Error\Exception;
 use TYPO3\Flow\Mvc\Controller\ControllerContext;
+use TYPO3\Flow\Mvc\Routing\UriBuilder;
 use TYPO3\Flow\Object\ObjectManager;
 use TYPO3\Flow\Reflection\ObjectAccess;
+use TYPO3\Flow\Resource\ResourceManager;
+use TYPO3\Media\Domain\Model\Asset;
+use TYPO3\Media\Domain\Model\Thumbnail;
 use TYPO3\TYPO3CR\Domain\Model\NodeInterface;
 use TYPO3\Flow\Mvc\Controller\Arguments;
 use TYPO3\Neos\Domain\Repository\SiteRepository;
@@ -85,6 +89,18 @@ class SearchIndexFactory
      * @var WorkspaceRepository
      */
     protected $workspaceRepository;
+
+    /**
+     * @Flow\Inject
+     * @var UriBuilder
+     */
+    protected $uriBuilder;
+
+    /**
+     * @Flow\Inject
+     * @var ResourceManager
+     */
+    protected $resourceManager;
 
     /**
      * @Flow\Inject
@@ -794,7 +810,51 @@ class SearchIndexFactory
                 $k = mb_strtolower(preg_replace("/[^A-z0-9]/", "-", $node->getNodeType()->getName() . ":" . $key));
                 $properties->$k = strip_tags(Encoding::UTF8FixWin1252Chars($val));
             }
+
+            if (gettype($val) === 'object') {
+                if ($val InstanceOf Asset) {
+                    if (!$this->baseUri) {
+                        $this->getView();
+                    }
+                    $k = mb_strtolower(preg_replace("/[^A-z0-9]/", "-", $node->getNodeType()->getName() . ":" . $key));
+                    $v = array(
+                        'url' => $val->getResource() ? $this->resourceManager->getPublicPersistentResourceUri($val->getResource()) : '',
+                        'name' => $val->getResource() ? $val->getResource()->getFilename() : '',
+                        'extension' => $val->getResource() ? $val->getResource()->getFileExtension() : '',
+                        'size' => $val->getResource() ? $val->getResource()->getFileSize() : 0,
+                        'sizeH' => $val->getResource() ? $this->human_filesize($val->getResource()->getFileSize()) : 0,
+                        'title' => $val->getTitle(),
+                        'caption' => $val->getCaption(),
+                        'thumbnailUri' => $val->getThumbnail()->getResource() ? $this->resourceManager->getPublicPersistentResourceUri($val->getThumbnail()->getResource()) : ''
+                    );
+                    if ($v['url'] !== '') {
+                        $v['uri'] = parse_url($v['url']);
+                        $data->uriResource = parse_url($v['url']);
+                        $data->urlResource = $v['url'];
+                    }
+                    $properties->$k = $v;
+                }
+
+
+            }
+
         }
+
+        // render additional properties given by node configuration
+        if ($node->getNodeType()->getConfiguration('hybridsearch')) {
+
+            $configuration = $node->getNodeType()->getConfiguration('hybridsearch');
+            if (isset($configuration['properties'])) {
+
+                foreach ($configuration['properties'] as $additionProperty => $additionalTyposcriptPath) {
+                    $k = mb_strtolower(preg_replace("/[^A-z0-9]/", "-", $node->getNodeType()->getName() . ":" . $additionProperty));
+                    $properties->$k = trim($this->getRenderedNode($node,$additionalTyposcriptPath));
+                }
+
+            }
+
+        }
+
 
 
         $flowQuery = new FlowQuery(array($node));
@@ -878,14 +938,27 @@ class SearchIndexFactory
 
 
         if ($this->creatingFullIndex && $data->url !== '') {
-            $gaData = $this->googleAnalyticsFactory->getGaDataByDestinationPage($data->uri['host'], $data->uri['path']);
-            $properties->__google = $gaData['keywords'];
-            $properties->__userGender = $gaData['userGender'];
-            $properties->__userAgeBracket = $gaData['userAgeBracket'];
-            $properties->__trendingHour = $gaData['trendingHour'];
-            if ($gaData['trendingRating']) {
-                $t = "__".$gaData['trendingRating'];
-                $properties->$t = 'trendingRating';
+
+            $gaData = false;
+            if (isset($data->uriResource)) {
+                if (isset($data->uriResource['host'])) {
+                    $gaData = $this->googleAnalyticsFactory->getGaDataByDestinationPage($data->uriResource['host'], isset($data->uriResource['path']) ? $data->uriResource['path'] : "/");
+                }
+            } else {
+                $gaData = $this->googleAnalyticsFactory->getGaDataByDestinationPage($data->uri['host'], $data->uri['path']);
+            }
+
+            if ($gaData) {
+
+                $properties->__google = $gaData['keywords'];
+                $properties->__userGender = $gaData['userGender'];
+                $properties->__userAgeBracket = $gaData['userAgeBracket'];
+                $properties->__trendingHour = $gaData['trendingHour'];
+                if ($gaData['trendingRating']) {
+                    $t = "__" . $gaData['trendingRating'];
+                    $properties->$t = 'trendingRating';
+                }
+
             }
         }
 
@@ -1435,8 +1508,10 @@ class SearchIndexFactory
         $this->site = $node->getContext()->getCurrentSite();
         $context = $this->createContext('live', $node->getDimensions(), array(), $this->site);
 
-        if (isset($this->settings['TypoScriptPaths'][$typoscriptPath][$this->site->getSiteResourcesPackageKey()]) === false) {
-            return '';
+
+
+        if (isset($this->settings['TypoScriptPaths'][$typoscriptPath][$this->site->getSiteResourcesPackageKey()])) {
+           $typoscriptPath = $this->settings['TypoScriptPaths'][$typoscriptPath][$this->site->getSiteResourcesPackageKey()];
         }
 
         /** @var Node $node */
@@ -1449,7 +1524,7 @@ class SearchIndexFactory
         if ($this->getView()) {
 
             $this->getView()->assign('value', $node);
-            $this->getView()->setTypoScriptPath($this->settings['TypoScriptPaths'][$typoscriptPath][$this->site->getSiteResourcesPackageKey()]);
+            $this->getView()->setTypoScriptPath($typoscriptPath);
             return $this->view->render();
 
         } else {
@@ -1510,5 +1585,17 @@ class SearchIndexFactory
 
     }
 
+    /**
+     * filesize human redable
+     * @param $bytes
+     * @param int $decimals
+     * @return string
+     */
+    private function human_filesize($bytes, $decimals = 2)
+    {
+        $sz = 'BKMGTP';
+        $factor = floor((strlen($bytes) - 1) / 3);
+        return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)) . @$sz[$factor];
+    }
 
 }
