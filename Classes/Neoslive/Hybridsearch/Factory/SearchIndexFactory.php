@@ -825,7 +825,7 @@ class SearchIndexFactory
                         'sizeH' => $val->getResource() ? $this->human_filesize($val->getResource()->getFileSize()) : 0,
                         'title' => $val->getTitle(),
                         'caption' => $val->getCaption(),
-                        'thumbnailUri' => $val->getThumbnail()->getResource() ? $this->resourceManager->getPublicPersistentResourceUri($val->getThumbnail()->getResource()) : ''
+                        'thumbnailUri' => $val->getThumbnail() && $val->getThumbnail()->getResource() ? $this->resourceManager->getPublicPersistentResourceUri($val->getThumbnail()->getResource()) : ''
                     );
                     if ($v['url'] !== '') {
                         $v['uri'] = parse_url($v['url']);
