@@ -143,7 +143,7 @@
              */
             var HybridsearchObject = function (hybridsearch) {
 
-                    var results, filter, index, lunrSearch, nodes, nodeTypeLabels, propertiesBoost, isRunning, searchInstancesInterval, lastSearchInstance, lastIndexHash;
+                    var results, filter, index, lunrSearch, nodes, nodeTypeLabels, propertiesBoost, isRunning, searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval;
 
                     isRunning = false;
                     searchInstancesInterval = false;
@@ -315,6 +315,20 @@
                          */
                         setLastIndexHash: function (hash) {
                             lastIndexHash = hash;
+                        },
+                        /**
+                         * @private
+                         * @return string indexInterval
+                         */
+                        getIndexInterval: function () {
+                            return indexInterval;
+                        },
+                        /**
+                         * @private
+                         * @param string indexInterval
+                         */
+                        setIndexInterval: function (interval) {
+                            indexInterval = interval;
                         },
                         /**
                          * @private
@@ -566,8 +580,6 @@
                                 }
 
 
-
-
                                 var keywords = self.getFilter().getQueryKeywords();
                                 var searchIndex = new this.SearchIndexInstance(self, keywords);
                                 lastSearchInstance = searchIndex.getIndex();
@@ -766,12 +778,16 @@
                                     });
 
 
-                                    indexinterval = setInterval(function () {
+                                    clearInterval(self.getIndexInterval());
+
+
+                                    self.setIndexInterval(setInterval(function () {
                                         if (indexintervalcounter > 10000 || indexcounter >= uniquarrayfinal.length) {
-                                            clearInterval(indexinterval);
+                                            clearInterval(self.getIndexInterval());
 
                                             var hash = Sha1.hash(JSON.stringify(indexdata));
-                                            if (hash !== self.getLastIndexHash()) {
+
+                                            if (hash !== self.getLastIndexHash() || results.count() === 0) {
                                                 results.$$app.clearResults();
                                                 self.cleanLocalIndex();
                                                 self.updateLocalIndex(indexdata);
@@ -779,7 +795,8 @@
                                             self.setLastIndexHash(hash);
                                         }
                                         indexintervalcounter++;
-                                    }, 10);
+
+                                    }, 10));
 
 
                                     return this;
