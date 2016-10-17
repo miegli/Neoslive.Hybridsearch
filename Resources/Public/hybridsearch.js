@@ -670,6 +670,9 @@
                                 this.execute = function (self, lastSearchInstance) {
 
 
+                                    clearInterval(self.getIndexInterval());
+
+
                                     var matchexact = [];
                                     var query = " " + filter.getQuery() + " ";
 
@@ -760,30 +763,41 @@
                                     var indexinterval = false;
                                     var indexintervalcounter = 0;
                                     var indexcounter = 0;
-                                    var indexdata = [];
+                                    var indexdata = {};
                                     angular.forEach(uniquarrayfinal, function (keyword) {
 
+
                                         self.getIndex(keyword).on("value", function (data) {
+
+                                            indexdata[keyword] = [];
+
                                             if (self.getFilter().isBlockedKeyword(keyword) === false) {
                                                 filter.addAutocompletedKeywords(keyword);
 
+
                                                 angular.forEach(data.val(), function (d) {
-                                                    indexdata.push(d);
+                                                    indexdata[keyword].push(d);
                                                 });
 
-                                                //self.updateLocalIndex(data.val());
+                                                // update search index by one changed keywords
+                                                if (self.getIndexInterval() === null) {
+                                                    self.cleanLocalIndex();
+                                                    self.updateLocalIndex(indexdata);
+                                                }
+
                                             }
                                             indexcounter++;
                                         });
+
+
                                     });
 
 
-                                    clearInterval(self.getIndexInterval());
-
-
+                                    // wait for all data and put it together to search index
                                     self.setIndexInterval(setInterval(function () {
                                         if (indexintervalcounter > 10000 || indexcounter >= uniquarrayfinal.length) {
                                             clearInterval(self.getIndexInterval());
+                                            clearInterval(self.setIndexInterval(null));
 
                                             var hash = Sha1.hash(JSON.stringify(indexdata));
 
@@ -867,6 +881,16 @@
                         getIndex: function (keyword) {
 
 
+                            var self = this;
+
+                            // remove old bindings
+                            angular.forEach(index, function (ref, keyw) {
+                                if (self.getFilter().isInQuery(keyw) === false || keyword == keyw) {
+                                    ref.off('value');
+                                }
+                            });
+
+
                             if (keyword === undefined) {
                                 keyword = this.getFilter().getQuery() ? this.getFilter().getQuery() : '';
                             }
@@ -924,15 +948,10 @@
 
                             if (self.getFilter().getFullSearchQuery()) {
 
-
-                                // add to lunr search index
-                                //self.cleanLocalIndex();
-                                self.addLocalIndex(data);
-
-                                // angular.forEach(data, function (val, keyword) {
-                                //     //self.removeLocalIndex(keyword);
-                                //     self.addLocalIndex(keyword, val);
-                                // });
+                                angular.forEach(data, function (val, keyword) {
+                                    //self.removeLocalIndex(keyword);
+                                    self.addLocalIndex(val);
+                                });
 
 
                             } else {
@@ -1965,6 +1984,18 @@
 
 
                     return q.length > 1 ? q : false;
+
+                },
+
+                /**
+                 * @private
+                 * @param string keyword
+                 * @returns boolean
+                 */
+                isInQuery: function (keyword) {
+
+                    return this.getFullSearchQuery().indexOf(" " + keyword + " ") < 0 ? false : true;
+
 
                 },
 
