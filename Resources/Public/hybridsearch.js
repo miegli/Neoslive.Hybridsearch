@@ -143,7 +143,7 @@
              */
             var HybridsearchObject = function (hybridsearch) {
 
-                    var results, filter, index, lunrSearch, nodes, nodeTypeLabels, propertiesBoost, isRunning, searchInstancesInterval, lastSearchInstance;
+                    var results, filter, index, lunrSearch, nodes, nodeTypeLabels, propertiesBoost, isRunning, searchInstancesInterval, lastSearchInstance, lastIndexHash;
 
                     isRunning = false;
                     searchInstancesInterval = false;
@@ -302,6 +302,20 @@
 
                     this.$$app = {
 
+                        /**
+                         * @private
+                         * @return string last index hash
+                         */
+                        getLastIndexHash: function () {
+                            return lastIndexHash;
+                        },
+                        /**
+                         * @private
+                         * @param string lastIndexHash
+                         */
+                        setLastIndexHash: function (hash) {
+                            lastIndexHash = hash;
+                        },
                         /**
                          * @private
                          */
@@ -551,8 +565,8 @@
                                     clearInterval(searchInstancesInterval);
                                 }
 
-                                results.$$app.clearResults();
-                                self.cleanLocalIndex();
+
+
 
                                 var keywords = self.getFilter().getQueryKeywords();
                                 var searchIndex = new this.SearchIndexInstance(self, keywords);
@@ -729,15 +743,44 @@
                                         self.getResults().$$data.notfound = false;
                                     }
 
+
+                                    // fetch index data
+                                    var indexinterval = false;
+                                    var indexintervalcounter = 0;
+                                    var indexcounter = 0;
+                                    var indexdata = [];
                                     angular.forEach(uniquarrayfinal, function (keyword) {
+
                                         self.getIndex(keyword).on("value", function (data) {
                                             if (self.getFilter().isBlockedKeyword(keyword) === false) {
                                                 filter.addAutocompletedKeywords(keyword);
-                                                self.updateLocalIndex(data.val());
-                                            }
 
+                                                angular.forEach(data.val(), function (d) {
+                                                    indexdata.push(d);
+                                                });
+
+                                                //self.updateLocalIndex(data.val());
+                                            }
+                                            indexcounter++;
                                         });
                                     });
+
+
+                                    indexinterval = setInterval(function () {
+                                        if (indexintervalcounter > 10000 || indexcounter >= uniquarrayfinal.length) {
+                                            clearInterval(indexinterval);
+
+                                            var hash = Sha1.hash(JSON.stringify(indexdata));
+                                            if (hash !== self.getLastIndexHash()) {
+                                                results.$$app.clearResults();
+                                                self.cleanLocalIndex();
+                                                self.updateLocalIndex(indexdata);
+                                            }
+                                            self.setLastIndexHash(hash);
+                                        }
+                                        indexintervalcounter++;
+                                    }, 10);
+
 
                                     return this;
                                 }
