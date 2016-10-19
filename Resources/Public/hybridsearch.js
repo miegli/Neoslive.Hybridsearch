@@ -253,6 +253,18 @@
                                 }
                             });
 
+
+                            if (typeof value === 'string' && value.substr(0,2) === '["' && value.substr(-2,2) === '"]') {
+                                try {
+                                    var valueJson = JSON.parse(value);
+                                } catch (e) {
+                                    valueJson = value;
+                                }
+                                value = valueJson;
+                            }
+
+
+
                             return value;
 
                         },
@@ -512,9 +524,9 @@
                          */
                         isFiltered: function (node) {
 
-                            if (node.properties.rawcontent == ' ' || node.properties.rawcontent == '') {
-                                return true;
-                            }
+                            // if (node.properties.rawcontent == ' ' || node.properties.rawcontent == '') {
+                            //     return true;
+                            // }
 
                             if (this.getFilter().getNodePath().length > 0 && node.uri.path.substr(0, this.getFilter().getNodePath().length) != this.getFilter().getNodePath()) {
                                 return true;

@@ -22,6 +22,7 @@ use TYPO3\Flow\Reflection\ObjectAccess;
 use TYPO3\Flow\Resource\ResourceManager;
 use TYPO3\Media\Domain\Model\Asset;
 use TYPO3\Media\Domain\Model\Thumbnail;
+use TYPO3\TYPO3CR\Domain\Model\NodeData;
 use TYPO3\TYPO3CR\Domain\Model\NodeInterface;
 use TYPO3\Flow\Mvc\Controller\Arguments;
 use TYPO3\Neos\Domain\Repository\SiteRepository;
@@ -358,6 +359,7 @@ class SearchIndexFactory
     public function sync()
     {
 
+
         foreach (json_decode($this->firebase->get('index', array('shallow' => 'true'))) as $workspaceName => $workspacevalue) {
 
             $workspace = $this->workspaceRepository->findByIdentifier($workspaceName);
@@ -368,6 +370,7 @@ class SearchIndexFactory
                     foreach ($dimensions as $dimension => $dimensionvalue) {
 
                         $nodes = json_decode($this->firebase->get('index/' . $workspaceName . "/" . $dimension, array('orderBy' => '"__sync"', 'startAt' => 1, 'limitToFirst' => 100)));
+
                         if ($nodes) {
                             foreach ($nodes as $identifier => $nodeIndex) {
 
@@ -410,7 +413,7 @@ class SearchIndexFactory
      * @param Node $node
      * @param Workspace $workspace
      */
-    public function updateIndexRealtime($node, $workspace = null)
+    public function updateIndexRealtime($node, $workspace)
     {
 
 
@@ -424,6 +427,87 @@ class SearchIndexFactory
         }
 
     }
+
+
+    /**
+     * Update index for given nodedata
+     * @param NodeData $nodedata
+     */
+    public function updateIndexForNodeData($nodedata)
+    {
+
+
+        $context = $this->contentContextFactory->create(['workspaceName' => 'live']);
+        $this->site = $context->getNodeByIdentifier($nodedata->getIdentifier())->getContext()->getCurrentSite();
+        $workspace = $this->workspaceRepository->findByIdentifier('live');
+
+        $dhashes = array();
+
+        foreach ($this->contentDimensionCombinator->getAllAllowedCombinations() as $dimensionConfiguration) {
+
+            if (isset($dhashes[$this->getDimensionConfiugurationHash($dimensionConfiguration)]) === false) {
+
+                $targetDimension = array_map(function ($dimensionValues) {
+                    return array_shift($dimensionValues);
+                }, $dimensionConfiguration);
+
+                /** @var Node $node */
+                $node = $this->createContext('live', $dimensionConfiguration, $targetDimension, $this->site)->getNodeByIdentifier($nodedata->getIdentifier());
+
+                if ($node !== null) {
+                    if ($node->isRemoved() || $node->isHidden()) {
+                        $this->firebase->delete("index/" . $workspace->getName() . "/" . $this->getDimensionConfiugurationHash($dimensionConfiguration) . "/" . $node->getIdentifier());
+                    } else {
+                        $this->firebase->set("index/" . $workspace->getName() . "/" . $this->getDimensionConfiugurationHash($dimensionConfiguration) . "/" . $node->getIdentifier() . "/__sync", time());
+                    }
+                }
+
+            }
+
+            $dhashes[$this->getDimensionConfiugurationHash($dimensionConfiguration)] = true;
+
+        }
+
+
+    }
+
+
+    /**
+     * Removes index for given nodedata
+     * @param NodeData $nodedata
+     */
+    public function removeIndexForNodeData($nodedata)
+    {
+
+
+        $context = $this->contentContextFactory->create(['workspaceName' => 'live']);
+        $this->site = $context->getNodeByIdentifier($nodedata->getIdentifier())->getContext()->getCurrentSite();
+        $workspace = $this->workspaceRepository->findByIdentifier('live');
+
+        $dhashes = array();
+
+        foreach ($this->contentDimensionCombinator->getAllAllowedCombinations() as $dimensionConfiguration) {
+
+            if (isset($dhashes[$this->getDimensionConfiugurationHash($dimensionConfiguration)]) === false) {
+
+                $targetDimension = array_map(function ($dimensionValues) {
+                    return array_shift($dimensionValues);
+                }, $dimensionConfiguration);
+
+                /** @var Node $node */
+                $node = $this->createContext('live', $dimensionConfiguration, $targetDimension, $this->site)->getNodeByIdentifier($nodedata->getIdentifier());
+                if ($node !== null) {
+                    $this->firebase->delete("index/" . $workspace->getName() . "/" . $this->getDimensionConfiugurationHash($dimensionConfiguration) . "/" . $node->getIdentifier());
+                }
+                $dhashes[$this->getDimensionConfiugurationHash($dimensionConfiguration)] = true;
+
+            }
+
+        }
+
+
+    }
+
 
     /**
      * Sync index
@@ -521,22 +605,29 @@ class SearchIndexFactory
         } else {
 
 
+            $dhashes = array();
+
             // TODO: Performance could be improved by a search for all child node data instead of looping over all contexts
             foreach ($this->contentDimensionCombinator->getAllAllowedCombinations() as $dimensionConfiguration) {
 
-                $targetDimension = array_map(function ($dimensionValues) {
-                    return array_shift($dimensionValues);
-                }, $dimensionConfiguration);
+                if (isset($dhashes[$this->getDimensionConfiugurationHash($dimensionConfiguration)]) == false) {
 
-                $context = $this->createContext($workspace->getName(), $dimensionConfiguration, $targetDimension, $site);
-                /** @var Node $node */
-                $node = new Node(
-                    $this->nodeDataRepository->findOneByPath($path, $workspace),
-                    $context
-                );
+                    $targetDimension = array_map(function ($dimensionValues) {
+                        return array_shift($dimensionValues);
+                    }, $dimensionConfiguration);
+
+                    $context = $this->createContext($workspace->getName(), $dimensionConfiguration, $targetDimension, $site);
+                    /** @var Node $node */
+                    $node = new Node(
+                        $this->nodeDataRepository->findOneByPath($path, $workspace),
+                        $context
+                    );
 
 
-                $this->generateIndex($node, $workspace, $dimensionConfiguration, '', $includingSelf);
+                    $this->generateIndex($node, $workspace, $dimensionConfiguration, '', $includingSelf);
+                    $dhashes[$this->getDimensionConfiugurationHash($dimensionConfiguration)] = true;
+
+                }
 
             }
 
@@ -811,6 +902,12 @@ class SearchIndexFactory
                 $properties->$k = strip_tags(Encoding::UTF8FixWin1252Chars($val));
             }
 
+            if (gettype($val) === 'array' && count($val) > 0) {
+                $k = mb_strtolower(preg_replace("/[^A-z0-9]/", "-", $node->getNodeType()->getName() . ":" . $key));
+                $properties->$k = json_encode($val);
+            }
+
+
             if (gettype($val) === 'object') {
                 if ($val InstanceOf Asset) {
                     if (!$this->baseUri) {
@@ -848,13 +945,12 @@ class SearchIndexFactory
 
                 foreach ($configuration['properties'] as $additionProperty => $additionalTyposcriptPath) {
                     $k = mb_strtolower(preg_replace("/[^A-z0-9]/", "-", $node->getNodeType()->getName() . ":" . $additionProperty));
-                    $properties->$k = trim($this->getRenderedNode($node,$additionalTyposcriptPath));
+                    $properties->$k = trim($this->getRenderedNode($node, $additionalTyposcriptPath));
                 }
 
             }
 
         }
-
 
 
         $flowQuery = new FlowQuery(array($node));
@@ -867,15 +963,31 @@ class SearchIndexFactory
             $grandParentNode = $documentNode;
         }
 
-        if ($documentNode) {
-            $uri = $this->getNodeLink($documentNode);
 
-            $breadcrumb = $this->getRenderedNode($documentNode, 'breadcrumb');
-        } else {
-            $uri = '';
-            $breadcrumb = '';
+        $uri = false;
+        $breadcrumb = '';
+
+        $urlproperty = mb_strtolower(preg_replace("/[^A-z0-9]/", "-", $node->getNodeType()->getName() . ":url"));
+        if (isset($properties->$urlproperty)) {
+            $uri = trim($properties->$urlproperty);
+        }
+        if ($node->hasProperty('url') && parse_url($node->getProperty('url')) !== false) {
+            $uri = $node->getProperty('url');
         }
 
+        if ($uri === false) {
+
+            if ($documentNode) {
+                $uri = $this->getNodeLink($documentNode);
+                $breadcrumb = $this->getRenderedNode($documentNode, 'breadcrumb');
+            } else {
+                $uri = '';
+            }
+        }
+
+        if ($documentNode) {
+            $breadcrumb = $this->getRenderedNode($documentNode, 'breadcrumb');
+        }
 
         $parentProperties = new \stdClass();
         $parentPropertiesText = '';
@@ -931,7 +1043,14 @@ class SearchIndexFactory
             $data->turbonode = false;
         }
 
-        $properties->rawcontent = $this->rawcontent($rendered);
+
+        $p = $data->nodeType . "-rawcontent";
+        if (isset($properties->$p) === false) {
+            $properties->$p = $this->rawcontent($rendered);
+        }
+        $properties->rawcontent = $properties->$p;
+
+
         $data->hash = ($properties->rawcontent !== '' ? sha1($properties->rawcontent) : $node->getNodeData()->getIdentifier());
         $data->url = $uri;
         $data->uri = parse_url($uri);
@@ -966,8 +1085,7 @@ class SearchIndexFactory
         $data->identifier = $node->getNodeData()->getIdentifier();
         $data->properties = $properties;
 
-        $p = $data->nodeType . "-rawcontent";
-        $properties->$p = $properties->rawcontent;
+
         $data->grandParentNode = new \stdClass();
 
         $data->grandParentNode->identifier = $grandParentNode ? $grandParentNode->getIdentifier() : null;
@@ -1003,7 +1121,8 @@ class SearchIndexFactory
      * @param array $dimensionConfiguration
      * @return string
      */
-    private function getDimensionConfiugurationHash($dimensionConfiguration)
+    private
+    function getDimensionConfiugurationHash($dimensionConfiguration)
     {
 
         return \TYPO3\TYPO3CR\Utility::sortDimensionValueArrayAndReturnDimensionsHash($dimensionConfiguration);
@@ -1016,7 +1135,8 @@ class SearchIndexFactory
      * @param Workspace $workspace
      * @return string
      */
-    private function getWorkspaceHash($workspace)
+    private
+    function getWorkspaceHash($workspace)
     {
 
         return preg_replace("/^A-z0-9/", "-", $workspace->getName());
@@ -1029,7 +1149,8 @@ class SearchIndexFactory
      * @param mixed $data
      * @return void
      */
-    public function firebaseUpdate($path, $data)
+    public
+    function firebaseUpdate($path, $data)
     {
         $this->addToQueue($path, $data, 'update');
 
@@ -1040,7 +1161,8 @@ class SearchIndexFactory
      * @param mixed $data
      * @return void
      */
-    public function firebaseSet($path, $data)
+    public
+    function firebaseSet($path, $data)
     {
 
         $this->addToQueue($path, $data, 'set');
@@ -1053,7 +1175,8 @@ class SearchIndexFactory
      * @param string $path
      * @return void
      */
-    public function firebaseDelete($path)
+    public
+    function firebaseDelete($path)
     {
 
         $this->firebase->delete($path);
@@ -1069,7 +1192,8 @@ class SearchIndexFactory
      * @param string $method
      * @return void
      */
-    protected function addToQueue($path, $data = null, $method = 'update')
+    protected
+    function addToQueue($path, $data = null, $method = 'update')
     {
 
 
@@ -1093,7 +1217,8 @@ class SearchIndexFactory
     /**
      * @return void
      */
-    public function proceedQueue()
+    public
+    function proceedQueue()
     {
 
         $this->proceedcounter++;
@@ -1509,9 +1634,8 @@ class SearchIndexFactory
         $context = $this->createContext('live', $node->getDimensions(), array(), $this->site);
 
 
-
         if (isset($this->settings['TypoScriptPaths'][$typoscriptPath][$this->site->getSiteResourcesPackageKey()])) {
-           $typoscriptPath = $this->settings['TypoScriptPaths'][$typoscriptPath][$this->site->getSiteResourcesPackageKey()];
+            $typoscriptPath = $this->settings['TypoScriptPaths'][$typoscriptPath][$this->site->getSiteResourcesPackageKey()];
         }
 
         /** @var Node $node */
@@ -1591,7 +1715,8 @@ class SearchIndexFactory
      * @param int $decimals
      * @return string
      */
-    private function human_filesize($bytes, $decimals = 2)
+    private
+    function human_filesize($bytes, $decimals = 2)
     {
         $sz = 'BKMGTP';
         $factor = floor((strlen($bytes) - 1) / 3);
