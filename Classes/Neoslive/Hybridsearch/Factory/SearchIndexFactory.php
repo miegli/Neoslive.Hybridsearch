@@ -432,14 +432,20 @@ class SearchIndexFactory
     /**
      * Update index for given nodedata
      * @param NodeData $nodedata
+     * @param Workspace $workspace
      */
-    public function updateIndexForNodeData($nodedata)
+    public function updateIndexForNodeData($nodedata, $workspace=null)
     {
 
 
-        $context = $this->contentContextFactory->create(['workspaceName' => 'live']);
+        if ($workspace) {
+            $context = $this->contentContextFactory->create(['workspaceName' => $workspace->getName()]);
+        } else {
+            $context = $this->contentContextFactory->create(['workspaceName' => 'live']);
+            $workspace = $this->workspaceRepository->findByIdentifier('live');
+        }
         $this->site = $context->getNodeByIdentifier($nodedata->getIdentifier())->getContext()->getCurrentSite();
-        $workspace = $this->workspaceRepository->findByIdentifier('live');
+
 
         $dhashes = array();
 
@@ -452,7 +458,7 @@ class SearchIndexFactory
                 }, $dimensionConfiguration);
 
                 /** @var Node $node */
-                $node = $this->createContext('live', $dimensionConfiguration, $targetDimension, $this->site)->getNodeByIdentifier($nodedata->getIdentifier());
+                $node = $this->createContext($workspace->getName(), $dimensionConfiguration, $targetDimension, $this->site)->getNodeByIdentifier($nodedata->getIdentifier());
 
                 if ($node !== null) {
                     if ($node->isRemoved() || $node->isHidden()) {
@@ -475,14 +481,20 @@ class SearchIndexFactory
     /**
      * Removes index for given nodedata
      * @param NodeData $nodedata
+     * @param Workspace $workspace
      */
-    public function removeIndexForNodeData($nodedata)
+    public function removeIndexForNodeData($nodedata, $workspace = null)
     {
 
 
-        $context = $this->contentContextFactory->create(['workspaceName' => 'live']);
+        if ($workspace) {
+            $context = $this->contentContextFactory->create(['workspaceName' => $workspace->getName()]);
+        } else {
+            $context = $this->contentContextFactory->create(['workspaceName' => 'live']);
+            $workspace = $this->workspaceRepository->findByIdentifier('live');
+        }
+
         $this->site = $context->getNodeByIdentifier($nodedata->getIdentifier())->getContext()->getCurrentSite();
-        $workspace = $this->workspaceRepository->findByIdentifier('live');
 
         $dhashes = array();
 
@@ -495,7 +507,7 @@ class SearchIndexFactory
                 }, $dimensionConfiguration);
 
                 /** @var Node $node */
-                $node = $this->createContext('live', $dimensionConfiguration, $targetDimension, $this->site)->getNodeByIdentifier($nodedata->getIdentifier());
+                $node = $this->createContext($workspace->getName(), $dimensionConfiguration, $targetDimension, $this->site)->getNodeByIdentifier($nodedata->getIdentifier());
                 if ($node !== null) {
                     $this->firebase->delete("index/" . $workspace->getName() . "/" . $this->getDimensionConfiugurationHash($dimensionConfiguration) . "/" . $node->getIdentifier());
                 }
