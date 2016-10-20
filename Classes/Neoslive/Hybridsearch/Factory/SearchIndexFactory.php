@@ -437,41 +437,42 @@ class SearchIndexFactory
     public function updateIndexForNodeData($nodedata, $workspace=null)
     {
 
+        if ($this->settings['Realtime']) {
+            if ($workspace) {
+                $context = $this->contentContextFactory->create(['workspaceName' => $workspace->getName()]);
+            } else {
+                $context = $this->contentContextFactory->create(['workspaceName' => 'live']);
+                $workspace = $this->workspaceRepository->findByIdentifier('live');
+            }
+            $this->site = $context->getNodeByIdentifier($nodedata->getIdentifier())->getContext()->getCurrentSite();
 
-        if ($workspace) {
-            $context = $this->contentContextFactory->create(['workspaceName' => $workspace->getName()]);
-        } else {
-            $context = $this->contentContextFactory->create(['workspaceName' => 'live']);
-            $workspace = $this->workspaceRepository->findByIdentifier('live');
-        }
-        $this->site = $context->getNodeByIdentifier($nodedata->getIdentifier())->getContext()->getCurrentSite();
 
+            $dhashes = array();
 
-        $dhashes = array();
+            foreach ($this->contentDimensionCombinator->getAllAllowedCombinations() as $dimensionConfiguration) {
 
-        foreach ($this->contentDimensionCombinator->getAllAllowedCombinations() as $dimensionConfiguration) {
+                if (isset($dhashes[$this->getDimensionConfiugurationHash($dimensionConfiguration)]) === false) {
 
-            if (isset($dhashes[$this->getDimensionConfiugurationHash($dimensionConfiguration)]) === false) {
+                    $targetDimension = array_map(function ($dimensionValues) {
+                        return array_shift($dimensionValues);
+                    }, $dimensionConfiguration);
 
-                $targetDimension = array_map(function ($dimensionValues) {
-                    return array_shift($dimensionValues);
-                }, $dimensionConfiguration);
+                    /** @var Node $node */
+                    $node = $this->createContext($workspace->getName(), $dimensionConfiguration, $targetDimension, $this->site)->getNodeByIdentifier($nodedata->getIdentifier());
 
-                /** @var Node $node */
-                $node = $this->createContext($workspace->getName(), $dimensionConfiguration, $targetDimension, $this->site)->getNodeByIdentifier($nodedata->getIdentifier());
-
-                if ($node !== null) {
-                    if ($node->isRemoved() || $node->isHidden()) {
-                        $this->firebase->delete("index/" . $workspace->getName() . "/" . $this->getDimensionConfiugurationHash($dimensionConfiguration) . "/" . $node->getIdentifier());
-                    } else {
-                        $this->firebase->set("index/" . $workspace->getName() . "/" . $this->getDimensionConfiugurationHash($dimensionConfiguration) . "/" . $node->getIdentifier() . "/__sync", time());
+                    if ($node !== null) {
+                        if ($node->isRemoved() || $node->isHidden()) {
+                            $this->firebase->delete("index/" . $workspace->getName() . "/" . $this->getDimensionConfiugurationHash($dimensionConfiguration) . "/" . $node->getIdentifier());
+                        } else {
+                            $this->firebase->set("index/" . $workspace->getName() . "/" . $this->getDimensionConfiugurationHash($dimensionConfiguration) . "/" . $node->getIdentifier() . "/__sync", time());
+                        }
                     }
+
                 }
 
+                $dhashes[$this->getDimensionConfiugurationHash($dimensionConfiguration)] = true;
+
             }
-
-            $dhashes[$this->getDimensionConfiugurationHash($dimensionConfiguration)] = true;
-
         }
 
 
@@ -486,37 +487,37 @@ class SearchIndexFactory
     public function removeIndexForNodeData($nodedata, $workspace = null)
     {
 
-
-        if ($workspace) {
-            $context = $this->contentContextFactory->create(['workspaceName' => $workspace->getName()]);
-        } else {
-            $context = $this->contentContextFactory->create(['workspaceName' => 'live']);
-            $workspace = $this->workspaceRepository->findByIdentifier('live');
-        }
-
-        $this->site = $context->getNodeByIdentifier($nodedata->getIdentifier())->getContext()->getCurrentSite();
-
-        $dhashes = array();
-
-        foreach ($this->contentDimensionCombinator->getAllAllowedCombinations() as $dimensionConfiguration) {
-
-            if (isset($dhashes[$this->getDimensionConfiugurationHash($dimensionConfiguration)]) === false) {
-
-                $targetDimension = array_map(function ($dimensionValues) {
-                    return array_shift($dimensionValues);
-                }, $dimensionConfiguration);
-
-                /** @var Node $node */
-                $node = $this->createContext($workspace->getName(), $dimensionConfiguration, $targetDimension, $this->site)->getNodeByIdentifier($nodedata->getIdentifier());
-                if ($node !== null) {
-                    $this->firebase->delete("index/" . $workspace->getName() . "/" . $this->getDimensionConfiugurationHash($dimensionConfiguration) . "/" . $node->getIdentifier());
-                }
-                $dhashes[$this->getDimensionConfiugurationHash($dimensionConfiguration)] = true;
-
+        if ($this->settings['Realtime']) {
+            if ($workspace) {
+                $context = $this->contentContextFactory->create(['workspaceName' => $workspace->getName()]);
+            } else {
+                $context = $this->contentContextFactory->create(['workspaceName' => 'live']);
+                $workspace = $this->workspaceRepository->findByIdentifier('live');
             }
 
-        }
+            $this->site = $context->getNodeByIdentifier($nodedata->getIdentifier())->getContext()->getCurrentSite();
 
+            $dhashes = array();
+
+            foreach ($this->contentDimensionCombinator->getAllAllowedCombinations() as $dimensionConfiguration) {
+
+                if (isset($dhashes[$this->getDimensionConfiugurationHash($dimensionConfiguration)]) === false) {
+
+                    $targetDimension = array_map(function ($dimensionValues) {
+                        return array_shift($dimensionValues);
+                    }, $dimensionConfiguration);
+
+                    /** @var Node $node */
+                    $node = $this->createContext($workspace->getName(), $dimensionConfiguration, $targetDimension, $this->site)->getNodeByIdentifier($nodedata->getIdentifier());
+                    if ($node !== null) {
+                        $this->firebase->delete("index/" . $workspace->getName() . "/" . $this->getDimensionConfiugurationHash($dimensionConfiguration) . "/" . $node->getIdentifier());
+                    }
+                    $dhashes[$this->getDimensionConfiugurationHash($dimensionConfiguration)] = true;
+
+                }
+
+            }
+        }
 
     }
 

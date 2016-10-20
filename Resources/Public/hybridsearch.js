@@ -254,7 +254,7 @@
                             });
 
 
-                            if (typeof value === 'string' && value.substr(0,2) === '["' && value.substr(-2,2) === '"]') {
+                            if (typeof value === 'string' && value.substr(0, 2) === '["' && value.substr(-2, 2) === '"]') {
                                 try {
                                     var valueJson = JSON.parse(value);
                                 } catch (e) {
@@ -262,7 +262,6 @@
                                 }
                                 value = valueJson;
                             }
-
 
 
                             return value;
@@ -383,7 +382,8 @@
                          * @returns {number}
                          */
                         getBoost: function (property) {
-                            return propertiesBoost[property] ? propertiesBoost[property] : 10;
+
+                            return propertiesBoost !== undefined && propertiesBoost[property] !== undefined ? propertiesBoost[property] : 10;
                         },
                         /**
                          * @private
@@ -461,7 +461,7 @@
                             }
 
 
-                            results.getApp().setResults(items);
+                            results.getApp().setResults(items, nodes);
 
                         },
 
@@ -517,6 +517,30 @@
                             nodesFound[hash] = true;
                         },
 
+                        /**
+                         * Get property.
+                         * @param {string} property Get single property from node data.
+                         * @returns {mixed}
+                         */
+                        getPropertyFromNode: function (node, property) {
+
+                            var value = '';
+
+
+                            if (node.properties[property] !== undefined) {
+                                return node.properties[property];
+                            }
+
+                            angular.forEach(node.properties, function (val, key) {
+                                if (value === '' && key.substr(key.length - property.length, property.length) === property) {
+                                    value = val !== undefined ? val : '';
+                                }
+                            });
+
+
+                            return value;
+
+                        },
 
                         /**
                          * @private
@@ -524,29 +548,37 @@
                          */
                         isFiltered: function (node) {
 
-                            // if (node.properties.rawcontent == ' ' || node.properties.rawcontent == '') {
-                            //     return true;
-                            // }
+                            var self = this;
 
                             if (this.getFilter().getNodePath().length > 0 && node.uri.path.substr(0, this.getFilter().getNodePath().length) != this.getFilter().getNodePath()) {
                                 return true;
                             }
 
                             var propertyFiltered = Object.keys(this.getFilter().getPropertyFilters()).length > 0 ? true : false;
+                            var propertyFilteredLength = Object.keys(this.getFilter().getPropertyFilters()).length;
+
 
                             if (propertyFiltered) {
-                                var propertyNotFound = false;
+
+                                var propertyMatching = 0;
+
                                 angular.forEach(this.getFilter().getPropertyFilters(), function (value, property) {
 
-                                    if (propertyNotFound === false && node.properties[property] !== undefined) {
-                                        if (node.properties[property] === value) {
-                                            propertyFiltered = false;
-                                        } else {
-                                            propertyNotFound = true;
-                                        }
+                                    if (self.getPropertyFromNode(node, property) == value) {
+                                        propertyMatching++;
                                     }
+
                                 });
+
+
+                                if (propertyMatching !== propertyFilteredLength) {
+                                    return true;
+                                } else {
+                                    propertyFiltered = false;
+                                }
+
                             }
+
 
                             if (propertyFiltered === false && this.getFilter().getAgeFilter() != '') {
                                 if (this.getFilter().getPropertyFilters() != node.__userAgeBracket) {
@@ -593,6 +625,8 @@
 
 
                                 var keywords = self.getFilter().getQueryKeywords();
+
+                                // fetch index from given keywords
                                 var searchIndex = new this.SearchIndexInstance(self, keywords);
                                 lastSearchInstance = searchIndex.getIndex();
 
@@ -604,6 +638,7 @@
                                         lastSearchInstance.execute(self, lastSearchInstance);
                                     }
                                 }, 10);
+
 
                             }
 
@@ -655,6 +690,7 @@
                                 value: this.$$data
                             });
 
+
                             /**
                              * Run search.
                              * @returns {SearchIndexInstance} SearchIndexInstance
@@ -663,11 +699,15 @@
 
                                 var instance = this;
 
-                                angular.forEach(keywords, function (keyword) {
-                                    if (keyword.length > 2 || (keyword.length === 2 && isNaN(keyword) === false)) {
-                                        self.getKeywords(keyword, instance);
-                                    }
-                                });
+                                if (keywords !== undefined) {
+
+                                    angular.forEach(keywords, function (keyword) {
+                                        if (keyword.length > 2 || (keyword.length === 2 && isNaN(keyword) === false)) {
+                                            self.getKeywords(keyword, instance);
+                                        }
+                                    });
+
+                                }
 
 
                                 return instance;
@@ -684,74 +724,82 @@
 
                                     clearInterval(self.getIndexInterval());
 
+                                    if (lastSearchInstance.$$data.keywords.length) {
 
-                                    var matchexact = [];
-                                    var query = " " + filter.getQuery() + " ";
-
-
-                                    angular.forEach(lastSearchInstance.$$data.keywords, function (v, k) {
-
-                                        if (v == query || query.search(" " + v + " ") >= 0 || (
-                                            v.length > 6 && query.search(" " + v.substr(0, 6)) >= 0 )
-                                        ) {
-                                            matchexact.push(v);
-                                        }
-
-                                    });
+                                        var matchexact = [];
+                                        var query = " " + filter.getQuery() + " ";
 
 
-                                    if (matchexact.length) {
-                                        matchexact.sort();
-                                        lastSearchInstance.$$data.keywords = matchexact;
+                                        angular.forEach(lastSearchInstance.$$data.keywords, function (v, k) {
 
-                                    }
-
-                                    // get unique
-                                    var uniqueobject = {};
-                                    var uniquarray = [];
-
-                                    angular.forEach(lastSearchInstance.$$data.keywords, function (keyword) {
-                                        if (uniqueobject[keyword] === undefined) {
-                                            uniquarray.push(keyword);
-                                        }
-                                        uniqueobject[keyword] = true;
-                                    });
-
-
-                                    // reduce more based on subterm
-                                    var uniqueobject = {};
-                                    var uniquarrayfinal = [];
-
-                                    angular.forEach(lastSearchInstance.$$data.keywords, function (keyword) {
-                                        if (uniqueobject[keyword.substr(0, 6)] === undefined) {
-                                            uniqueobject[keyword.substr(0, 6)] = {};
-                                        }
-                                        uniqueobject[keyword.substr(0, 6)][keyword] = keyword;
-                                    });
-
-
-                                    angular.forEach(uniqueobject, function (short, key) {
-
-                                        var match = false;
-                                        angular.forEach(short, function (term) {
-                                            if (query.search(" " + term + " ") >= 0) {
-                                                match = term;
+                                            if (v == query || query.search(" " + v + " ") >= 0 || (
+                                                v.length > 6 && query.search(" " + v.substr(0, 6)) >= 0 )
+                                            ) {
+                                                matchexact.push(v);
                                             }
+
                                         });
 
-                                        if (match) {
-                                            uniquarrayfinal.push(match);
-                                        } else {
-                                            angular.forEach(short, function (term) {
 
-                                                if (query.search(" " + term.substr(0, 3)) > -1) {
-                                                    uniquarrayfinal.push(term);
-                                                }
+                                        if (matchexact.length) {
+                                            matchexact.sort();
+                                            lastSearchInstance.$$data.keywords = matchexact;
 
-                                            });
                                         }
 
-                                    });
+                                        // get unique
+                                        var uniqueobject = {};
+                                        var uniquarray = [];
+
+                                        angular.forEach(lastSearchInstance.$$data.keywords, function (keyword) {
+                                            if (uniqueobject[keyword] === undefined) {
+                                                uniquarray.push(keyword);
+                                            }
+                                            uniqueobject[keyword] = true;
+                                        });
+
+
+                                        // reduce more based on subterm
+                                        var uniqueobject = {};
+                                        var uniquarrayfinal = [];
+
+                                        angular.forEach(lastSearchInstance.$$data.keywords, function (keyword) {
+                                            if (uniqueobject[keyword.substr(0, 6)] === undefined) {
+                                                uniqueobject[keyword.substr(0, 6)] = {};
+                                            }
+                                            uniqueobject[keyword.substr(0, 6)][keyword] = keyword;
+                                        });
+
+
+                                        angular.forEach(uniqueobject, function (short, key) {
+
+                                            var match = false;
+                                            angular.forEach(short, function (term) {
+                                                if (query.search(" " + term + " ") >= 0) {
+                                                    match = term;
+                                                }
+                                            });
+
+                                            if (match) {
+                                                uniquarrayfinal.push(match);
+                                            } else {
+                                                angular.forEach(short, function (term) {
+
+                                                    if (query.search(" " + term.substr(0, 3)) > -1) {
+                                                        uniquarrayfinal.push(term);
+                                                    }
+
+                                                });
+                                            }
+
+                                        });
+
+                                    } else {
+
+                                        // fetch index from non query request
+                                        uniquarrayfinal = [null];
+
+                                    }
 
 
                                     if (uniquarrayfinal.length === 0) {
@@ -765,14 +813,12 @@
                                         )
                                         ;
 
-                                    }
-                                    else {
+                                    } else {
                                         self.getResults().$$data.notfound = false;
                                     }
 
 
                                     // fetch index data
-                                    var indexinterval = false;
                                     var indexintervalcounter = 0;
                                     var indexcounter = 0;
                                     var indexdata = {};
@@ -783,46 +829,63 @@
 
                                             indexdata[keyword] = [];
 
-                                            if (self.getFilter().isBlockedKeyword(keyword) === false) {
-                                                filter.addAutocompletedKeywords(keyword);
 
+                                            if (keyword === null) {
 
-                                                angular.forEach(data.val(), function (d) {
-                                                    indexdata[keyword].push(d);
+                                                // return full index as result
+                                                nodes = {};
+                                                angular.forEach(data.val(), function (node, id) {
+                                                    nodes[id] = node['_node'];
                                                 });
+                                                self.search();
 
-                                                // update search index by one changed keywords
-                                                if (self.getIndexInterval() === null) {
-                                                    self.cleanLocalIndex();
-                                                    self.updateLocalIndex(indexdata);
+                                            } else {
+
+                                                // perform search
+                                                if (self.getFilter().isBlockedKeyword(keyword) === false) {
+
+                                                    filter.addAutocompletedKeywords(keyword);
+                                                    angular.forEach(data.val(), function (d) {
+                                                        indexdata[keyword].push(d);
+                                                    });
+                                                    // update search index by one changed keywords
+                                                    if (self.getIndexInterval() === null) {
+                                                        self.cleanLocalIndex();
+                                                        self.updateLocalIndex(indexdata);
+                                                    }
                                                 }
 
+                                                indexcounter++;
+
                                             }
-                                            indexcounter++;
+
+
                                         });
 
 
                                     });
 
 
-                                    // wait for all data and put it together to search index
-                                    self.setIndexInterval(setInterval(function () {
-                                        if (indexintervalcounter > 10000 || indexcounter >= uniquarrayfinal.length) {
-                                            clearInterval(self.getIndexInterval());
-                                            clearInterval(self.setIndexInterval(null));
+                                    if (lastSearchInstance.$$data.keywords.length) {
+                                        // wait for all data and put it together to search index
+                                        self.setIndexInterval(setInterval(function () {
+                                            if (indexintervalcounter > 10000 || indexcounter >= uniquarrayfinal.length) {
+                                                clearInterval(self.getIndexInterval());
+                                                clearInterval(self.setIndexInterval(null));
 
-                                            var hash = Sha1.hash(JSON.stringify(indexdata));
+                                                var hash = Sha1.hash(JSON.stringify(indexdata));
 
-                                            if (hash !== self.getLastIndexHash() || results.count() === 0) {
-                                                results.$$app.clearResults();
-                                                self.cleanLocalIndex();
-                                                self.updateLocalIndex(indexdata);
+                                                if (hash !== self.getLastIndexHash() || results.count() === 0) {
+                                                    results.$$app.clearResults();
+                                                    self.cleanLocalIndex();
+                                                    self.updateLocalIndex(indexdata);
+                                                }
+                                                self.setLastIndexHash(hash);
                                             }
-                                            self.setLastIndexHash(hash);
-                                        }
-                                        indexintervalcounter++;
+                                            indexintervalcounter++;
 
-                                    }, 10));
+                                        }, 10));
+                                    }
 
 
                                     return this;
@@ -903,9 +966,10 @@
                             });
 
 
-                            if (keyword === undefined) {
+                            if (keyword === undefined || keyword === null) {
                                 keyword = this.getFilter().getQuery() ? this.getFilter().getQuery() : '';
                             }
+
 
                             var ref = hybridsearch.$firebase().database().ref().child("index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension);
                             var query = false;
@@ -917,7 +981,6 @@
                                 } else {
                                     query = ref.orderByChild("_nodetype" + keyword).equalTo(this.getFilter().getNodeType()).limitToFirst(250);
                                 }
-
                             }
 
 
@@ -1460,12 +1523,14 @@
                     /**
                      * @private
                      * @param results
+                     * @param nodes
                      */
-                    setResults: function (results) {
+                    setResults: function (results, nodes) {
 
 
                         this.clearResults();
 
+                        self.$$data.nodes = nodes;
 
                         angular.forEach(results, function (val, key) {
 
@@ -1668,6 +1733,58 @@
                 },
 
                 /**
+                 * Get all different values from given property
+                 * @param {string} property
+                 * @param {boolean} filtered true if return only distincts from filtered result, false returns all variants cummulated
+                 * @returns {array} collection of property values
+                 */
+                getDistinct: function (property, filtered) {
+
+                    var self = this, variants = {};
+
+                    if (filtered) {
+                        angular.forEach(this.getNodes(), function (node, identifier) {
+                            variants[node.getProperty(property)] = variants[node.getProperty(property)] === undefined ? 1 : variants[node.getProperty(property)]++;
+                        });
+                    } else {
+                        angular.forEach(this.$$data.nodes, function (node, identifier) {
+                            variants[self.getPropertyFromNode(node, property)] = variants[self.getPropertyFromNode(node, property)] === undefined ? 1 : variants[self.getPropertyFromNode(node, property)]++;
+                        });
+                    }
+
+                    return variants;
+
+
+                },
+
+                /**
+                 * @private
+                 * Get property.
+                 * @param {string} property Get single property from node data.
+                 * @returns {mixed}
+                 */
+                getPropertyFromNode: function (node, property) {
+
+                    var value = '';
+
+
+                    if (node.properties[property] !== undefined) {
+                        return node.properties[property];
+                    }
+
+                    angular.forEach(node.properties, function (val, key) {
+                        if (value === '' && key.substr(key.length - property.length, property.length) === property) {
+                            value = val !== undefined ? val : '';
+                        }
+                    });
+
+
+                    return value;
+
+                },
+
+                /**
+                 *
                  * Get alle nodes from current search result a grouped object.
                  * @returns {HybridsearchResultsGroupObject}
                  */
