@@ -856,12 +856,14 @@
                                     } else {
 
                                         // fetch index from non query request
-                                        uniquarrayfinal = [null];
+                                       if (self.getFilter().getQuery() === '') {
+                                           uniquarrayfinal = [null];
+                                       }
 
                                     }
 
 
-                                    if (uniquarrayfinal.length === 0) {
+                                    if (uniquarrayfinal !== undefined && uniquarrayfinal.length === 0) {
                                         self.getResults().$$data.notfound = true;
                                         if (self.getResults().$$data.notfoundtimeout !== undefined) {
                                             clearTimeout(self.getResults().$$data.notfoundtimeout);
@@ -881,6 +883,9 @@
                                     var indexintervalcounter = 0;
                                     var indexcounter = 0;
                                     var indexdata = {};
+
+
+
                                     angular.forEach(uniquarrayfinal, function (keyword) {
 
 
