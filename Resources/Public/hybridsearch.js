@@ -48,15 +48,17 @@
              * @param databaseURL {string} databaseURL, google firebase realtime database endpoint
              * @param workspace {string} workspace, identifier of the workspace to use from indexed datebase
              * @param dimension {string} dimension, hash of the dimension configuration to use form indexed database
+             * @param site {string} site identifier (uuid)
              * @example
              * var hybridSearch = new $hybridsearchObject(
              *  'https://<DATABASE_NAME>.firebaseio.com',
              *  'live',
-             *  'fb11fdde869d0a8fcfe00a2fd35c031d'
+             *  'fb11fdde869d0a8fcfe00a2fd35c031d',
+             *  '628e5470-bc99-47ea-a2ea-eee689fdd041'
              * ));
              * @returns {Hybridsearch} used for HybridsearchObject constructor.
              */
-            function Hybridsearch(databaseURL, workspace, dimension) {
+            function Hybridsearch(databaseURL, workspace, dimension, site) {
 
 
                 if (!(this instanceof Hybridsearch)) {
@@ -78,7 +80,8 @@
                 this.$$conf = {
                     firebase: firebaseconfig,
                     workspace: workspace,
-                    dimension: dimension
+                    dimension: dimension,
+                    site: site
                 };
                 Object.defineProperty(this, '$$conf', {
                     value: this.$$conf
@@ -427,7 +430,7 @@
                             items['_nodesTurbo'] = {};
                             items['_nodesByType'] = {};
 
-
+                            console.log(self.getFilter().getFullSearchQuery());
                             if (!self.getFilter().getFullSearchQuery()) {
                                 // return all nodes bco no query set
                                 angular.forEach(nodes, function (node) {
@@ -710,33 +713,6 @@
                         SearchIndexInstance: function (self, keywords) {
 
 
-                            // if (searchTimer) {
-                            //     clearTimeout(searchTimer);
-                            // }
-
-
-                            //  searchTimer = setTimeout(function () {
-
-                            // if (self.getFilter().getNodeType()) {
-
-                            // if (lastFilterHash != filter.getHash()) {
-
-                            // nodes = {};
-                            // get all nodes by types without keyword
-                            // don't process nodes over lunr search in this case
-                            //  self.getIndex().on("value", function (data) {
-                            //      updates[self.getFilter().getNodeType()] = data.val();
-                            //     self.updateLocalIndex(updates);
-
-                            // });
-
-                            // } else {
-
-                            // }
-
-                            // } else {
-
-
                             this.$$data = {
                                 keywords: [],
                                 running: 0,
@@ -856,9 +832,9 @@
                                     } else {
 
                                         // fetch index from non query request
-                                       if (self.getFilter().getQuery() === '') {
-                                           uniquarrayfinal = [null];
-                                       }
+                                        if (self.getFilter().getQuery() === '') {
+                                            uniquarrayfinal = [null];
+                                        }
 
                                     }
 
@@ -883,7 +859,6 @@
                                     var indexintervalcounter = 0;
                                     var indexcounter = 0;
                                     var indexdata = {};
-
 
 
                                     angular.forEach(uniquarrayfinal, function (keyword) {
@@ -967,7 +942,7 @@
                          */
                         getKeyword: function (querysegment) {
 
-                            return hybridsearch.$firebase().database().ref().child("keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/" + querysegment);
+                            return hybridsearch.$firebase().database().ref().child("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/" + querysegment);
                         }
 
                         ,
@@ -991,9 +966,9 @@
                             instance.$$data.running++;
 
                             if (parseInt(substrEnd) > 0) {
-                                var ref = hybridsearch.$firebase().database().ref().child("keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().equalTo(substrEnd).limitToFirst(1);
+                                var ref = hybridsearch.$firebase().database().ref().child("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().equalTo(substrEnd).limitToFirst(1);
                             } else {
-                                var ref = hybridsearch.$firebase().database().ref().child("keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().startAt(substrStart).limitToFirst(5);
+                                var ref = hybridsearch.$firebase().database().ref().child("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().startAt(substrStart).limitToFirst(5);
                             }
 
                             instance.$$data.promises[querysegment] = ref.on("value", function (data) {
@@ -1035,7 +1010,7 @@
                             }
 
 
-                            var ref = hybridsearch.$firebase().database().ref().child("index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension);
+                            var ref = hybridsearch.$firebase().database().ref().child("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension);
                             var query = false;
 
                             if (query === false && this.getFilter().getNodeType()) {
@@ -2052,7 +2027,23 @@
                  * * @returns HybridsearchObject
                  */
                 getPropertyFilters: function () {
-                    return this.$$data.propertyFilter === undefined ? {} : this.$$data.propertyFilter;
+
+                    var propertyfilters = this.$$data.propertyFilter === undefined ? {} : this.$$data.propertyFilter;
+
+                    angular.forEach(propertyfilters, function (propertyfilter, property) {
+
+                        angular.forEach(propertyfilter.value, function (value, key) {
+
+                            if (value === false) {
+                                delete propertyfilters[property].value[key];
+                            }
+
+
+                        });
+
+
+                    });
+                    return propertyfilters;
                 },
 
                 /**
@@ -2180,7 +2171,7 @@
                     var q = this.$$data.magickeywords + "  " + this.getAutocompletedKeywords() + "  " + this.getAdditionalKeywords();
 
 
-                    return q.length > 1 ? q : false;
+                    return q.length - (q.match(/ /g) || []).length > 1 ? q : false;
 
                 },
 

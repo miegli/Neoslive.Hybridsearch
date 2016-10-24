@@ -18,6 +18,7 @@ use TYPO3\Flow\Error\Exception;
 use TYPO3\Flow\Mvc\Controller\ControllerContext;
 use TYPO3\Flow\Mvc\Routing\UriBuilder;
 use TYPO3\Flow\Object\ObjectManager;
+use TYPO3\Flow\Persistence\Doctrine\PersistenceManager;
 use TYPO3\Flow\Reflection\ObjectAccess;
 use TYPO3\Flow\Resource\ResourceManager;
 use TYPO3\Media\Domain\Model\Asset;
@@ -66,6 +67,11 @@ class SearchIndexFactory
     protected $baseUri;
 
 
+    /**
+     * @var PersistenceManager
+     * @Flow\Inject
+     */
+    protected $persistenceManager;
     /**
      * @var ConfigurationManager
      * @Flow\Inject
@@ -216,12 +222,6 @@ class SearchIndexFactory
     /**
      * @var integer
      */
-    protected $memoryusage;
-
-
-    /**
-     * @var integer
-     */
     protected $indexcounter;
 
 
@@ -307,8 +307,7 @@ class SearchIndexFactory
         $this->temporaryDirectory = $temporaryDirectory;
         $this->queuecounter = 100000000;
 
-        $this->memoryusage = memory_get_peak_usage();
-        gc_enable();
+
     }
 
 
@@ -360,34 +359,49 @@ class SearchIndexFactory
     {
 
 
-        foreach (json_decode($this->firebase->get('index', array('shallow' => 'true'))) as $workspaceName => $workspacevalue) {
+        $sites = json_decode($this->firebase->get('sites', array('shallow' => 'true')));
 
-            $workspace = $this->workspaceRepository->findByIdentifier($workspaceName);
-            if ($workspace) {
-                $dimensions = json_decode($this->firebase->get('index/' . $workspaceName, array('shallow' => 'true')));
+        if ($sites === null) {
+            return true;
+        }
 
-                if ($dimensions) {
-                    foreach ($dimensions as $dimension => $dimensionvalue) {
+        foreach ($sites as $siteIdentifier => $sitesValue) {
 
-                        $nodes = json_decode($this->firebase->get('index/' . $workspaceName . "/" . $dimension, array('orderBy' => '"__sync"', 'startAt' => 1, 'limitToFirst' => 100)));
+            $this->site = $this->siteRepository->findByIdentifier($siteIdentifier);
 
-                        if ($nodes) {
-                            foreach ($nodes as $identifier => $nodeIndex) {
 
-                                $node = $this->nodeDataRepository->findOneByIdentifier($identifier, $workspace);
-                                if ($node) {
-                                    $this->firebase->update("index/" . $workspace->getName() . "/" . $dimension . "/" . $node->getIdentifier() . "/__sync", 0);
-                                    $this->createIndex($node->getPath(), $workspace, $this->getSiteByContextPath($node->getContextPath()), true);
-                                } else {
-                                    // remove index for non existing node
-                                    $this->firebase->delete("index/" . $workspace->getName() . "/" . $dimension . "/" . $identifier);
+            foreach (json_decode($this->firebase->get('sites/' . $siteIdentifier . '/index/', array('shallow' => 'true'))) as $workspaceName => $workspaceValue) {
 
+
+                $workspace = $this->workspaceRepository->findByIdentifier($workspaceName);
+                if ($workspace) {
+                    $dimensions = json_decode($this->firebase->get('sites/' . $siteIdentifier . '/index/' . $workspaceName, array('shallow' => 'true')));
+
+                    if ($dimensions) {
+                        foreach ($dimensions as $dimension => $dimensionvalue) {
+
+                            $nodes = json_decode($this->firebase->get('sites/' . $siteIdentifier . '/index/' . $workspaceName . "/" . $dimension, array('orderBy' => '"__sync"', 'startAt' => 1, 'limitToFirst' => 100)));
+
+                            if ($nodes) {
+                                foreach ($nodes as $identifier => $nodeIndex) {
+
+                                    $node = $this->nodeDataRepository->findOneByIdentifier($identifier, $workspace);
+                                    if ($node) {
+                                        $this->firebase->update("sites/" . $siteIdentifier . "/index/" . $workspace->getName() . "/" . $dimension . "/" . $node->getIdentifier() . "/__sync", 0);
+                                        $this->createIndex($node->getPath(), $workspace, $this->getSiteByContextPath($node->getContextPath()), true);
+                                    } else {
+                                        // remove index for non existing node
+                                        $this->firebase->delete("sites/" . $siteIdentifier . "/index/" . $workspace->getName() . "/" . $dimension . "/" . $identifier);
+
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
+
+
         }
 
         $this->save();
@@ -420,9 +434,9 @@ class SearchIndexFactory
         if ($this->settings['Realtime']) {
 
             if ($node->isRemoved() || $node->isHidden()) {
-                $this->firebase->delete("index/" . $workspace->getName() . "/" . $node->getNodeData()->getDimensionsHash() . "/" . $node->getIdentifier());
+                $this->firebase->delete("sites/" . $this->site->getIdentifier() . "/index/" . $workspace->getName() . "/" . $node->getNodeData()->getDimensionsHash() . "/" . $node->getIdentifier());
             } else {
-                $this->firebase->set("index/" . $workspace->getName() . "/" . $node->getNodeData()->getDimensionsHash() . "/" . $node->getIdentifier() . "/__sync", time());
+                $this->firebase->set("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace->getName() . "/" . $node->getNodeData()->getDimensionsHash() . "/" . $node->getIdentifier() . "/__sync", time());
             }
         }
 
@@ -434,7 +448,7 @@ class SearchIndexFactory
      * @param NodeData $nodedata
      * @param Workspace $workspace
      */
-    public function updateIndexForNodeData($nodedata, $workspace=null)
+    public function updateIndexForNodeData($nodedata, $workspace = null)
     {
 
         if ($this->settings['Realtime']) {
@@ -462,9 +476,9 @@ class SearchIndexFactory
 
                     if ($node !== null) {
                         if ($node->isRemoved() || $node->isHidden()) {
-                            $this->firebase->delete("index/" . $workspace->getName() . "/" . $this->getDimensionConfiugurationHash($dimensionConfiguration) . "/" . $node->getIdentifier());
+                            $this->firebase->delete("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace->getName() . "/" . $this->getDimensionConfiugurationHash($dimensionConfiguration) . "/" . $node->getIdentifier());
                         } else {
-                            $this->firebase->set("index/" . $workspace->getName() . "/" . $this->getDimensionConfiugurationHash($dimensionConfiguration) . "/" . $node->getIdentifier() . "/__sync", time());
+                            $this->firebase->set("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace->getName() . "/" . $this->getDimensionConfiugurationHash($dimensionConfiguration) . "/" . $node->getIdentifier() . "/__sync", time());
                         }
                     }
 
@@ -510,7 +524,7 @@ class SearchIndexFactory
                     /** @var Node $node */
                     $node = $this->createContext($workspace->getName(), $dimensionConfiguration, $targetDimension, $this->site)->getNodeByIdentifier($nodedata->getIdentifier());
                     if ($node !== null) {
-                        $this->firebase->delete("index/" . $workspace->getName() . "/" . $this->getDimensionConfiugurationHash($dimensionConfiguration) . "/" . $node->getIdentifier());
+                        $this->firebase->delete("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace->getName() . "/" . $this->getDimensionConfiugurationHash($dimensionConfiguration) . "/" . $node->getIdentifier());
                     }
                     $dhashes[$this->getDimensionConfiugurationHash($dimensionConfiguration)] = true;
 
@@ -716,10 +730,11 @@ class SearchIndexFactory
     private function removeSingleIndex($node, $workspaceHash, $dimensionConfigurationHash, $skipKeywords = array())
     {
 
+
         if ($this->creatingFullIndex === false) {
             // set to false first and remove after (creating event call on clientside watchers)
-            $this->firebaseSet("index/$workspaceHash/$dimensionConfigurationHash" . "/" . urlencode($node->getIdentifier()), false);
-            $this->firebaseDelete("index/$workspaceHash/$dimensionConfigurationHash" . "/" . urlencode($node->getIdentifier()));
+            $this->firebaseSet("sites/" . $this->getSiteIdentifier() . "/index/$workspaceHash/$dimensionConfigurationHash" . "/" . urlencode($node->getIdentifier()), false);
+            $this->firebaseDelete("sites/" . $this->getSiteIdentifier() . "/index/$workspaceHash/$dimensionConfigurationHash" . "/" . urlencode($node->getIdentifier()));
         }
 
 
@@ -905,6 +920,7 @@ class SearchIndexFactory
                 $parentNodeFilter = '[instanceof TYPO3.Neos:Content]';
             }
         }
+
 
 
         $properties = new \stdClass();
@@ -1327,9 +1343,28 @@ class SearchIndexFactory
     function updateFireBaseRules()
     {
 
+        $mergedrules = array();
 
-        $keywords = $this->firebase->get("keywords");
-        $this->firebase->set('.settings/rules', $this->getFirebaseRules(json_decode($keywords)));
+
+        $sites = json_decode($this->firebase->get('sites', array('shallow' => 'true')));
+
+        if ($sites === null) {
+            return false;
+        }
+
+        foreach ($sites as $siteIdentifier => $val) {
+
+
+            $keywords = $this->firebase->get("sites/" . $siteIdentifier . "/keywords");
+
+
+            $this->getFirebaseRules(json_decode($keywords), $siteIdentifier, $mergedrules);
+
+
+        }
+
+
+        $this->firebase->set('.settings/rules', $mergedrules);
 
 
     }
@@ -1351,9 +1386,9 @@ class SearchIndexFactory
         foreach ($this->index as $workspace => $workspaceData) {
             foreach ($workspaceData as $dimension => $dimensionData) {
                 if ($this->creatingFullIndex) {
-                    $this->firebaseUpdate("index/" . $workspace . "/" . $dimension, $dimensionData);
+                    $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $dimension, $dimensionData);
                 } else {
-                    $this->firebase->update("index/" . $workspace . "/" . $dimension, $dimensionData);
+                    $this->firebase->update("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $dimension, $dimensionData);
                 }
             }
         }
@@ -1362,9 +1397,9 @@ class SearchIndexFactory
 
             foreach ($workspaceData as $dimension => $dimensionData) {
                 if ($this->creatingFullIndex) {
-                    $this->firebaseUpdate("keywords/$workspace/$dimension", $dimensionData);
+                    $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/keywords/$workspace/$dimension", $dimensionData);
                 } else {
-                    $this->firebase->update("keywords/$workspace/$dimension", $dimensionData);
+                    $this->firebase->update("sites/" . $this->getSiteIdentifier() . "/keywords/$workspace/$dimension", $dimensionData);
                 }
             }
 
@@ -1394,17 +1429,19 @@ class SearchIndexFactory
     /**
      * Get Firebase rules by given keywords
      * @param mixed $keywords
-     * @return array
+     * @param string $siteKey
+     * @param array $mergedrules
+     * @return void
      */
     private
-    function getFirebaseRules($keywords)
+    function getFirebaseRules($keywords, $siteKey, &$mergedrules)
     {
 
         $rules = array();
 
         if (count($keywords)) {
             foreach ($keywords as $dimension => $val) {
-                if (isset($rules['index'][$dimension]) === false) {
+                if (isset($rules[$dimension]) === false) {
                     $rules['index'][$dimension] = array();
                 }
                 foreach ($val as $k => $v) {
@@ -1430,13 +1467,31 @@ class SearchIndexFactory
         }
 
 
-        return array(
-            'rules' => array(
-                '.read' => true,
-                'index' => current($rules),
-                'ga' => array('.indexOn' => 'url')
-            )
+        if (isset($mergedrules['rules']) == false) {
+            $mergedrules['rules'] = array();
+        }
+
+        if (isset($mergedrules['rules']['sites']) == false) {
+            $mergedrules['rules']['sites'] = array();
+        }
+
+        if (isset($mergedrules['rules']['sites'][$siteKey]) == false) {
+            $mergedrules['rules']['sites'][$siteKey] = array();
+        }
+
+        $mergedrules['rules']['sites'][$siteKey] = array(
+            '.read' => true,
+            'ga' => array('.indexOn' => 'url')
         );
+
+
+        if (count($rules)) {
+
+            $mergedrules['rules']['sites'][$siteKey]['index'] = $rules['index'];
+
+        }
+        return;
+
 
     }
 
@@ -1454,7 +1509,7 @@ class SearchIndexFactory
     {
 
 
-        $path = "keywords/" . $workspaceHash . "/" . $dimensionConfigurationHash . "/" . $node->getIdentifier();
+        $path = "sites/" . $this->getSiteIdentifier() . "/keywords/" . $workspaceHash . "/" . $dimensionConfigurationHash . "/" . $node->getIdentifier();
         $result = $this->firebase->get($path);
 
         if ($result != 'null') {
@@ -1734,6 +1789,24 @@ class SearchIndexFactory
         $sz = 'BKMGTP';
         $factor = floor((strlen($bytes) - 1) / 3);
         return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)) . @$sz[$factor];
+    }
+
+
+    /**
+     * get db identifier for current site
+     * @return string
+     */
+    private
+    function getSiteIdentifier()
+    {
+
+        if ($this->site instanceof Site) {
+            return $this->persistenceManager->getIdentifierByObject($this->site);
+        } else {
+            return 'nosite';
+        }
+
+
     }
 
 }
