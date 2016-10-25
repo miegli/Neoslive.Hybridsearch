@@ -552,8 +552,6 @@
                             var propertyFilteredLength = Object.keys(this.getFilter().getPropertyFilters()).length;
 
 
-
-
                             if (propertyFiltered) {
 
                                 var propertyMatching = 0;
@@ -608,9 +606,6 @@
                                                 }
                                             }
                                         });
-
-
-
 
 
                                         if (filter.booleanmode === false && isMatching === Object.keys(filterobject).length) {
@@ -700,7 +695,7 @@
                                         clearInterval(searchInstancesInterval);
                                         lastSearchInstance.execute(self, lastSearchInstance);
                                     }
-                                }, 10);
+                                }, 5);
 
 
                             }
@@ -866,11 +861,9 @@
                                     angular.forEach(uniquarrayfinal, function (keyword) {
 
 
-
                                         self.getIndex(keyword).once("value", function (data) {
 
                                             indexdata[keyword] = [];
-
 
 
                                             if (keyword === null) {
@@ -1207,6 +1200,7 @@
 
                     this.$$app.setIsRunning();
                     this.$$app.setSearchIndex();
+
 
                 },
 
