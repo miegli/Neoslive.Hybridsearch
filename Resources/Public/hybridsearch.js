@@ -618,11 +618,11 @@
                                         });
 
 
-                                        if (filter.booleanmode === false && isMatching === Object.keys(filterobject).length) {
+                                        if (filter.booleanmode === true && isMatching === Object.keys(filterobject).length) {
                                             propertyMatching++;
                                         }
 
-                                        if (filter.booleanmode === true && isMatching > 0) {
+                                        if (filter.booleanmode === false && isMatching > 0) {
                                             propertyMatching++;
                                         }
 
