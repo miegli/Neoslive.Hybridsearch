@@ -119,7 +119,7 @@
      * @module Angular main module
      * @returns {hybridsearch}
      */
-    angular.module('hybridsearch.common').factory('$hybridsearchObject', ['$firebaseObject', '$hybridsearchResultsObject', '$hybridsearchFilterObject', '$http', '$q',
+    angular.module('hybridsearch.common').factory('$hybridsearchObject', ['$firebaseObject', '$hybridsearchResultsObject', '$hybridsearchFilterObject', '$http', '$q', '$location', '$cookies',
 
         /**
          * @private
@@ -128,7 +128,7 @@
          * @param $hybridsearchFilterObject
          * @returns {HybridsearchObject}
          */
-            function (firebaseObject, $hybridsearchResultsObject, $hybridsearchFilterObject, $http, $q) {
+            function (firebaseObject, $hybridsearchResultsObject, $hybridsearchFilterObject, $http, $q, $location, $cookies) {
 
             /**
              * @example
@@ -146,9 +146,10 @@
              */
             var HybridsearchObject = function (hybridsearch) {
 
-                    var results, filter, index, lunrSearch, nodes, nodeTypeLabels, propertiesBoost, isRunning, searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval;
+                    var results, filter, index, lunrSearch, nodes, nodeTypeLabels, propertiesBoost, isRunning, firstfilterhash, searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval;
 
                     isRunning = false;
+                    firstfilterhash = false;
                     searchInstancesInterval = false;
                     lastSearchInstance = false;
                     results = new $hybridsearchResultsObject();
@@ -352,6 +353,20 @@
                         },
                         /**
                          * @private
+                         * @param string first filter hash
+                         */
+                        setFirstFilterHash: function (hash) {
+                            firstfilterhash = hash;
+                        },
+                        /**
+                         * @private
+                         * @returns string
+                         */
+                        getFirstFilterHash: function () {
+                            return firstfilterhash;
+                        },
+                        /**
+                         * @private
                          * @returns {boolean}
                          */
                         isRunning: function () {
@@ -419,6 +434,42 @@
                         },
                         /**
                          * @private
+                         * @param {string} query
+                         * @returns {hybridsearchFilterObject}
+                         */
+                        setFilter: function (query) {
+
+
+                            var scope = filter.getQueryScope();
+                            if (scope) {
+                                scope[filter.getQueryScopeProperty()] = query;
+                            }
+
+
+                            return filter;
+
+                        },
+
+                        /**
+                         * @private
+                         * @returns mixed
+                         */
+                        updateLocationHash: function () {
+
+                            if (this.getResults().countAll() > 0) {
+                                $location.search(this.getFirstFilterHash(), this.getFilter().getQuery());
+                                var filterObject = {
+                                    'query': this.getFilter().getQuery()
+                                };
+
+                                $cookies.put(this.getFirstFilterHash(), JSON.stringify(filterObject));
+
+                            }
+
+                        },
+
+                        /**
+                         * @private
                          * @returns mixed
                          */
                         search: function () {
@@ -466,6 +517,7 @@
 
 
                             results.getApp().setResults(items, nodes);
+                            this.updateLocationHash();
 
                         },
 
@@ -1198,6 +1250,24 @@
                  */
                 run: function () {
 
+                    this.$$app.setFirstFilterHash(this.$$app.getFilter().getHash());
+
+                    var lastFilterCookie = $cookies.get(this.$$app.getFirstFilterHash());
+                    if (lastFilterCookie) {
+
+                        if ($location.$$search[this.$$app.getFirstFilterHash()] !== undefined) {
+                            try {
+                                var lastFilter = JSON.parse(lastFilterCookie);
+                                if (lastFilter.query !== undefined) {
+                                    this.$$app.setFilter(lastFilter.query);
+                                }
+                            } catch (e) {
+                                //
+                            }
+                        }
+                    }
+
+
                     this.$$app.setIsRunning();
                     this.$$app.setSearchIndex();
 
@@ -1346,6 +1416,9 @@
                     var self = this;
 
                     if (scope) {
+
+                        self.$$app.getFilter().setQueryScope(scope, input);
+
                         scope.$watch(input, function (searchInput) {
                             self.$$app.getFilter().setQuery(scope[input]);
 
@@ -1652,20 +1725,25 @@
 
                     },
 
+
                     /**
                      * @private
                      * @returns mixed
                      */
                     executeCallbackMethod: function (self) {
-
                         this.callbackMethod(self);
-
                     },
-
+                    /**
+                     * @private
+                     * @returns mixed
+                     */
                     getNodeTypeLabels: function () {
                         return nodeTypeLabels;
                     },
-
+                    /**
+                     * @private
+                     * @returns mixed
+                     */
                     getNodeTypeLabel: function (nodeType) {
                         return nodeTypeLabels[nodeType] !== undefined ? nodeTypeLabels[nodeType] : nodeType;
                     },
@@ -1722,6 +1800,13 @@
                  */
                 count: function () {
                     return !this.getNodes() ? 0 : Object.keys(this.$$app.getResultsData()._nodes).length;
+                },
+                /**
+                 * Get number of search results including turbonodes.
+                 * @returns {integer} Search results length.
+                 */
+                countAll: function () {
+                    return this.count() + this.countTurboNodes();
                 },
                 /**
                  * Returns true if given query can't result anyhing
@@ -1992,6 +2077,29 @@
                 setQuery: function (query) {
                     this.$$data.query = query;
                     return this;
+                },
+
+                /**
+                 * @param scope scope
+                 * @param {string} property
+                 * @returns HybridsearchObject
+                 */
+                setQueryScope: function (scope, property) {
+                    this.$$data.queryscope = scope;
+                    this.$$data.queryscopeproperty = property;
+                    return this;
+                },
+                /**
+                 * @returns mixed
+                 */
+                getQueryScope: function () {
+                    return this.$$data.queryscope;
+                },
+                /**
+                 * @returns mixed
+                 */
+                getQueryScopeProperty: function () {
+                    return this.$$data.queryscopeproperty;
                 },
 
                 /**
