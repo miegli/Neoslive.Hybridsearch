@@ -329,7 +329,7 @@ class SearchIndexFactory
         foreach ($this->workspaceRepository->findAll() as $workspace) {
             /** @var Workspace $workspace */
             if ($workspacename === null || $workspacename === $workspace->getName()) {
-                $this->deleteWorkspace($workspace);
+                $this->deleteWorkspace($workspace, $site);
             }
         }
 
@@ -806,9 +806,15 @@ class SearchIndexFactory
 
             }
 
-
             foreach ($keywords as $keyword => $val) {
-                $this->keywords->$workspaceHash->$dimensionConfigurationHash[strval($keyword)] = 1;
+                $k = strval($keyword);
+                if (substr($k, 0, 9) === "_nodetype") {
+                    $k = $this->getNodeTypeName($node) . substr($k, 9);
+                }
+
+                if ($k) {
+                    $this->keywords->$workspaceHash->$dimensionConfigurationHash[$k] = 1;
+                }
             }
 
 
@@ -892,6 +898,17 @@ class SearchIndexFactory
 
 
     /**
+     * gets node type name
+     * @param Node $node
+     * @return string
+     */
+    private function getNodeTypeName($node)
+    {
+        return mb_strtolower(preg_replace("/[^A-z0-9]/", "-", $node->getNodeType()->getName()));
+    }
+
+
+    /**
      * @param Node $node
      * @param string $grandParentNodeFilter
      * @param string $parentNodeFilter
@@ -902,7 +919,7 @@ class SearchIndexFactory
 
 
         $data = new \stdClass();
-        $data->nodeType = mb_strtolower(preg_replace("/[^A-z0-9]/", "-", $node->getNodeType()->getName()));
+        $data->nodeType = $this->getNodeTypeName($node);
 
 
         if ($grandParentNodeFilter === '') {
@@ -920,7 +937,6 @@ class SearchIndexFactory
                 $parentNodeFilter = '[instanceof TYPO3.Neos:Content]';
             }
         }
-
 
 
         $properties = new \stdClass();
@@ -1445,19 +1461,22 @@ class SearchIndexFactory
                     $rules['index'][$dimension] = array();
                 }
                 foreach ($val as $k => $v) {
+
                     if (isset($rules['index'][$dimension][$k]) === false) {
                         $rules['index'][$dimension][$k] = array();
-                        $rules['index'][$dimension][$k]['.indexOn'] = array();
+                        $rules['index'][$dimension][$k]['.indexOn'] = array('_nodetype');
                     }
 
 
                     if (is_array($v)) {
                         foreach (array_keys($v) as $key) {
                             array_push($rules['index'][$dimension][$k]['.indexOn'], (string)strval($key));
+                            array_push($rules['index'][$dimension][$k]['.indexOn'], (string)"_nodetype".strval($key));
                         }
                     } else {
                         foreach (get_object_vars($v) as $key => $value) {
                             array_push($rules['index'][$dimension][$k]['.indexOn'], (string)strval($key));
+                            array_push($rules['index'][$dimension][$k]['.indexOn'], (string)"_nodetype".strval($key));
                         }
                     }
 
@@ -1536,17 +1555,18 @@ class SearchIndexFactory
      * Delete index for given workspace
      * Do firebase delete request
      * @param Workspace $workspace
+     * @param Site $site
      * @return mixed
      */
     protected
-    function deleteWorkspace($workspace)
+    function deleteWorkspace($workspace, $site)
     {
 
 
         $this->output->outputLine("delete old index for workspace " . $workspace->getName());
 
-        $this->firebase->delete('index/' . $workspace->getName());
-        $this->firebase->delete('keywords/' . $workspace->getName());
+        $this->firebase->delete("sites/" . $this->getSiteIdentifier($site) . '/index/' . $workspace->getName());
+        $this->firebase->delete("sites/" . $this->getSiteIdentifier($site) . '/keywords/' . $workspace->getName());
 
 
     }

@@ -430,6 +430,7 @@
                             items['_nodesTurbo'] = {};
                             items['_nodesByType'] = {};
 
+
                             if (!self.getFilter().getFullSearchQuery()) {
                                 // return all nodes bco no query set
                                 angular.forEach(nodes, function (node) {
@@ -490,17 +491,6 @@
 
 
                             if (nodesFound[hash] !== undefined) {
-
-                                // if (items['_nodesTurbo'][hash] !== undefined) {
-                                //   //  items['_nodesTurbo'][hash].addScore(score);
-                                // }
-                                // if (items['_nodes'][hash] !== undefined) {
-                                //  //   items['_nodes'][hash].addScore(score);
-                                // }
-                                // if (items['_nodesByType'][nodeTypeLabel][hash] !== undefined) {
-                                //    // items['_nodesByType'][nodeTypeLabel][hash].addScore(score);
-                                // }
-
                                 skip = true;
                             }
 
@@ -562,6 +552,8 @@
                             var propertyFilteredLength = Object.keys(this.getFilter().getPropertyFilters()).length;
 
 
+
+
                             if (propertyFiltered) {
 
                                 var propertyMatching = 0;
@@ -618,11 +610,14 @@
                                         });
 
 
-                                        if (filter.booleanmode === true && isMatching === Object.keys(filterobject).length) {
+
+
+
+                                        if (filter.booleanmode === false && isMatching === Object.keys(filterobject).length) {
                                             propertyMatching++;
                                         }
 
-                                        if (filter.booleanmode === false && isMatching > 0) {
+                                        if (filter.booleanmode === true && isMatching > 0) {
                                             propertyMatching++;
                                         }
 
@@ -692,6 +687,7 @@
 
 
                                 var keywords = self.getFilter().getQueryKeywords();
+
 
                                 // fetch index from given keywords
                                 var searchIndex = new this.SearchIndexInstance(self, keywords);
@@ -763,6 +759,7 @@
 
 
                                     clearInterval(self.getIndexInterval());
+
 
                                     if (lastSearchInstance.$$data.keywords.length) {
 
@@ -869,9 +866,12 @@
                                     angular.forEach(uniquarrayfinal, function (keyword) {
 
 
-                                        self.getIndex(keyword).on("value", function (data) {
+
+                                        self.getIndex(keyword).once("value", function (data) {
 
                                             indexdata[keyword] = [];
+
+
 
                                             if (keyword === null) {
 
@@ -900,9 +900,10 @@
 
                                                 }
 
-                                                indexcounter++;
 
                                             }
+
+                                            indexcounter++;
 
 
                                         });
@@ -914,7 +915,7 @@
                                     if (lastSearchInstance.$$data.keywords.length) {
                                         // wait for all data and put it together to search index
                                         self.setIndexInterval(setInterval(function () {
-                                            if (indexintervalcounter > 10000 || indexcounter >= uniquarrayfinal.length) {
+                                            if (indexintervalcounter > 1000 || indexcounter >= uniquarrayfinal.length) {
                                                 clearInterval(self.getIndexInterval());
                                                 clearInterval(self.setIndexInterval(null));
 
@@ -928,8 +929,7 @@
                                                 self.setLastIndexHash(hash);
                                             }
                                             indexintervalcounter++;
-
-                                        }, 10));
+                                        }, 2));
                                     }
 
 
@@ -961,11 +961,17 @@
                          */
                         getKeywords: function (querysegment, instance = false) {
 
-
+                            var self = this;
                             var substrStart = querysegment.toLowerCase();
                             var substrEnd = substrStart;
                             if (substrStart.length > 8) {
                                 substrStart = substrStart.substr(0, substrStart.length - 3);
+                            }
+
+
+                            if (this.getFilter().getNodeType()) {
+                                substrStart = this.getFilter().getNodeType() + substrStart;
+                                substrEnd = this.getFilter().getNodeType() + substrEnd;
                             }
 
 
@@ -982,7 +988,14 @@
 
                                 if (data !== undefined) {
                                     angular.forEach(data.val(), function (v, k) {
-                                        instance.$$data.keywords.push(k);
+
+                                        if (self.getFilter().getNodeType()) {
+                                            instance.$$data.keywords.push(k.substring(self.getFilter().getNodeType().length));
+                                        } else {
+                                            instance.$$data.keywords.push(k);
+                                        }
+
+
                                     });
                                 }
 
@@ -1339,16 +1352,21 @@
                     var self = this;
 
                     if (scope) {
-
-
                         scope.$watch(input, function (searchInput) {
                             self.$$app.getFilter().setQuery(scope[input]);
+
                             if (searchInput !== undefined) {
+                                if (searchInput.length === 0) {
+                                    self.$$app.getFilter().resetQuery();
+                                }
                                 self.$$app.setSearchIndex();
                             }
                         });
 
                     } else {
+                        if (input.length === 0) {
+                            self.$$app.getFilter().resetQuery();
+                        }
                         self.$$app.getFilter().setQuery(input);
                         self.$$app.setSearchIndex();
                     }
@@ -1979,6 +1997,16 @@
                  */
                 setQuery: function (query) {
                     this.$$data.query = query;
+                    return this;
+                },
+
+                /**
+                 * @private
+                 * @returns HybridsearchObject
+                 */
+                resetQuery: function () {
+                    this.$$data.autocompletedKeywords = '';
+                    this.$$data.query = '';
                     return this;
                 },
 
