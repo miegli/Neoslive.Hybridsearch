@@ -430,7 +430,6 @@
                             items['_nodesTurbo'] = {};
                             items['_nodesByType'] = {};
 
-                            console.log(self.getFilter().getFullSearchQuery());
                             if (!self.getFilter().getFullSearchQuery()) {
                                 // return all nodes bco no query set
                                 angular.forEach(nodes, function (node) {
@@ -552,6 +551,7 @@
                          */
                         isFiltered: function (node) {
 
+
                             var self = this;
 
                             if (this.getFilter().getNodePath().length > 0 && node.uri.path.substr(0, this.getFilter().getNodePath().length) != this.getFilter().getNodePath()) {
@@ -578,8 +578,12 @@
                                     }
 
                                     // filter is string
-                                    if (filterApplied === false && typeof filter.value === 'string' && ((filter.reverse === false && self.getPropertyFromNode(node, property) == filter.value || filter.reverse === true && self.getPropertyFromNode(node, property) != filter.value))) {
-                                        propertyMatching++;
+                                    if (filterApplied === false && typeof filter.value === 'string') {
+
+                                        if (((filter.reverse === false && self.getPropertyFromNode(node, property) == filter.value) || (filter.reverse === true && self.getPropertyFromNode(node, property) != filter.value))) {
+                                            propertyMatching++;
+                                        }
+
                                         filterApplied = true;
                                     }
 
@@ -597,7 +601,6 @@
 
                                     // filter is object
                                     if (filterApplied === false && Object.keys(filterobject).length > 0) {
-
 
                                         var isMatching = 0;
                                         angular.forEach(filterobject, function (value, key) {
@@ -623,16 +626,18 @@
                                             propertyMatching++;
                                         }
 
+                                        filterApplied = true;
 
-                                    } else {
-                                        propertyMatching++;
                                     }
 
+                                    if (filterApplied === false) {
+                                        propertyMatching++;
+                                    }
 
                                 });
 
 
-                                if (propertyMatching < propertyFilteredLength) {
+                                if (propertyMatching !== propertyFilteredLength) {
                                     return true;
 
                                 } else {
@@ -644,13 +649,13 @@
 
                             if (propertyFiltered === false && this.getFilter().getAgeFilter() != '') {
                                 if (this.getFilter().getPropertyFilters() != node.__userAgeBracket) {
-                                    return false;
+                                    return true;
                                 }
                             }
 
                             if (propertyFiltered === false && this.getFilter().getGenderFilter() != '') {
                                 if (this.getFilter().getGenderFilter() != node.__userGender) {
-                                    return false;
+                                    return true;
                                 }
                             }
 
@@ -868,7 +873,6 @@
 
                                             indexdata[keyword] = [];
 
-
                                             if (keyword === null) {
 
                                                 // return full index as result
@@ -892,6 +896,8 @@
                                                         self.cleanLocalIndex();
                                                         self.updateLocalIndex(indexdata);
                                                     }
+
+
                                                 }
 
                                                 indexcounter++;
@@ -912,7 +918,7 @@
                                                 clearInterval(self.getIndexInterval());
                                                 clearInterval(self.setIndexInterval(null));
 
-                                                var hash = Sha1.hash(JSON.stringify(indexdata));
+                                                var hash = self.getFilter().getHash() + " " + Sha1.hash(JSON.stringify(indexdata));
 
                                                 if (hash !== self.getLastIndexHash() || results.count() === 0) {
                                                     results.$$app.clearResults();
@@ -1221,11 +1227,11 @@
                  * @param {string} property to search only for
                  * @param {string} value that property must match
                  * @param {scope} scope false if is simple string otherwise angular scope required for binding data
-                 * @param boolean booleanmode (true if array values treated with OR conditions)
                  * @param boolean reverse (true if condition logic is reversed)
+                 * @param boolean booleanmode (true if array values treated with OR conditions)
                  * @returns {HybridsearchObject}
                  */
-                addPropertyFilter: function (property, value, scope=null, booleanmode = true, reverse = false) {
+                addPropertyFilter: function (property, value, scope=null, reverse = false, booleanmode = true) {
 
                     var self = this;
 
@@ -1779,7 +1785,7 @@
                  * @param {boolean} filtered true if return only distincts from filtered result, false returns all variants cummulated
                  * @returns {array} collection of property values
                  */
-                getDistinct: function (property, filtered) {
+                getDistinct: function (property, filtered=false) {
 
                     var self = this, variants = {};
 
@@ -1787,13 +1793,29 @@
                         angular.forEach(this.getNodes(), function (node) {
                             variants[node.getProperty(property)] = variants[node.getProperty(property)] === undefined ? 1 : variants[node.getProperty(property)] = variants[node.getProperty(property)] + 1;
                         });
+
+                        return variants;
+
                     } else {
-                        angular.forEach(this.$$data.nodes, function (node) {
+
+                        if (this.$$data.distincts == undefined) {
+                            this.$$data.distincts = {};
+                        }
+
+                        angular.forEach(this.getNodes(), function (node) {
                             variants[self.getPropertyFromNode(node, property)] = variants[self.getPropertyFromNode(node, property)] === undefined ? 1 : variants[self.getPropertyFromNode(node, property)] = variants[self.getPropertyFromNode(node, property)] + 1;
                         });
-                    }
 
-                    return variants;
+                        angular.forEach(self.$$data.distincts, function (k, v) {
+                            self.$$data.distincts[v] = 0;
+                        });
+
+                        angular.forEach(variants, function (k, v) {
+                            self.$$data.distincts[v] = k;
+                        });
+
+                        return self.$$data.distincts;
+                    }
 
 
                 },
@@ -1911,6 +1933,7 @@
 
                     hash.push(this.$$data.query);
                     hash.push(this.$$data.nodeType);
+                    hash.push(this.$$data.propertyFilter);
 
                     return Sha1.hash(JSON.stringify(hash));
                 },
@@ -1986,7 +2009,11 @@
                     if (this.$$data.propertyFilter == undefined) {
                         this.$$data.propertyFilter = {};
                     }
-                    this.$$data.propertyFilter[property] = {value: value, booleanmode: booleanmode, reverse: reverse};
+                    this.$$data.propertyFilter[property] = {
+                        value: value,
+                        booleanmode: booleanmode,
+                        reverse: reverse
+                    };
                     return this;
                 },
 
