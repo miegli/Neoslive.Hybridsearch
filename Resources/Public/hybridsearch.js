@@ -913,7 +913,7 @@
                                     angular.forEach(uniquarrayfinal, function (keyword) {
 
 
-                                        self.getIndex(keyword).once("value", function (data) {
+                                        self.getIndex(keyword).on("value", function (data) {
 
                                             indexdata[keyword] = [];
 
