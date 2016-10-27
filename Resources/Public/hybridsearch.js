@@ -1326,6 +1326,21 @@
                 },
 
                 /**
+                 * @param {string} scope variable name
+                 * @param {scope} scope
+                 * @example
+                 *   .$bind(scopevar,scope);
+                 *
+                 * @returns {HybridsearchObject}
+                 */
+                $bind: function (scopevar, scope) {
+                    this.$$app.getResults().$$app.setScope(scope);
+                    scope[scopevar] = this.$$app.getResults();
+                    this.run();
+                    return this;
+                },
+
+                /**
                  * @private
                  * run search and perform queries
                  * @returns  {HybridsearchObject}
@@ -1828,6 +1843,14 @@
 
                     /**
                      * @private
+                     * @returns {mixed}
+                     */
+                    getCallbackMethod: function () {
+                        return this.callbackMethod;
+                    },
+
+                    /**
+                     * @private
                      * @returns {HybridsearchResultsObject}
                      */
                     setCallbackMethod: function (callback) {
@@ -1836,13 +1859,39 @@
 
                     },
 
+                    /**
+                     * @private
+                     * @param {scope} scope
+                     * @returns {HybridsearchResultsObject}
+                     */
+                    setScope: function (scope) {
+                        this.scope = scope;
+                        return this;
+                    },
 
                     /**
                      * @private
+                     * @returns {HybridsearchResultsObject}
+                     */
+                    getScope: function () {
+                        return this.scope;
+                    },
+
+                    /**
+                     * @private
+                     * @param obj
                      * @returns mixed
                      */
-                    executeCallbackMethod: function (self) {
-                        this.callbackMethod(self);
+                    executeCallbackMethod: function (obj) {
+
+                        var self = this;
+                        if (self.getScope() !== undefined) {
+                            setTimeout(function () {
+                                self.getScope().$apply(function () {
+                                });
+                            }, 5);
+                        }
+                        this.callbackMethod(obj);
                     },
                     /**
                      * @private
