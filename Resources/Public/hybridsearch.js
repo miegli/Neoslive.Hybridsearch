@@ -146,7 +146,15 @@
              */
             var HybridsearchObject = function (hybridsearch) {
 
-                    var results, filter, index, lunrSearch, nodes, nodeTypeLabels, propertiesBoost, isRunning, firstfilterhash, searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval;
+                    var hybridsearchInstanceNumber, results, filter, index, lunrSearch, nodes, nodeTypeLabels, propertiesBoost, isRunning, firstfilterhash, searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval;
+
+                    // count instances
+                    if (window.hybridsearchInstances === undefined) {
+                        window.hybridsearchInstances = 1;
+                    } else {
+                        window.hybridsearchInstances++;
+                    }
+
 
                     isRunning = false;
                     firstfilterhash = false;
@@ -319,6 +327,20 @@
 
                         /**
                          * @private
+                         * @return void
+                         */
+                        setHybridsearchInstanceNumber: function () {
+                            hybridsearchInstanceNumber = window.hybridsearchInstances;
+                        },
+                        /**
+                         * @private
+                         * @return integer instance number
+                         */
+                        getHybridsearchInstanceNumber: function () {
+                            return hybridsearchInstanceNumber === undefined ? 0 : hybridsearchInstanceNumber;
+                        },
+                        /**
+                         * @private
                          * @return string last index hash
                          */
                         getLastIndexHash: function () {
@@ -434,15 +456,64 @@
                         },
                         /**
                          * @private
-                         * @param {string} query
+                         * @param {object} filters
                          * @returns {hybridsearchFilterObject}
                          */
-                        setFilter: function (query) {
+                        setFilter: function (filters) {
 
 
-                            var scope = filter.getQueryScope();
-                            if (scope) {
-                                scope[filter.getQueryScopeProperty()] = query;
+                            var self = this;
+
+                            if (filters) {
+
+                                angular.forEach(filters, function (filter, identifier) {
+
+
+                                    switch (identifier) {
+
+                                        case 'propertyFilters':
+
+                                            angular.forEach(filter, function (obj, property) {
+                                                if (self.getFilter().getScopeProperties()[identifier][property] !== undefined) {
+                                                    self.getFilter().getScopeByIdentifier(identifier)[property] = obj.value;
+                                                    setTimeout(function () {
+                                                        self.getFilter().getScopeByIdentifier(identifier).$apply(function () {
+                                                        });
+                                                    }, 10);
+                                                }
+                                            });
+                                            break;
+
+                                        case 'query':
+                                            if (self.getFilter().getScopeProperties()[identifier] !== undefined) {
+                                                self.getFilter().getScopeByIdentifier(identifier)[Object.keys(self.getFilter().getScopeProperties()[identifier])[0]] = filter;
+                                                setTimeout(function () {
+                                                    self.getFilter().getScopeByIdentifier(identifier).$apply(function () {
+                                                    });
+                                                }, 10);
+                                            }
+                                            break;
+
+                                    }
+
+                                });
+                            } else {
+
+                                angular.forEach(self.getFilter().getScopeProperties(), function (obj, identifier) {
+
+                                    switch (identifier) {
+                                        // remove current query
+                                        case 'query':
+                                            self.getFilter().getScopeByIdentifier(identifier)[Object.keys(self.getFilter().getScopeProperties()[identifier])[0]] = '';
+                                            setTimeout(function () {
+                                                self.getFilter().getScopeByIdentifier(identifier).$apply(function () {
+                                                });
+                                            }, 10);
+                                    }
+
+
+                                });
+
                             }
 
 
@@ -456,15 +527,26 @@
                          */
                         updateLocationHash: function () {
 
-                            if (this.getResults().countAll() > 0) {
-                                $location.search(this.getFirstFilterHash(), this.getFilter().getQuery());
-                                var filterObject = {
-                                    'query': this.getFilter().getQuery()
-                                };
 
-                                $cookies.put(this.getFirstFilterHash(), JSON.stringify(filterObject));
+                            $location.search('q' + this.getHybridsearchInstanceNumber(), 1);
 
-                            }
+                            var filterObject = {
+                                'query': this.getFilter().getQuery(),
+                                'propertyFilters': this.getFilter().getPropertyFilters()
+                            };
+
+
+                            $cookies.put(this.getFirstFilterHash(), JSON.stringify(filterObject));
+
+
+                        },
+
+                        /**
+                         * @private
+                         * @returns mixed
+                         */
+                        clearLocationHash: function () {
+                            $location.search('q' + this.getHybridsearchInstanceNumber(), null);
 
                         },
 
@@ -474,6 +556,7 @@
                          */
                         search: function () {
 
+                            this.updateLocationHash();
 
                             var fields = {}, items = {}, self = this, nodesFound = {};
 
@@ -481,20 +564,15 @@
                             items['_nodesTurbo'] = {};
                             items['_nodesByType'] = {};
 
-
                             if (!self.getFilter().getFullSearchQuery()) {
                                 // return all nodes bco no query set
                                 angular.forEach(nodes, function (node) {
-
                                     if (self.isFiltered(node) === false) {
                                         self.addNodeToSearchResult(node.identifier, 1, nodesFound, items);
                                     }
-
                                 });
 
-
                             } else {
-
 
                                 // execute query search
                                 angular.forEach(lunrSearch.getFields(), function (v, k) {
@@ -517,7 +595,7 @@
 
 
                             results.getApp().setResults(items, nodes);
-                            this.updateLocationHash();
+
 
                         },
 
@@ -750,6 +828,10 @@
                                 }, 5);
 
 
+                            }
+
+                            if (filter.hasFilters() === false) {
+                                // self.clearLocationHash();
                             }
 
                         },
@@ -1250,27 +1332,52 @@
                  */
                 run: function () {
 
-                    this.$$app.setFirstFilterHash(this.$$app.getFilter().getHash());
+                    var self = this;
+
+                    self.$$app.setHybridsearchInstanceNumber();
+                    self.$$app.setFirstFilterHash(self.$$app.getFilter().getHash());
+
+                    window.addEventListener('hashchange', function () {
+
+                        if ($location.$$search['q' + self.$$app.getHybridsearchInstanceNumber()] === undefined) {
+                            self.$$app.setFilter(null);
+                        } else {
+                            self.applyLastFilter();
+                        }
+                    });
+
+                    self.applyLastFilter();
+                    self.$$app.setIsRunning();
+                    self.$$app.setSearchIndex();
+
+
+                },
+
+                /**
+                 * @private
+                 * run search and perform queries
+                 * @returns  {HybridsearchObject}
+                 */
+                applyLastFilter: function () {
+
 
                     var lastFilterCookie = $cookies.get(this.$$app.getFirstFilterHash());
-                    if (lastFilterCookie) {
 
-                        if ($location.$$search[this.$$app.getFirstFilterHash()] !== undefined) {
+
+                    if (lastFilterCookie) {
+                        if ($location.$$search['q' + this.$$app.getHybridsearchInstanceNumber()] !== undefined) {
                             try {
                                 var lastFilter = JSON.parse(lastFilterCookie);
-                                if (lastFilter.query !== undefined) {
-                                    this.$$app.setFilter(lastFilter.query);
-                                }
+                                this.$$app.setFilter(lastFilter);
+
                             } catch (e) {
-                                //
+                                // json parse failed
+                                $cookies.remove(this.$$app.getFirstFilterHash());
                             }
                         }
+
+
                     }
-
-
-                    this.$$app.setIsRunning();
-                    this.$$app.setSearchIndex();
-
 
                 },
 
@@ -1285,6 +1392,7 @@
                     var self = this;
 
                     if (scope) {
+                        self.$$app.getFilter().setScopeProperty(scope, nodeType, 'nodeType');
                         scope.$watch(nodeType, function (filterNodeInput) {
                             self.$$app.getFilter().setNodeType(filterNodeInput);
                             self.$$app.setSearchIndex();
@@ -1313,6 +1421,7 @@
                     var self = this;
 
                     if (scope) {
+                        self.$$app.getFilter().setScopeProperty(scope, value, 'propertyFilters');
                         scope.$watch(value, function (v) {
                             self.$$app.getFilter().addPropertyFilter(property, v, booleanmode, reverse);
                             self.$$app.setSearchIndex();
@@ -1338,6 +1447,7 @@
                     var self = this;
 
                     if (scope) {
+                        self.$$app.getFilter().setScopeProperty(scope, input, 'genderFilter');
                         scope.$watch(gender, function (v) {
                             self.$$app.getFilter().setGenderFilter(v);
                             self.$$app.setSearchIndex();
@@ -1363,6 +1473,7 @@
                     var self = this;
 
                     if (scope) {
+                        self.$$app.getFilter().setScopeProperty(scope, age, 'ageFilter');
                         scope.$watch(age, function (v) {
                             self.$$app.getFilter().setAgeFilter(v);
                             self.$$app.setSearchIndex();
@@ -1388,7 +1499,7 @@
                     var self = this;
 
                     if (scope) {
-
+                        self.$$app.getFilter().setScopeProperty(scope, nodePath, 'nodePath');
                         scope.$watch(nodePath, function (filterNodeInput) {
                             self.$$app.getFilter().setNodePath(filterNodeInput);
                             self.$$app.setSearchIndex();
@@ -1416,8 +1527,7 @@
                     var self = this;
 
                     if (scope) {
-
-                        self.$$app.getFilter().setQueryScope(scope, input);
+                        self.$$app.getFilter().setScopeProperty(scope, input, 'query');
 
                         scope.$watch(input, function (searchInput) {
                             self.$$app.getFilter().setQuery(scope[input]);
@@ -1425,6 +1535,7 @@
                             if (searchInput !== undefined) {
                                 if (searchInput.length === 0) {
                                     self.$$app.getFilter().resetQuery();
+                                    self.$$app.clearLocationHash();
                                 }
                                 self.$$app.setSearchIndex();
                             }
@@ -2082,24 +2193,43 @@
                 /**
                  * @param scope scope
                  * @param {string} property
+                 * @param {string} identifier
                  * @returns HybridsearchObject
                  */
-                setQueryScope: function (scope, property) {
-                    this.$$data.queryscope = scope;
-                    this.$$data.queryscopeproperty = property;
+                setScopeProperty: function (scope, property, identifier) {
+
+                    if (this.$$data.scopes == undefined) {
+                        this.$$data.scopes = {};
+                    }
+                    if (this.$$data.scopeProperties == undefined) {
+                        this.$$data.scopeProperties = {};
+                    }
+
+                    this.$$data.scopes[identifier] = scope;
+                    if (this.$$data.scopeProperties[identifier] === undefined) {
+                        this.$$data.scopeProperties[identifier] = {};
+                    }
+
+                    this.$$data.scopeProperties[identifier][property] = identifier;
+
                     return this;
                 },
                 /**
+                 * @param string identifier
                  * @returns mixed
                  */
-                getQueryScope: function () {
-                    return this.$$data.queryscope;
+                getScopeProperties: function () {
+                    return this.$$data.scopeProperties;
+
                 },
+
                 /**
-                 * @returns mixed
+                 * @param string identifier
+                 * @returns scope
                  */
-                getQueryScopeProperty: function () {
-                    return this.$$data.queryscopeproperty;
+                getScopeByIdentifier: function (identifier) {
+
+                    return this.$$data.scopes[identifier];
                 },
 
                 /**

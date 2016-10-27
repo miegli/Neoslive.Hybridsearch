@@ -1471,12 +1471,12 @@ class SearchIndexFactory
                     if (is_array($v)) {
                         foreach (array_keys($v) as $key) {
                             array_push($rules['index'][$dimension][$k]['.indexOn'], (string)strval($key));
-                            array_push($rules['index'][$dimension][$k]['.indexOn'], (string)"_nodetype".strval($key));
+                            array_push($rules['index'][$dimension][$k]['.indexOn'], (string)"_nodetype" . strval($key));
                         }
                     } else {
                         foreach (get_object_vars($v) as $key => $value) {
                             array_push($rules['index'][$dimension][$k]['.indexOn'], (string)strval($key));
-                            array_push($rules['index'][$dimension][$k]['.indexOn'], (string)"_nodetype".strval($key));
+                            array_push($rules['index'][$dimension][$k]['.indexOn'], (string)"_nodetype" . strval($key));
                         }
                     }
 
