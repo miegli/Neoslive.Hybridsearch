@@ -66,17 +66,6 @@
                 }
 
 
-                // Initialize the Firebase SDK
-                var firebaseconfig = {
-                    databaseURL: databaseURL
-                };
-                try {
-                    firebase.initializeApp(firebaseconfig);
-                } catch (e) {
-                    // firebase was initizalized before
-                }
-
-
                 this.$$conf = {
                     firebase: firebaseconfig,
                     workspace: workspace,
@@ -86,6 +75,19 @@
                 Object.defineProperty(this, '$$conf', {
                     value: this.$$conf
                 });
+
+
+                // Initialize the Firebase SDK
+                var firebaseconfig = {
+                    databaseURL: databaseURL
+                };
+                try {
+                    firebase.initializeApp(firebaseconfig);
+                    firebase.database().goOnline();
+                    //   firebase.database.enableLogging(true)
+                } catch (e) {
+                    // firebase was initizalized before
+                }
 
 
             }
@@ -175,11 +177,13 @@
                      * init ga data
                      */
                     if (filter.getGa() === undefined) {
-                        hybridsearch.$firebase().database().ref().child("ga").orderByChild("url").equalTo(location.href).limitToFirst(1).once('value', function (data) {
-                            angular.forEach(data.val(), function (val) {
-                                filter.setGa(val);
-                            });
-                        });
+
+                        // hybridsearch.$firebase().database().ref().child("ga").orderByChild("url").equalTo(location.href).limitToFirst(1).once('value', function (data) {
+                        //     angular.forEach(data.val(), function (val) {
+                        //         filter.setGa(val);
+                        //     });
+                        // });
+
                     }
 
 
@@ -410,7 +414,7 @@
                          * @param string first filter hash
                          */
                         setFirstFilterHash: function (hash) {
-                            firstfilterhash = Sha1.hash(this.getHybridsearchInstanceNumber()+$location.$$absUrl+hash);
+                            firstfilterhash = Sha1.hash(this.getHybridsearchInstanceNumber() + $location.$$absUrl + hash);
                         },
                         /**
                          * @private
@@ -511,7 +515,7 @@
                                                     setTimeout(function () {
                                                         self.getFilter().getScopeByIdentifier(identifier).$apply(function () {
                                                         });
-                                                    }, 10);
+                                                    }, 5);
                                                 }
                                             });
                                             break;
@@ -522,7 +526,7 @@
                                                 setTimeout(function () {
                                                     self.getFilter().getScopeByIdentifier(identifier).$apply(function () {
                                                     });
-                                                }, 10);
+                                                }, 5);
                                             }
                                             break;
 
@@ -540,7 +544,7 @@
                                             setTimeout(function () {
                                                 self.getFilter().getScopeByIdentifier(identifier).$apply(function () {
                                                 });
-                                            }, 10);
+                                            }, 5);
                                     }
 
 
@@ -619,14 +623,11 @@
                             items['_nodesByType'] = {};
 
 
-
                             if (!self.getFilter().getFullSearchQuery()) {
                                 // return all nodes bco no query set
 
 
-
                                 angular.forEach(nodes, function (node) {
-
 
 
                                     if (self.isFiltered(node) === false) {
@@ -928,7 +929,7 @@
                                         clearInterval(searchInstancesInterval);
                                         lastSearchInstance.execute(self, lastSearchInstance);
                                     }
-                                }, 5);
+                                }, 10);
 
 
                             } else {
@@ -1163,7 +1164,7 @@
                                                 self.setLastIndexHash(hash);
                                             }
                                             indexintervalcounter++;
-                                        }, 2));
+                                        }, 10));
                                     }
 
 
@@ -1182,7 +1183,7 @@
                          */
                         getKeyword: function (querysegment) {
 
-                            return hybridsearch.$firebase().database().ref().child("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/" + querysegment);
+                            return hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/" + querysegment);
                         }
 
                         ,
@@ -1212,12 +1213,12 @@
                             instance.$$data.running++;
 
                             if (parseInt(substrEnd) > 0) {
-                                var ref = hybridsearch.$firebase().database().ref().child("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().equalTo(substrEnd).limitToFirst(1);
+                                var ref = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().equalTo(substrEnd).limitToFirst(5);
                             } else {
-                                var ref = hybridsearch.$firebase().database().ref().child("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().startAt(substrStart).limitToFirst(5);
+                                var ref = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().startAt(substrStart).limitToFirst(15);
                             }
 
-                            instance.$$data.promises[querysegment] = ref.on("value", function (data) {
+                            ref.once("value", function (data) {
 
 
                                 if (data !== undefined) {
@@ -1263,7 +1264,7 @@
                             }
 
 
-                            var ref = hybridsearch.$firebase().database().ref().child("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension);
+                            var ref = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension);
                             var query = false;
 
                             if (query === false && this.getFilter().getNodeType()) {
@@ -1277,6 +1278,9 @@
 
 
                             if (query === false) {
+                                if (keyword === null) {
+                                    return null;
+                                }
                                 query = ref.orderByChild(keyword).equalTo(1).limitToFirst(100);
                             }
 
@@ -1292,11 +1296,7 @@
                          * @returns {firebaseObject}
                          */
                         getIndexByNodeIdentifier: function (identifier) {
-
-                            var query = hybridsearch.$firebase().database().ref().child("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/" + identifier);
-                            index[identifier] = query;
-                            return query;
-
+                            return hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/" + identifier + "/_node");
                         },
 
                         /**
@@ -1305,11 +1305,7 @@
                          * @returns {firebaseObject}
                          */
                         getIndexByNodeType: function (nodeType) {
-
-                            var query = hybridsearch.$firebase().database().ref().child("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByChild("_nodetype").equalTo(nodeType);
-                            index[nodeType] = query;
-                            return query;
-
+                            return hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByChild("_nodetype").equalTo(nodeType);
                         },
 
                         /**
@@ -1511,14 +1507,14 @@
                         //if ($location.$$search['q' + this.$$app.getHybridsearchInstanceNumber()] != undefined) {
 
 
-                            try {
-                                var lastFilter = JSON.parse(lastFilterCookie);
-                                this.$$app.setFilter(lastFilter);
+                        try {
+                            var lastFilter = JSON.parse(lastFilterCookie);
+                            this.$$app.setFilter(lastFilter);
 
-                            } catch (e) {
-                                // json parse failed
+                        } catch (e) {
+                            // json parse failed
 
-                            }
+                        }
 
                         //}
 
@@ -1554,7 +1550,6 @@
                     }
 
 
-
                     return this;
 
                 },
@@ -1574,7 +1569,6 @@
 
                     if (scope) {
                         self.$$app.getFilter().setScopeProperty(scope, value, 'propertyFilters');
-
                         scope.$watch(value, function (v) {
                             self.$$app.getFilter().addPropertyFilter(property, v, booleanmode, reverse);
                             self.$$app.setSearchIndex();
@@ -1607,14 +1601,13 @@
                         self.$$app.getIndexByNodeIdentifier(node).on("value", function (data) {
 
                             if (data.val()) {
-
-                                self.$$app.addLocalIndex([data.val()]);
+                                self.$$app.addLocalIndex([{'_node': data.val()}]);
                                 if (timer !== false) {
                                     clearTimeout(timer);
                                 }
                                 timer = setTimeout(function () {
                                     self.$$app.search();
-                                }, 100);
+                                }, nodesArray.length > 50 ? 500 : 250);
                             }
 
                         });
@@ -2716,7 +2709,6 @@
                  * @returns string
                  */
                 getFullSearchQuery: function () {
-
 
 
                     if (this.getQuery() == '' && this.getAutocompletedKeywords() === undefined) {
