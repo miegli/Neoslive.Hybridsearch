@@ -4,9 +4,9 @@
  * provides you with the $firebase service which allows you to easily keep your $scope
  * variables in sync with your Firebase backend.
  *
- * AngularFire 2.0.2
+ * AngularFire 2.1.0
  * https://github.com/firebase/angularfire/
- * Date: 08/19/2016
+ * Date: 10/25/2016
  * License: MIT
  */
 (function(exports) {
@@ -470,6 +470,14 @@
         });
 
         this._sync.init(this.$list);
+
+        // $resolved provides quick access to the current state of the $loaded() promise.
+        // This is useful in data-binding when needing to delay the rendering or visibilty
+        // of the data until is has been loaded from firebase.
+        this.$list.$resolved = false;
+        this.$loaded().finally(function() {
+          self.$list.$resolved = true;
+        });
 
         return this.$list;
       }
@@ -1170,6 +1178,7 @@
         if( !(this instanceof FirebaseObject) ) {
           return new FirebaseObject(ref);
         }
+        var self = this;
         // These are private config props and functions used internally
         // they are collected here to reduce clutter in console.log and forEach
         this.$$conf = {
@@ -1197,6 +1206,14 @@
 
         // start synchronizing data with Firebase
         this.$$conf.sync.init();
+
+        // $resolved provides quick access to the current state of the $loaded() promise.
+        // This is useful in data-binding when needing to delay the rendering or visibilty
+        // of the data until is has been loaded from firebase.
+        this.$resolved = false;
+        this.$loaded().finally(function() {
+          self.$resolved = true;
+        });
       }
 
       FirebaseObject.prototype = {
@@ -2244,7 +2261,7 @@ if ( typeof Object.getPrototypeOf !== "function" ) {
           /**
            * AngularFire version number.
            */
-          VERSION: '2.0.2',
+          VERSION: '2.1.0',
 
           allPromises: $q.all.bind($q)
         };
