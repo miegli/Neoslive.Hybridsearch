@@ -146,7 +146,7 @@
              */
             var HybridsearchObject = function (hybridsearch) {
 
-                    var hybridsearchInstanceNumber, results, filter, index, lunrSearch, nodes, nodeTypeLabels, propertiesBoost, isRunning, firstfilterhash, searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval;
+                    var hybridsearchInstanceNumber, results, filter, index, lunrSearch, nodes, nodeTypeLabels, propertiesBoost, isRunning, firstfilterhash, searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier;
 
                     // count instances
                     if (window.hybridsearchInstances === undefined) {
@@ -318,6 +318,25 @@
                          */
                         getDocumentNode: function () {
                             return this.grandParentNode ? new HybridsearchResultsNode(this.grandParentNode) : false;
+                        },
+
+                        /**
+                         * @private
+                         * Get internal nodes storage
+                         * @returns {array}
+                         */
+                        getNodes: function () {
+                            return nodes;
+                        },
+
+                        /**
+                         * @private
+                         * Add node to internal nodes storage
+                         * @param  {node} node
+                         * @returns {array}
+                         */
+                        addNode: function (node) {
+                            nodes[node['_node']['identifier']] = node;
                         }
 
                     };
@@ -372,6 +391,18 @@
                          */
                         setIsRunning: function () {
                             isRunning = true;
+                        },
+                        /**
+                         * @private
+                         */
+                        setIsNodesByIdentifier: function () {
+                            isNodesByIdentifier = true;
+                        },
+                        /**
+                         * @private
+                         */
+                        isNodesByIdentifier: function () {
+                            return isNodesByIdentifier !== undefined ? true : false;
                         },
                         /**
                          * @private
@@ -564,6 +595,7 @@
                             items['_nodesTurbo'] = {};
                             items['_nodesByType'] = {};
 
+
                             if (!self.getFilter().getFullSearchQuery()) {
                                 // return all nodes bco no query set
                                 angular.forEach(nodes, function (node) {
@@ -574,22 +606,37 @@
 
                             } else {
 
-                                // execute query search
-                                angular.forEach(lunrSearch.getFields(), function (v, k) {
-                                    fields[v] = {boost: self.getBoost(v)}
-                                });
 
-                                angular.forEach(lunrSearch.search(filter.getFinalSearchQuery(lastSearchInstance), {
-                                        fields: fields,
-                                        bool: "OR"
-                                    }), function (item) {
+                                var query = filter.getFinalSearchQuery(lastSearchInstance);
 
-                                        if (nodes[item.ref] !== undefined) {
-                                            self.addNodeToSearchResult(item.ref, item.score, nodesFound, items);
+                                if (query === false) {
+                                    // return all nodes bco no query set
+                                    angular.forEach(nodes, function (node) {
+                                        if (self.isFiltered(node) === false) {
+                                            self.addNodeToSearchResult(node.identifier, 1, nodesFound, items);
                                         }
+                                    });
 
-                                    }
-                                );
+                                } else {
+
+                                    // execute query search
+                                    angular.forEach(lunrSearch.getFields(), function (v, k) {
+                                        fields[v] = {boost: self.getBoost(v)}
+                                    });
+
+                                    angular.forEach(lunrSearch.search(query, {
+                                            fields: fields,
+                                            bool: "OR"
+                                        }), function (item) {
+
+                                            if (nodes[item.ref] !== undefined) {
+                                                self.addNodeToSearchResult(item.ref, item.score, nodesFound, items);
+                                            }
+
+                                        }
+                                    );
+                                }
+
 
                             }
 
@@ -673,6 +720,11 @@
 
 
                             var self = this;
+
+
+                            if (this.getFilter().getNodeType() && this.getFilter().getNodeType() !== node.nodeType) {
+                                return true;
+                            }
 
                             if (this.getFilter().getNodePath().length > 0 && node.uri.path.substr(0, this.getFilter().getNodePath().length) != this.getFilter().getNodePath()) {
                                 return true;
@@ -794,7 +846,7 @@
                             var self = this;
 
 
-                            if (self.isRunning() && filter.hasFilters()) {
+                            if (self.isNodesByIdentifier() === false && self.isRunning() && filter.hasFilters()) {
 
 
                                 if (lastSearchInstance) {
@@ -828,6 +880,10 @@
                                 }, 5);
 
 
+                            } else {
+                                if (self.isRunning()) {
+                                    self.search();
+                                }
                             }
 
                             if (filter.hasFilters() === false) {
@@ -978,8 +1034,7 @@
                                         self.getResults().$$data.notfoundtimeout = setTimeout(function () {
                                                 self.getResults().getApp().executeCallbackMethod(self.getResults());
                                             }, 2000
-                                        )
-                                        ;
+                                        );
 
                                     } else {
                                         self.getResults().$$data.notfound = false;
@@ -998,7 +1053,6 @@
                                         self.getIndex(keyword).on("value", function (data) {
 
                                             indexdata[keyword] = [];
-
 
                                             if (keyword === null) {
 
@@ -1021,6 +1075,7 @@
                                                     // update search index by one changed keywords
                                                     if (self.getIndexInterval() === null) {
                                                         self.cleanLocalIndex();
+
                                                         self.updateLocalIndex(indexdata);
                                                     }
 
@@ -1177,8 +1232,21 @@
 
                             return query;
 
-                        }
-                        ,
+                        },
+
+                        /**
+                         * @private
+                         * @param string identifier
+                         * @returns {firebaseObject}
+                         */
+                        getIndexByNodeIdentifier: function (identifier) {
+
+                            var query = hybridsearch.$firebase().database().ref().child("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/" + identifier);
+                            index[identifier] = query;
+                            return query;
+
+                        },
+
                         /**
                          * @private
                          * @param array
@@ -1209,7 +1277,6 @@
                             if (self.getFilter().getFullSearchQuery()) {
 
                                 angular.forEach(data, function (val, keyword) {
-                                    //self.removeLocalIndex(keyword);
                                     self.addLocalIndex(val);
                                 });
 
@@ -1349,21 +1416,25 @@
 
                     var self = this;
 
-                    self.$$app.setHybridsearchInstanceNumber();
-                    self.$$app.setFirstFilterHash(self.$$app.getFilter().getHash());
+                    if (self.$$app.isRunning() === false) {
 
-                    window.addEventListener('hashchange', function () {
+                        self.$$app.setHybridsearchInstanceNumber();
+                        self.$$app.setFirstFilterHash(self.$$app.getFilter().getHash());
 
-                        if ($location.$$search['q' + self.$$app.getHybridsearchInstanceNumber()] === undefined) {
-                            self.$$app.setFilter(null);
-                        } else {
-                            self.applyLastFilter();
-                        }
-                    });
+                        window.addEventListener('hashchange', function () {
 
-                    self.applyLastFilter();
-                    self.$$app.setIsRunning();
-                    self.$$app.setSearchIndex();
+                            if ($location.$$search['q' + self.$$app.getHybridsearchInstanceNumber()] === undefined) {
+                                self.$$app.setFilter(null);
+                            } else {
+                                self.applyLastFilter();
+                            }
+                        });
+
+                        self.applyLastFilter();
+                        self.$$app.setIsRunning();
+                        self.$$app.setSearchIndex();
+
+                    }
 
 
                 },
@@ -1437,6 +1508,7 @@
 
                     if (scope) {
                         self.$$app.getFilter().setScopeProperty(scope, value, 'propertyFilters');
+
                         scope.$watch(value, function (v) {
                             self.$$app.getFilter().addPropertyFilter(property, v, booleanmode, reverse);
                             self.$$app.setSearchIndex();
@@ -1446,6 +1518,43 @@
                         self.$$app.getFilter().addPropertyFilter(property, value, booleanmode, reverse);
                         self.$$app.setSearchIndex();
                     }
+
+                    return this;
+
+                },
+
+                /**
+                 * Adds nodes by identifier to search index
+                 * @param {array} nodesArray
+                 * @returns {HybridsearchObject}
+                 */
+                addNodesByIdentifier: function (nodesArray) {
+
+
+                    var self = this;
+                    var timer = false;
+
+                    self.$$app.setIsNodesByIdentifier();
+
+                    angular.forEach(nodesArray, function (node) {
+
+                        self.$$app.getIndexByNodeIdentifier(node).on("value", function (data) {
+
+                            if (data.val()) {
+
+                                self.$$app.addLocalIndex([data.val()]);
+                                if (timer !== false) {
+                                    clearTimeout(timer);
+                                }
+                                timer = setTimeout(function () {
+                                    self.$$app.search();
+                                }, 100);
+                            }
+
+                        });
+
+
+                    });
 
                     return this;
 
@@ -2326,6 +2435,7 @@
                     return this;
                 },
 
+
                 /**
                  * @param string value
                  * @returns HybridsearchObject
@@ -2537,22 +2647,27 @@
                     var d = new Date();
                     var self = this;
 
-                    var term = lastSearchInstance.$$data.keywords.join(" ") + " trendingHour" + d.getHours() + " " + (this.getGa('userGender') ? this.getGa('userGender') : '') + " " + (this.getGa('userGender') ? this.getGa('userAgeBracket') : '')
-                    var terms = term.split(" ");
-
-
                     // get unique
                     var uniqueobject = {};
                     var uniquarray = [];
 
-                    angular.forEach(terms, function (keyword) {
+                    if (lastSearchInstance.$$data !== undefined) {
+                        var term = lastSearchInstance.$$data.keywords.join(" ") + " trendingHour" + d.getHours() + " " + (this.getGa('userGender') ? this.getGa('userGender') : '') + " " + (this.getGa('userGender') ? this.getGa('userAgeBracket') : '')
+                        var terms = term.split(" ");
 
-                        if (uniqueobject[keyword] === undefined && self.isBlockedKeyword(keyword) === false) {
-                            uniquarray.push(keyword);
-                        }
-                        uniqueobject[keyword] = true;
+                        angular.forEach(terms, function (keyword) {
 
-                    });
+                            if (uniqueobject[keyword] === undefined && self.isBlockedKeyword(keyword) === false) {
+                                uniquarray.push(keyword);
+                            }
+                            uniqueobject[keyword] = true;
+
+                        });
+
+                    } else {
+                        return self.getQuery().length ? self.getQuery() : false;
+
+                    }
 
 
                     return uniquarray.join(" ");
