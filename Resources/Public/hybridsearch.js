@@ -685,7 +685,7 @@
                             }
                             searchCounterTimeout = setTimeout(function () {
                                 searchCounter++;
-                            }, 1000);
+                            }, 2000);
 
 
                         },
