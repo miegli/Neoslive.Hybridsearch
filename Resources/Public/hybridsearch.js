@@ -146,7 +146,7 @@
              */
             var HybridsearchObject = function (hybridsearch) {
 
-                    var hybridsearchInstanceNumber, results, filter, index, lunrSearch, nodes, nodeTypeLabels, propertiesBoost, isRunning, firstfilterhash, searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier;
+                    var hybridsearchInstanceNumber, results, filter, index, lunrSearch, nodes, nodeTypeLabels, propertiesBoost, isRunning, firstfilterhash, searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier, searchCounter, searchCounterTimeout;
 
                     // count instances
                     if (window.hybridsearchInstances === undefined) {
@@ -155,7 +155,8 @@
                         window.hybridsearchInstances++;
                     }
 
-
+                    searchCounter = 0;
+                    searchCounterTimeout = false;
                     isRunning = false;
                     firstfilterhash = false;
                     searchInstancesInterval = false;
@@ -409,7 +410,7 @@
                          * @param string first filter hash
                          */
                         setFirstFilterHash: function (hash) {
-                            firstfilterhash = hash;
+                            firstfilterhash = Sha1.hash($location.$$absUrl+hash);
                         },
                         /**
                          * @private
@@ -559,15 +560,15 @@
                         updateLocationHash: function () {
 
 
-                            // $location.search('q' + this.getHybridsearchInstanceNumber(), 1);
+                            if (this.getSearchCounter() > 0) {
 
-                            var filterObject = {
-                                'query': this.getFilter().getQuery(),
-                                'propertyFilters': this.getFilter().getPropertyFilters()
-                            };
+                                var filterObject = {
+                                    'query': this.getFilter().getQuery(),
+                                    'propertyFilters': this.getFilter().getPropertyFilters()
+                                };
 
-
-                            $cookies.put(this.getFirstFilterHash(), JSON.stringify(filterObject));
+                                $cookies.put(this.getFirstFilterHash(), JSON.stringify(filterObject));
+                            }
 
 
                         },
@@ -585,7 +586,28 @@
                          * @private
                          * @returns mixed
                          */
+                        getSearchCounter: function () {
+
+                            return searchCounter;
+
+                        },
+
+                        /**
+                         * @private
+                         * @returns mixed
+                         */
+                        resetSearchCounter: function () {
+
+                            searchCounter = 0;
+
+                        },
+
+                        /**
+                         * @private
+                         * @returns mixed
+                         */
                         search: function () {
+
 
                             this.updateLocationHash();
 
@@ -648,6 +670,8 @@
 
                                         }
                                     );
+
+
                                 }
 
 
@@ -655,6 +679,13 @@
 
 
                             results.getApp().setResults(items, nodes);
+
+                            if (searchCounterTimeout) {
+                                clearTimeout(searchCounterTimeout);
+                            }
+                            searchCounterTimeout = setTimeout(function () {
+                                searchCounter++;
+                            }, 1000);
 
 
                         },
@@ -1447,15 +1478,6 @@
                         self.$$app.setHybridsearchInstanceNumber();
                         self.$$app.setFirstFilterHash(self.$$app.getFilter().getHash());
 
-                        // window.addEventListener('hashchange', function () {
-                        //
-                        //     if ($location.$$search['q' + self.$$app.getHybridsearchInstanceNumber()] === undefined) {
-                        //         //self.$$app.setFilter(null);
-                        //     } else {
-                        //         self.applyLastFilter();
-                        //     }
-                        // });
-
                         self.applyLastFilter();
                         self.$$app.setIsRunning();
                         self.$$app.setSearchIndex();
@@ -1477,15 +1499,22 @@
 
 
                     if (lastFilterCookie) {
-                         try {
-                            var lastFilter = JSON.parse(lastFilterCookie);
-                            this.$$app.setFilter(lastFilter);
 
-                        } catch (e) {
-                            // json parse failed
+                        //if ($location.$$search['q' + this.$$app.getHybridsearchInstanceNumber()] != undefined) {
 
-                        }
 
+                            try {
+                                var lastFilter = JSON.parse(lastFilterCookie);
+                                this.$$app.setFilter(lastFilter);
+
+                            } catch (e) {
+                                // json parse failed
+
+                            }
+
+                        //}
+
+                        //this.$$app.resetSearchCounter();
                         $cookies.remove(this.$$app.getFirstFilterHash());
 
                     }
