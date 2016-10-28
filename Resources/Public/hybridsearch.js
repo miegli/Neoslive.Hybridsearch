@@ -410,7 +410,7 @@
                          * @param string first filter hash
                          */
                         setFirstFilterHash: function (hash) {
-                            firstfilterhash = Sha1.hash($location.$$absUrl+hash);
+                            firstfilterhash = Sha1.hash(this.getHybridsearchInstanceNumber()+$location.$$absUrl+hash);
                         },
                         /**
                          * @private
@@ -619,9 +619,16 @@
                             items['_nodesByType'] = {};
 
 
+
                             if (!self.getFilter().getFullSearchQuery()) {
                                 // return all nodes bco no query set
+
+
+
                                 angular.forEach(nodes, function (node) {
+
+
+
                                     if (self.isFiltered(node) === false) {
                                         self.addNodeToSearchResult(node.identifier, 1, nodesFound, items);
                                     }
@@ -1105,6 +1112,7 @@
                                                 angular.forEach(data.val(), function (node, id) {
                                                     nodes[id] = node['_node'];
                                                 });
+
                                                 self.search();
 
                                             } else {
@@ -1536,12 +1544,16 @@
                         scope.$watch(nodeType, function (filterNodeInput) {
                             self.$$app.getFilter().setNodeType(filterNodeInput);
                             self.$$app.setSearchIndex();
+
                         }, true);
 
                     } else {
                         self.$$app.getFilter().setNodeType(nodeType);
                         self.$$app.setSearchIndex();
+
                     }
+
+
 
                     return this;
 
@@ -2705,7 +2717,14 @@
                  */
                 getFullSearchQuery: function () {
 
+
+
+                    if (this.getQuery() == '' && this.getAutocompletedKeywords() === undefined) {
+                        return false;
+                    }
+
                     var q = this.$$data.magickeywords + "  " + this.getAutocompletedKeywords() + "  " + this.getAdditionalKeywords();
+
 
                     return q.length - (q.match(/ /g) || []).length > 1 ? q : false;
 
