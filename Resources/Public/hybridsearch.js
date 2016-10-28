@@ -559,7 +559,7 @@
                         updateLocationHash: function () {
 
 
-                            $location.search('q' + this.getHybridsearchInstanceNumber(), 1);
+                            // $location.search('q' + this.getHybridsearchInstanceNumber(), 1);
 
                             var filterObject = {
                                 'query': this.getFilter().getQuery(),
@@ -1447,14 +1447,14 @@
                         self.$$app.setHybridsearchInstanceNumber();
                         self.$$app.setFirstFilterHash(self.$$app.getFilter().getHash());
 
-                        window.addEventListener('hashchange', function () {
-
-                            if ($location.$$search['q' + self.$$app.getHybridsearchInstanceNumber()] === undefined) {
-                                //self.$$app.setFilter(null);
-                            } else {
-                                self.applyLastFilter();
-                            }
-                        });
+                        // window.addEventListener('hashchange', function () {
+                        //
+                        //     if ($location.$$search['q' + self.$$app.getHybridsearchInstanceNumber()] === undefined) {
+                        //         //self.$$app.setFilter(null);
+                        //     } else {
+                        //         self.applyLastFilter();
+                        //     }
+                        // });
 
                         self.applyLastFilter();
                         self.$$app.setIsRunning();
@@ -1477,17 +1477,16 @@
 
 
                     if (lastFilterCookie) {
-                        if ($location.$$search['q' + this.$$app.getHybridsearchInstanceNumber()] !== undefined) {
-                            try {
-                                var lastFilter = JSON.parse(lastFilterCookie);
-                                this.$$app.setFilter(lastFilter);
+                         try {
+                            var lastFilter = JSON.parse(lastFilterCookie);
+                            this.$$app.setFilter(lastFilter);
 
-                            } catch (e) {
-                                // json parse failed
-                                $cookies.remove(this.$$app.getFirstFilterHash());
-                            }
+                        } catch (e) {
+                            // json parse failed
+
                         }
 
+                        $cookies.remove(this.$$app.getFirstFilterHash());
 
                     }
 
