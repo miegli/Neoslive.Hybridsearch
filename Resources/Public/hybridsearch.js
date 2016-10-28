@@ -589,6 +589,7 @@
 
                             this.updateLocationHash();
 
+
                             var fields = {}, items = {}, self = this, nodesFound = {};
 
                             items['_nodes'] = {};
@@ -608,6 +609,7 @@
 
 
                                 var query = filter.getFinalSearchQuery(lastSearchInstance);
+
 
                                 if (query === false) {
                                     // return all nodes bco no query set
@@ -630,7 +632,18 @@
                                         }), function (item) {
 
                                             if (nodes[item.ref] !== undefined) {
-                                                self.addNodeToSearchResult(item.ref, item.score, nodesFound, items);
+
+                                                if (self.isNodesByIdentifier()) {
+                                                    // post filter node
+                                                    if (self.isFiltered(nodes[item.ref]) === false) {
+                                                        self.addNodeToSearchResult(item.ref, item.score, nodesFound, items);
+                                                    }
+                                                } else {
+                                                    // dont post filter because filter were applied before while filling search index
+                                                    self.addNodeToSearchResult(item.ref, item.score, nodesFound, items);
+                                                }
+
+
                                             }
 
                                         }
@@ -1249,6 +1262,19 @@
 
                         /**
                          * @private
+                         * @param string identifier
+                         * @returns {firebaseObject}
+                         */
+                        getIndexByNodeType: function (nodeType) {
+
+                            var query = hybridsearch.$firebase().database().ref().child("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByChild("_nodetype").equalTo(nodeType);
+                            index[nodeType] = query;
+                            return query;
+
+                        },
+
+                        /**
+                         * @private
                          * @param array
                          * @returns void
                          */
@@ -1424,7 +1450,7 @@
                         window.addEventListener('hashchange', function () {
 
                             if ($location.$$search['q' + self.$$app.getHybridsearchInstanceNumber()] === undefined) {
-                                self.$$app.setFilter(null);
+                                //self.$$app.setFilter(null);
                             } else {
                                 self.applyLastFilter();
                             }
@@ -1543,6 +1569,49 @@
                             if (data.val()) {
 
                                 self.$$app.addLocalIndex([data.val()]);
+                                if (timer !== false) {
+                                    clearTimeout(timer);
+                                }
+                                timer = setTimeout(function () {
+                                    self.$$app.search();
+                                }, 100);
+                            }
+
+                        });
+
+
+                    });
+
+                    return this;
+
+                },
+
+                /**
+                 * Adds nodes by node types to search index
+                 * @param {array} nodesTypesArray
+                 * @returns {HybridsearchObject}
+                 */
+                addNodesByNodeTypes: function (nodesTypesArray) {
+
+
+                    var self = this;
+                    var timer = false;
+
+                    self.$$app.setIsNodesByIdentifier();
+
+                    angular.forEach(nodesTypesArray, function (nodetype) {
+
+                        self.$$app.getIndexByNodeType(nodetype).on("value", function (data) {
+
+                            var addnodes = [];
+
+                            if (data.val()) {
+
+                                angular.forEach(data.val(), function (node) {
+                                    addnodes.push(node);
+                                });
+                                self.$$app.addLocalIndex(addnodes);
+
                                 if (timer !== false) {
                                     clearTimeout(timer);
                                 }
@@ -2309,6 +2378,7 @@
                  */
                 hasFilters: function () {
 
+
                     if (this.getQuery() != '') {
                         return true;
                     }
@@ -2606,16 +2676,8 @@
                  * @returns string
                  */
                 getFullSearchQuery: function () {
-                    if (this.getAutocompletedKeywords() === undefined) {
-                        return false;
-                    }
-                    if (this.getAdditionalKeywords() === undefined) {
-                        return false;
-                    }
-
 
                     var q = this.$$data.magickeywords + "  " + this.getAutocompletedKeywords() + "  " + this.getAdditionalKeywords();
-
 
                     return q.length - (q.match(/ /g) || []).length > 1 ? q : false;
 
