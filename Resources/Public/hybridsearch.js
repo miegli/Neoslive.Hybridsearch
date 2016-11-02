@@ -148,7 +148,7 @@
              */
             var HybridsearchObject = function (hybridsearch) {
 
-                    var hybridsearchInstanceNumber, results, filter, index, lunrSearch, nodes, nodeTypeLabels, propertiesBoost, isRunning, firstfilterhash, searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier, searchCounter, searchCounterTimeout;
+                    var hybridsearchInstanceNumber, results, filter, index, lunrSearch, nodes, nodeTypeLabels, propertiesBoost, isRunning, firstfilterhash, searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier, nodesByIdentifier, searchCounter, searchCounterTimeout;
 
                     // count instances
                     if (window.hybridsearchInstances === undefined) {
@@ -165,6 +165,7 @@
                     lastSearchInstance = false;
                     results = new $hybridsearchResultsObject();
                     filter = new $hybridsearchFilterObject();
+                    nodesByIdentifier = {};
                     nodeTypeLabels = {};
                     nodes = {};
                     index = {};
@@ -406,6 +407,28 @@
                         /**
                          * @private
                          */
+                        addNodesByIdentifier: function (nodes) {
+                            angular.forEach(nodes, function (val, key) {
+                                nodesByIdentifier[val] = true;
+                            });
+                        },
+                        /**
+                         * @private
+                         */
+                        getNodesAddedByIdentifier: function () {
+                            return nodesByIdentifier;
+                        },
+                        /**
+                         * @private
+                         * @param string identifier of node
+                         * returns {boolean}
+                         */
+                        isNodeAddedByIdentifier: function (identifier) {
+                            return nodesByIdentifier[identifier] === undefined ? false : true;
+                        },
+                        /**
+                         * @private
+                         */
                         isNodesByIdentifier: function () {
                             return isNodesByIdentifier !== undefined ? true : false;
                         },
@@ -503,7 +526,6 @@
                             if (filters) {
 
                                 angular.forEach(filters, function (filter, identifier) {
-
 
                                     switch (identifier) {
 
@@ -770,9 +792,7 @@
                          */
                         isFiltered: function (node) {
 
-
                             var self = this;
-
 
                             if (this.getFilter().getNodeType() && this.getFilter().getNodeType() !== node.nodeType) {
                                 return true;
@@ -781,6 +801,11 @@
                             if (this.getFilter().getNodePath().length > 0 && node.uri.path.substr(0, this.getFilter().getNodePath().length) != this.getFilter().getNodePath()) {
                                 return true;
                             }
+
+                            if (self.isNodesByIdentifier() && self.isNodeAddedByIdentifier(node.identifier) === false) {
+                                return true;
+                            }
+
 
                             var propertyFiltered = Object.keys(this.getFilter().getPropertyFilters()).length > 0 ? true : false;
                             var propertyFilteredLength = Object.keys(this.getFilter().getPropertyFilters()).length;
@@ -829,9 +854,8 @@
                                         var isMatching = 0;
                                         angular.forEach(filterobject, function (value, key) {
 
-
                                             if (value) {
-                                                if ((filter.reverse === false && key === self.getPropertyFromNode(node, property)) || (filter.reverse === true && key !== self.getPropertyFromNode(node, property))) {
+                                                if ((filter.reverse === false && (key === self.getPropertyFromNode(node, property) || self.getPropertyFromNode(node, property).indexOf(key) >= 0 )) || (filter.reverse === true && key !== self.getPropertyFromNode(node, property) && self.getPropertyFromNode(node, property).indexOf(key) < 0)) {
                                                     isMatching++;
                                                 }
                                             } else {
@@ -1594,6 +1618,7 @@
                     var self = this;
                     var timer = false;
 
+                    self.$$app.addNodesByIdentifier(nodesArray);
                     self.$$app.setIsNodesByIdentifier();
 
                     angular.forEach(nodesArray, function (node) {
@@ -2530,6 +2555,11 @@
                     if (this.$$data.propertyFilter == undefined) {
                         this.$$data.propertyFilter = {};
                     }
+
+                    if (typeof value === 'object' && value.length === 0) {
+                        return this;
+                    }
+
                     this.$$data.propertyFilter[property] = {
                         value: value,
                         booleanmode: booleanmode,
