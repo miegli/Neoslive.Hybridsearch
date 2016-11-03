@@ -2568,7 +2568,8 @@
                  * @returns {integer} count collection of property values
                  */
                 getDistinctCount: function (property, filtered=false) {
-                    return Object.keys(this.getDistinct(property,filtered)).length;
+
+                    return Object.keys(this.getDistinct(property, filtered)).length;
                 },
 
                 /**
@@ -2602,11 +2603,9 @@
                         });
 
 
-
                         angular.forEach(self.$$data.distincts[property], function (k, v) {
                             self.$$data.distincts[property][v] = 0;
                         });
-
 
 
                         angular.forEach(variants, function (k, v) {
@@ -2621,20 +2620,22 @@
 
                             }
 
-                        if (valueJson) {
-                            angular.forEach(valueJson, function (vs) {
-                                if (vs.length > 0) {
-                                    self.$$data.distincts[property][vs] = k;
+
+                            if (valueJson) {
+                                angular.forEach(valueJson, function (vs) {
+                                    if (vs.length > 0) {
+                                        self.$$data.distincts[property][vs] = k;
+                                    }
+                                });
+
+
+                            } else {
+
+
+                                if (v.length > 0) {
+                                    self.$$data.distincts[property][v] = k;
                                 }
-                            });
-
-
-                        } else {
-                            if (v.length > 0) {
-                                self.$$data.distincts[property][v] = k;
                             }
-                        }
-
 
 
                         });
