@@ -431,7 +431,7 @@ class SearchIndexFactory
     {
 
 
-        if ($this->settings['Realtime']) {
+        if ($this->settings['Realtime'] && $this->site !== null) {
 
             if ($node->isRemoved() || $node->isHidden()) {
                 $this->firebase->delete("sites/" . $this->site->getIdentifier() . "/index/" . $workspace->getName() . "/" . $node->getNodeData()->getDimensionsHash() . "/" . $node->getIdentifier());
