@@ -783,7 +783,6 @@
                          */
                         search: function () {
 
-
                             this.updateLocationHash();
 
 
@@ -2563,6 +2562,16 @@
                 },
 
                 /**
+                 * Get distinct count
+                 * @param {string} property
+                 * @param {boolean} filtered true if return only distincts from filtered result, false returns all variants cummulated
+                 * @returns {integer} count collection of property values
+                 */
+                getDistinctCount: function (property, filtered=false) {
+                    return Object.keys(this.getDistinct(property,filtered)).length;
+                },
+
+                /**
                  * Get all different values from given property
                  * @param {string} property
                  * @param {boolean} filtered true if return only distincts from filtered result, false returns all variants cummulated
@@ -2584,20 +2593,53 @@
                         if (this.$$data.distincts == undefined) {
                             this.$$data.distincts = {};
                         }
+                        if (this.$$data.distincts[property] == undefined) {
+                            this.$$data.distincts[property] = {};
+                        }
 
                         angular.forEach(this.getNodes(), function (node) {
                             variants[self.getPropertyFromNode(node, property)] = variants[self.getPropertyFromNode(node, property)] === undefined ? 1 : variants[self.getPropertyFromNode(node, property)] = variants[self.getPropertyFromNode(node, property)] + 1;
                         });
 
-                        angular.forEach(self.$$data.distincts, function (k, v) {
-                            self.$$data.distincts[v] = 0;
+
+
+                        angular.forEach(self.$$data.distincts[property], function (k, v) {
+                            self.$$data.distincts[property][v] = 0;
                         });
+
+
 
                         angular.forEach(variants, function (k, v) {
-                            self.$$data.distincts[v] = k;
+
+                            valueJson = false;
+                            if (typeof v === 'string' && v.substr(0, 2) === '["' && v.substr(-2, 2) === '"]') {
+                                try {
+                                    var valueJson = JSON.parse(v);
+                                } catch (e) {
+                                    valueJson = false;
+                                }
+
+                            }
+
+                        if (valueJson) {
+                            angular.forEach(valueJson, function (vs) {
+                                if (vs.length > 0) {
+                                    self.$$data.distincts[property][vs] = k;
+                                }
+                            });
+
+
+                        } else {
+                            if (v.length > 0) {
+                                self.$$data.distincts[property][v] = k;
+                            }
+                        }
+
+
+
                         });
 
-                        return self.$$data.distincts;
+                        return self.$$data.distincts[property];
                     }
 
 
@@ -2847,7 +2889,11 @@
                         this.$$data.propertyFilter = {};
                     }
 
-                    if (value && typeof value === 'object' && value.length === 0) {
+                    if (value !== undefined && value !== null && typeof value === 'object' && (value.length === 0 || Object.keys(value).length === 0)) {
+                        return this;
+                    }
+
+                    if (value == undefined || value == null) {
                         return this;
                     }
 
