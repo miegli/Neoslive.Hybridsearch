@@ -1637,7 +1637,6 @@
                          * @returns string
                          */
                         getLocalIndexHash: function () {
-                            console.log(1);
                             return Sha1.hash(JSON.stringify({nodes: nodes, q: this.getFilter().getQuery()}));
                         },
                         /**
@@ -2457,7 +2456,7 @@
                         var self = this;
                         if (self.getScope() !== undefined) {
                             setTimeout(function () {
-                                self.getScope().$apply(function () {
+                                self.getScope().$digest(function () {
                                 });
                             }, 5);
                         }
