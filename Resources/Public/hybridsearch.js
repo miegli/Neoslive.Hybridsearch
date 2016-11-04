@@ -2457,7 +2457,7 @@
                         var self = this;
                         if (self.getScope() !== undefined) {
                             setTimeout(function () {
-                                self.getScope().$apply(function () {
+                                self.getScope().$digest(function () {
                                 });
                             }, 5);
                         }
