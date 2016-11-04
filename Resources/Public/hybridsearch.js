@@ -1408,6 +1408,7 @@
                                             clearTimeout(self.getResults().$$data.notfoundtimeout);
                                         }
                                         self.getResults().$$data.notfoundtimeout = setTimeout(function () {
+                                                self.getResults().$$app.clearResults();
                                                 self.getResults().getApp().executeCallbackMethod(self.getResults());
                                             }, 2000
                                         );
@@ -1474,7 +1475,7 @@
                                     if (lastSearchInstance.$$data.keywords.length) {
                                         // wait for all data and put it together to search index
                                         self.setIndexInterval(setInterval(function () {
-                                            if (indexintervalcounter > 1000 || indexcounter >= uniquarrayfinal.length) {
+                                            if (indexintervalcounter > 100 || indexcounter >= uniquarrayfinal.length) {
                                                 clearInterval(self.getIndexInterval());
                                                 clearInterval(self.setIndexInterval(null));
 
@@ -1488,7 +1489,7 @@
                                                 self.setLastIndexHash(hash);
                                             }
                                             indexintervalcounter++;
-                                        }, 10));
+                                        }, 5));
                                     }
 
 
