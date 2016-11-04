@@ -1408,7 +1408,6 @@
                                             clearTimeout(self.getResults().$$data.notfoundtimeout);
                                         }
                                         self.getResults().$$data.notfoundtimeout = setTimeout(function () {
-                                                self.getResults().$$app.clearResults();
                                                 self.getResults().getApp().executeCallbackMethod(self.getResults());
                                             }, 2000
                                         );
@@ -1422,7 +1421,7 @@
                                     var indexintervalcounter = 0;
                                     var indexcounter = 0;
                                     var indexdata = {};
-
+                                    var cleanedup = false;
 
                                     angular.forEach(uniquarrayfinal, function (keyword) {
 
@@ -1466,6 +1465,11 @@
                                             indexcounter++;
 
 
+                                            if (cleanedup) {
+                                                self.updateLocalIndex(indexdata);
+                                            }
+
+
                                         });
 
 
@@ -1482,8 +1486,12 @@
                                                 var hash = self.getFilter().getHash() + " " + Sha1.hash(JSON.stringify(indexdata));
 
                                                 if (hash !== self.getLastIndexHash() || results.count() === 0) {
-                                                    results.$$app.clearResults();
-                                                    self.cleanLocalIndex();
+                                                    if (cleanedup === false) {
+                                                        results.$$app.clearResults();
+                                                        self.cleanLocalIndex();
+                                                        cleanedup = true;
+                                                    }
+
                                                     self.updateLocalIndex(indexdata);
                                                 }
                                                 self.setLastIndexHash(hash);
@@ -1606,7 +1614,7 @@
                                 if (keyword === null) {
                                     return null;
                                 }
-                                query = ref.orderByChild(keyword).equalTo(1).limitToFirst(10);
+                                query = ref.orderByChild(keyword).equalTo(1);
                             }
 
                             index[keyword] = query;
@@ -1698,6 +1706,7 @@
 
 
                             }
+
 
                             self.search();
 
