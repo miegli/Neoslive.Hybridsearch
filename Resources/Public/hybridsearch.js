@@ -83,8 +83,7 @@
                 };
                 try {
                     firebase.initializeApp(firebaseconfig);
-                    firebase.database().goOnline();
-                    //   firebase.database.enableLogging(true)
+                    //firebase.database.enableLogging(true)
                 } catch (e) {
                     // firebase was initizalized before
                 }
@@ -148,7 +147,7 @@
              */
             var HybridsearchObject = function (hybridsearch) {
 
-                    var hybridsearchInstanceNumber, results, filter, index, lunrSearch, nodes, nodeTypeLabels, propertiesBoost, isRunning, firstfilterhash, searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier, nodesByIdentifier, searchCounter, searchCounterTimeout;
+                    var hybridsearchInstanceNumber, results, filter, index, lunrSearch, nodes, nodesLastHash, nodeTypeLabels, propertiesBoost, isRunning, firstfilterhash, searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier, nodesByIdentifier, searchCounter, searchCounterTimeout;
 
                     // count instances
                     if (window.hybridsearchInstances === undefined) {
@@ -158,6 +157,7 @@
                     }
 
                     searchCounter = 0;
+                    nodesLastHash = 0;
                     searchCounterTimeout = false;
                     isRunning = false;
                     firstfilterhash = false;
@@ -783,6 +783,7 @@
                          */
                         search: function () {
 
+
                             this.updateLocationHash();
 
 
@@ -850,6 +851,19 @@
                                     );
 
 
+                                }
+
+
+                            }
+
+
+                            if (results.hasDistincts()) {
+                                if (nodesLastHash > 0 && this.getLocalIndexHash() !== nodesLastHash) {
+                                    results.updateDistincts();
+
+                                }
+                                if (nodesLastHash === 1) {
+                                    nodesLastHash = this.getLocalIndexHash();
                                 }
 
 
@@ -1242,7 +1256,7 @@
                                         clearInterval(searchInstancesInterval);
                                         lastSearchInstance.execute(self, lastSearchInstance);
                                     }
-                                }, 10);
+                                }, 25);
 
 
                             } else {
@@ -1251,9 +1265,6 @@
                                 }
                             }
 
-                            if (filter.hasFilters() === false) {
-                                // self.clearLocationHash();
-                            }
 
                         },
 
@@ -1528,7 +1539,7 @@
                             if (parseInt(substrEnd) > 0) {
                                 var ref = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().equalTo(substrEnd).limitToFirst(5);
                             } else {
-                                var ref = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().startAt(substrStart).limitToFirst(15);
+                                var ref = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().startAt(substrStart).limitToFirst(5);
                             }
 
                             ref.once("value", function (data) {
@@ -1585,7 +1596,7 @@
                                     query = ref.orderByChild("_nodetype").equalTo(this.getFilter().getNodeType());
                                     keyword = this.getFilter().getNodeType();
                                 } else {
-                                    query = ref.orderByChild("_nodetype" + keyword).equalTo(this.getFilter().getNodeType()).limitToFirst(250);
+                                    query = ref.orderByChild("_nodetype" + keyword).equalTo(this.getFilter().getNodeType());
                                 }
                             }
 
@@ -1594,7 +1605,7 @@
                                 if (keyword === null) {
                                     return null;
                                 }
-                                query = ref.orderByChild(keyword).equalTo(1).limitToFirst(100);
+                                query = ref.orderByChild(keyword).equalTo(1).limitToFirst(10);
                             }
 
                             index[keyword] = query;
@@ -1623,17 +1634,40 @@
 
                         /**
                          * @private
+                         * @returns string
+                         */
+                        getLocalIndexHash: function () {
+                            console.log(1);
+                            return Sha1.hash(JSON.stringify({nodes: nodes, q: this.getFilter().getQuery()}));
+                        },
+                        /**
+                         * @private
                          * @param array
                          * @returns void
                          */
                         cleanLocalIndex: function () {
 
-                            nodes = {};
-                            this.getFilter().setAutocompletedKeywords('');
+                            if (results.hasDistincts()) {
+                                this.setNodesLastHash(this.getLocalIndexHash());
+                            }
 
+                            nodes = {};
+
+                            this.getFilter().setAutocompletedKeywords('');
+                            lunrSearch = null;
                             lunrSearch = elasticlunr(function () {
                                 this.setRef('id');
                             });
+
+                        },
+
+                        /**
+                         * @private
+                         * @param string
+                         * @returns void
+                         */
+                        setNodesLastHash: function (hash) {
+                            nodesLastHash = hash;
 
                         }
                         ,
@@ -1761,7 +1795,7 @@
                 $watch: function (callback) {
 
                     this.$$app.getResults().getApp().setCallbackMethod(callback);
-                    this.run();
+
 
                     return this;
                 },
@@ -1777,7 +1811,7 @@
                 $bind: function (scopevar, scope) {
                     this.$$app.getResults().$$app.setScope(scope);
                     scope[scopevar] = this.$$app.getResults();
-                    this.run();
+
                     return this;
                 },
 
@@ -1795,7 +1829,7 @@
                         self.$$app.setHybridsearchInstanceNumber();
                         self.$$app.setFirstFilterHash(self.$$app.getFilter().getHash());
 
-                        self.applyLastFilter();
+                        //self.applyLastFilter();
                         self.$$app.setIsRunning();
                         self.$$app.setSearchIndex();
 
@@ -1912,7 +1946,7 @@
 
                     angular.forEach(nodesArray, function (node) {
 
-                        self.$$app.getIndexByNodeIdentifier(node).on("value", function (data) {
+                        self.$$app.getIndexByNodeIdentifier(node).once("value", function (data) {
 
                             if (data.val()) {
                                 self.$$app.addLocalIndex([{'_node': data.val()}]);
@@ -1948,7 +1982,7 @@
 
                     angular.forEach(nodesTypesArray, function (nodetype) {
 
-                        self.$$app.getIndexByNodeType(nodetype).on("value", function (data) {
+                        self.$$app.getIndexByNodeType(nodetype).once("value", function (data) {
 
                             var addnodes = [];
 
@@ -1964,7 +1998,7 @@
                                 }
                                 timer = setTimeout(function () {
                                     self.$$app.search();
-                                }, 100);
+                                }, 50);
                             }
 
                         });
@@ -2069,16 +2103,27 @@
                     if (scope) {
                         self.$$app.getFilter().setScopeProperty(scope, input, 'query');
 
-                        scope.$watch(input, function (searchInput) {
-                            self.$$app.getFilter().setQuery(scope[input]);
+                        scope.$watch(input, function (searchInput, searchInputLast) {
 
-                            if (searchInput !== undefined) {
-                                if (searchInput.length === 0) {
-                                    self.$$app.getFilter().resetQuery();
-                                    self.$$app.clearLocationHash();
+                            if (searchInput !== searchInputLast) {
+
+                                self.$$app.getFilter().setQuery(scope[input]);
+
+                                if (searchInput !== undefined) {
+                                    if (searchInput.length === 0) {
+
+                                        self.$$app.getFilter().resetQuery();
+                                        self.$$app.setNodesLastHash(1);
+                                        self.$$app.clearLocationHash();
+                                    }
+
+                                    self.$$app.setSearchIndex();
+
                                 }
-                                self.$$app.setSearchIndex();
+
                             }
+
+
                         });
 
                     } else {
@@ -2562,90 +2607,198 @@
                 },
 
                 /**
+                 * update distincts
+                 * @returns {HybridsearchResultsObject}
+                 */
+                updateDistincts: function () {
+
+                    var self = this;
+                    this.clearDistincts();
+
+                    angular.forEach(this.$$data.distincts, function (val, key) {
+                        self.getDistinct(key);
+                    });
+
+                    return this;
+
+                },
+                /**
+                 * clear distincts
+                 * @returns {void}
+                 */
+                clearDistincts: function () {
+                    this.$$data.distincts = {};
+                },
+                /**
+                 * @private
+                 * check if any distincts are ative
+                 * @returns {boolean}
+                 */
+                hasDistincts: function () {
+                    return this.$$data.distincts === undefined ? false : Object.keys(this.$$data.distincts).length ? true : false;
+                },
+                /**
                  * Get distinct count
                  * @param {string} property
-                 * @param {boolean} filtered true if return only distincts from filtered result, false returns all variants cummulated
                  * @returns {integer} count collection of property values
                  */
-                getDistinctCount: function (property, filtered=false) {
-
-                    return Object.keys(this.getDistinct(property, filtered)).length;
+                getDistinctCount: function (property) {
+                    return Object.keys(this.getDistinct(property)).length;
                 },
 
                 /**
                  * Get all different values from given property
                  * @param {string} property
-                 * @param {boolean} filtered true if return only distincts from filtered result, false returns all variants cummulated
                  * @returns {array} collection of property values
                  */
-                getDistinct: function (property, filtered=false) {
+                getDistinct: function (property) {
 
-                    var self = this, variants = {};
+                    var self = this, variants = {}, propvalue = '', variantsfinal = [];
 
-                    if (filtered) {
-                        angular.forEach(this.getNodes(), function (node) {
-                            variants[node.getProperty(property)] = variants[node.getProperty(property)] === undefined ? 1 : variants[node.getProperty(property)] = variants[node.getProperty(property)] + 1;
-                        });
+                    if (self.$$data.distincts == undefined) {
+                        self.$$data.distincts = {};
+                    }
 
-                        return variants;
+                    if (self.$$data.distincts[property] == undefined) {
+                        self.$$data.distincts[property] = {};
+                    }
 
-                    } else {
-
-                        if (this.$$data.distincts == undefined) {
-                            this.$$data.distincts = {};
-                        }
-                        if (this.$$data.distincts[property] == undefined) {
-                            this.$$data.distincts[property] = {};
-                        }
-
-                        angular.forEach(this.getNodes(), function (node) {
-                            variants[self.getPropertyFromNode(node, property)] = variants[self.getPropertyFromNode(node, property)] === undefined ? 1 : variants[self.getPropertyFromNode(node, property)] = variants[self.getPropertyFromNode(node, property)] + 1;
-                        });
-
-
-                        angular.forEach(self.$$data.distincts[property], function (k, v) {
-                            self.$$data.distincts[property][v] = 0;
-                        });
-
-
-                        angular.forEach(variants, function (k, v) {
-
-                            valueJson = false;
-                            if (typeof v === 'string' && v.substr(0, 2) === '["' && v.substr(-2, 2) === '"]') {
-                                try {
-                                    var valueJson = JSON.parse(v);
-                                } catch (e) {
-                                    valueJson = false;
-                                }
-
-                            }
-
-
-                            if (valueJson) {
-                                angular.forEach(valueJson, function (vs) {
-                                    if (vs.length > 0) {
-                                        self.$$data.distincts[property][vs] = k;
-                                    }
-                                });
-
-
-                            } else {
-
-
-                                if (v.length > 0) {
-                                    self.$$data.distincts[property][v] = k;
-                                }
-                            }
-
-
-                        });
-
+                    if (Object.keys(self.$$data.distincts[property]).length) {
                         return self.$$data.distincts[property];
                     }
 
+                    angular.forEach(this.getNodes(), function (node) {
+                        propvalue = self.getPropertyFromNode(node, property);
+
+                        if (typeof propvalue == 'object') {
+
+                            angular.forEach(propvalue, function (v, k) {
+                                var k = Sha1.hash(JSON.stringify(v));
+                                variants[k] = {value: v, count: variants[k] === undefined ? 1 : variants[k].count + 1};
+                            });
+                        } else {
+                            if (propvalue.length) {
+                                var k = Sha1.hash(JSON.stringify(propvalue));
+                                variants[k] = {
+                                    value: propvalue,
+                                    count: variants[k] === undefined ? 1 : variants[k].count + 1
+                                };
+                            }
+
+                        }
+
+
+                    });
+
+
+                    angular.forEach(variants, function (v, k) {
+
+
+                        valueJson = false;
+                        if (typeof v.value === 'string' && v.value.substr(0, 2) === '["' && v.value.substr(-2, 2) === '"]') {
+                            try {
+                                var valueJson = JSON.parse(v.value);
+                            } catch (e) {
+                                valueJson = false;
+                            }
+
+                        }
+
+
+                        if (valueJson) {
+
+                            angular.forEach(valueJson, function (vs) {
+                                if (vs.length > 0) {
+                                    variants[property][k] = {value: vs, count: v.count};
+                                }
+                            });
+
+
+                        }
+
+
+                    });
+
+                    self.$$data.distincts[property] = variants;
+
+                    return self.$$data.distincts[property];
+
 
                 },
+                /**
+                 * @private
+                 * @param {object}
+                 * @param {string} property
+                 * @returns {mixed}
+                 */
+                getPropertyFromObject: function (object, property) {
 
+
+                    if (property === '*') {
+
+                        var values = [];
+                        angular.forEach(object, function (val, key) {
+                            angular.forEach(val, function (v) {
+                                values.push(v);
+                            });
+                        });
+
+                        return values;
+                    }
+
+                    var values = [];
+
+                    angular.forEach(object, function (val, key) {
+
+                        if (typeof key != 'string' || values.length === 0 && key.substr(key.length - property.length, property.length) === property) {
+
+
+                            if (typeof val === 'string') {
+                                try {
+                                    var valuesObject = JSON.parse(val);
+                                    if (valuesObject) {
+                                        values = valuesObject;
+                                        return values;
+
+                                    }
+                                } catch (e) {
+                                    values = [val];
+                                }
+
+                                if (property == key) {
+                                    values = object[property];
+                                    return values;
+                                } else {
+                                    values = object[key];
+                                    return values;
+                                }
+
+                            }
+
+                        }
+
+                        if (typeof val === 'object') {
+
+                            values = [];
+                            angular.forEach(val, function (v, k) {
+
+                                if (values.length == 0 && typeof k == 'string' && (k.substr(k.length - property.length, property.length) === property || k == property)) {
+                                    values.push(val[k]);
+                                    return values;
+                                }
+
+                            });
+
+
+                        }
+
+
+                    });
+
+
+                    return values;
+
+                },
                 /**
                  * @private
                  * Get property.
@@ -2655,18 +2808,59 @@
                 getPropertyFromNode: function (node, property) {
 
                     var value = '';
+                    var self = this;
 
 
                     if (node.properties[property] !== undefined) {
                         return node.properties[property];
                     }
 
+                    // handles value as json parsable object if required
+                    if (property.indexOf(".") >= 0) {
 
-                    angular.forEach(node.properties, function (val, key) {
-                        if (value === '' && key.substr(key.length - property.length, property.length) === property) {
-                            value = val !== undefined ? val : '';
-                        }
-                    });
+                        var propertysegments = property.split(".");
+                        var value = node.properties;
+
+                        angular.forEach(propertysegments, function (segment) {
+
+
+                            if (value[segment] !== undefined) {
+                                value = value[segment];
+                            } else {
+
+                                if (value.length === undefined) {
+                                    value = self.getPropertyFromObject(value, segment);
+                                } else {
+                                    var newvalue = [];
+                                    angular.forEach(value, function (v) {
+                                        var n = self.getPropertyFromObject({v}, segment);
+                                        newvalue.push(n[0]);
+                                    });
+                                    value = newvalue;
+
+                                }
+                            }
+
+
+                        });
+
+
+                    } else {
+                        angular.forEach(node.properties, function (val, key) {
+                            if (value === '' && key.substr(key.length - property.length, property.length) === property) {
+                                value = val !== undefined ? val : '';
+                                if (typeof value === 'string' && value.substr(0, 2) === '["' && value.substr(-2, 2) === '"]') {
+                                    try {
+                                        var valueJson = JSON.parse(value);
+                                    } catch (e) {
+                                        valueJson = value;
+                                    }
+                                    value = valueJson;
+                                }
+
+                            }
+                        });
+                    }
 
 
                     return value;
@@ -2852,11 +3046,14 @@
                     return this.$$data.scopes[identifier];
                 },
 
+
                 /**
                  * @private
                  * @returns HybridsearchObject
                  */
                 resetQuery: function () {
+
+                    this.$$data.hasquery = false;
                     this.$$data.autocompletedKeywords = '';
                     this.$$data.query = '';
                     return this;
