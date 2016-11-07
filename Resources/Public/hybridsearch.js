@@ -70,7 +70,8 @@
                     firebase: firebaseconfig,
                     workspace: workspace,
                     dimension: dimension,
-                    site: site
+                    site: site,
+                    databaseURL: databaseURL
                 };
                 Object.defineProperty(this, '$$conf', {
                     value: this.$$conf
@@ -686,7 +687,7 @@
                                                     setTimeout(function () {
                                                         self.getFilter().getScopeByIdentifier(identifier).$apply(function () {
                                                         });
-                                                    }, 5);
+                                                    }, 50);
                                                 }
                                             });
                                             break;
@@ -697,7 +698,7 @@
                                                 setTimeout(function () {
                                                     self.getFilter().getScopeByIdentifier(identifier).$apply(function () {
                                                     });
-                                                }, 5);
+                                                }, 50);
                                             }
                                             break;
 
@@ -715,7 +716,7 @@
                                             setTimeout(function () {
                                                 self.getFilter().getScopeByIdentifier(identifier).$apply(function () {
                                                 });
-                                            }, 5);
+                                            }, 50);
                                     }
 
 
@@ -1073,6 +1074,7 @@
 
                             var self = this;
 
+
                             if (this.getFilter().getNodeType() && this.getFilter().getNodeType() !== node.nodeType) {
                                 return true;
                             }
@@ -1256,7 +1258,7 @@
                                         clearInterval(searchInstancesInterval);
                                         lastSearchInstance.execute(self, lastSearchInstance);
                                     }
-                                }, 25);
+                                }, 50);
 
 
                             } else {
@@ -1426,51 +1428,87 @@
                                     angular.forEach(uniquarrayfinal, function (keyword) {
 
 
-                                        self.getIndex(keyword).on("value", function (data) {
+                                        if (keyword === null && self.getFilter().getNodeType()) {
+                                            // preload for speed optimazings
 
-                                            indexdata[keyword] = [];
+                                            $http({
+                                                method: 'GET',
+                                                url: hybridsearch.$$conf.databaseURL + '/sites/' + hybridsearch.$$conf.site + '/index/live/' + hybridsearch.$$conf.dimension + '.json?orderBy=%22_nodetype%22&equalTo=%22' + self.getFilter().getNodeType() + '%22'
+                                            }).then(function successCallback(response) {
 
-                                            if (keyword === null) {
-
-                                                // return full index as result
                                                 nodes = {};
-                                                angular.forEach(data.val(), function (node, id) {
+                                                angular.forEach(response.data, function (node, id) {
                                                     nodes[id] = node['_node'];
                                                 });
 
                                                 self.search();
-
-                                            } else {
-
-                                                // perform search
-                                                if (self.getFilter().isBlockedKeyword(keyword) === false) {
-
-                                                    filter.addAutocompletedKeywords(keyword);
-                                                    angular.forEach(data.val(), function (d) {
-                                                        indexdata[keyword].push(d);
+                                                self.getIndex(keyword).on("child_changed", function (data) {
+                                                    self.getIndex(keyword).once("value", function (data) {
+                                                        nodes = {};
+                                                        angular.forEach(data.val(), function (node, id) {
+                                                            nodes[id] = node['_node'];
+                                                        });
+                                                        self.search();
                                                     });
-                                                    // update search index by one changed keywords
-                                                    if (self.getIndexInterval() === null) {
-                                                        self.cleanLocalIndex();
+                                                });
 
-                                                        self.updateLocalIndex(indexdata);
+                                            }, function errorCallback(response) {
+                                                // called asynchronously if an error occurs
+                                                // or server returns response with an error status.
+                                            });
+
+
+                                        } else {
+
+
+                                            self.getIndex(keyword).on("value", function (data) {
+
+                                                indexdata[keyword] = [];
+
+                                                if (keyword === null) {
+
+                                                    // return full index as result
+                                                    nodes = {};
+                                                    angular.forEach(data.val(), function (node, id) {
+                                                        nodes[id] = node['_node'];
+                                                    });
+
+
+                                                    self.search();
+
+                                                } else {
+
+                                                    // perform search
+                                                    if (self.getFilter().isBlockedKeyword(keyword) === false) {
+
+                                                        filter.addAutocompletedKeywords(keyword);
+                                                        angular.forEach(data.val(), function (d) {
+                                                            indexdata[keyword].push(d);
+                                                        });
+                                                        // update search index by one changed keywords
+                                                        if (self.getIndexInterval() === null) {
+                                                            self.cleanLocalIndex();
+
+                                                            self.updateLocalIndex(indexdata);
+                                                        }
+
+
                                                     }
 
 
                                                 }
 
-
-                                            }
-
-                                            indexcounter++;
+                                                indexcounter++;
 
 
-                                            if (cleanedup) {
-                                                self.updateLocalIndex(indexdata);
-                                            }
+                                                if (cleanedup) {
+                                                    self.updateLocalIndex(indexdata);
+                                                }
 
 
-                                        });
+                                            });
+
+                                        }
 
 
                                     });
@@ -1481,7 +1519,7 @@
                                         self.setIndexInterval(setInterval(function () {
                                             if (indexintervalcounter > 100 || indexcounter >= uniquarrayfinal.length) {
                                                 clearInterval(self.getIndexInterval());
-                                                clearInterval(self.setIndexInterval(null));
+                                                //clearInterval(self.setIndexInterval(null));
 
                                                 var hash = self.getFilter().getHash() + " " + Sha1.hash(JSON.stringify(indexdata));
 
@@ -1497,7 +1535,8 @@
                                                 self.setLastIndexHash(hash);
                                             }
                                             indexintervalcounter++;
-                                        }, 5));
+
+                                        }, 2));
                                     }
 
 
@@ -1597,15 +1636,15 @@
                             }
 
 
-                            var ref = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension);
                             var query = false;
 
                             if (query === false && this.getFilter().getNodeType()) {
                                 if (keyword === "") {
-                                    query = ref.orderByChild("_nodetype").equalTo(this.getFilter().getNodeType());
+                                    query = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension).orderByChild("_nodetype").equalTo(this.getFilter().getNodeType());
                                     keyword = this.getFilter().getNodeType();
+
                                 } else {
-                                    query = ref.orderByChild("_nodetype" + keyword).equalTo(this.getFilter().getNodeType());
+                                    query = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension).orderByChild("_nodetype" + keyword).equalTo(this.getFilter().getNodeType());
                                 }
                             }
 
@@ -1614,7 +1653,7 @@
                                 if (keyword === null) {
                                     return null;
                                 }
-                                query = ref.orderByChild(keyword).equalTo(1);
+                                query = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension).orderByChild(keyword).equalTo(1);
                             }
 
                             index[keyword] = query;
@@ -1746,25 +1785,25 @@
                             angular.forEach(data, function (value, key) {
 
 
-                                if (self.isFiltered(value['_node']) === false) {
+                                //  if (self.isFiltered(value['_node']) === false) {
 
-                                    nodes[value['_node']['identifier']] = value['_node'];
+                                nodes[value['_node']['identifier']] = value['_node'];
 
-                                    if (value._node != undefined && value._node.properties != undefined) {
+                                if (value._node != undefined && value._node.properties != undefined) {
 
-                                        var doc = value._node.properties;
+                                    var doc = value._node.properties;
 
-                                        angular.forEach(value._node.properties, function (val, key) {
-                                            if (lunrSearch.getFields().indexOf(key) < 0) {
-                                                lunrSearch.addField(key);
-                                            }
-                                        });
+                                    angular.forEach(value._node.properties, function (val, key) {
+                                        if (lunrSearch.getFields().indexOf(key) < 0) {
+                                            lunrSearch.addField(key);
+                                        }
+                                    });
 
-                                        doc.id = value._node.identifier;
-                                        lunrSearch.addDoc(doc);
-                                    }
-
+                                    doc.id = value._node.identifier;
+                                    lunrSearch.addDoc(doc);
                                 }
+
+                                //  }
 
 
                             });
@@ -2468,7 +2507,7 @@
                             setTimeout(function () {
                                 self.getScope().$digest(function () {
                                 });
-                            }, 5);
+                            }, 50);
                         }
                         this.callbackMethod(obj);
                     },
