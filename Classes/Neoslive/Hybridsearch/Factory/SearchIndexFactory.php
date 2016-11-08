@@ -403,6 +403,9 @@ class SearchIndexFactory
             }
 
             $this->save();
+
+
+
             if (count($moditifedNodeData)) {
                 $this->firebase->set("/lastsync/$workspaceName", $lastSyncTimestamp);
             }
@@ -413,6 +416,8 @@ class SearchIndexFactory
 
 
         $lastpid = $this->firebase->get("/pid/$workspaceName");
+
+
 
         // infinite loop only once per workspace
 
@@ -1423,7 +1428,6 @@ class SearchIndexFactory
     function save()
     {
 
-        \TYPO3\Flow\var_dump($this->creatingFullIndex);
 
         // patch index data all in one request
         foreach ($this->index as $workspace => $workspaceData) {
