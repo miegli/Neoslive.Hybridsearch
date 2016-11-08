@@ -306,7 +306,7 @@ class SearchIndexFactory
 
         $this->temporaryDirectory = $temporaryDirectory;
         $this->queuecounter = 100000000;
-
+        $GLOBALS["neoslive.hybridsearch.insyncmode"] = true;
 
     }
 
@@ -325,6 +325,9 @@ class SearchIndexFactory
         $this->creatingFullIndex = true;
         $this->site = $site;
 
+
+
+        \TYPO3\Flow\var_dump($GLOBALS["neoslive.hybridsearch.insyncmode"]);exit;
 
         foreach ($this->workspaceRepository->findAll() as $workspace) {
             /** @var Workspace $workspace */

@@ -31,7 +31,8 @@ class StandaloneViewAspect
 
        $templatePathAndFilename = $joinPoint->getAdviceChain()->proceed($joinPoint);
 
-        if (is_file($templatePathAndFilename) === false) {
+
+        if (isset($GLOBALS["neoslive.hybridsearch.insyncmode"]) && $GLOBALS["neoslive.hybridsearch.insyncmode"] && is_file($templatePathAndFilename) === false) {
             $templatePathAndFilename = 'resource://Neoslive.Hybridsearch/Private/Templates/Fallback.html';
             $standaloneView = $joinPoint->getProxy();
             \TYPO3\Flow\Reflection\ObjectAccess::setProperty($standaloneView, 'templatePathAndFilename', $templatePathAndFilename);
