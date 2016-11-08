@@ -12,17 +12,15 @@ namespace Neoslive\Hybridsearch\Factory;
  */
 
 
+use Neoslive\Hybridsearch\Domain\Repository\NeosliveHybridsearchNodeDataRepository;
 use TYPO3\Flow\Annotations as Flow;
 use TYPO3\Flow\Configuration\ConfigurationManager;
 use TYPO3\Flow\Error\Exception;
 use TYPO3\Flow\Mvc\Controller\ControllerContext;
 use TYPO3\Flow\Mvc\Routing\UriBuilder;
-use TYPO3\Flow\Object\ObjectManager;
 use TYPO3\Flow\Persistence\Doctrine\PersistenceManager;
-use TYPO3\Flow\Reflection\ObjectAccess;
 use TYPO3\Flow\Resource\ResourceManager;
 use TYPO3\Media\Domain\Model\Asset;
-use TYPO3\Media\Domain\Model\Thumbnail;
 use TYPO3\TYPO3CR\Domain\Model\NodeData;
 use TYPO3\TYPO3CR\Domain\Model\NodeInterface;
 use TYPO3\Flow\Mvc\Controller\Arguments;
@@ -42,13 +40,12 @@ use Firebase\FirebaseLib;
 use TYPO3\Flow\Utility\Algorithms;
 use TYPO3\Flow\Core\Booting\Scripts;
 use TYPO3\Neos\Service\LinkingService;
-use TYPO3\Neos\Domain\Service\SiteService;
 use TYPO3\Flow\Cli\ConsoleOutput;
 use TYPO3\Flow\Mvc\ActionRequest;
 use TYPO3\TypoScript\View\TypoScriptView;
 use TYPO3\Flow\Core\Bootstrap;
 use Neoslive\Hybridsearch\Request\HttpRequestHandler;
-use Neoslive\Hybridsearch\Factory\GoogleAnalyticsFactory;
+
 
 class SearchIndexFactory
 {
@@ -86,6 +83,11 @@ class SearchIndexFactory
 
 
     /**
+     * @var \DateTime
+     */
+    protected $lastSyncDateTime;
+
+    /**
      * @var ConsoleOutput
      * @Flow\Inject
      */
@@ -114,6 +116,12 @@ class SearchIndexFactory
      * @var NodeDataRepository
      */
     protected $nodeDataRepository;
+
+    /**
+     * @Flow\Inject
+     * @var NeosliveHybridsearchNodeDataRepository
+     */
+    protected $neosliveHybridsearchNodeDataRepository;
 
 
     /**
@@ -307,6 +315,7 @@ class SearchIndexFactory
         $this->temporaryDirectory = $temporaryDirectory;
         $this->queuecounter = 100000000;
         $GLOBALS["neoslive.hybridsearch.insyncmode"] = true;
+        $this->lastSyncDateTime = new \DateTime();
 
     }
 
@@ -326,13 +335,10 @@ class SearchIndexFactory
         $this->site = $site;
 
 
-
-        \TYPO3\Flow\var_dump($GLOBALS["neoslive.hybridsearch.insyncmode"]);exit;
-
         foreach ($this->workspaceRepository->findAll() as $workspace) {
             /** @var Workspace $workspace */
             if ($workspacename === null || $workspacename === $workspace->getName()) {
-                $this->deleteWorkspace($workspace, $site);
+                $this->deleteIndex($site);
             }
         }
 
@@ -357,57 +363,71 @@ class SearchIndexFactory
 
     /**
      * Update index
+     * @param integer $lastSyncTimestamp
+     * @param string $lastSyncPid
+     * @param string $workspaceName
      */
-    public function sync()
+    public function sync($lastSyncTimestamp = 0, $lastSyncPid = '', $workspaceName = 'live')
     {
 
 
-        $sites = json_decode($this->firebase->get('sites', array('shallow' => 'true')));
-
-        if ($sites === null) {
-            return true;
-        }
-
-        foreach ($sites as $siteIdentifier => $sitesValue) {
-
-            $this->site = $this->siteRepository->findByIdentifier($siteIdentifier);
+        if ($lastSyncTimestamp > 0) {
 
 
-            foreach (json_decode($this->firebase->get('sites/' . $siteIdentifier . '/index/', array('shallow' => 'true'))) as $workspaceName => $workspaceValue) {
-
-
-                $workspace = $this->workspaceRepository->findByIdentifier($workspaceName);
-                if ($workspace) {
-                    $dimensions = json_decode($this->firebase->get('sites/' . $siteIdentifier . '/index/' . $workspaceName, array('shallow' => 'true')));
-
-                    if ($dimensions) {
-                        foreach ($dimensions as $dimension => $dimensionvalue) {
-
-                            $nodes = json_decode($this->firebase->get('sites/' . $siteIdentifier . '/index/' . $workspaceName . "/" . $dimension, array('orderBy' => '"__sync"', 'startAt' => 1, 'limitToFirst' => 100)));
-
-                            if ($nodes) {
-                                foreach ($nodes as $identifier => $nodeIndex) {
-
-                                    $node = $this->nodeDataRepository->findOneByIdentifier($identifier, $workspace);
-                                    if ($node) {
-                                        $this->firebase->update("sites/" . $siteIdentifier . "/index/" . $workspace->getName() . "/" . $dimension . "/" . $node->getIdentifier() . "/__sync", 0);
-                                        $this->createIndex($node->getPath(), $workspace, $this->getSiteByContextPath($node->getContextPath()), true);
-                                    } else {
-                                        // remove index for non existing node
-                                        $this->firebase->delete("sites/" . $siteIdentifier . "/index/" . $workspace->getName() . "/" . $dimension . "/" . $identifier);
-
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+            $lastsync = $this->firebase->get("/lastsync/$workspaceName");
+            if (!$lastsync) {
+                $date = new \DateTime();
+                $date->setTimestamp($lastSyncTimestamp);
+            } else {
+                $date = new \DateTime();
+                $date->setTimestamp($lastsync);
             }
 
+            $lastSyncDateTime = new \DateTime();
+            $lastSyncTimestamp = $lastSyncDateTime->getTimeStamp();
+
+
+            $moditifedNodeData = $this->neosliveHybridsearchNodeDataRepository->findByWorkspaceAndLastModificationDateTimeDate($this->workspaceRepository->findByIdentifier($workspaceName), $date);
+            $this->lastSyncDateTime = new \DateTime();
+
+
+            foreach ($moditifedNodeData as $nodedata) {
+
+                $context = $this->contentContextFactory->create(['workspaceName' => $nodedata->getWorkspace()->getName()]);
+
+                $node = $context->getNodeByIdentifier($nodedata->getIdentifier());
+                $node->getContext()->getFirstLevelNodeCache()->flush();
+
+                $this->createIndex($node->getPath(), $nodedata->getWorkspace(), $this->getSiteByContextPath($node->getContextPath()), true, $node);
+
+            }
+
+            $this->save();
+            if (count($moditifedNodeData)) {
+                $this->firebase->set("/lastsync/$workspaceName", $lastSyncTimestamp);
+            }
+
+            sleep(3);
 
         }
 
-        $this->save();
+
+        $lastpid = $this->firebase->get("/pid/$workspaceName");
+
+        // infinite loop only once per workspace
+
+        if ($lastSyncPid === '' || $lastpid == $lastSyncPid) {
+
+            if (!$lastSyncTimestamp) {
+                $lastSyncDateTime = new \DateTime();
+                $lastSyncTimestamp = $lastSyncDateTime->getTimeStamp();
+            }
+
+            $this->firebase->set("/pid/$workspaceName", getmypid());
+            Scripts::executeCommandAsync('hybridsearch:sync', $this->flowSettings, array('lastSyncTimestamp' => $lastSyncTimestamp, 'lastSyncPid' => getmypid(), 'workspaceName' => $workspaceName));
+
+        }
+
 
     }
 
@@ -433,15 +453,19 @@ class SearchIndexFactory
     public function updateIndexRealtime($node, $workspace)
     {
 
-
-        if ($this->settings['Realtime'] && $this->site !== null) {
-
-            if ($node->isRemoved() || $node->isHidden()) {
-                $this->firebase->delete("sites/" . $this->site->getIdentifier() . "/index/" . $workspace->getName() . "/" . $node->getNodeData()->getDimensionsHash() . "/" . $node->getIdentifier());
-            } else {
-                $this->firebase->set("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace->getName() . "/" . $node->getNodeData()->getDimensionsHash() . "/" . $node->getIdentifier() . "/__sync", time());
-            }
+        if ($this->settings['Realtime']) {
+            $this->sync(0, '', $workspace->getName());
         }
+
+
+//        if ($this->settings['Realtime'] && $this->site !== null) {
+//
+//            if ($node->isRemoved() || $node->isHidden()) {
+//                $this->firebase->delete("sites/" . $this->site->getIdentifier() . "/index/" . $workspace->getName() . "/" . $node->getNodeData()->getDimensionsHash() . "/" . $node->getIdentifier());
+//            } else {
+//                $this->firebase->set("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace->getName() . "/" . $node->getNodeData()->getDimensionsHash() . "/" . $node->getIdentifier() . "/__sync", time());
+//            }
+//        }
 
     }
 
@@ -541,12 +565,13 @@ class SearchIndexFactory
 
     /**
      * Sync index
+     * @param string $workspaceName
      */
-    public function syncIndexRealtime()
+    public function syncIndexRealtime($workspaceName = 'live')
     {
 
         if ($this->settings['Realtime']) {
-            Scripts::executeCommandAsync('hybridsearch:sync', $this->flowSettings, array());
+            Scripts::executeCommandAsync('hybridsearch:sync', $this->flowSettings, array('workspaceName' => $workspaceName));
         }
 
     }
@@ -660,6 +685,7 @@ class SearchIndexFactory
                 }
 
             }
+
 
         }
 
@@ -1391,15 +1417,13 @@ class SearchIndexFactory
 
     /**
      * Save generated search index as tempory json file for persisting later
-     * @param string $target keywords|index
-     * @param mixed index
-     * @param mixed keywords
      * @return void
      */
     protected
     function save()
     {
 
+        \TYPO3\Flow\var_dump($this->creatingFullIndex);
 
         // patch index data all in one request
         foreach ($this->index as $workspace => $workspaceData) {
@@ -1555,22 +1579,17 @@ class SearchIndexFactory
 
 
     /**
-     * Delete index for given workspace
+     * Delete index for given site
      * Do firebase delete request
-     * @param Workspace $workspace
      * @param Site $site
      * @return mixed
      */
     protected
-    function deleteWorkspace($workspace, $site)
+    function deleteIndex($site)
     {
 
-
-        $this->output->outputLine("delete old index for workspace " . $workspace->getName());
-
-        $this->firebase->delete("sites/" . $this->getSiteIdentifier($site) . '/index/' . $workspace->getName());
-        $this->firebase->delete("sites/" . $this->getSiteIdentifier($site) . '/keywords/' . $workspace->getName());
-
+        $this->output->outputLine("delete old index for  " . $site->getName());
+        $this->firebase->delete("sites/" . $this->getSiteIdentifier($site));
 
     }
 
@@ -1824,6 +1843,7 @@ class SearchIndexFactory
     {
 
         if ($this->site instanceof Site) {
+            return $this->site->getNodeName();
             return $this->persistenceManager->getIdentifierByObject($this->site);
         } else {
             return 'nosite';

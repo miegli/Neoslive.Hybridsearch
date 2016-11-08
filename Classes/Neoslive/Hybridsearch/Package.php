@@ -24,17 +24,5 @@ class Package extends BasePackage
 
 
 
-    /**
-     * @param Bootstrap $bootstrap The current bootstrap
-     * @return void
-     */
-    public function boot(Bootstrap $bootstrap)
-    {
-
-
-        $dispatcher = $bootstrap->getSignalSlotDispatcher();
-        $dispatcher->connect(PublishingService::class, 'nodePublished', SearchIndexFactory::class, 'updateIndexRealtime');
-
-    }
 
 }

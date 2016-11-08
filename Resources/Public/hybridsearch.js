@@ -1430,7 +1430,7 @@
 
                                         if (keyword === null && self.getFilter().getNodeType()) {
                                             // preload for speed optimazings
-                                            console.log(keyword);
+
                                             $http({
                                                 method: 'GET',
                                                 url: hybridsearch.$$conf.databaseURL + '/sites/' + hybridsearch.$$conf.site + '/index/live/' + hybridsearch.$$conf.dimension + '.json?orderBy=%22_nodetype%22&equalTo=%22' + self.getFilter().getNodeType() + '%22'
@@ -2721,8 +2721,16 @@
                         if (typeof propvalue == 'object') {
 
                             angular.forEach(propvalue, function (v, k) {
-                                var k = Sha1.hash(JSON.stringify(v));
-                                variants[k] = {value: v, count: variants[k] === undefined ? 1 : variants[k].count + 1};
+
+                                if (v !== undefined) {
+                                    var k = Sha1.hash(JSON.stringify(v));
+                                    variants[k] = {
+                                        value: v,
+                                        count: variants[k] === undefined ? 1 : variants[k].count + 1
+                                    };
+                                }
+
+
                             });
                         } else {
                             if (propvalue.length) {

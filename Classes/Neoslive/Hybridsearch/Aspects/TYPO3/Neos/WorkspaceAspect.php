@@ -37,7 +37,8 @@ class WorkspaceAspect
     public function publishAllAction(JoinPointInterface $joinPoint)
     {
 
-       $this->searchIndexFactory->syncIndexRealtime();
+
+       $this->searchIndexFactory->syncIndexRealtime($joinPoint->getMethodArgument('targetWorkspaceName'));
 
     }
 
@@ -48,20 +49,10 @@ class WorkspaceAspect
     public function publishNodesAction(JoinPointInterface $joinPoint)
     {
 
-       $this->searchIndexFactory->syncIndexRealtime();
+       $this->searchIndexFactory->syncIndexRealtime($joinPoint->getMethodArgument('targetWorkspaceName'));
 
     }
 
-    /**
-     * @Flow\After("method(TYPO3\Neos\Service\Controller\WorkspaceController->publishNodeAction())")
-     * @return void
-     */
-    public function publishNodeAction(JoinPointInterface $joinPoint)
-    {
-
-       $this->searchIndexFactory->syncIndexRealtime();
-
-    }
 
 
 }
