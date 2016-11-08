@@ -390,21 +390,17 @@ class SearchIndexFactory
             $moditifedNodeData = $this->neosliveHybridsearchNodeDataRepository->findByWorkspaceAndLastModificationDateTimeDate($this->workspaceRepository->findByIdentifier($workspaceName), $date);
             $this->lastSyncDateTime = new \DateTime();
 
-
             foreach ($moditifedNodeData as $nodedata) {
-
                 $context = $this->contentContextFactory->create(['workspaceName' => $nodedata->getWorkspace()->getName()]);
-
                 $node = $context->getNodeByIdentifier($nodedata->getIdentifier());
-                $node->getContext()->getFirstLevelNodeCache()->flush();
-
-                $this->createIndex($node->getPath(), $nodedata->getWorkspace(), $this->getSiteByContextPath($node->getContextPath()), true, $node);
-
+                $flowQuery = new FlowQuery(array($node));
+                $closestNode = $flowQuery->closest($this->settings['Filter']['NodeTypeFilter'])->get(0);
+                if ($closestNode) {
+                    $this->generateIndex($closestNode, $nodedata->getWorkspace(), $closestNode->getContext()->getDimensions(), '', true);
+                }
             }
 
             $this->save();
-
-
 
             if (count($moditifedNodeData)) {
                 $this->firebase->set("/lastsync/$workspaceName", $lastSyncTimestamp);
@@ -416,7 +412,6 @@ class SearchIndexFactory
 
 
         $lastpid = $this->firebase->get("/pid/$workspaceName");
-
 
 
         // infinite loop only once per workspace
@@ -661,6 +656,13 @@ class SearchIndexFactory
         if ($node !== null) {
 
             $this->generateIndex($node, $workspace, $node->getContext()->getDimensions(), '', $includingSelf);
+
+            $flowQuery = new FlowQuery(array($node));
+            $closestNode = $flowQuery->parent()->closest($this->settings['Filter']['NodeTypeFilter'])->get(0);
+            if ($closestNode) {
+                $this->generateIndex($closestNode, $workspace, $closestNode->getContext()->getDimensions(), '', true);
+            }
+
 
         } else {
 
