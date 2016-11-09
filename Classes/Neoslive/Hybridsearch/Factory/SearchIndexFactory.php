@@ -389,7 +389,7 @@ class SearchIndexFactory
 
             $moditifedNodeData = $this->neosliveHybridsearchNodeDataRepository->findByWorkspaceAndLastModificationDateTimeDate($this->workspaceRepository->findByIdentifier($workspaceName), $date);
             $this->firebase->set("/lastsync/$workspaceName", $lastSyncTimestamp);
-            
+
             $this->lastSyncDateTime = new \DateTime();
 
             foreach ($moditifedNodeData as $nodedata) {
@@ -399,7 +399,15 @@ class SearchIndexFactory
                 $closestNode = $flowQuery->closest($this->settings['Filter']['NodeTypeFilter'])->get(0);
                 if ($closestNode) {
                     $this->generateIndex($closestNode, $nodedata->getWorkspace(), $closestNode->getContext()->getDimensions(), '', true);
+                } else {
+
+                    $flowQuery = new FlowQuery(array($node->getParent()));
+                    $closestNode = $flowQuery->closest($this->settings['Filter']['NodeTypeFilter'])->get(0);
+                    if ($closestNode) {
+                        $this->generateIndex($closestNode, $nodedata->getWorkspace(), $closestNode->getContext()->getDimensions(), '', true);
+                    }
                 }
+
             }
 
             $this->save();
@@ -414,7 +422,7 @@ class SearchIndexFactory
         $lastpid = $this->firebase->get("/pid/$workspaceName");
 
 
-        // infinite loop only once per workspace
+        // infinite loop only one thread per workspace
 
         if ($lastSyncPid === '' || $lastpid == $lastSyncPid) {
 
