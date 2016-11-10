@@ -79,16 +79,15 @@ class HybridSearchCommandController extends CommandController
      * Synchronize indexes
      *
      * This command updates index from all local changes
-     * @param integer $lastSyncTimestamp
-     * @param string $lastSyncPid
      * @param string $workspaceName
+     * @param integer $lastSyncPid
      * @param integer $lastSyncCounter
      * @return void
      */
-    public function syncCommand($lastSyncTimestamp=0,$lastSyncPid=0,$workspaceName='live',$lastSyncCounter=0)
+    public function syncCommand($workspaceName='live',$lastSyncPid=0,$lastSyncCounter=0)
 
     {
-        $this->searchIndexFactory->sync($lastSyncTimestamp,$lastSyncPid,$workspaceName,$lastSyncCounter);
+        $this->searchIndexFactory->sync($workspaceName,$lastSyncPid,$lastSyncCounter);
 
     }
 
