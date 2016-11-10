@@ -110,7 +110,6 @@ class GoogleAnalyticsFactory
             if (isset($this->settings['Google']['Analytics']['Reports'])) {
 
                 foreach ($this->settings['Google']['Analytics']['Reports'] as $host => $reportId) {
-                    $this->output->outputLine("loading google analytics report id " . $reportId . ' for host ' . $host);
                     $this->fetchGaData($host, $reportId);
                 }
             }

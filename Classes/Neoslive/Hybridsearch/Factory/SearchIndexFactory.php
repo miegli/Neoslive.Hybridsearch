@@ -315,6 +315,7 @@ class SearchIndexFactory
 
         $this->temporaryDirectory = $temporaryDirectory;
         $this->queuecounter = 100000000;
+        $this->allSiteKeys = array();
         $GLOBALS["neoslive.hybridsearch.insyncmode"] = true;
 
 
@@ -322,42 +323,52 @@ class SearchIndexFactory
 
 
     /**
-     * Create full search index for given node path
-     * @param string $path path of the root node name
-     * @param Site $site
+     * Create full search index for given workspace
      * @param string $workspacename
      * @return void
      */
-    public function createFullIndex($path, $site, $workspacename)
+    public function createFullIndex($workspacename = 'live')
     {
 
-
         $this->creatingFullIndex = true;
-        $this->site = $site;
 
-
-        foreach ($this->workspaceRepository->findAll() as $workspace) {
-            /** @var Workspace $workspace */
-            if ($workspacename === null || $workspacename === $workspace->getName()) {
-                $this->deleteIndex($site);
-            }
+        foreach ($this->siteRepository->findAll() as $site) {
+            $this->site = $site;
+            array_push($this->allSiteKeys, $this->getSiteIdentifier());
+            $this->deleteIndex($site);
         }
 
 
-        foreach ($this->workspaceRepository->findAll() as $workspace) {
+        $moditifedNodeData = $this->nodeDataRepository->findByWorkspace($this->workspaceRepository->findByIdentifier($workspacename));
 
-            /** @var Workspace $workspace */
-            if ($workspacename === null || $workspacename === $workspace->getName()) {
-                $this->createIndex($path, $workspace, $site);
 
+        $this->output->progressStart(count($moditifedNodeData));
+
+        $counter = 0;
+        foreach ($moditifedNodeData as $nodedata) {
+
+            $this->output->progressAdvance(1);
+            $this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace(), true);
+
+            if ($counter % 100 === 0) {
+                $this->save();
             }
 
+            $counter++;
         }
+
+
 
 
         $this->save();
         $this->proceedQueue();
         $this->updateFireBaseRules();
+
+        $this->output->progressFinish();
+
+
+        return true;
+
 
     }
 
@@ -468,8 +479,9 @@ class SearchIndexFactory
      * Update index for given nodedata
      * @param NodeData $nodedata
      * @param Workspace $workspace
+     * @param boolean $noparentcheck
      */
-    public function updateIndexForNodeData($nodedata, $workspace)
+    public function updateIndexForNodeData($nodedata, $workspace, $noparentcheck = false)
     {
 
 
@@ -509,9 +521,11 @@ class SearchIndexFactory
                         if ($flowQuery->is($this->settings['Filter']['NodeTypeFilter'])) {
                             $this->generateIndex($node, $workspace, $node->getContext()->getDimensions());
                         } else {
-                            $node = $flowQuery->parent()->closest($this->settings['Filter']['NodeTypeFilter'])->get(0);
-                            if ($node) {
-                                $this->generateIndex($node, $workspace, $node->getContext()->getDimensions());
+                            if ($noparentcheck === false) {
+                                $node = $flowQuery->parent()->closest($this->settings['Filter']['NodeTypeFilter'])->get(0);
+                                if ($node) {
+                                    $this->generateIndex($node, $workspace, $node->getContext()->getDimensions());
+                                }
                             }
                         }
 
@@ -594,7 +608,7 @@ class SearchIndexFactory
     {
 
 
-        $this->output->outputLine("create index for " . $path . " and workspace " . $workspace->getName());
+        //$this->output->outputLine("create index for " . $path . " and workspace " . $workspace->getName());
 
 
         if ($node !== null) {
@@ -667,9 +681,6 @@ class SearchIndexFactory
 
 
         $dimensionConfigurationHash = $this->getDimensionConfiugurationHash($dimensionConfiguration);
-
-
-        $this->output->outputLine("generate nodes index for " . $node->getPath() . ", workspace " . $workspace->getName() . " and dimension " . json_encode($dimensionConfiguration));
 
 
         $flowQuery = new FlowQuery(array($node));

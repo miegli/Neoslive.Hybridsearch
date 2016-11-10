@@ -47,29 +47,18 @@ class HybridSearchCommandController extends CommandController
     protected $siteRepository;
 
     /**
-     * Create full search index for given node path
+     * Create full search index for given workspace name
      *
      * This command is used to create full search index.
      *
-     * @param string $path Name of the root node
-     * @param string $site Name of the site
      * @param string $workspacename Name of the workspace
      * @return void
      */
-    public function createFullIndexCommand($path, $site, $workspacename)
+    public function createFullIndexCommand($workspacename='live')
     {
 
 
-        $site = $this->siteRepository->findOneByNodeName($site);
-
-
-        if ($site === null) {
-            $this->outputLine('Error: No site for exporting found');
-            $this->quit(1);
-        }
-
-
-        $this->searchIndexFactory->createFullIndex($path, $site, $workspacename);
+        $this->searchIndexFactory->createFullIndex($workspacename);
 
 
     }
