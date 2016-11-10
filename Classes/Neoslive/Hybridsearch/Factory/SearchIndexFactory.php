@@ -398,6 +398,8 @@ class SearchIndexFactory
 
         if ($lastSyncCounter > 1) {
 
+            $this->firebase->set("/pid/$workspaceName", getmypid());
+
             $lastsync = $this->firebase->get("/lastsync/$workspaceName");
             $date = new \DateTime();
 
@@ -439,8 +441,7 @@ class SearchIndexFactory
 
         // infinite loop only one thread per workspace
         if ($lastSyncPid === 0 || $lastpid == $lastSyncPid) {
-            $this->firebase->set("/pid/$workspaceName", getmypid());
-            Scripts::executeCommandAsync('hybridsearch:sync', $this->flowSettings, array('lastSyncPid' => getmypid(), 'workspace' => $workspaceName, 'lastSyncCounter' => $lastSyncCounter));
+             Scripts::executeCommandAsync('hybridsearch:sync', $this->flowSettings, array('lastSyncPid' => getmypid(), 'workspace' => $workspaceName, 'lastSyncCounter' => $lastSyncCounter));
         }
 
 
