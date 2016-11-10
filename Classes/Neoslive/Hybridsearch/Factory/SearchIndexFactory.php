@@ -381,8 +381,9 @@ class SearchIndexFactory
      * @param integer $lastSyncTimestamp
      * @param integer $lastSyncPid
      * @param string $workspaceName
+     * @param integer $lastSyncCounter
      */
-    public function sync($lastSyncTimestamp = 0, $lastSyncPid = 0, $workspaceName = 'live')
+    public function sync($lastSyncTimestamp = 0, $lastSyncPid = 0, $workspaceName = 'live',$lastSyncCounter = 0)
     {
 
 
@@ -414,27 +415,18 @@ class SearchIndexFactory
                    $this->updateIndex($node,$nodedata->getWorkspace());
                 }
 
-//                $flowQuery = new FlowQuery(array($node));
-//                $closestNode = $flowQuery->closest($this->settings['Filter']['NodeTypeFilter'])->get(0);
-//                if ($closestNode) {
-//                    $this->generateIndex($closestNode, $nodedata->getWorkspace(), $closestNode->getContext()->getDimensions(), '', true);
-//                } else {
-//
-//                    $flowQuery = new FlowQuery(array($node->getParent()));
-//                    $closestNode = $flowQuery->closest($this->settings['Filter']['NodeTypeFilter'])->get(0);
-//                    if ($closestNode) {
-//                        $this->generateIndex($closestNode, $nodedata->getWorkspace(), $closestNode->getContext()->getDimensions(), '', true);
-//                    }
-//                }
-
-
-
-
-
             }
 
             $this->save();
-            sleep(30);
+            sleep(60);
+
+            if (count($moditifedNodeData)) {
+                $lastSyncCounter = $lastSyncCounter+1;
+            }
+
+            if ($lastSyncCounter > 10) {
+                $this->updateFireBaseRules();
+            }
 
 
        }
@@ -452,7 +444,7 @@ class SearchIndexFactory
             }
             $this->firebase->set("/pid/$workspaceName", getmypid());
 
-            Scripts::executeCommandAsync('hybridsearch:sync', $this->flowSettings, array('lastSyncTimestamp' => $lastSyncTimestamp, 'lastSyncPid' => getmypid(), 'workspaceName' => $workspaceName));
+            Scripts::executeCommandAsync('hybridsearch:sync', $this->flowSettings, array('lastSyncTimestamp' => $lastSyncTimestamp, 'lastSyncPid' => getmypid(), 'workspaceName' => $workspaceName, 'lastSyncCounter'=>$lastSyncCounter));
 
         }
 
