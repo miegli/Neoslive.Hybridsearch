@@ -1433,7 +1433,7 @@
 
                                             $http({
                                                 method: 'GET',
-                                                url: hybridsearch.$$conf.databaseURL + '/sites/' + hybridsearch.$$conf.site + '/index/live/' + hybridsearch.$$conf.dimension + '.json?orderBy=%22_nodetype%22&equalTo=%22' + self.getFilter().getNodeType() + '%22'
+                                                url: hybridsearch.$$conf.databaseURL + '/sites/' + hybridsearch.$$conf.site + '/index/live/' + hybridsearch.$$conf.dimension + '.json?format=export&orderBy=%22_nodetype%22&equalTo=%22' + self.getFilter().getNodeType() + '%22'
                                             }).then(function successCallback(response) {
 
                                                 nodes = {};

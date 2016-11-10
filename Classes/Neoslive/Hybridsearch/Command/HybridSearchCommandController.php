@@ -84,7 +84,7 @@ class HybridSearchCommandController extends CommandController
      * @param string $workspaceName
      * @return void
      */
-    public function syncCommand($lastSyncTimestamp=0,$lastSyncPid='',$workspaceName='live')
+    public function syncCommand($lastSyncTimestamp=0,$lastSyncPid=0,$workspaceName='live')
 
     {
         $this->searchIndexFactory->sync($lastSyncTimestamp,$lastSyncPid,$workspaceName);
