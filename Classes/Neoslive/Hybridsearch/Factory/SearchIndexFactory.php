@@ -375,14 +375,14 @@ class SearchIndexFactory
     }
 
 
-
     /**
      * Update index
      * @param integer $lastSyncTimestamp
      * @param integer $lastSyncPid
      * @param string $workspaceName
+     * @param integer $lastSyncCounter
      */
-    public function sync($lastSyncTimestamp = 0, $lastSyncPid = 0, $workspaceName = 'live')
+    public function sync($lastSyncTimestamp = 0, $lastSyncPid = 0, $workspaceName = 'live', $lastSyncCounter = 0)
     {
 
 
@@ -411,33 +411,22 @@ class SearchIndexFactory
                 $node = $context->getNodeByIdentifier($nodedata->getIdentifier());
 
                 if ($node) {
-                   $this->updateIndex($node,$nodedata->getWorkspace());
+                    $this->updateIndex($node, $nodedata->getWorkspace());
                 }
-
-//                $flowQuery = new FlowQuery(array($node));
-//                $closestNode = $flowQuery->closest($this->settings['Filter']['NodeTypeFilter'])->get(0);
-//                if ($closestNode) {
-//                    $this->generateIndex($closestNode, $nodedata->getWorkspace(), $closestNode->getContext()->getDimensions(), '', true);
-//                } else {
-//
-//                    $flowQuery = new FlowQuery(array($node->getParent()));
-//                    $closestNode = $flowQuery->closest($this->settings['Filter']['NodeTypeFilter'])->get(0);
-//                    if ($closestNode) {
-//                        $this->generateIndex($closestNode, $nodedata->getWorkspace(), $closestNode->getContext()->getDimensions(), '', true);
-//                    }
-//                }
-
-
-
-
 
             }
 
+            $lastSyncCounter = $lastSyncCounter + 1;
+
+            if (count($moditifedNodeData)) {
+                $this->updateFireBaseRules();
+            }
+
             $this->save();
-            sleep(30);
+            sleep(60);
 
 
-       }
+        }
 
 
         $lastpid = $this->firebase->get("/pid/$workspaceName");
@@ -452,7 +441,7 @@ class SearchIndexFactory
             }
             $this->firebase->set("/pid/$workspaceName", getmypid());
 
-            Scripts::executeCommandAsync('hybridsearch:sync', $this->flowSettings, array('lastSyncTimestamp' => $lastSyncTimestamp, 'lastSyncPid' => getmypid(), 'workspaceName' => $workspaceName));
+            Scripts::executeCommandAsync('hybridsearch:sync', $this->flowSettings, array('lastSyncTimestamp' => $lastSyncTimestamp, 'lastSyncPid' => getmypid(), 'workspaceName' => $workspaceName, 'lastSyncCounter' => $lastSyncCounter));
 
         }
 
@@ -589,7 +578,6 @@ class SearchIndexFactory
         }
 
     }
-
 
 
     /**
@@ -1469,9 +1457,9 @@ class SearchIndexFactory
 
 
         if ($this->creatingFullIndex) {
-            $this->firebaseUpdate("sites/" . $this->getSiteIdentifier()."/ga", $this->ga);
+            $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/ga", $this->ga);
         } else {
-            $this->firebase->update("sites/" . $this->getSiteIdentifier()."/ga", $this->ga);
+            $this->firebase->update("sites/" . $this->getSiteIdentifier() . "/ga", $this->ga);
         }
 
 
@@ -1510,7 +1498,7 @@ class SearchIndexFactory
 
                     if (isset($rules['index'][$dimension][$k]) === false) {
                         $rules['index'][$dimension][$k] = array();
-                        $rules['index'][$dimension][$k]['.indexOn'] = array('.value','_nodetype');
+                        $rules['index'][$dimension][$k]['.indexOn'] = array('.value', '_nodetype');
                     }
 
 
