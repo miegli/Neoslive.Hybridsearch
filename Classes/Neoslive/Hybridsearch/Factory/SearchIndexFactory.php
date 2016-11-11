@@ -396,7 +396,6 @@ class SearchIndexFactory
     {
 
         $lastSyncCounter++;
-        $lastSyncCounter++;
 
         if ($lastSyncCounter > 1) {
 

@@ -49,6 +49,7 @@
              * @param workspace {string} workspace, identifier of the workspace to use from indexed datebase
              * @param dimension {string} dimension, hash of the dimension configuration to use form indexed database
              * @param site {string} site identifier (uuid)
+             * @param cdn {string} (optional) cdn host for static data
              * @example
              * var hybridSearch = new $hybridsearchObject(
              *  'https://<DATABASE_NAME>.firebaseio.com',
@@ -58,7 +59,7 @@
              * ));
              * @returns {Hybridsearch} used for HybridsearchObject constructor.
              */
-            function Hybridsearch(databaseURL, workspace, dimension, site) {
+            function Hybridsearch(databaseURL, workspace, dimension, site, cdnHost) {
 
 
                 if (!(this instanceof Hybridsearch)) {
@@ -71,7 +72,8 @@
                     workspace: workspace,
                     dimension: dimension,
                     site: site,
-                    databaseURL: databaseURL
+                    databaseURL: databaseURL,
+                    cdnHost: cdnHost
                 };
                 Object.defineProperty(this, '$$conf', {
                     value: this.$$conf
@@ -1404,21 +1406,6 @@
                                     }
 
 
-                                    if (uniquarrayfinal !== undefined && uniquarrayfinal.length === 0) {
-                                        self.getResults().$$data.notfound = true;
-                                        if (self.getResults().$$data.notfoundtimeout !== undefined) {
-                                            clearTimeout(self.getResults().$$data.notfoundtimeout);
-                                        }
-                                        self.getResults().$$data.notfoundtimeout = setTimeout(function () {
-                                                self.getResults().getApp().executeCallbackMethod(self.getResults());
-                                            }, 2000
-                                        );
-
-                                    } else {
-                                        self.getResults().$$data.notfound = false;
-                                    }
-
-
                                     // fetch index data
                                     var indexintervalcounter = 0;
                                     var indexcounter = 0;
@@ -1429,19 +1416,25 @@
 
 
                                         if (keyword === null && self.getFilter().getNodeType()) {
-                                            // preload for speed optimazings
 
+
+
+                                            // preload for speed optimazings
                                             $http({
                                                 method: 'GET',
-                                                url: hybridsearch.$$conf.databaseURL + '/sites/' + hybridsearch.$$conf.site + '/index/live/' + hybridsearch.$$conf.dimension + '.json?format=export&orderBy=%22_nodetype%22&equalTo=%22' + self.getFilter().getNodeType() + '%22'
+                                                cache: true,
+                                                headers : {
+                                                    "Cache-Control" : "public, max-age=360",
+                                                },
+                                                url: self.getIndex(keyword, true),
                                             }).then(function successCallback(response) {
-
                                                 nodes = {};
                                                 angular.forEach(response.data, function (node, id) {
                                                     nodes[id] = node['_node'];
                                                 });
 
                                                 self.search();
+
                                                 self.getIndex(keyword).on("child_changed", function (data) {
                                                     self.getIndex(keyword).once("value", function (data) {
                                                         nodes = {};
@@ -1455,25 +1448,34 @@
                                             }, function errorCallback(response) {
                                                 // called asynchronously if an error occurs
                                                 // or server returns response with an error status.
+                                                self.getIndex(keyword).on("value", function (data) {
+
+                                                    nodes = {};
+                                                    angular.forEach(data.val(), function (node, id) {
+                                                        nodes[id] = node['_node'];
+                                                    });
+                                                    self.search();
+
+                                                });
                                             });
+
+
+
+
 
 
                                         } else {
 
-
-                                            self.getIndex(keyword).on("value", function (data) {
+                                          self.getIndex(keyword).on("value", function (data) {
 
                                                 indexdata[keyword] = [];
 
                                                 if (keyword === null) {
-
                                                     // return full index as result
                                                     nodes = {};
                                                     angular.forEach(data.val(), function (node, id) {
                                                         nodes[id] = node['_node'];
                                                     });
-
-
                                                     self.search();
 
                                                 } else {
@@ -1494,8 +1496,6 @@
 
 
                                                     }
-
-
                                                 }
 
                                                 indexcounter++;
@@ -1507,6 +1507,7 @@
 
 
                                             });
+
 
                                         }
 
@@ -1616,9 +1617,10 @@
                         /**
                          * @private
                          * @param string keyword
+                         * @param boolan rest using rest
                          * @returns {firebaseObject}
                          */
-                        getIndex: function (keyword) {
+                        getIndex: function (keyword, rest) {
 
 
                             var self = this;
@@ -1640,11 +1642,22 @@
 
                             if (query === false && this.getFilter().getNodeType()) {
                                 if (keyword === "") {
-                                    query = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension).orderByChild("_nodetype").equalTo(this.getFilter().getNodeType());
+
+                                    if (rest) {
+                                        return (hybridsearch.$$conf.cdnHost === undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnHost ) + '/sites/' + hybridsearch.$$conf.site + '/index/live/' + hybridsearch.$$conf.dimension + '.json?orderBy=%22_nodetype%22&equalTo=%22' + this.getFilter().getNodeType() + '%22';
+                                    } else {
+                                        query = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension).orderByChild("_nodetype").equalTo(this.getFilter().getNodeType());
+                                    }
+
                                     keyword = this.getFilter().getNodeType();
 
+
                                 } else {
-                                    query = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension).orderByChild("_nodetype" + keyword).equalTo(this.getFilter().getNodeType());
+                                    if (rest) {
+                                        return (hybridsearch.$$conf.cdnHost === undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnHost ) + '/sites/' + hybridsearch.$$conf.site + '/index/live/' + hybridsearch.$$conf.dimension + '.json?orderBy=%22_nodetype' + keyword + '%22&equalTo=%22' + this.getFilter().getNodeType() + '%22';
+                                    } else {
+                                        query = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension).orderByChild("_nodetype" + keyword).equalTo(this.getFilter().getNodeType());
+                                    }
                                 }
                             }
 
@@ -1653,7 +1666,11 @@
                                 if (keyword === null) {
                                     return null;
                                 }
-                                query = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension).orderByChild(keyword).equalTo(1);
+                                if (rest) {
+                                    return (hybridsearch.$$conf.cdnHost === undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnHost ) + '/sites/' + hybridsearch.$$conf.site + '/index/live/' + hybridsearch.$$conf.dimension + '.json?orderBy=%22' + keyword + '%22&equalTo=1';
+                                } else {
+                                    query = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension).orderByChild(keyword).equalTo(1);
+                                }
                             }
 
                             index[keyword] = query;
