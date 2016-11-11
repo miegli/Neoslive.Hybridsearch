@@ -1,23 +1,3 @@
-# Hybridsearch
-
-**Parameters**
-
--   `databaseURL`  {string} databaseURL, google firebase realtime database endpoint
--   `workspace`  {string} workspace, identifier of the workspace to use from indexed datebase
--   `dimension`  {string} dimension, hash of the dimension configuration to use form indexed database
-
-**Examples**
-
-```javascript
-var hybridSearch = new $hybridsearchObject(
- 'https://<DATABASE_NAME>.firebaseio.com',
- 'live',
- 'fb11fdde869d0a8fcfe00a2fd35c031d'
-));
-```
-
-Returns **Hybridsearch** used for HybridsearchObject constructor.
-
 # HybridsearchObject
 
 **Parameters**
@@ -38,6 +18,22 @@ var mySearch = new HybridsearchObject(hybridSearch);
        console.log(data);
      });
 ```
+
+## $bind
+
+**Parameters**
+
+-   `scopevar`  
+-   `scope` **string** variable name
+-   `scope` **scope** 
+
+**Examples**
+
+```javascript
+.$bind(scopevar,scope);
+```
+
+Returns **HybridsearchObject** 
 
 ## $watch
 
@@ -68,6 +64,26 @@ Returns **HybridsearchObject**
 
 Returns **HybridsearchObject** 
 
+## addNodesByIdentifier
+
+Adds nodes by identifier to search index
+
+**Parameters**
+
+-   `nodesArray` **array** 
+
+Returns **HybridsearchObject** 
+
+## addNodesByNodeTypes
+
+Adds nodes by node types to search index
+
+**Parameters**
+
+-   `nodesTypesArray` **array** 
+
+Returns **HybridsearchObject** 
+
 ## addPropertyFilter
 
 Adds a property filter to the query.
@@ -77,6 +93,10 @@ Adds a property filter to the query.
 -   `property` **string** to search only for
 -   `value` **string** that property must match
 -   `scope` **scope** false if is simple string otherwise angular scope required for binding data
+-   `boolean`  reverse (true if condition logic is reversed)
+-   `boolean`  booleanmode (true if array values treated with OR conditions)
+-   `reverse`   (optional, default `false`)
+-   `booleanmode`   (optional, default `true`)
 
 Returns **HybridsearchObject** 
 
@@ -182,6 +202,30 @@ Sets a search string to the query.
 
 Returns **HybridsearchObject** 
 
+# Hybridsearch
+
+**Parameters**
+
+-   `databaseURL`  {string} databaseURL, google firebase realtime database endpoint
+-   `workspace`  {string} workspace, identifier of the workspace to use from indexed datebase
+-   `dimension`  {string} dimension, hash of the dimension configuration to use form indexed database
+-   `site`  {string} site identifier (uuid)
+-   `cdn`  {string} (optional) cdn host for static data
+-   `cdnHost`  
+
+**Examples**
+
+```javascript
+var hybridSearch = new $hybridsearchObject(
+ 'https://<DATABASE_NAME>.firebaseio.com',
+ 'live',
+ 'fb11fdde869d0a8fcfe00a2fd35c031d',
+ '628e5470-bc99-47ea-a2ea-eee689fdd041'
+));
+```
+
+Returns **Hybridsearch** used for HybridsearchObject constructor.
+
 # HybridsearchResultsGroupObject
 
 HybridsearchResultsGroupObject
@@ -197,6 +241,17 @@ Returns **integer** Search results length.
 Get group collection.
 
 Returns **array** collection of {HybridsearchResultsDataObject}
+
+# getPropertyFromNode
+
+Get property.
+
+**Parameters**
+
+-   `node`  
+-   `property` **string** Get single property from node data.
+
+Returns **mixed** 
 
 # HybridsearchResultsNode
 
@@ -269,59 +324,27 @@ Is result a turbo node or not.
 
 Returns **boolean** 
 
-# HybridsearchResultsDataObject
-
-HybridsearchResultsDataObject
-
-## count
-
-Get number of search results in this group.
-
-Returns **integer** Search results length.
-
-## getLabel
-
-Get groups label.
-
-Returns **string** Group label
-
-## getNodes
-
-Get all nodes for this group from current search result.
-
-Returns **array** collection of {HybridsearchResultsNode}
-
-# HybridsearchResultsDataObject
-
-HybridsearchResultsDataObject
-
-## count
-
-Get number of search results in this group.
-
-Returns **integer** Search results length.
-
-## getLabel
-
-Get groups label.
-
-Returns **string** Group label
-
-## getNodes
-
-Get all nodes for this group from current search result.
-
-Returns **array** collection of {HybridsearchResultsNode}
-
 # HybridsearchResultsObject
 
 Return the search results as {HybridsearchResultsObject}.
 
 Returns **HybridsearchResultsObject** 
 
+## clearDistincts
+
+clear distincts
+
+Returns **void** 
+
 ## count
 
 Get number of search results.
+
+Returns **integer** Search results length.
+
+## countAll
+
+Get number of search results including turbonodes.
 
 Returns **integer** Search results length.
 
@@ -345,11 +368,43 @@ Get number of search results by given node type label.
 
 Returns **integer** Search results length.
 
+## countTurboNodes
+
+Get number of turbo nodes
+
+Returns **integer** Search results length.
+
+## getDistinct
+
+Get all different values from given property
+
+**Parameters**
+
+-   `property` **string** 
+
+Returns **array** collection of property values
+
+## getDistinctCount
+
+Get distinct count
+
+**Parameters**
+
+-   `property` **string** 
+
+Returns **integer** count collection of property values
+
 ## getGrouped
 
 Get alle nodes from current search result a grouped object.
 
 Returns **HybridsearchResultsGroupObject** 
+
+## getHash
+
+Get hash of results
+
+Returns **string** Search results hash
 
 ## getNodes
 
@@ -382,3 +437,104 @@ Returns **array** collection of {HybridsearchResultsNode}
 Get all turbonodes from current search result.
 
 Returns **array** collection of {HybridsearchResultsNode}
+
+## nothingFound
+
+Returns true if given query can't result anyhing
+
+Returns **boolean** True if query is matching nothing
+
+## updateDistincts
+
+update distincts
+
+Returns **HybridsearchResultsObject** 
+
+# HybridsearchResultsDataObject
+
+HybridsearchResultsDataObject
+
+## count
+
+Get number of search results in this group.
+
+Returns **integer** Search results length.
+
+## getLabel
+
+Get groups label.
+
+Returns **string** Group label
+
+## getNodes
+
+Get all nodes for this group from current search result.
+
+Returns **array** collection of {HybridsearchResultsNode}
+
+# HybridsearchResultsDataObject
+
+HybridsearchResultsDataObject
+
+## count
+
+Get number of search results in this group.
+
+Returns **integer** Search results length.
+
+## getLabel
+
+Get groups label.
+
+Returns **string** Group label
+
+## getNodes
+
+Get all nodes for this group from current search result.
+
+Returns **array** collection of {HybridsearchResultsNode}
+
+# execute
+
+execute search.
+
+**Parameters**
+
+-   `self`  
+-   `lastSearchInstance`  
+
+Returns **SearchIndexInstance** SearchIndexInstance
+
+# Sha1
+
+SHA-1 hash function reference implementation.
+
+## hash
+
+Generates SHA-1 hash of string.
+
+**Parameters**
+
+-   `msg` **string** (Unicode) string to be hashed.
+
+Returns **string** Hash of msg as hex character string.
+
+# getGa
+
+init ga data
+
+# getIndex
+
+Run search.
+
+Returns **SearchIndexInstance** SearchIndexInstance
+
+# utf8Decode
+
+Extend String object with method to decode utf8 string to multi-byte
+
+# utf8Encode
+
+Extend String object with method to encode multi-byte string to utf8
+
+-   monsur.hossa.in/2012/07/20/utf-8-in-javascript.html
