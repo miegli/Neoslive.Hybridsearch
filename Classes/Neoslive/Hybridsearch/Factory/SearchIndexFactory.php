@@ -396,7 +396,7 @@ class SearchIndexFactory
     {
 
         $lastSyncCounter++;
-
+        $lastSyncCounter++;
 
         if ($lastSyncCounter > 1) {
 
@@ -414,6 +414,7 @@ class SearchIndexFactory
 
             $this->firebase->set("/lastsync/$workspaceName", $lastSyncTimestamp);
             $moditifedNodeData = $this->neosliveHybridsearchNodeDataRepository->findByWorkspaceAndLastModificationDateTimeDate($this->workspaceRepository->findByIdentifier($workspaceName), $date);
+
 
 
             $counter = 0;
@@ -1581,20 +1582,26 @@ class SearchIndexFactory
     function getRenderedNode($node, $typoscriptPath = 'page')
     {
 
+        if ($node->getContext()->getCurrentSite()) {
+            $this->site = $node->getContext()->getCurrentSite();
 
 
-        if (isset($this->settings['TypoScriptPaths'][$typoscriptPath][$this->site->getSiteResourcesPackageKey()])) {
-            $typoscriptPath = $this->settings['TypoScriptPaths'][$typoscriptPath][$this->site->getSiteResourcesPackageKey()];
+            if (isset($this->settings['TypoScriptPaths'][$typoscriptPath][$this->site->getSiteResourcesPackageKey()])) {
+                $typoscriptPath = $this->settings['TypoScriptPaths'][$typoscriptPath][$this->site->getSiteResourcesPackageKey()];
+            }
+
+
+            if ($this->getView() && $node->getContext()->getCurrentSiteNode()) {
+                $this->getView()->assign('value', $node);
+                $this->getView()->setTypoScriptPath($typoscriptPath);
+                return $this->view->render();
+            } else {
+                return '';
+            }
+
         }
 
-
-        if ($this->getView() && $node->getContext()->getCurrentSiteNode()) {
-            $this->getView()->assign('value', $node);
-            $this->getView()->setTypoScriptPath($typoscriptPath);
-            return $this->view->render();
-        } else {
-            return '';
-        }
+        return '';
 
     }
 
