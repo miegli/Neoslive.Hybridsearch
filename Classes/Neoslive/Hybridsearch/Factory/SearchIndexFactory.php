@@ -431,7 +431,7 @@ class SearchIndexFactory
 
             $this->save();
 
-            if (count($moditifedNodeData) > 10 || $lastSyncCounter > 60) {
+            if (count($moditifedNodeData) > 100 || $lastSyncCounter > 600) {
                 $this->updateFireBaseRules(true);
             }
 
