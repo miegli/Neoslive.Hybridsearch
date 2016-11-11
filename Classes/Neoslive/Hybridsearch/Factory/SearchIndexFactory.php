@@ -13,12 +13,14 @@ namespace Neoslive\Hybridsearch\Factory;
 
 
 use Neoslive\Hybridsearch\Domain\Repository\NeosliveHybridsearchNodeDataRepository;
+use Neoslive\Hybridsearch\View\HybridSearchTypoScriptView;
 use TYPO3\Flow\Annotations as Flow;
 use TYPO3\Flow\Configuration\ConfigurationManager;
 use TYPO3\Flow\Error\Exception;
 use TYPO3\Flow\Mvc\Controller\ControllerContext;
 use TYPO3\Flow\Mvc\Routing\UriBuilder;
 use TYPO3\Flow\Persistence\Doctrine\PersistenceManager;
+use TYPO3\Flow\Reflection\ObjectAccess;
 use TYPO3\Flow\Resource\ResourceManager;
 use TYPO3\Media\Domain\Model\Asset;
 use TYPO3\TYPO3CR\Domain\Model\NodeData;
@@ -441,7 +443,7 @@ class SearchIndexFactory
 
         // infinite loop only one thread per workspace
         if ($lastSyncPid === 0 || $lastpid == $lastSyncPid) {
-             Scripts::executeCommandAsync('hybridsearch:sync', $this->flowSettings, array('lastSyncPid' => getmypid(), 'workspace' => $workspaceName, 'lastSyncCounter' => $lastSyncCounter));
+            Scripts::executeCommandAsync('hybridsearch:sync', $this->flowSettings, array('lastSyncPid' => getmypid(), 'workspace' => $workspaceName, 'lastSyncCounter' => $lastSyncCounter));
         }
 
 
@@ -515,6 +517,8 @@ class SearchIndexFactory
                                     if ($node) {
                                         $this->generateIndex($node, $workspace, $node->getContext()->getDimensions());
                                     }
+                                } else {
+                                    return true;
                                 }
                             }
                         }
@@ -1577,35 +1581,20 @@ class SearchIndexFactory
     function getRenderedNode($node, $typoscriptPath = 'page')
     {
 
-        if ($node->getContext()) {
-            $context = $node->getContext();
-            $this->site = $node->getContext()->getCurrentSite();
-        } else {
-            $this->site = $node->getContext()->getCurrentSite();
-            $context = $this->createContext('live', $node->getDimensions(), array(), $this->site);
-        }
+
 
         if (isset($this->settings['TypoScriptPaths'][$typoscriptPath][$this->site->getSiteResourcesPackageKey()])) {
             $typoscriptPath = $this->settings['TypoScriptPaths'][$typoscriptPath][$this->site->getSiteResourcesPackageKey()];
         }
 
-        /** @var Node $node */
-        $node = new Node(
-            $node->getNodeData(),
-            $context
-        );
 
-
-        if ($this->getView()) {
-
+        if ($this->getView() && $node->getContext()->getCurrentSiteNode()) {
             $this->getView()->assign('value', $node);
             $this->getView()->setTypoScriptPath($typoscriptPath);
             return $this->view->render();
-
         } else {
             return '';
         }
-
 
     }
 
@@ -1649,7 +1638,7 @@ class SearchIndexFactory
                 $arguments = new Arguments();
                 $controllerContext = new \TYPO3\Flow\Mvc\Controller\ControllerContext($request, $response, $arguments);
                 $this->controllerContext = $controllerContext;
-                $this->view = new \TYPO3\Neos\View\TypoScriptView();
+                $this->view = new HybridSearchTypoScriptView();
                 $this->view->setControllerContext($controllerContext);
 
 
