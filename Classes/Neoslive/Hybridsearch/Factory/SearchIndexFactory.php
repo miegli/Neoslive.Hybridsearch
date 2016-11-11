@@ -395,6 +395,7 @@ class SearchIndexFactory
     public function sync($workspaceName = 'live', $lastSyncPid = 0, $lastSyncCounter = 0)
     {
 
+
         $lastSyncCounter++;
 
         if ($lastSyncCounter > 1) {
@@ -431,7 +432,7 @@ class SearchIndexFactory
             $this->save();
 
             if (count($moditifedNodeData) > 10 || $lastSyncCounter > 60) {
-                $this->updateFireBaseRules();
+                $this->updateFireBaseRules(true);
             }
 
             sleep(60);
@@ -1224,10 +1225,11 @@ class SearchIndexFactory
 
     /**
      * Updates firebase rules for performance increase
+     * @param $update true if update, false if override
      * @return void
      */
     public
-    function updateFireBaseRules()
+    function updateFireBaseRules($update=false)
     {
 
         $mergedrules = array();
@@ -1249,7 +1251,8 @@ class SearchIndexFactory
         }
 
 
-        $this->firebase->set('.settings/rules', $mergedrules);
+
+            $this->firebase->set('.settings/rules', $mergedrules);
 
 
     }

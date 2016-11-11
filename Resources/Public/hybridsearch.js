@@ -49,7 +49,7 @@
              * @param workspace {string} workspace, identifier of the workspace to use from indexed datebase
              * @param dimension {string} dimension, hash of the dimension configuration to use form indexed database
              * @param site {string} site identifier (uuid)
-             * @param cdn {string} (optional) cdn host for static data
+             * @param cdnHost {string} (optional) cdn host for static data
              * @example
              * var hybridSearch = new $hybridsearchObject(
              *  'https://<DATABASE_NAME>.firebaseio.com',
