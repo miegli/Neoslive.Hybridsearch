@@ -20,7 +20,6 @@ use TYPO3\Flow\Error\Exception;
 use TYPO3\Flow\Mvc\Controller\ControllerContext;
 use TYPO3\Flow\Mvc\Routing\UriBuilder;
 use TYPO3\Flow\Persistence\Doctrine\PersistenceManager;
-use TYPO3\Flow\Reflection\ObjectAccess;
 use TYPO3\Flow\Resource\ResourceManager;
 use TYPO3\Media\Domain\Model\Asset;
 use TYPO3\TYPO3CR\Domain\Model\NodeData;
@@ -334,6 +333,8 @@ class SearchIndexFactory
 
         $this->creatingFullIndex = true;
 
+        $this->deleteQueue();
+
         foreach ($this->siteRepository->findAll() as $site) {
             $this->site = $site;
             array_push($this->allSiteKeys, $this->getSiteIdentifier());
@@ -344,18 +345,11 @@ class SearchIndexFactory
 
         $this->output->progressStart(count($moditifedNodeData));
 
-        $counter = 0;
+
         foreach ($moditifedNodeData as $nodedata) {
 
             $this->output->progressAdvance(1);
             $this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace(), true);
-
-
-            if ($counter % 100 === 0) {
-                $this->save();
-            }
-
-            $counter++;
         }
 
 
@@ -396,9 +390,12 @@ class SearchIndexFactory
     {
 
 
+
         $lastSyncCounter++;
 
+
         if ($lastSyncCounter > 1) {
+
 
             $this->firebase->set("/pid/$workspaceName", getmypid());
 
@@ -413,29 +410,27 @@ class SearchIndexFactory
             $lastSyncTimestamp = $lastSyncDateTime->getTimeStamp();
 
             $this->firebase->set("/lastsync/$workspaceName", $lastSyncTimestamp);
+
             $moditifedNodeData = $this->neosliveHybridsearchNodeDataRepository->findByWorkspaceAndLastModificationDateTimeDate($this->workspaceRepository->findByIdentifier($workspaceName), $date);
 
 
+            $this->proceedQueue();
 
-            $counter = 0;
+
             foreach ($moditifedNodeData as $nodedata) {
                 $this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace());
-                $counter++;
-
-                if ($counter % 100 === 0) {
-                    $this->creatingFullIndex = true;
-                    $this->save();
-                }
 
             }
 
             $this->save();
 
             if (count($moditifedNodeData) > 100 || $lastSyncCounter > 600) {
-                $this->updateFireBaseRules(true);
+           //     $this->updateFireBaseRules(true);
             }
 
-            sleep(60);
+            $this->proceedQueue();
+
+            sleep(30);
         }
 
 
@@ -611,16 +606,18 @@ class SearchIndexFactory
      * @param Node $node
      * @param String $workspaceHash
      * @param string $dimensionConfigurationHash
-     * @param array $skipKeywords
      * @return void
      */
-    private function removeSingleIndex($node, $workspaceHash, $dimensionConfigurationHash, $skipKeywords = array())
+    private function removeSingleIndex($node, $workspaceHash, $dimensionConfigurationHash)
     {
 
+        $keywords = \json_decode($this->firebase->get("sites/" . $this->getSiteIdentifier() . "/index/$workspaceHash/$dimensionConfigurationHash" . "/___keywords/" . urlencode($node->getIdentifier())));
 
-        // set to false first and remove after (creating event call on clientside watchers)
-        $this->firebaseSet("sites/" . $this->getSiteIdentifier() . "/index/$workspaceHash/$dimensionConfigurationHash" . "/" . urlencode($node->getIdentifier()), false);
-        $this->firebaseDelete("sites/" . $this->getSiteIdentifier() . "/index/$workspaceHash/$dimensionConfigurationHash" . "/" . urlencode($node->getIdentifier()));
+        if ($keywords) {
+            foreach ($keywords as $keyword) {
+                $this->firebaseDelete("sites/" . $this->getSiteIdentifier() . "/index/$workspaceHash/$dimensionConfigurationHash" . "/" . $keyword . "/" . urlencode($node->getIdentifier()));
+            }
+        }
 
 
     }
@@ -638,9 +635,6 @@ class SearchIndexFactory
 
         $this->indexcounter++;
 
-        if ($this->indexcounter % 100 === 0) {
-            $this->save();
-        }
 
         $workspaceHash = $this->getWorkspaceHash($workspace);
 
@@ -669,9 +663,8 @@ class SearchIndexFactory
         $identifier = $indexData->identifier;
 
         $keywords = $this->generateSearchIndexFromProperties($indexData->properties, $indexData->nodeType);
-        $keywords->_node = $indexData;
-        $keywords->_nodetype = $indexData->nodeType;
-        $keywords->__sync = 0;
+        //   $keywords->_node = $indexData;
+        //   $keywords->_nodetype = $indexData->nodeType;
 
 
         if (isset($indexData->properties->__google)) {
@@ -683,20 +676,38 @@ class SearchIndexFactory
             );
 
         }
+        $nt = "__" . $this->getNodeTypeName($node);
+        $keywords->$nt = true;
+
+        $keywordsOfNode = array();
 
         foreach ($keywords as $keyword => $val) {
             $k = strval($keyword);
             if (substr($k, 0, 9) === "_nodetype") {
-                $k = $this->getNodeTypeName($node) . substr($k, 9);
+                $k = "_" . $this->getNodeTypeName($node) . substr($k, 9);
             }
 
             if ($k) {
                 $this->keywords->$workspaceHash->$dimensionConfigurationHash[$k] = 1;
             }
+            if (isset($this->index->$workspaceHash->$dimensionConfigurationHash->$k) === false) {
+                $this->index->$workspaceHash->$dimensionConfigurationHash->$k = new \stdClass();
+            }
+            $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier = array('node' => $indexData, 'nodeType' => $indexData->nodeType);
+            array_push($keywordsOfNode, $k);
+
         }
 
 
-        $this->index->$workspaceHash->$dimensionConfigurationHash->$identifier = $keywords;
+        if (isset($this->index->$workspaceHash->$dimensionConfigurationHash->___keywords) === false) {
+            $this->index->$workspaceHash->$dimensionConfigurationHash->___keywords = new \stdClass();
+        }
+        $this->index->$workspaceHash->$dimensionConfigurationHash->___keywords->$identifier = $keywordsOfNode;
+
+
+        if ($this->creatingFullIndex === false) {
+            $this->removeSingleIndex($node, $workspaceHash, $dimensionConfigurationHash);
+        }
 
 
         unset($node);
@@ -1138,6 +1149,25 @@ class SearchIndexFactory
      * @return void
      */
     public
+    function deleteQueue()
+    {
+
+        $fp = opendir($this->temporaryDirectory);
+        while (false !== ($entry = readdir($fp))) {
+
+            if (strlen($entry) > 2) {
+                unlink($this->temporaryDirectory . "/" . $entry);
+            }
+
+        }
+
+
+    }
+
+    /**
+     * @return void
+     */
+    public
     function proceedQueue()
     {
 
@@ -1150,11 +1180,10 @@ class SearchIndexFactory
             if ($this->proceedcounter < 2) $this->output->outputLine('Queue is locked. Retrying...');
             sleep(1);
 
-            if ($this->proceedcounter < (ini_get('max_execution_time') > 0 ? ini_get('max_execution_time') > 0 : 60)) {
+            if ($this->proceedcounter < 60) {
                 $this->proceedQueue();
             } else {
                 $this->output->outputLine('Queue is locked. Exit.');
-                exit;
             }
 
 
@@ -1229,7 +1258,7 @@ class SearchIndexFactory
      * @return void
      */
     public
-    function updateFireBaseRules($update=false)
+    function updateFireBaseRules($update = false)
     {
 
         $mergedrules = array();
@@ -1251,8 +1280,7 @@ class SearchIndexFactory
         }
 
 
-
-            $this->firebase->set('.settings/rules', $mergedrules);
+        $this->firebase->set('.settings/rules', $mergedrules);
 
 
     }
@@ -1271,9 +1299,12 @@ class SearchIndexFactory
         foreach ($this->index as $workspace => $workspaceData) {
             foreach ($workspaceData as $dimension => $dimensionData) {
                 if ($this->creatingFullIndex) {
-                    $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $dimension, $dimensionData);
+                        $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $dimension, $dimensionData);
                 } else {
-                    $this->firebase->update("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $dimension, $dimensionData);
+                    foreach ($dimensionData as $dimensionIndex => $dimensionIndexData) {
+                        $this->firebase->update("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $dimension . "/" . $dimensionIndex, $dimensionIndexData);
+                    }
+
                 }
             }
         }
@@ -1308,6 +1339,7 @@ class SearchIndexFactory
         $this->ga = new \stdClass();
         gc_collect_cycles();
 
+
     }
 
 
@@ -1340,17 +1372,17 @@ class SearchIndexFactory
                         }
 
 
-                        if (is_array($v)) {
-                            foreach (array_keys($v) as $key) {
-                                array_push($rules['index'][$dimension][$k]['.indexOn'], (string)strval($key));
-                                array_push($rules['index'][$dimension][$k]['.indexOn'], (string)"_nodetype" . strval($key));
-                            }
-                        } else {
-                            foreach (get_object_vars($v) as $key => $value) {
-                                array_push($rules['index'][$dimension][$k]['.indexOn'], (string)strval($key));
-                                array_push($rules['index'][$dimension][$k]['.indexOn'], (string)"_nodetype" . strval($key));
-                            }
-                        }
+//                        if (is_array($v)) {
+//                            foreach (array_keys($v) as $key) {
+//                                array_push($rules['index'][$dimension][$k]['.indexOn'], (string)strval($key));
+//                                array_push($rules['index'][$dimension][$k]['.indexOn'], (string)"_nodetype" . strval($key));
+//                            }
+//                        } else {
+//                            foreach (get_object_vars($v) as $key => $value) {
+//                                array_push($rules['index'][$dimension][$k]['.indexOn'], (string)strval($key));
+//                                array_push($rules['index'][$dimension][$k]['.indexOn'], (string)"_nodetype" . strval($key));
+//                            }
+//                        }
 
 
                     }
