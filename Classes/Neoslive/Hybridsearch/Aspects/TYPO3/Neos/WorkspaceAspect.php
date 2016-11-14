@@ -37,8 +37,7 @@ class WorkspaceAspect
     public function publishAllAction(JoinPointInterface $joinPoint)
     {
 
-
-       $this->searchIndexFactory->syncIndexRealtime($joinPoint->getMethodArgument('targetWorkspaceName'));
+         $this->searchIndexFactory->syncIndexRealtime($joinPoint->getMethodArgument('targetWorkspaceName'));
 
     }
 
@@ -49,7 +48,7 @@ class WorkspaceAspect
     public function publishNodesAction(JoinPointInterface $joinPoint)
     {
 
-       $this->searchIndexFactory->syncIndexRealtime($joinPoint->getMethodArgument('targetWorkspaceName'));
+      $this->searchIndexFactory->syncIndexRealtime($joinPoint->getMethodArgument('targetWorkspaceName'));
 
     }
 
