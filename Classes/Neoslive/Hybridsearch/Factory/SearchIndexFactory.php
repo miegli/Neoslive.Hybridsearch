@@ -504,21 +504,20 @@ class SearchIndexFactory
                         if ($flowQuery->is($this->settings['Filter']['NodeTypeFilter'])) {
 
                             $this->generateSingleIndex($node, $workspace, $this->getDimensionConfiugurationHash($node->getContext()->getDimensions()));
-
-                            //$this->generateIndex($node, $workspace, $node->getContext()->getDimensions());
+                            $counter++;
+                          
 
                         } else {
                             if ($noparentcheck === false) {
                                 $node = $flowQuery->parent()->closest($this->settings['Filter']['NodeTypeFilter'])->get(0);
                                 if ($node) {
                                     $this->generateIndex($node, $workspace, $node->getContext()->getDimensions());
+                                    $counter++;
                                 }
-                            } else {
-                                return true;
                             }
                         }
                     }
-                    $counter++;
+
 
                 }
 
