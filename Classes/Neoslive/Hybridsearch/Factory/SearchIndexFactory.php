@@ -392,9 +392,6 @@ class SearchIndexFactory
     }
 
 
-
-
-
     /**
      * Removes trashes nods
      */
@@ -415,7 +412,7 @@ class SearchIndexFactory
                             foreach ($workspaceData as $dimension => $dimensionData) {
                                 if ($dimensionData) {
                                     foreach ($dimensionData as $nodeIdentifier => $trashTimestamp) {
-                                        $this->removeSingleIndex($nodeIdentifier,$workspace,$dimension,array(),$site);
+                                        $this->removeSingleIndex($nodeIdentifier, $workspace, $dimension, array(), $site);
                                     }
 
                                 }
@@ -653,7 +650,7 @@ class SearchIndexFactory
      * @param array $keywordsOfNode current keywords
      * @return void
      */
-    private function removeSingleIndex($nodeIdentifier, $workspaceHash, $dimensionConfigurationHash, $keywordsOfNode = array(),$siteIdentifier = null)
+    private function removeSingleIndex($nodeIdentifier, $workspaceHash, $dimensionConfigurationHash, $keywordsOfNode = array(), $siteIdentifier = null)
     {
         if ($siteIdentifier === null) {
             $siteIdentifier = $this->getSiteIdentifier();
@@ -662,15 +659,17 @@ class SearchIndexFactory
         $keywords = \json_decode($this->firebase->get("sites/" . $siteIdentifier . "/index/$workspaceHash/$dimensionConfigurationHash" . "/___keywords/" . urlencode($nodeIdentifier)));
 
         if ($keywords) {
+            $keywordsremove = array();
             foreach ($keywords as $keyword) {
-
                 if (count($keywordsOfNode) === 0 || in_array($keyword, $keywordsOfNode) === false) {
-                    $this->firebaseDelete("sites/" . $siteIdentifier . "/index/$workspaceHash/$dimensionConfigurationHash" . "/" . $keyword . "/" . urlencode($nodeIdentifier));
+                    $keywordsremove[$keyword . "/" . urlencode($nodeIdentifier)] = null;
                 }
-
             }
+           $this->firebase->update("sites/$siteIdentifier/index/$workspaceHash/$dimensionConfigurationHash", $keywordsremove);
+           if (count($keywordsOfNode) === 0) {
+               $this->firebase->delete("sites/" . $siteIdentifier . "/index/$workspaceHash/$dimensionConfigurationHash" . "/___keywords/" . urlencode($nodeIdentifier));
+           }
         }
-
 
     }
 
