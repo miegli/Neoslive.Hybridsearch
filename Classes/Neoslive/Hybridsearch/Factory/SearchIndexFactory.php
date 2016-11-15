@@ -356,10 +356,11 @@ class SearchIndexFactory
         foreach ($moditifedNodeData as $nodedata) {
 
             $this->output->progressAdvance(1);
-            $this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace(), true);
-            if (strlen(json_encode($this->index)  > 50000000) || strlen(json_encode($this->keywords) > 50000000)) {
+
+            if ($this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace(), true) > 0 && (strlen(json_encode($this->index) > 50000000) || strlen(json_encode($this->keywords) > 50000000))) {
                 $this->save();
             }
+
 
         }
 
@@ -401,6 +402,7 @@ class SearchIndexFactory
     {
 
 
+        $lastSyncCounter++;
         $lastSyncCounter++;
 
 
@@ -464,20 +466,21 @@ class SearchIndexFactory
      * @param NodeData $nodedata
      * @param Workspace $workspace
      * @param boolean $noparentcheck
+     * @return integer count of proceed nodes
      */
     public function updateIndexForNodeData($nodedata, $workspace, $noparentcheck = false)
     {
+
+        $counter = 0;
 
 
         if (count($this->allSiteKeys) === 0) {
             $this->allSiteKeys = json_decode($this->firebase->get('sites', array('shallow' => 'true')));
         }
 
-        $dhashes = array();
 
         foreach ($this->getAllDimensionCombinations() as $dimensionConfiguration) {
 
-            // if (isset($dhashes[$this->getDimensionConfiugurationHash($dimensionConfiguration)]) === false) {
 
             $targetDimension = array_map(function ($dimensionValues) {
                 return array_shift($dimensionValues);
@@ -515,19 +518,20 @@ class SearchIndexFactory
                             }
                         }
                     }
-
+                    $counter++;
 
                 }
 
 
             } else {
-                foreach ($this->allSiteKeys as $siteKey => $siteKeyVal) {
-                    $this->firebase->delete("sites/" . $siteKey . "/index/" . $workspace->getName() . "/" . $this->getDimensionConfiugurationHash($dimensionConfiguration) . "/" . $nodedata->getIdentifier());
+                if ($this->creatingFullIndex === false) {
+                    foreach ($this->allSiteKeys as $siteKey => $siteKeyVal) {
+                        $this->firebase->delete("sites/" . $siteKey . "/index/" . $workspace->getName() . "/" . $this->getDimensionConfiugurationHash($dimensionConfiguration) . "/" . $nodedata->getIdentifier());
+                    }
                 }
             }
-            // }
 
-            //$dhashes[$this->getDimensionConfiugurationHash($dimensionConfiguration)] = true;
+
             unset($context);
             unset($node);
             if (isset($flowQuery)) {
@@ -536,6 +540,7 @@ class SearchIndexFactory
 
         }
 
+        return $counter;
 
     }
 

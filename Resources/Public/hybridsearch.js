@@ -1419,38 +1419,8 @@
                                         if (keyword === null && self.getFilter().getNodeType()) {
 
 
-
-                                            // preload for speed optimazings
-                                            $http({
-                                                method: 'GET',
-                                                cache: true,
-                                                headers: {
-                                                    "Cache-Control": "public, max-age=360",
-                                                },
-                                                url: self.getIndex(keyword, true),
-                                            }).then(function successCallback(response) {
-                                                nodes = {};
-                                                angular.forEach(response.data, function (node, id) {
-                                                    nodes[id] = node.node;
-                                                });
-
-
-                                                self.search();
-
-                                                self.getIndex(keyword).on("child_changed", function (data) {
-                                                    self.getIndex(keyword).once("value", function (data) {
-                                                        nodes = {};
-                                                        angular.forEach(data.val(), function (node, id) {
-
-                                                            nodes[id] = node.node;
-                                                        });
-                                                        self.search();
-                                                    });
-                                                });
-
-                                            }, function errorCallback(response) {
-                                                // called asynchronously if an error occurs
-                                                // or server returns response with an error status.
+                                            if (hybridsearch.$$conf.cdnHost === undefined) {
+                                                // bind directly to firebase
                                                 self.getIndex(keyword).on("value", function (data) {
 
                                                     nodes = {};
@@ -1460,7 +1430,52 @@
                                                     self.search();
 
                                                 });
-                                            });
+
+                                            } else {
+
+                                                // bind indirectly after preload over cdn
+                                                $http({
+                                                    method: 'GET',
+                                                    cache: true,
+                                                    headers: {
+                                                        "Cache-Control": "public, max-age=360",
+                                                    },
+                                                    url: self.getIndex(keyword, true),
+                                                }).then(function successCallback(response) {
+                                                    nodes = {};
+                                                    angular.forEach(response.data, function (node, id) {
+                                                        nodes[id] = node.node;
+                                                    });
+
+
+                                                    self.search();
+
+                                                    self.getIndex(keyword).on("child_changed", function (data) {
+                                                        self.getIndex(keyword).once("value", function (data) {
+                                                            nodes = {};
+                                                            angular.forEach(data.val(), function (node, id) {
+
+                                                                nodes[id] = node.node;
+                                                            });
+                                                            self.search();
+                                                        });
+                                                    });
+
+                                                }, function errorCallback(response) {
+                                                    // called asynchronously if an error occurs
+                                                    // or server returns response with an error status.
+                                                    self.getIndex(keyword).on("value", function (data) {
+
+                                                        nodes = {};
+                                                        angular.forEach(data.val(), function (node, id) {
+                                                            nodes[id] = node.node;
+                                                        });
+                                                        self.search();
+
+                                                    });
+                                                });
+
+                                            }
 
 
                                         } else {
@@ -1657,7 +1672,6 @@
 
                                 } else {
 
-
                                     if (rest) {
                                         return (hybridsearch.$$conf.cdnHost === undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnHost ) + '/sites/' + hybridsearch.$$conf.site + '/index/live/' + "/" + hybridsearch.$$conf.dimension + "/_" + this.getFilter().getNodeType() + keyword + '/.json';
                                     } else {
@@ -1675,6 +1689,7 @@
                                 if (keyword === null) {
                                     return null;
                                 }
+
                                 if (rest) {
                                     return (hybridsearch.$$conf.cdnHost === undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnHost ) + '/sites/' + hybridsearch.$$conf.site + '/index/live/' + hybridsearch.$$conf.dimension + '/' + keyword + '/.json';
                                 } else {
