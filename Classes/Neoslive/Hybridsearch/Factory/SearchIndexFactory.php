@@ -189,6 +189,12 @@ class SearchIndexFactory
     /**
      * @var array
      */
+    protected $allDimensionCombinations;
+
+
+    /**
+     * @var array
+     */
     protected $allSiteKeys;
 
 
@@ -330,10 +336,11 @@ class SearchIndexFactory
     public function createFullIndex($workspacename = 'live')
     {
 
+        $this->deleteQueue();
         $this->lockReltimeIndexer();
         $this->firebase->set("/lastsync/$workspacename", time());
         $this->creatingFullIndex = true;
-        $this->deleteQueue();
+
 
         foreach ($this->siteRepository->findAll() as $site) {
             $this->site = $site;
@@ -346,22 +353,20 @@ class SearchIndexFactory
         $this->output->progressStart(count($moditifedNodeData));
 
 
-        $counter = 0;
         foreach ($moditifedNodeData as $nodedata) {
 
             $this->output->progressAdvance(1);
             $this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace(), true);
 
-            if ($counter % 100) {
+            if (strlen(json_encode($this->index)) || strlen(json_encode($this->keywords) > 100000000)) {
                 $this->save();
             }
-
-            $counter++;
 
         }
 
 
         $this->save();
+
         $this->proceedQueue();
         $this->updateFireBaseRules();
 
@@ -460,22 +465,6 @@ class SearchIndexFactory
 
 
     /**
-     * Update index for given node and target workspace
-     * @param Node $node
-     * @param Workspace $workspace
-     */
-    public function updateIndexRealtime($node, $workspace)
-    {
-
-        if ($this->settings['Realtime']) {
-            $this->sync(0, '', $workspace->getName());
-        }
-
-
-    }
-
-
-    /**
      * Update index for given nodedata
      * @param NodeData $nodedata
      * @param Workspace $workspace
@@ -491,59 +480,64 @@ class SearchIndexFactory
 
         $dhashes = array();
 
-        foreach ($this->contentDimensionCombinator->getAllAllowedCombinations() as $dimensionConfiguration) {
+        foreach ($this->getAllDimensionCombinations() as $dimensionConfiguration) {
 
-            if (isset($dhashes[$this->getDimensionConfiugurationHash($dimensionConfiguration)]) === false) {
+            // if (isset($dhashes[$this->getDimensionConfiugurationHash($dimensionConfiguration)]) === false) {
 
-                $targetDimension = array_map(function ($dimensionValues) {
-                    return array_shift($dimensionValues);
-                }, $dimensionConfiguration);
+            $targetDimension = array_map(function ($dimensionValues) {
+                return array_shift($dimensionValues);
+            }, $dimensionConfiguration);
 
-                $context = $this->contentContextFactory->create(['targetDimension' => $targetDimension, 'dimensions' => $dimensionConfiguration, 'workspaceName' => $nodedata->getWorkspace()->getName()]);
+            $context = $this->contentContextFactory->create(['targetDimension' => $targetDimension, 'dimensions' => $dimensionConfiguration, 'workspaceName' => $nodedata->getWorkspace()->getName()]);
 
-                $node = $context->getNodeByIdentifier($nodedata->getIdentifier());
-                if ($node) {
+            $node = $context->getNodeByIdentifier($nodedata->getIdentifier());
+            if ($node) {
 
-                    if (isset($this->settings['Filter']['NodeTypeFilter'])) {
+                if (isset($this->settings['Filter']['NodeTypeFilter'])) {
 
-                        if ($node->isHidden() || $node->isRemoved()) {
-                            foreach ($this->allSiteKeys as $siteKey => $siteKeyVal) {
-                                $this->removeSingleIndex($node, $this->getWorkspaceHash($workspace), $this->getDimensionConfiugurationHash($dimensionConfiguration));
-                            }
+                    if ($node->isHidden() || $node->isRemoved()) {
+                        foreach ($this->allSiteKeys as $siteKey => $siteKeyVal) {
+                            $this->removeSingleIndex($node, $this->getWorkspaceHash($workspace), $this->getDimensionConfiugurationHash($dimensionConfiguration));
+                        }
+                    } else {
+
+                        $flowQuery = new FlowQuery(array($node));
+
+                        if ($flowQuery->is($this->settings['Filter']['NodeTypeFilter'])) {
+
+                            $this->generateSingleIndex($node, $workspace, $this->getDimensionConfiugurationHash($node->getContext()->getDimensions()));
+
+                            //$this->generateIndex($node, $workspace, $node->getContext()->getDimensions());
+
                         } else {
-
-                            $flowQuery = new FlowQuery(array($node));
-
-                            if ($flowQuery->is($this->settings['Filter']['NodeTypeFilter'])) {
-
-                                $this->generateSingleIndex($node, $workspace, $this->getDimensionConfiugurationHash($node->getContext()->getDimensions()));
-
-                                //$this->generateIndex($node, $workspace, $node->getContext()->getDimensions());
-
-                            } else {
-                                if ($noparentcheck === false) {
-                                    $node = $flowQuery->parent()->closest($this->settings['Filter']['NodeTypeFilter'])->get(0);
-                                    if ($node) {
-                                        $this->generateIndex($node, $workspace, $node->getContext()->getDimensions());
-                                    }
-                                } else {
-                                    return true;
+                            if ($noparentcheck === false) {
+                                $node = $flowQuery->parent()->closest($this->settings['Filter']['NodeTypeFilter'])->get(0);
+                                if ($node) {
+                                    $this->generateIndex($node, $workspace, $node->getContext()->getDimensions());
                                 }
+                            } else {
+                                return true;
                             }
                         }
-
-
                     }
 
 
-                } else {
-                    foreach ($this->allSiteKeys as $siteKey => $siteKeyVal) {
-                        $this->firebase->delete("sites/" . $siteKey . "/index/" . $workspace->getName() . "/" . $this->getDimensionConfiugurationHash($dimensionConfiguration) . "/" . $nodedata->getIdentifier());
-                    }
+                }
+
+
+            } else {
+                foreach ($this->allSiteKeys as $siteKey => $siteKeyVal) {
+                    $this->firebase->delete("sites/" . $siteKey . "/index/" . $workspace->getName() . "/" . $this->getDimensionConfiugurationHash($dimensionConfiguration) . "/" . $nodedata->getIdentifier());
                 }
             }
+            // }
 
-            $dhashes[$this->getDimensionConfiugurationHash($dimensionConfiguration)] = true;
+            //$dhashes[$this->getDimensionConfiugurationHash($dimensionConfiguration)] = true;
+            unset($context);
+            unset($node);
+            if (isset($flowQuery)) {
+                unset($flowQuery);
+            }
 
         }
 
@@ -1177,23 +1171,15 @@ class SearchIndexFactory
     function proceedQueue()
     {
 
-        $this->proceedcounter++;
-        $lockedfilename = $this->temporaryDirectory . "/locked.txt";
 
         if ($this->isLockReltimeIndexer() === true) {
 
-
             if ($this->proceedcounter < 2) $this->output->outputLine('Queue is locked. Retrying...');
-            sleep(1);
-
-            if ($this->proceedcounter < 60) {
-                $this->proceedQueue();
-            } else {
-                $this->output->outputLine('Queue is locked. Exit.');
-            }
-
+            sleep(10);
+            Scripts::executeCommandAsync('hybridsearch:proceed', $this->flowSettings);
 
         } else {
+
 
             $this->lockReltimeIndexer();
 
@@ -1331,7 +1317,7 @@ class SearchIndexFactory
 
         $lockedfilename = $this->temporaryDirectory . "/locked.txt";
 
-        return is_file($lockedfilename);
+        return \is_file($lockedfilename);
 
 
     }
@@ -1368,19 +1354,16 @@ class SearchIndexFactory
         foreach ($this->keywords as $workspace => $workspaceData) {
 
             $patch = array();
-            foreach ($workspaceData as $dimension => $dimensionData) {
-
-                foreach ($dimensionData as $keyword => $keyWordData) {
-                    $patch[$keyword] = $keyWordData;
+            foreach ($workspaceData as $dimensionIndex => $dimensionIndexData) {
+                foreach ($dimensionIndexData as $dimensionIndexKey => $dimensionIndexDataAll) {
+                    $patch[$workspace . "/" . $dimensionIndex . "/" . $dimensionIndexKey] = $dimensionIndexDataAll;
                 }
-
-
             }
 
             if ($this->creatingFullIndex) {
-                $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/keywords/$workspace/" . $dimension, $patch);
+                $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/keywords/", $patch);
             } else {
-                $this->firebase->update("sites/" . $this->getSiteIdentifier() . "/keywords/$workspace/" . $dimension, $patch);
+                $this->firebase->update("sites/" . $this->getSiteIdentifier() . "/keywords/", $patch);
             }
 
         }
@@ -1743,6 +1726,24 @@ class SearchIndexFactory
         }
 
         return $this->view;
+
+    }
+
+    /**
+     * Return all allowed dimension combinations
+     * @return array
+     */
+    private
+    function getAllDimensionCombinations()
+    {
+
+        if (count($this->allDimensionCombinations)) {
+            return $this->allDimensionCombinations;
+        } else {
+            $this->allDimensionCombinations = $this->contentDimensionCombinator->getAllAllowedCombinations();
+        }
+
+        return $this->allDimensionCombinations;
 
     }
 
