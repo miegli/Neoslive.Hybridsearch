@@ -505,7 +505,7 @@ class SearchIndexFactory
 
                             $this->generateSingleIndex($node, $workspace, $this->getDimensionConfiugurationHash($node->getContext()->getDimensions()));
                             $counter++;
-                          
+
 
                         } else {
                             if ($noparentcheck === false) {
@@ -1256,16 +1256,10 @@ class SearchIndexFactory
         }
 
         foreach ($this->allSiteKeys as $siteIdentifier => $val) {
-
-
-            $keywords = $this->firebase->get("sites/" . $siteIdentifier . "/keywords");
-
-
-            $this->getFirebaseRules(json_decode($keywords), $siteIdentifier, $mergedrules);
-
-
+            $mergedrules['rules']['sites'][$siteIdentifier] = array(
+                '.read' => true
+            );
         }
-
 
         $this->firebase->set('.settings/rules', $mergedrules);
 
@@ -1380,82 +1374,6 @@ class SearchIndexFactory
 
     }
 
-
-    /**
-     * Get Firebase rules by given keywords
-     * @param mixed $keywords
-     * @param string $siteKey
-     * @param array $mergedrules
-     * @return void
-     */
-    private
-    function getFirebaseRules($keywords, $siteKey, &$mergedrules)
-    {
-
-        $rules = array();
-
-        if (count($keywords)) {
-            foreach ($keywords as $dimension => $val) {
-                if (isset($rules[$dimension]) === false) {
-                    $rules['index'][$dimension] = array();
-                }
-
-
-                if (gettype($val) === 'object') {
-                    foreach ($val as $k => $v) {
-
-                        if (isset($rules['index'][$dimension][$k]) === false) {
-                            $rules['index'][$dimension][$k] = array();
-                            $rules['index'][$dimension][$k]['.indexOn'] = array('.value', '_nodetype');
-                        }
-
-
-//                        if (is_array($v)) {
-//                            foreach (array_keys($v) as $key) {
-//                                array_push($rules['index'][$dimension][$k]['.indexOn'], (string)strval($key));
-//                                array_push($rules['index'][$dimension][$k]['.indexOn'], (string)"_nodetype" . strval($key));
-//                            }
-//                        } else {
-//                            foreach (get_object_vars($v) as $key => $value) {
-//                                array_push($rules['index'][$dimension][$k]['.indexOn'], (string)strval($key));
-//                                array_push($rules['index'][$dimension][$k]['.indexOn'], (string)"_nodetype" . strval($key));
-//                            }
-//                        }
-
-
-                    }
-                }
-            }
-        }
-
-
-        if (isset($mergedrules['rules']) == false) {
-            $mergedrules['rules'] = array();
-        }
-
-        if (isset($mergedrules['rules']['sites']) == false) {
-            $mergedrules['rules']['sites'] = array();
-        }
-
-        if (isset($mergedrules['rules']['sites'][$siteKey]) == false) {
-            $mergedrules['rules']['sites'][$siteKey] = array();
-        }
-
-        $mergedrules['rules']['sites'][$siteKey] = array(
-            '.read' => true,
-            'ga' => array('.indexOn' => 'url')
-        );
-
-
-        if (count($rules)) {
-
-            $mergedrules['rules']['sites'][$siteKey]['index'] = $rules['index'];
-
-        }
-        return;
-
-
-    }
 
 
     /**
