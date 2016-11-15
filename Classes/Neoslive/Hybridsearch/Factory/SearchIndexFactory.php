@@ -357,7 +357,7 @@ class SearchIndexFactory
 
             $this->output->progressAdvance(1);
 
-            if ($this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace(), true) > 0 && (strlen(json_encode($this->index) > 50000000) || strlen(json_encode($this->keywords) > 50000000))) {
+            if ($this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace(), true) > 0 && (strlen(json_encode($this->index) > 10000000) || strlen(json_encode($this->keywords) > 10000000))) {
                 $this->save();
             }
 
