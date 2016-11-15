@@ -357,8 +357,7 @@ class SearchIndexFactory
 
             $this->output->progressAdvance(1);
             $this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace(), true);
-
-            if (strlen(json_encode($this->index)) || strlen(json_encode($this->keywords) > 100000000)) {
+            if (strlen(json_encode($this->index)  > 50000000) || strlen(json_encode($this->keywords) > 50000000)) {
                 $this->save();
             }
 
@@ -366,15 +365,11 @@ class SearchIndexFactory
 
 
         $this->save();
-
+        $this->unlockReltimeIndexer();
         $this->proceedQueue();
         $this->updateFireBaseRules();
-
-
         $this->output->progressFinish();
 
-
-        $this->unlockReltimeIndexer();
 
         return true;
 
@@ -982,7 +977,7 @@ class SearchIndexFactory
         $properties->rawcontent = $properties->$p;
 
 
-        $data->hash = ($properties->rawcontent !== '' ? sha1($properties->rawcontent) : $node->getNodeData()->getIdentifier());
+        $data->hash = sha1(json_encode($properties));
         $data->url = $uri;
         $data->uri = parse_url($uri);
 
