@@ -275,9 +275,6 @@ class SearchIndexFactory
     {
         $this->settings = $settings;
 
-        $this->index = new \stdClass();
-        $this->keywords = new \stdClass();
-        $this->ga = new \stdClass();
 
         putenv('FLOW_REWRITEURLS=1');
 
@@ -317,6 +314,8 @@ class SearchIndexFactory
         $this->temporaryDirectory = $temporaryDirectory;
         $this->queuecounter = 100000000;
         $this->allSiteKeys = array();
+        $this->index = new \stdClass();
+        $this->keywords = new \stdClass();
         $GLOBALS["neoslive.hybridsearch.insyncmode"] = true;
 
 
@@ -331,8 +330,9 @@ class SearchIndexFactory
     public function createFullIndex($workspacename = 'live')
     {
 
+        $this->lockReltimeIndexer();
+        $this->firebase->set("/lastsync/$workspacename", time());
         $this->creatingFullIndex = true;
-
         $this->deleteQueue();
 
         foreach ($this->siteRepository->findAll() as $site) {
@@ -346,10 +346,18 @@ class SearchIndexFactory
         $this->output->progressStart(count($moditifedNodeData));
 
 
+        $counter = 0;
         foreach ($moditifedNodeData as $nodedata) {
 
             $this->output->progressAdvance(1);
             $this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace(), true);
+
+            if ($counter % 100) {
+                $this->save();
+            }
+
+            $counter++;
+
         }
 
 
@@ -357,8 +365,11 @@ class SearchIndexFactory
         $this->proceedQueue();
         $this->updateFireBaseRules();
 
+
         $this->output->progressFinish();
 
+
+        $this->unlockReltimeIndexer();
 
         return true;
 
@@ -390,48 +401,49 @@ class SearchIndexFactory
     {
 
 
-
         $lastSyncCounter++;
 
 
         if ($lastSyncCounter > 1) {
 
-
-            $this->proceedQueue();
-
-            $this->firebase->set("/pid/$workspaceName", getmypid());
-
-            $lastsync = $this->firebase->get("/lastsync/$workspaceName");
-            $date = new \DateTime();
-
-            if ($lastsync) {
-                $date->setTimestamp(intval($lastsync));
-            }
-
-            $lastSyncDateTime = new \DateTime();
-            $lastSyncTimestamp = $lastSyncDateTime->getTimeStamp();
-
-            $this->firebase->set("/lastsync/$workspaceName", $lastSyncTimestamp);
+            if ($this->isLockReltimeIndexer() === false) {
 
 
-
-            $moditifedNodeData = $this->neosliveHybridsearchNodeDataRepository->findByWorkspaceAndLastModificationDateTimeDate($this->workspaceRepository->findByIdentifier($workspaceName), $date);
-
-
-
-            foreach ($moditifedNodeData as $nodedata) {
-                $this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace());
-
-            }
-
-
-            if (count($moditifedNodeData)) {
-                $this->save();
                 $this->proceedQueue();
 
+                $this->firebase->set("/pid/$workspaceName", getmypid());
+
+                $lastsync = $this->firebase->get("/lastsync/$workspaceName");
+                $date = new \DateTime();
+
+                if ($lastsync) {
+                    $date->setTimestamp(intval($lastsync));
+                }
+
+                $lastSyncDateTime = new \DateTime();
+                $lastSyncTimestamp = $lastSyncDateTime->getTimeStamp();
+
+                $this->firebase->set("/lastsync/$workspaceName", $lastSyncTimestamp);
+
+
+                $moditifedNodeData = $this->neosliveHybridsearchNodeDataRepository->findByWorkspaceAndLastModificationDateTimeDate($this->workspaceRepository->findByIdentifier($workspaceName), $date);
+
+
+                foreach ($moditifedNodeData as $nodedata) {
+                    $this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace());
+
+                }
+
+
+                if (count($moditifedNodeData)) {
+                    $this->save();
+                    $this->proceedQueue();
+
+                }
+
             }
 
-           sleep(30);
+            sleep(30);
         }
 
 
@@ -440,7 +452,7 @@ class SearchIndexFactory
 
         // infinite loop only one thread per workspace
         if ($lastSyncPid === 0 || $lastpid == $lastSyncPid) {
-           Scripts::executeCommandAsync('hybridsearch:sync', $this->flowSettings, array('lastSyncPid' => getmypid(), 'workspace' => $workspaceName, 'lastSyncCounter' => $lastSyncCounter));
+            Scripts::executeCommandAsync('hybridsearch:sync', $this->flowSettings, array('lastSyncPid' => getmypid(), 'workspace' => $workspaceName, 'lastSyncCounter' => $lastSyncCounter));
         }
 
 
@@ -610,7 +622,7 @@ class SearchIndexFactory
      * @param array $keywordsOfNode current keywords
      * @return void
      */
-    private function removeSingleIndex($node, $workspaceHash, $dimensionConfigurationHash,$keywordsOfNode)
+    private function removeSingleIndex($node, $workspaceHash, $dimensionConfigurationHash, $keywordsOfNode)
     {
 
         $keywords = \json_decode($this->firebase->get("sites/" . $this->getSiteIdentifier() . "/index/$workspaceHash/$dimensionConfigurationHash" . "/___keywords/" . urlencode($node->getIdentifier())));
@@ -618,7 +630,7 @@ class SearchIndexFactory
         if ($keywords) {
             foreach ($keywords as $keyword) {
 
-                if (count($keywordsOfNode) === 0 || in_array($keyword,$keywordsOfNode) === false) {
+                if (count($keywordsOfNode) === 0 || in_array($keyword, $keywordsOfNode) === false) {
                     $this->firebaseDelete("sites/" . $this->getSiteIdentifier() . "/index/$workspaceHash/$dimensionConfigurationHash" . "/" . $keyword . "/" . urlencode($node->getIdentifier()));
                 }
 
@@ -669,19 +681,7 @@ class SearchIndexFactory
         $identifier = $indexData->identifier;
 
         $keywords = $this->generateSearchIndexFromProperties($indexData->properties, $indexData->nodeType);
-        //   $keywords->_node = $indexData;
-        //   $keywords->_nodetype = $indexData->nodeType;
 
-
-        if (isset($indexData->properties->__google)) {
-
-            $this->ga->$identifier = array(
-                'userGender' => $indexData->properties->__userGender,
-                'userAgeBracket' => $indexData->properties->__userAgeBracket,
-                'url' => $indexData->url
-            );
-
-        }
         $nt = "__" . $this->getNodeTypeName($node);
         $keywords->$nt = true;
 
@@ -712,7 +712,7 @@ class SearchIndexFactory
 
 
         if ($this->creatingFullIndex === false) {
-            $this->removeSingleIndex($node, $workspaceHash, $dimensionConfigurationHash,$keywordsOfNode);
+            $this->removeSingleIndex($node, $workspaceHash, $dimensionConfigurationHash, $keywordsOfNode);
         }
 
 
@@ -1180,7 +1180,7 @@ class SearchIndexFactory
         $this->proceedcounter++;
         $lockedfilename = $this->temporaryDirectory . "/locked.txt";
 
-        if (is_file($lockedfilename) === true) {
+        if ($this->isLockReltimeIndexer() === true) {
 
 
             if ($this->proceedcounter < 2) $this->output->outputLine('Queue is locked. Retrying...');
@@ -1195,9 +1195,7 @@ class SearchIndexFactory
 
         } else {
 
-            $fp = fopen($lockedfilename, 'w');
-            fwrite($fp, time());
-            fclose($fp);
+            $this->lockReltimeIndexer();
 
             $files = array();
 
@@ -1249,9 +1247,7 @@ class SearchIndexFactory
             }
 
 
-            if (is_file($lockedfilename)) {
-                unlink($lockedfilename);
-            }
+            $this->unlockReltimeIndexer();
 
         }
 
@@ -1291,6 +1287,55 @@ class SearchIndexFactory
 
     }
 
+    /**
+     * Locks the realtime indexer
+     * @return void
+     */
+    protected
+    function lockReltimeIndexer()
+    {
+
+        $lockedfilename = $this->temporaryDirectory . "/locked.txt";
+
+        $fp = fopen($lockedfilename, 'w');
+        fwrite($fp, time());
+        fclose($fp);
+
+
+    }
+
+    /**
+     * Un-Locks the realtime indexer
+     * @return void
+     */
+    protected
+    function unlockReltimeIndexer()
+    {
+
+        $lockedfilename = $this->temporaryDirectory . "/locked.txt";
+
+        if (is_file($lockedfilename)) {
+            unlink($lockedfilename);
+        }
+
+
+    }
+
+    /**
+     * If is locked realtime indexer
+     * @return boolean
+     */
+    protected
+    function isLockReltimeIndexer()
+    {
+
+        $lockedfilename = $this->temporaryDirectory . "/locked.txt";
+
+        return is_file($lockedfilename);
+
+
+    }
+
 
     /**
      * Save generated search index as tempory json file for persisting later
@@ -1302,47 +1347,52 @@ class SearchIndexFactory
 
 
         // patch index data all in one request
+
         foreach ($this->index as $workspace => $workspaceData) {
             foreach ($workspaceData as $dimension => $dimensionData) {
-                if ($this->creatingFullIndex) {
-                        $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $dimension, $dimensionData);
-                } else {
-                    foreach ($dimensionData as $dimensionIndex => $dimensionIndexData) {
-                        $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $dimension . "/" . $dimensionIndex, $dimensionIndexData);
+                $patch = array();
+                foreach ($dimensionData as $dimensionIndex => $dimensionIndexData) {
+                    foreach ($dimensionIndexData as $dimensionIndexKey => $dimensionIndexDataAll) {
+                        $patch[$dimension . "/" . $dimensionIndex . "/" . $dimensionIndexKey] = $dimensionIndexDataAll;
                     }
-
+                }
+                if ($this->creatingFullIndex) {
+                    $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace, $patch);
+                } else {
+                    $this->firebase->update("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace, $patch);
                 }
             }
         }
+
 
         foreach ($this->keywords as $workspace => $workspaceData) {
 
+            $patch = array();
             foreach ($workspaceData as $dimension => $dimensionData) {
-                if ($this->creatingFullIndex) {
-                    $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/keywords/$workspace/$dimension", $dimensionData);
-                } else {
-                    $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/keywords/$workspace/$dimension", $dimensionData);
+
+                foreach ($dimensionData as $keyword => $keyWordData) {
+                    $patch[$keyword] = $keyWordData;
                 }
+
+
             }
 
-        }
+            if ($this->creatingFullIndex) {
+                $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/keywords/$workspace/" . $dimension, $patch);
+            } else {
+                $this->firebase->update("sites/" . $this->getSiteIdentifier() . "/keywords/$workspace/" . $dimension, $patch);
+            }
 
-
-        if ($this->creatingFullIndex) {
-            $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/ga", $this->ga);
-        } else {
-            $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/ga", $this->ga);
         }
 
 
         unset($this->index);
         unset($this->keywords);
-        unset($this->ga);
 
 
         $this->index = new \stdClass();
         $this->keywords = new \stdClass();
-        $this->ga = new \stdClass();
+
         gc_collect_cycles();
 
 
