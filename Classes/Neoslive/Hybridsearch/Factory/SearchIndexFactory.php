@@ -352,12 +352,16 @@ class SearchIndexFactory
 
         $this->output->progressStart(count($moditifedNodeData));
 
-
+        $counter = 0;
         foreach ($moditifedNodeData as $nodedata) {
 
             $this->output->progressAdvance(1);
 
-            if ($this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace(), true) > 0 && (strlen(json_encode($this->index) > 10000000) || strlen(json_encode($this->keywords) > 10000000))) {
+            if ($this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace(), true) > 0 ) {
+                $counter++;
+            }
+
+            if ($counter % 250 === 0) {
                 $this->save();
             }
 
