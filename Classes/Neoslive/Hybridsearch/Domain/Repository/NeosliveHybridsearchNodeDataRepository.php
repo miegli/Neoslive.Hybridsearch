@@ -59,12 +59,15 @@ class NeosliveHybridsearchNodeDataRepository extends NodeDataRepository
         $queryBuilder->select('n')
             ->from(NodeData::class, 'n')
             ->where('n.workspace = :workspace')
-            ->andWhere('n.lastModificationDateTime >= \''.$lastModificationDateTime->format("Y-m-d H:i:s").'\'')
+            ->andWhere('(n.movedTo IS NULL OR n.removed = :removed) AND n.lastModificationDateTime >= \''.$lastModificationDateTime->format("Y-m-d H:i:s").'\'')
             ->orderBy('n.lastModificationDateTime', 'DESC')
-            ->setParameter('workspace', $workspace);
+            ->setParameter('workspace', $workspace)
+            ->setParameter('removed', false, \PDO::PARAM_BOOL);
 
         return $queryBuilder->getQuery()->getResult();
     }
+
+
 
 
 }

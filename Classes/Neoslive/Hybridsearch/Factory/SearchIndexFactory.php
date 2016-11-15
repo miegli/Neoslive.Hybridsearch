@@ -392,6 +392,47 @@ class SearchIndexFactory
     }
 
 
+
+
+
+    /**
+     * Removes trashes nods
+     */
+    private function removeTrashedNodes()
+    {
+
+
+        // remove nodes from trash
+        $trash = json_decode($this->firebase->get("/trash"));
+
+
+        if ($trash) {
+            foreach ($trash as $site => $siteData) {
+
+                if ($siteData) {
+                    foreach ($siteData as $workspace => $workspaceData) {
+                        if ($workspaceData) {
+                            foreach ($workspaceData as $dimension => $dimensionData) {
+                                if ($dimensionData) {
+                                    foreach ($dimensionData as $nodeIdentifier => $trashTimestamp) {
+                                        $this->removeSingleIndex($nodeIdentifier,$workspace,$dimension,array(),$site);
+                                    }
+
+                                }
+                            }
+
+                        }
+                    }
+                }
+
+                $this->firebase->delete("trash/$site");
+
+            }
+        }
+
+
+    }
+
     /**
      * Update index
      * @param string $workspaceName
@@ -403,17 +444,18 @@ class SearchIndexFactory
 
 
         $lastSyncCounter++;
-        $lastSyncCounter++;
 
 
         if ($lastSyncCounter > 1) {
 
             if ($this->isLockReltimeIndexer() === false) {
 
-
                 $this->proceedQueue();
 
                 $this->firebase->set("/pid/$workspaceName", getmypid());
+
+                $this->removeTrashedNodes();
+
 
                 $lastsync = $this->firebase->get("/lastsync/$workspaceName");
                 $date = new \DateTime();
@@ -426,16 +468,11 @@ class SearchIndexFactory
                 $lastSyncTimestamp = $lastSyncDateTime->getTimeStamp();
 
                 $this->firebase->set("/lastsync/$workspaceName", $lastSyncTimestamp);
-
-
                 $moditifedNodeData = $this->neosliveHybridsearchNodeDataRepository->findByWorkspaceAndLastModificationDateTimeDate($this->workspaceRepository->findByIdentifier($workspaceName), $date);
-
 
                 foreach ($moditifedNodeData as $nodedata) {
                     $this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace());
-
                 }
-
 
                 if (count($moditifedNodeData)) {
                     $this->save();
@@ -495,7 +532,7 @@ class SearchIndexFactory
 
                     if ($node->isHidden() || $node->isRemoved()) {
                         foreach ($this->allSiteKeys as $siteKey => $siteKeyVal) {
-                            $this->removeSingleIndex($node, $this->getWorkspaceHash($workspace), $this->getDimensionConfiugurationHash($dimensionConfiguration));
+                            $this->removeSingleIndex($node->getIdentifier(), $this->getWorkspaceHash($workspace), $this->getDimensionConfiugurationHash($dimensionConfiguration));
                         }
                     } else {
 
@@ -522,14 +559,7 @@ class SearchIndexFactory
                 }
 
 
-            } else {
-                if ($this->creatingFullIndex === false) {
-                    foreach ($this->allSiteKeys as $siteKey => $siteKeyVal) {
-                        $this->firebase->delete("sites/" . $siteKey . "/index/" . $workspace->getName() . "/" . $this->getDimensionConfiugurationHash($dimensionConfiguration) . "/" . $nodedata->getIdentifier());
-                    }
-                }
             }
-
 
             unset($context);
             unset($node);
@@ -545,13 +575,21 @@ class SearchIndexFactory
 
 
     /**
-     * Update index for given node and target workspace
+     * Check and Remove index for given node and target workspace
      * @param Node $node
-     * @param Workspace $workspace
      */
-    private function removeIndex($node, $workspace)
+    public function checkIndexRealtimeForRemovingNode($node, $targetWorkspace)
     {
-        $this->removeSingleIndex($node, $this->getWorkspaceHash($workspace), $node->getNodeData()->getDimensionsHash());
+
+        if ($this->settings['Realtime'] && $node->isRemoved()) {
+
+            $flowQuery = new FlowQuery(array($node));
+            if ($flowQuery->is($this->settings['Filter']['NodeTypeFilter']) === true) {
+                $this->site = $node->getContext()->getCurrentSite();
+                $this->firebase->set("/trash/" . $this->getSiteIdentifier() . "/" . $this->getWorkspaceHash($targetWorkspace) . "/" . $this->getDimensionConfiugurationHash($node->getDimensions()) . "/" . $node->getIdentifier(), time());
+            }
+        }
+
     }
 
 
@@ -609,22 +647,25 @@ class SearchIndexFactory
     /**
      * Remove single index for given node
      *
-     * @param Node $node
+     * @param String $nodeIdentifier
      * @param String $workspaceHash
      * @param string $dimensionConfigurationHash
      * @param array $keywordsOfNode current keywords
      * @return void
      */
-    private function removeSingleIndex($node, $workspaceHash, $dimensionConfigurationHash, $keywordsOfNode)
+    private function removeSingleIndex($nodeIdentifier, $workspaceHash, $dimensionConfigurationHash, $keywordsOfNode = array(),$siteIdentifier = null)
     {
+        if ($siteIdentifier === null) {
+            $siteIdentifier = $this->getSiteIdentifier();
+        }
 
-        $keywords = \json_decode($this->firebase->get("sites/" . $this->getSiteIdentifier() . "/index/$workspaceHash/$dimensionConfigurationHash" . "/___keywords/" . urlencode($node->getIdentifier())));
+        $keywords = \json_decode($this->firebase->get("sites/" . $siteIdentifier . "/index/$workspaceHash/$dimensionConfigurationHash" . "/___keywords/" . urlencode($nodeIdentifier)));
 
         if ($keywords) {
             foreach ($keywords as $keyword) {
 
                 if (count($keywordsOfNode) === 0 || in_array($keyword, $keywordsOfNode) === false) {
-                    $this->firebaseDelete("sites/" . $this->getSiteIdentifier() . "/index/$workspaceHash/$dimensionConfigurationHash" . "/" . $keyword . "/" . urlencode($node->getIdentifier()));
+                    $this->firebaseDelete("sites/" . $siteIdentifier . "/index/$workspaceHash/$dimensionConfigurationHash" . "/" . $keyword . "/" . urlencode($nodeIdentifier));
                 }
 
             }
@@ -705,7 +746,7 @@ class SearchIndexFactory
 
 
         if ($this->creatingFullIndex === false) {
-            $this->removeSingleIndex($node, $workspaceHash, $dimensionConfigurationHash, $keywordsOfNode);
+            $this->removeSingleIndex($node->getIdentifier(), $workspaceHash, $dimensionConfigurationHash, $keywordsOfNode);
         }
 
 
@@ -1248,6 +1289,7 @@ class SearchIndexFactory
     function updateFireBaseRules($update = false)
     {
 
+
         $mergedrules = array();
         $this->allSiteKeys = json_decode($this->firebase->get('sites', array('shallow' => 'true')));
 
@@ -1375,7 +1417,6 @@ class SearchIndexFactory
     }
 
 
-
     /**
      * Get Firebase index by node
      * @param Node $node
@@ -1422,6 +1463,7 @@ class SearchIndexFactory
     function deleteIndex($site)
     {
         $this->firebase->delete("sites/" . $this->getSiteIdentifier($site));
+        $this->firebase->delete("/trash/" . $this->getSiteIdentifier($site));
 
     }
 
@@ -1689,7 +1731,6 @@ class SearchIndexFactory
 
         if ($this->site instanceof Site) {
             return $this->site->getNodeName();
-            return $this->persistenceManager->getIdentifierByObject($this->site);
         } else {
             return 'nosite';
         }
