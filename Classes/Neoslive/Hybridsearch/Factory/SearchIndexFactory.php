@@ -1127,6 +1127,7 @@ class SearchIndexFactory
     function firebaseUpdate($path, $data)
     {
         $this->addToQueue($path, $data, 'update');
+        unset($data);
 
     }
 
@@ -1140,7 +1141,7 @@ class SearchIndexFactory
     {
 
         $this->addToQueue($path, $data, 'set');
-
+        unset($data);
 
     }
 
@@ -1154,8 +1155,6 @@ class SearchIndexFactory
     {
 
         $this->firebase->delete($path);
-        //$this->addToQueue($path, null, 'delete');
-
 
     }
 
@@ -1174,14 +1173,17 @@ class SearchIndexFactory
         $filename = $this->temporaryDirectory . "/queued_" . time() . $this->queuecounter . "_" . Algorithms::generateUUID() . ".json";
 
         $fp = fopen($filename, 'w');
-        fwrite($fp, json_encode(
+        $content = json_encode(
             array(
                 'path' => $path,
                 'data' => $data,
                 'method' => $method,
             )
-        ));
+        );
+        fwrite($fp, $content);
         fclose($fp);
+        unset($content);
+        unset($fp);
 
         $this->queuecounter++;
 
@@ -1203,6 +1205,7 @@ class SearchIndexFactory
             }
 
         }
+
 
 
     }
@@ -1355,7 +1358,7 @@ class SearchIndexFactory
 
         $lockedfilename = $this->temporaryDirectory . "/locked.txt";
 
-        return \is_file($lockedfilename);
+        return is_file($lockedfilename);
 
 
     }
@@ -1409,6 +1412,7 @@ class SearchIndexFactory
 
         unset($this->index);
         unset($this->keywords);
+        unset($path);
 
 
         $this->index = new \stdClass();
