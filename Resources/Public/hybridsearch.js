@@ -150,7 +150,7 @@
              */
             var HybridsearchObject = function (hybridsearch) {
 
-                    var hybridsearchInstanceNumber, results, filter, index, lunrSearch, nodes, nodesLastHash, nodeTypeLabels, propertiesBoost, isRunning, firstfilterhash, searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier, nodesByIdentifier, searchCounter, searchCounterTimeout;
+                    var hybridsearchInstanceNumber, pendingRequests, results, filter, index, lunrSearch, nodes, nodesLastHash, nodeTypeLabels, propertiesBoost, isRunning, firstfilterhash, searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier, nodesByIdentifier, searchCounter, searchCounterTimeout;
 
                     // count instances
                     if (window.hybridsearchInstances === undefined) {
@@ -172,6 +172,7 @@
                     nodeTypeLabels = {};
                     nodes = {};
                     index = {};
+                    pendingRequests = [];
                     lunrSearch = elasticlunr(function () {
                         this.setRef('id');
                     });
@@ -502,6 +503,25 @@
 
                     this.$$app = {
 
+                        /**
+                         * @private
+                         * @param request
+                         * @return void
+                         */
+                        addPendingRequest: function (request) {
+                            pendingRequests.push(request);
+                        },
+                        /**
+                         * @private
+                         * @return void
+                         */
+                        cancelAllPendingRequest: function () {
+                            angular.forEach($http.pendingRequests, function (request) {
+                                if (request.cancel && request.timeout) {
+                                    request.cancel.resolve();
+                                }
+                            });
+                        },
                         /**
                          * @private
                          * @return void
@@ -1227,6 +1247,7 @@
 
                             var self = this;
                             nodes = {};
+                            self.cancelAllPendingRequest();
 
                             if (self.isNodesByIdentifier() === false && self.isRunning() && filter.hasFilters()) {
 
@@ -1259,7 +1280,7 @@
                                         clearInterval(searchInstancesInterval);
                                         lastSearchInstance.execute(self, lastSearchInstance);
                                     }
-                                }, 50);
+                                }, 10);
 
 
                             } else {
@@ -1419,7 +1440,7 @@
 
 
                                         // bind indirectly after preloading over rest/cdn
-                                        $http({
+                                        var h = $http({
                                             method: 'GET',
                                             cache: true,
                                             headers: {
@@ -1476,6 +1497,7 @@
                                     if (lastSearchInstance.$$data.keywords.length) {
                                         // wait for all data and put it together to search index
                                         self.setIndexInterval(setInterval(function () {
+
                                             if (indexintervalcounter > 100 || indexcounter >= uniquarrayfinal.length) {
                                                 clearInterval(self.getIndexInterval());
 
@@ -1495,7 +1517,7 @@
                                             }
                                             indexintervalcounter++;
 
-                                        }, 150));
+                                        }, 50));
                                     }
 
 
