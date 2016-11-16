@@ -1440,7 +1440,7 @@
 
 
                                         // bind indirectly after preloading over rest/cdn
-                                        var h = $http({
+                                        $http({
                                             method: 'GET',
                                             cache: true,
                                             headers: {
@@ -1488,6 +1488,25 @@
                                             });
 
 
+                                        }, function errorCallback(response) {
+                                            // called asynchronously if an error occurs
+                                            // or server returns response with an error status.
+                                            self.getIndex(keyword).on("value", function (data) {
+                                                angular.forEach(data.val(), function (node, id) {
+                                                    nodes[id] = node.node;
+                                                });
+                                                if (keyword === null) {
+                                                    self.search(nodes);
+                                                } else {
+                                                    indexdata[keyword] = [];
+                                                    angular.forEach(data.val(), function (node, id) {
+                                                        nodes[id] = node;
+                                                        indexdata[keyword].push(node);
+                                                    });
+                                                    self.updateLocalIndex(indexdata);
+                                                    indexcounter++;
+                                                }
+                                            });
                                         });
 
 
