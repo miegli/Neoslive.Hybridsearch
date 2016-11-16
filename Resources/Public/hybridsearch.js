@@ -822,6 +822,7 @@
 
                                 } else {
 
+
                                     // execute query search
                                     angular.forEach(lunrSearch.getFields(), function (v, k) {
                                         fields[v] = {boost: self.getBoost(v)}
@@ -831,6 +832,7 @@
                                             fields: fields,
                                             bool: "OR"
                                         }), function (item) {
+
 
                                             if (nodes[item.ref] !== undefined) {
 
@@ -1439,8 +1441,9 @@
                                                 angular.forEach(response.data, function (node, id) {
                                                     indexdata[keyword].push(node);
                                                 });
-                                                self.updateLocalIndex(indexdata);
+                                                //self.updateLocalIndex(indexdata);
                                                 indexcounter++;
+
                                             }
 
 
@@ -1473,10 +1476,8 @@
                                     if (lastSearchInstance.$$data.keywords.length) {
                                         // wait for all data and put it together to search index
                                         self.setIndexInterval(setInterval(function () {
-                                            console.log(indexintervalcounter);
                                             if (indexintervalcounter > 100 || indexcounter >= uniquarrayfinal.length) {
                                                 clearInterval(self.getIndexInterval());
-                                                //clearInterval(self.setIndexInterval(null));
 
                                                 var hash = self.getFilter().getHash() + " " + Sha1.hash(JSON.stringify(indexdata));
 
@@ -1490,6 +1491,7 @@
                                                     self.updateLocalIndex(indexdata);
                                                 }
                                                 self.setLastIndexHash(hash);
+                                                self.search();
                                             }
                                             indexintervalcounter++;
 
