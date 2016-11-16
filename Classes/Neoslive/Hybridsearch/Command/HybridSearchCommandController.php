@@ -24,8 +24,6 @@ class HybridSearchCommandController extends CommandController
 {
 
 
-
-
     /**
      * @Flow\Inject
      * @var SearchIndexFactory
@@ -54,15 +52,10 @@ class HybridSearchCommandController extends CommandController
      * @param string $workspace Name of the workspace
      * @return void
      */
-    public function createFullIndexCommand($workspace='live')
+    public function createFullIndexCommand($workspace = 'live')
     {
-
-
         $this->searchIndexFactory->createFullIndex($workspace);
-
-
     }
-
 
     /**
      * Synchronize indexes
@@ -73,26 +66,9 @@ class HybridSearchCommandController extends CommandController
      * @param integer $lastSyncCounter
      * @return void
      */
-    public function syncCommand($workspace='live',$lastSyncPid=0,$lastSyncCounter=0)
-
+    public function syncCommand($workspace = 'live', $lastSyncPid = 0, $lastSyncCounter = 0)
     {
-        $this->searchIndexFactory->sync($workspace,$lastSyncPid,$lastSyncCounter);
-
-    }
-
-    /**
-     * Synchronize indexes
-     *
-     * This command updates index from all local changes
-     *
-     * @return void
-     */
-    public function testCommand()
-
-    {
-
-        \TYPO3\Flow\var_dump($this->googleAnalyticsFactory->getGaDataByDestinationPage('phlu.ch.phlu-eduweb5.nine.ch','/studium.html'));
-
+        $this->searchIndexFactory->sync($workspace, $lastSyncPid, $lastSyncCounter);
     }
 
     /**
@@ -104,23 +80,7 @@ class HybridSearchCommandController extends CommandController
      */
     public function proceedCommand()
     {
-
         $this->searchIndexFactory->proceedQueue();
-
-    }
-
-    /**
-     * Update firebase rules once a night for better performance
-     *
-     * This command updates firebase rules and index
-     *
-     * @return void
-     */
-    public function updateRulesCommand()
-    {
-
-        $this->searchIndexFactory->updateFireBaseRules();
-
     }
 
 

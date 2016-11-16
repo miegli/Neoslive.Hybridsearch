@@ -298,7 +298,6 @@ class SearchIndexFactory
         $this->firebase = new FirebaseLib($this->settings['Firebase']['endpoint'], $this->settings['Firebase']['token']);
         $this->firebase->setTimeOut(0);
 
-
         $this->environment = $environment;
 
         $temporaryDirectory = $this->environment->getPathToTemporaryDirectory() . 'NeosliveHybridsearch/';
@@ -357,7 +356,7 @@ class SearchIndexFactory
 
             $this->output->progressAdvance(1);
 
-            if ($this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace(), true) > 0 ) {
+            if ($this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace(), true) > 0) {
                 $counter++;
             }
 
@@ -669,10 +668,10 @@ class SearchIndexFactory
                     $keywordsremove[$keyword . "/" . urlencode($nodeIdentifier)] = null;
                 }
             }
-           $this->firebase->update("sites/$siteIdentifier/index/$workspaceHash/$dimensionConfigurationHash", $keywordsremove);
-           if (count($keywordsOfNode) === 0) {
-               $this->firebase->delete("sites/" . $siteIdentifier . "/index/$workspaceHash/$dimensionConfigurationHash" . "/___keywords/" . urlencode($nodeIdentifier));
-           }
+            $this->firebase->update("sites/$siteIdentifier/index/$workspaceHash/$dimensionConfigurationHash", $keywordsremove);
+            if (count($keywordsOfNode) === 0) {
+                $this->firebase->delete("sites/" . $siteIdentifier . "/index/$workspaceHash/$dimensionConfigurationHash" . "/___keywords/" . urlencode($nodeIdentifier));
+            }
         }
 
     }
@@ -771,9 +770,7 @@ class SearchIndexFactory
     protected function generateSearchIndexFromProperties($properties, $nodeTypeName)
     {
 
-
         if (count($properties) === 0) {
-
             return $properties;
         }
 
@@ -781,41 +778,22 @@ class SearchIndexFactory
 
         $text = "";
 
-
         foreach ($properties as $property => $value) {
-
             if (gettype($value) !== 'string') {
-
                 $value = json_encode($value);
             }
-
             $text .= (preg_replace("/[^A-z0-9öäüÖÄÜ ]/", "", mb_strtolower(strip_tags(preg_replace("/[^A-z0-9öäüÖÄÜ]/", " ", $value)))) . " ");
-
         }
 
         $words = explode(" ", $text);
-
-
-//        $hypenated = $this->getHyphenator()->hyphenate($text);
-//        if (is_string($hypenated)) {
-//            $hwords = explode(" ", $hypenated);
-//            foreach ($hwords as $key => $v) {
-//                if (strlen($v) > 2) {
-//                    $words[] = $v;
-//                }
-//            }
-//        }
 
         foreach ($words as $w) {
             if (strlen($w) > 1) {
                 $w = Encoding::UTF8FixWin1252Chars($w);
                 $w = preg_replace('#[^\w()/.%\-&üöäÜÖÄ]#', "", $w);
                 $keywords->$w = 1;
-
                 $a = "_nodetype" . $w;
                 $keywords->$a = $nodeTypeName;
-
-
             }
         }
 
@@ -1207,7 +1185,6 @@ class SearchIndexFactory
         }
 
 
-
     }
 
     /**
@@ -1311,7 +1288,6 @@ class SearchIndexFactory
 
         $this->firebase->set('.settings/rules', $mergedrules);
 
-
     }
 
     /**
@@ -1327,7 +1303,6 @@ class SearchIndexFactory
         $fp = fopen($lockedfilename, 'w');
         fwrite($fp, time());
         fclose($fp);
-
 
     }
 
@@ -1360,7 +1335,6 @@ class SearchIndexFactory
 
         return is_file($lockedfilename);
 
-
     }
 
 
@@ -1371,9 +1345,6 @@ class SearchIndexFactory
     protected
     function save()
     {
-
-
-        // patch index data all in one request
 
         foreach ($this->index as $workspace => $workspaceData) {
             foreach ($workspaceData as $dimension => $dimensionData) {
@@ -1390,7 +1361,6 @@ class SearchIndexFactory
                 }
             }
         }
-
 
         foreach ($this->keywords as $workspace => $workspaceData) {
 
