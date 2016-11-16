@@ -709,7 +709,7 @@
                                                     setTimeout(function () {
                                                         self.getFilter().getScopeByIdentifier(identifier).$apply(function () {
                                                         });
-                                                    }, 50);
+                                                    }, 10);
                                                 }
                                             });
                                             break;
@@ -720,7 +720,7 @@
                                                 setTimeout(function () {
                                                     self.getFilter().getScopeByIdentifier(identifier).$apply(function () {
                                                     });
-                                                }, 50);
+                                                }, 10);
                                             }
                                             break;
 
@@ -738,7 +738,7 @@
                                             setTimeout(function () {
                                                 self.getFilter().getScopeByIdentifier(identifier).$apply(function () {
                                                 });
-                                            }, 50);
+                                            }, 10);
                                     }
 
 
@@ -1436,40 +1436,64 @@
                                     angular.forEach(uniquarrayfinal, function (keyword) {
 
 
-                                        //if (keyword === null && self.getFilter().getNodeType()) {
+
+                                        if (hybridsearch.$$conf.cdnHost !== undefined) {
 
 
-                                        // bind indirectly after preloading over rest/cdn
-                                        $http({
-                                            method: 'GET',
-                                            cache: true,
-                                            headers: {
-                                                "Cache-Control": "public, max-age=360",
-                                            },
-                                            url: self.getIndex(keyword, true),
-                                        }).then(function successCallback(response) {
+                                            // bind indirectly after preloading over rest/cdn
+                                            $http({
+                                                method: 'GET',
+                                                cache: true,
+                                                headers: {
+                                                    "Cache-Control": "public, max-age=360",
+                                                },
+                                                url: self.getIndex(keyword, true),
+                                            }).then(function successCallback(response) {
 
 
-                                            angular.forEach(response.data, function (node, id) {
-                                                nodes[id] = node.node;
-                                            });
-                                            if (keyword === null) {
-                                                self.search(nodes);
-                                            } else {
-
-                                                indexdata[keyword] = [];
-                                                filter.addAutocompletedKeywords(keyword);
                                                 angular.forEach(response.data, function (node, id) {
-                                                    indexdata[keyword].push(node);
+                                                    nodes[id] = node.node;
                                                 });
-                                                //self.updateLocalIndex(indexdata);
-                                                indexcounter++;
+                                                if (keyword === null) {
+                                                    self.search(nodes);
+                                                } else {
 
-                                            }
+                                                    indexdata[keyword] = [];
+                                                    filter.addAutocompletedKeywords(keyword);
+                                                    angular.forEach(response.data, function (node, id) {
+                                                        indexdata[keyword].push(node);
+                                                    });
+                                                    //self.updateLocalIndex(indexdata);
+                                                    indexcounter++;
+
+                                                }
 
 
-                                            self.getIndex(keyword).on("child_changed", function (data) {
-                                                self.getIndex(keyword).once("value", function (data) {
+                                                self.getIndex(keyword).on("child_changed", function (data) {
+                                                    self.getIndex(keyword).once("value", function (data) {
+                                                        angular.forEach(data.val(), function (node, id) {
+                                                            nodes[id] = node.node;
+                                                        });
+                                                        if (keyword === null) {
+                                                            self.search(nodes);
+                                                        } else {
+                                                            indexdata[keyword] = [];
+                                                            angular.forEach(data.val(), function (node, id) {
+                                                                nodes[id] = node;
+                                                                indexdata[keyword].push(node);
+                                                            });
+                                                            self.updateLocalIndex(indexdata);
+                                                            indexcounter++;
+                                                        }
+                                                    });
+                                                });
+
+
+                                            }, function errorCallback() {
+
+                                                // called asynchronously if an error occurs
+                                                // or server returns response with an error status.
+                                                self.getIndex(keyword).on("value", function (data) {
                                                     angular.forEach(data.val(), function (node, id) {
                                                         nodes[id] = node.node;
                                                     });
@@ -1487,8 +1511,7 @@
                                                 });
                                             });
 
-
-                                        }, function errorCallback(response) {
+                                        } else {
                                             // called asynchronously if an error occurs
                                             // or server returns response with an error status.
                                             self.getIndex(keyword).on("value", function (data) {
@@ -1507,10 +1530,10 @@
                                                     indexcounter++;
                                                 }
                                             });
-                                        });
+                                        }
 
 
-                                    });
+                                     });
 
 
                                     if (lastSearchInstance.$$data.keywords.length) {
@@ -1536,7 +1559,7 @@
                                             }
                                             indexintervalcounter++;
 
-                                        }, 50));
+                                        }, 10));
                                     }
 
 
@@ -2168,7 +2191,7 @@
                  * @param {scope} scope false if is simple string otherwise angular scope required for binding data
                  * @returns {HybridsearchObject}
                  */
-                setQuery: function (input, scope=null) {
+                setQuery: function (input, scope) {
 
                     var self = this;
 
@@ -2177,23 +2200,31 @@
 
                         scope.$watch(input, function (searchInput, searchInputLast) {
 
-                            if (searchInput !== searchInputLast) {
+                            if (scope["_hybridsearchSetQeuryInterval"] !== undefined) {
+                                window.clearTimeout(scope["_hybridsearchSetQeuryInterval"]);
+                            }
 
-                                self.$$app.getFilter().setQuery(scope[input]);
+                            scope["_hybridsearchSetQeuryInterval"] = window.setTimeout(function () {
+                                if (searchInput !== searchInputLast) {
 
-                                if (searchInput !== undefined) {
-                                    if (searchInput.length === 0) {
+                                    self.$$app.getFilter().setQuery(scope[input]);
 
-                                        self.$$app.getFilter().resetQuery();
-                                        self.$$app.setNodesLastHash(1);
-                                        self.$$app.clearLocationHash();
+                                    if (searchInput !== undefined) {
+                                        if (searchInput.length === 0) {
+
+                                            self.$$app.getFilter().resetQuery();
+                                            self.$$app.setNodesLastHash(1);
+                                            self.$$app.clearLocationHash();
+                                        }
+
+                                        self.$$app.setSearchIndex();
+
                                     }
-
-                                    self.$$app.setSearchIndex();
 
                                 }
 
-                            }
+
+                            }, 100);
 
 
                         });
@@ -2531,7 +2562,7 @@
                             setTimeout(function () {
                                 self.getScope().$digest(function () {
                                 });
-                            }, 50);
+                            }, 10);
                         }
                         this.callbackMethod(obj);
                     },
