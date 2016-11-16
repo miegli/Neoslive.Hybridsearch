@@ -1566,7 +1566,7 @@
                          * @param boolean synchronous
                          * @returns {firebaseObject}
                          */
-                        getKeywords: function (querysegment, instance = false) {
+                        getKeywords: function (querysegment, instance) {
 
                             var self = this;
                             var substrStart = querysegment.toLowerCase();
