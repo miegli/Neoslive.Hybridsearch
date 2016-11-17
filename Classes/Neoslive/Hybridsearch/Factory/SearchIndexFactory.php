@@ -415,7 +415,17 @@ class SearchIndexFactory
                             foreach ($workspaceData as $dimension => $dimensionData) {
                                 if ($dimensionData) {
                                     foreach ($dimensionData as $nodeIdentifier => $trashTimestamp) {
-                                        $this->removeSingleIndex($nodeIdentifier, $workspace, $dimension, array(), $site);
+
+                                        if ($dimension === 'd751713988987e9331980363e24189ce') {
+                                            // if no dimension is set, then iterate over all dimensions
+                                            foreach ($this->getAllDimensionCombinations() as $dimensionConfiguration) {
+                                                $this->removeSingleIndex($nodeIdentifier, $workspace, $this->getDimensionConfiugurationHash($dimensionConfiguration), array(), $site);
+                                            }
+                                        } else {
+                                               $this->removeSingleIndex($nodeIdentifier, $workspace, $dimension, array(), $site);
+                                        }
+
+
                                     }
 
                                 }
@@ -425,7 +435,7 @@ class SearchIndexFactory
                     }
                 }
 
-                $this->firebase->delete("trash/$site");
+               $this->firebase->delete("trash/$site");
 
             }
         }
@@ -448,12 +458,10 @@ class SearchIndexFactory
 
         if ($lastSyncCounter > 1) {
 
+
             if ($this->isLockReltimeIndexer() === false) {
 
                 $this->proceedQueue();
-
-                $this->firebase->set("/pid/$workspaceName", getmypid());
-
                 $this->removeTrashedNodes();
 
 
@@ -482,15 +490,12 @@ class SearchIndexFactory
 
             }
 
-            sleep(30);
+            sleep(15);
         }
 
-
-        $lastpid = $this->firebase->get("/pid/$workspaceName");
-
-
         // infinite loop only one thread per workspace
-        if ($lastSyncPid === 0 || $lastpid == $lastSyncPid) {
+        if ($lastSyncPid === 0 || $this->firebase->get("/pid/$workspaceName") == $lastSyncPid) {
+            $this->firebase->set("pid/$workspaceName", getmypid());
             Scripts::executeCommandAsync('hybridsearch:sync', $this->flowSettings, array('lastSyncPid' => getmypid(), 'workspace' => $workspaceName, 'lastSyncCounter' => $lastSyncCounter));
         }
 
@@ -575,11 +580,44 @@ class SearchIndexFactory
 
 
     /**
+     * Check and Remove index for given nodeData
+     * @param NodeData $nodedata
+     */
+    public function checkIndexRealtimeForRemovingNodeData($nodedata)
+    {
+
+
+        if ($this->settings['Realtime']) {
+
+            $p = explode("/", $nodedata->getContextPath());
+
+            $this->site = $this->siteRepository->findByIdentifier($p[2]);
+            $context = $this->createContext($nodedata->getWorkspace()->getName(), $nodedata->getDimensions(), array(), $this->site);
+
+
+            /** @var Node $node */
+            $node = new Node(
+                $nodedata,
+                $context
+            );
+
+            $flowQuery = new FlowQuery(array($node));
+
+            if ($flowQuery->is($this->settings['Filter']['NodeTypeFilter']) === true) {
+                $this->site = $node->getContext()->getCurrentSite();
+                $this->firebase->set("/trash/" . $p[2] . "/" . $this->getWorkspaceHash($nodedata->getWorkspace()) . "/" . $this->getDimensionConfiugurationHash($node->getDimensions()) . "/" . $node->getIdentifier(), time());
+            }
+        }
+
+    }
+
+    /**
      * Check and Remove index for given node and target workspace
      * @param Node $node
      */
     public function checkIndexRealtimeForRemovingNode($node, $targetWorkspace)
     {
+
 
         if ($this->settings['Realtime'] && $node->isRemoved()) {
 
