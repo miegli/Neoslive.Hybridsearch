@@ -360,7 +360,7 @@ class SearchIndexFactory
                 $counter++;
             }
 
-            if ($counter % 250 === 0) {
+            if ($counter % 200 === 0) {
                 $this->save();
             }
 
@@ -1142,7 +1142,9 @@ class SearchIndexFactory
     public
     function firebaseUpdate($path, $data)
     {
+
         $this->addToQueue($path, $data, 'update');
+
         unset($data);
 
     }
@@ -1186,22 +1188,32 @@ class SearchIndexFactory
     {
 
 
-        $filename = $this->temporaryDirectory . "/queued_" . time() . $this->queuecounter . "_" . Algorithms::generateUUID() . ".json";
+        if (count($data) > 2 && mb_strlen(json_encode($data),'utf8') > 200000000) {
+                $this->addToQueue($path, array_slice($data,0,count($data)/2), $method);
+                $this->addToQueue($path, array_slice($data,count($data)/2), $method);
+            unset($data);
+            return true;
+        } else {
 
-        $fp = fopen($filename, 'w');
-        $content = json_encode(
-            array(
-                'path' => $path,
-                'data' => $data,
-                'method' => $method,
-            )
-        );
-        fwrite($fp, $content);
-        fclose($fp);
-        unset($content);
-        unset($fp);
+            $filename = $this->temporaryDirectory . "/queued_" . time() . $this->queuecounter . "_" . Algorithms::generateUUID() . ".json";
 
-        $this->queuecounter++;
+            $fp = fopen($filename, 'w');
+            $content = json_encode(
+                array(
+                    'path' => $path,
+                    'data' => $data,
+                    'method' => $method,
+                )
+            );
+            fwrite($fp, $content);
+            fclose($fp);
+            unset($content);
+            unset($fp);
+
+            $this->queuecounter++;
+        }
+
+        return true;
 
     }
 
