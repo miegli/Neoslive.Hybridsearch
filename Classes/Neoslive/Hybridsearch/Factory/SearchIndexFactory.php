@@ -478,6 +478,7 @@ class SearchIndexFactory
                 $this->firebase->set("/lastsync/$workspaceName", $lastSyncTimestamp);
                 $moditifedNodeData = $this->neosliveHybridsearchNodeDataRepository->findByWorkspaceAndLastModificationDateTimeDate($this->workspaceRepository->findByIdentifier($workspaceName), $date);
 
+
                 foreach ($moditifedNodeData as $nodedata) {
                     $this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace());
                 }

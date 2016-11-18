@@ -460,10 +460,15 @@
 
                         /**
                          * Preview html content of node.
+                         * @param maxlength
                          * @returns {string}
                          */
-                        getPreview: function () {
-                            return this.properties.rawcontent === undefined ? '' : this.properties.rawcontent;
+                        getPreview: function (maxlength) {
+                            if (maxlength === undefined) {
+                                maxlength = 512;
+                            }
+
+                            return this.properties.rawcontent === undefined ? '' : this.properties.rawcontent.substr(0, maxlength) + (this.properties.rawcontent.length >= maxlength ? ' ...' : '');
                         },
 
                         /**
