@@ -422,7 +422,7 @@ class SearchIndexFactory
                                                 $this->removeSingleIndex($nodeIdentifier, $workspace, $this->getDimensionConfiugurationHash($dimensionConfiguration), array(), $site);
                                             }
                                         } else {
-                                               $this->removeSingleIndex($nodeIdentifier, $workspace, $dimension, array(), $site);
+                                            $this->removeSingleIndex($nodeIdentifier, $workspace, $dimension, array(), $site);
                                         }
 
 
@@ -435,7 +435,7 @@ class SearchIndexFactory
                     }
                 }
 
-               $this->firebase->delete("trash/$site");
+                $this->firebase->delete("trash/$site");
 
             }
         }
@@ -1046,7 +1046,7 @@ class SearchIndexFactory
         $data->uri = parse_url($uri);
 
 
-        if ($this->creatingFullIndex && $data->url !== '') {
+        if ($this->creatingFullIndex && $data->url !== '' && isset($data->uri['path'])) {
 
             $gaData = false;
             if (isset($data->uriResource)) {
@@ -1629,12 +1629,20 @@ class SearchIndexFactory
     function getRenderedNode($node, $typoscriptPath = 'page')
     {
 
+
         if ($node->getContext()->getCurrentSite()) {
             $this->site = $node->getContext()->getCurrentSite();
 
 
             if (isset($this->settings['TypoScriptPaths'][$typoscriptPath][$this->site->getSiteResourcesPackageKey()])) {
                 $typoscriptPath = $this->settings['TypoScriptPaths'][$typoscriptPath][$this->site->getSiteResourcesPackageKey()];
+            } else {
+                if ($typoscriptPath === 'breadcrumb') {
+                    $typoscriptPath = 'neosliveHybridsearchBreadcrumb';
+                }
+                if ($typoscriptPath === 'page') {
+                    $typoscriptPath = 'neosliveHybridsearchRawContent';
+                }
             }
 
 
@@ -1654,6 +1662,7 @@ class SearchIndexFactory
 
     /**
      * @return TypoScriptView
+     * @throws Exception
      */
     private
     function getView()
@@ -1664,38 +1673,40 @@ class SearchIndexFactory
 
             if ($this->site) {
 
+                if ($this->site->getFirstActiveDomain() === NULL) {
+                    throw new Exception(sprintf('The site "%s" has no active domains. please add one before indexing', $this->site->getName()));
+                    exit;
+                } else {
+                    $httpRequest = \TYPO3\Flow\Http\Request::create(new \TYPO3\Flow\Http\Uri($this->site->getFirstActiveDomain()->getHostPattern()));
+                    $this->baseUri = ($this->site->getFirstActiveDomain()->getScheme() == '' ? 'http://' : $this->site->getFirstActiveDomain()->getScheme()) . $this->site->getFirstActiveDomain()->getHostPattern() . ($this->site->getFirstActiveDomain()->getPort() == '' ? '' : ':' . $this->site->getFirstActiveDomain()->getPort());
+                    $request = new \TYPO3\Flow\Mvc\ActionRequest($httpRequest);
 
-                $httpRequest = \TYPO3\Flow\Http\Request::create(new \TYPO3\Flow\Http\Uri($this->site->getFirstActiveDomain()->getHostPattern()));
-                $this->baseUri = ($this->site->getFirstActiveDomain()->getScheme() == '' ? 'http://' : $this->site->getFirstActiveDomain()->getScheme()) . $this->site->getFirstActiveDomain()->getHostPattern() . ($this->site->getFirstActiveDomain()->getPort() == '' ? '' : ':' . $this->site->getFirstActiveDomain()->getPort());
-                $request = new \TYPO3\Flow\Mvc\ActionRequest($httpRequest);
+
+                    $requestHandler = $this->bootstrap->getActiveRequestHandler();
 
 
-                $requestHandler = $this->bootstrap->getActiveRequestHandler();
+                    if ($requestHandler instanceof \TYPO3\Flow\Http\RequestHandler === false) {
+
+                        // simulate security context
+                        $context = new \TYPO3\Flow\Security\Context;
+                        \TYPO3\Flow\Reflection\ObjectAccess::setProperty($context, 'request', $request);
+                        $requestHandlerInterface = new HttpRequestHandler($httpRequest);
+                        \TYPO3\Flow\Reflection\ObjectAccess::setProperty($this->bootstrap, 'activeRequestHandler', $requestHandlerInterface);
+
+                    }
 
 
-                if ($requestHandler instanceof \TYPO3\Flow\Http\RequestHandler === false) {
-
-                    // simulate security context
-                    $context = new \TYPO3\Flow\Security\Context;
-                    \TYPO3\Flow\Reflection\ObjectAccess::setProperty($context, 'request', $request);
-                    $requestHandlerInterface = new HttpRequestHandler($httpRequest);
-                    \TYPO3\Flow\Reflection\ObjectAccess::setProperty($this->bootstrap, 'activeRequestHandler', $requestHandlerInterface);
-
+                    $request->setControllerActionName('show');
+                    $request->setControllerName('Frontend\Node');
+                    $request->setControllerPackageKey('TYPO3.Neos');
+                    $request->setFormat('html');
+                    $response = new \TYPO3\Flow\Http\Response();
+                    $arguments = new Arguments();
+                    $controllerContext = new \TYPO3\Flow\Mvc\Controller\ControllerContext($request, $response, $arguments);
+                    $this->controllerContext = $controllerContext;
+                    $this->view = new HybridSearchTypoScriptView();
+                    $this->view->setControllerContext($controllerContext);
                 }
-
-
-                $request->setControllerActionName('show');
-                $request->setControllerName('Frontend\Node');
-                $request->setControllerPackageKey('TYPO3.Neos');
-                $request->setFormat('html');
-                $response = new \TYPO3\Flow\Http\Response();
-                $arguments = new Arguments();
-                $controllerContext = new \TYPO3\Flow\Mvc\Controller\ControllerContext($request, $response, $arguments);
-                $this->controllerContext = $controllerContext;
-                $this->view = new HybridSearchTypoScriptView();
-                $this->view->setControllerContext($controllerContext);
-
-
             }
         }
 

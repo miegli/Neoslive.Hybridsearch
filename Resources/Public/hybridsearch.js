@@ -50,6 +50,7 @@
              * @param dimension {string} dimension, hash of the dimension configuration to use form indexed database
              * @param site {string} site identifier (uuid)
              * @param cdnHost {string} (optional) cdn host for static data
+             * @param debug {boolean}
              * @example
              * var hybridSearch = new $hybridsearchObject(
              *  'https://<DATABASE_NAME>.firebaseio.com',
@@ -59,7 +60,7 @@
              * ));
              * @returns {Hybridsearch} used for HybridsearchObject constructor.
              */
-            function Hybridsearch(databaseURL, workspace, dimension, site, cdnHost) {
+            function Hybridsearch(databaseURL, workspace, dimension, site, cdnHost,debug) {
 
 
                 if (!(this instanceof Hybridsearch)) {
@@ -86,7 +87,9 @@
                 };
                 try {
                     firebase.initializeApp(firebaseconfig);
-                    //firebase.database.enableLogging(true)
+                   if (debug !== undefined) {
+                       firebase.database.enableLogging(true);
+                   }
                 } catch (e) {
                     // firebase was initizalized before
                 }
@@ -123,7 +126,7 @@
      * @module Angular main module
      * @returns {hybridsearch}
      */
-    angular.module('hybridsearch.common').factory('$hybridsearchObject', ['$firebaseObject', '$hybridsearchResultsObject', '$hybridsearchFilterObject', '$http', '$q', '$location', '$cookies',
+    angular.module('hybridsearch.common').factory('$hybridsearchObject', ['$firebaseObject', '$hybridsearchResultsObject', '$hybridsearchFilterObject', '$http', '$q', '$location',
 
         /**
          * @private
@@ -132,16 +135,16 @@
          * @param $hybridsearchFilterObject
          * @returns {HybridsearchObject}
          */
-            function (firebaseObject, $hybridsearchResultsObject, $hybridsearchFilterObject, $http, $q, $location, $cookies) {
+            function (firebaseObject, $hybridsearchResultsObject, $hybridsearchFilterObject, $http, $q, $location) {
 
             /**
              * @example
-             * var hybridSearch = new HybridsearchObject(
+             * var hybridSearch = new $Hybridsearch(
              *  'https://<DATABASE_NAME>.firebaseio.com',
              *  'live',
              *  'fb11fdde869d0a8fcfe00a2fd35c031d'
              * ));
-             * var mySearch = new HybridsearchObject(hybridSearch);
+             * var mySearch = new $HybridsearchObject(hybridSearch);
              *      mySearch.setQuery("Foo").addPropertyFilter('title', 'Foo').setNodeType('bar').$watch(function (data) {
              *        console.log(data);
              *      });
@@ -751,25 +754,7 @@
 
                         },
 
-                        /**
-                         * @private
-                         * @returns mixed
-                         */
-                        updateLocationHash: function () {
 
-
-                            if (this.getSearchCounter() > 0) {
-
-                                var filterObject = {
-                                    'query': this.getFilter().getQuery(),
-                                    'propertyFilters': this.getFilter().getPropertyFilters()
-                                };
-
-                                $cookies.put(this.getFirstFilterHash(), JSON.stringify(filterObject));
-                            }
-
-
-                        },
 
                         /**
                          * @private
@@ -808,7 +793,7 @@
                         search: function (nodesFromInput) {
 
 
-                            this.updateLocationHash();
+
 
 
                             var fields = {}, items = {}, self = this, nodesFound = {};
@@ -1923,8 +1908,6 @@
 
                         self.$$app.setHybridsearchInstanceNumber();
                         self.$$app.setFirstFilterHash(self.$$app.getFilter().getHash());
-
-                        //self.applyLastFilter();
                         self.$$app.setIsRunning();
                         self.$$app.setSearchIndex();
 
@@ -1933,39 +1916,6 @@
 
                 },
 
-                /**
-                 * @private
-                 * run search and perform queries
-                 * @returns  {HybridsearchObject}
-                 */
-                applyLastFilter: function () {
-
-
-                    var lastFilterCookie = $cookies.get(this.$$app.getFirstFilterHash());
-
-
-                    if (lastFilterCookie) {
-
-                        //if ($location.$$search['q' + this.$$app.getHybridsearchInstanceNumber()] != undefined) {
-
-
-                        try {
-                            var lastFilter = JSON.parse(lastFilterCookie);
-                            this.$$app.setFilter(lastFilter);
-
-                        } catch (e) {
-                            // json parse failed
-
-                        }
-
-                        //}
-
-                        //this.$$app.resetSearchCounter();
-                        $cookies.remove(this.$$app.getFirstFilterHash());
-
-                    }
-
-                },
 
 
                 /**
