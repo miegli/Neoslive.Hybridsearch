@@ -2,7 +2,7 @@ TYPO3:
   Neos:
     typoScript:
       autoInclude:
-        'Neoslive.Hybridsearch.Neos.Demo': TRUE
+        'Neoslive.Hybridsearch': TRUE
 
 
 
