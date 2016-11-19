@@ -10,6 +10,7 @@
     },
     "name": "neoslive/hybridsearch",
     "minimum-stability": "dev",
+    "version": "0.1.0",
     "autoload": {
         "psr-0": {
             "Neoslive\\Hybridsearch": "Classes/"
