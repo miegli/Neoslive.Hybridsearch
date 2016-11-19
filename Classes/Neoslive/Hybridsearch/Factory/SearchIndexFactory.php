@@ -1029,10 +1029,10 @@ class SearchIndexFactory
 
         if ($node->getProperty('neoslivehybridsearchturbonode')) {
             $data->turbonode = true;
-            $data->html = $rendered;
         } else {
             $data->turbonode = false;
         }
+        $data->html = $rendered;
 
 
         $p = $data->nodeType . "-rawcontent";
@@ -1189,9 +1189,9 @@ class SearchIndexFactory
     {
 
 
-        if (count($data) > 2 && mb_strlen(json_encode($data),'utf8') > 200000000) {
-                $this->addToQueue($path, array_slice($data,0,count($data)/2), $method);
-                $this->addToQueue($path, array_slice($data,count($data)/2), $method);
+        if (count($data) > 2 && mb_strlen(json_encode($data), 'utf8') > 200000000) {
+            $this->addToQueue($path, array_slice($data, 0, count($data) / 2), $method);
+            $this->addToQueue($path, array_slice($data, count($data) / 2), $method);
             unset($data);
             return true;
         } else {
