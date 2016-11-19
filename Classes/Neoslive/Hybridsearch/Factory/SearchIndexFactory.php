@@ -452,54 +452,56 @@ class SearchIndexFactory
     public function sync($workspaceName = 'live', $lastSyncPid = 0, $lastSyncCounter = 0)
     {
 
+        if ($this->settings['Realtime']) {
 
-        $lastSyncCounter++;
-
-
-        if ($lastSyncCounter > 1) {
+            $lastSyncCounter++;
 
 
-            if ($this->isLockReltimeIndexer() === false) {
-
-                $this->proceedQueue();
-                $this->removeTrashedNodes();
+            if ($lastSyncCounter > 1) {
 
 
-                $lastsync = $this->firebase->get("/lastsync/$workspaceName");
-                $date = new \DateTime();
+                if ($this->isLockReltimeIndexer() === false) {
 
-                if ($lastsync) {
-                    $date->setTimestamp(intval($lastsync));
-                }
-
-                $lastSyncDateTime = new \DateTime();
-                $lastSyncTimestamp = $lastSyncDateTime->getTimeStamp();
-
-                $this->firebase->set("/lastsync/$workspaceName", $lastSyncTimestamp);
-                $moditifedNodeData = $this->neosliveHybridsearchNodeDataRepository->findByWorkspaceAndLastModificationDateTimeDate($this->workspaceRepository->findByIdentifier($workspaceName), $date);
-
-
-                foreach ($moditifedNodeData as $nodedata) {
-                    $this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace());
-                }
-
-                if (count($moditifedNodeData)) {
-                    $this->save();
                     $this->proceedQueue();
+                    $this->removeTrashedNodes();
+
+
+                    $lastsync = $this->firebase->get("/lastsync/$workspaceName");
+                    $date = new \DateTime();
+
+                    if ($lastsync) {
+                        $date->setTimestamp(intval($lastsync));
+                    }
+
+                    $lastSyncDateTime = new \DateTime();
+                    $lastSyncTimestamp = $lastSyncDateTime->getTimeStamp();
+
+                    $this->firebase->set("/lastsync/$workspaceName", $lastSyncTimestamp);
+                    $moditifedNodeData = $this->neosliveHybridsearchNodeDataRepository->findByWorkspaceAndLastModificationDateTimeDate($this->workspaceRepository->findByIdentifier($workspaceName), $date);
+
+
+                    foreach ($moditifedNodeData as $nodedata) {
+                        $this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace());
+                    }
+
+                    if (count($moditifedNodeData)) {
+                        $this->save();
+                        $this->proceedQueue();
+
+                    }
 
                 }
 
+                sleep(15);
             }
 
-            sleep(15);
-        }
+            // infinite loop only one thread per workspace
+            if ($lastSyncPid === 0 || $this->firebase->get("/pid/$workspaceName") == $lastSyncPid) {
+                $this->firebase->set("pid/$workspaceName", getmypid());
+                Scripts::executeCommandAsync('hybridsearch:sync', $this->flowSettings, array('lastSyncPid' => getmypid(), 'workspace' => $workspaceName, 'lastSyncCounter' => $lastSyncCounter));
+            }
 
-        // infinite loop only one thread per workspace
-        if ($lastSyncPid === 0 || $this->firebase->get("/pid/$workspaceName") == $lastSyncPid) {
-            $this->firebase->set("pid/$workspaceName", getmypid());
-            Scripts::executeCommandAsync('hybridsearch:sync', $this->flowSettings, array('lastSyncPid' => getmypid(), 'workspace' => $workspaceName, 'lastSyncCounter' => $lastSyncCounter));
         }
-
 
     }
 
@@ -1029,10 +1031,10 @@ class SearchIndexFactory
 
         if ($node->getProperty('neoslivehybridsearchturbonode')) {
             $data->turbonode = true;
+            $data->html = $rendered;
         } else {
             $data->turbonode = false;
         }
-        $data->html = $rendered;
 
 
         $p = $data->nodeType . "-rawcontent";
@@ -1189,9 +1191,9 @@ class SearchIndexFactory
     {
 
 
-        if (count($data) > 2 && mb_strlen(json_encode($data), 'utf8') > 200000000) {
-            $this->addToQueue($path, array_slice($data, 0, count($data) / 2), $method);
-            $this->addToQueue($path, array_slice($data, count($data) / 2), $method);
+        if (count($data) > 2 && mb_strlen(json_encode($data),'utf8') > 200000000) {
+                $this->addToQueue($path, array_slice($data,0,count($data)/2), $method);
+                $this->addToQueue($path, array_slice($data,count($data)/2), $method);
             unset($data);
             return true;
         } else {
