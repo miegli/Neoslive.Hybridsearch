@@ -9,6 +9,7 @@
         "google/apiclient": "*"
     },
     "name": "neoslive/hybridsearch",
+    "minimum-stability": "dev",
     "autoload": {
         "psr-0": {
             "Neoslive\\Hybridsearch": "Classes/"
