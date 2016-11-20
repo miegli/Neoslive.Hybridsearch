@@ -1184,16 +1184,18 @@ class SearchIndexFactory
      * @param string $path
      * @param mixed $data
      * @param string $method
+     * @param integer $chunkcounter
      * @return void
      */
     protected
-    function addToQueue($path, $data = null, $method = 'update')
+    function addToQueue($path, $data = null, $method = 'update', $chunkcounter = 0)
     {
 
 
-        if (count($data) > 2 && mb_strlen(json_encode($data),'utf8') > 200000000) {
-                $this->addToQueue($path, array_slice($data,0,count($data)/2), $method);
-                $this->addToQueue($path, array_slice($data,count($data)/2), $method);
+        if ($chunkcounter < 100 && count($data) > 2 && mb_strlen(json_encode($data),'utf8') > 200000000) {
+                $chunkcounter++;
+                $this->addToQueue($path, array_slice($data,0,ceil(count($data)/2)), $method,$chunkcounter);
+                $this->addToQueue($path, array_slice($data,floor(count($data)/2)), $method,$chunkcounter);
             unset($data);
             return true;
         } else {
@@ -1250,9 +1252,8 @@ class SearchIndexFactory
 
         if ($this->isLockReltimeIndexer() === true) {
 
-            if ($this->proceedcounter < 2) $this->output->outputLine('Queue is locked. Retrying...');
-            sleep(10);
-            Scripts::executeCommandAsync('hybridsearch:proceed', $this->flowSettings);
+            $this->output->outputLine('Queue is locked. Aborted');
+            return true;
 
         } else {
 
