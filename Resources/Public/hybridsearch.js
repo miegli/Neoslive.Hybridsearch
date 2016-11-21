@@ -379,7 +379,7 @@
                                 angular.forEach(node.properties, function (val, key) {
                                     if (value === '' && key.substr(key.length - property.length, property.length) === property) {
                                         value = val !== undefined ? val : '';
-                                        if (typeof value === 'string' && value.substr(0, 2) === '["' && value.substr(-2, 2) === '"]') {
+                                        if (typeof value === 'string' && ((value.substr(0, 2) === '["' && value.substr(-2, 2) === '"]') || (value.substr(0, 2) === '[{' && value.substr(-2, 2) === '}]') )) {
                                             try {
                                                 var valueJson = JSON.parse(value);
                                             } catch (e) {
@@ -406,6 +406,7 @@
 
 
                             var value = '';
+                            var propertyfullname = property;
 
                             if (this.properties == undefined) {
                                 return value;
@@ -424,19 +425,21 @@
                             angular.forEach(this.properties, function (val, key) {
                                 if (value === '' && key.substr(key.length - property.length, property.length) === property) {
                                     value = val !== undefined ? val : '';
+                                    propertyfullname = key;
                                 }
                             });
 
-
-                            if (typeof value === 'string' && value.substr(0, 2) === '["' && value.substr(-2, 2) === '"]') {
-                                try {
-                                    var valueJson = JSON.parse(value);
-                                } catch (e) {
-                                    valueJson = value;
+                                if (typeof value === 'string' && ((value.substr(0, 2) === '["' && value.substr(-2, 2) === '"]') || (value.substr(0, 2) === '[{' && value.substr(-2, 2) === '}]') )) {
+                                    try {
+                                        var valueJson = JSON.parse(value);
+                                    } catch (e) {
+                                        valueJson = value;
+                                    }
+                                    if (valueJson) {
+                                        this.properties[propertyfullname] = valueJson;
+                                        return this.properties[propertyfullname];
+                                    }
                                 }
-                                value = valueJson;
-                            }
-
 
                             return value;
 
@@ -1059,7 +1062,8 @@
                                 angular.forEach(node.properties, function (val, key) {
                                     if (value === '' && key.substr(key.length - property.length, property.length) === property) {
                                         value = val !== undefined ? val : '';
-                                        if (typeof value === 'string' && value.substr(0, 2) === '["' && value.substr(-2, 2) === '"]') {
+
+                                        if (typeof value === 'string' && ((value.substr(0, 2) === '["' && value.substr(-2, 2) === '"]') || (value.substr(0, 2) === '[{' && value.substr(-2, 2) === '}]') )) {
                                             try {
                                                 var valueJson = JSON.parse(value);
                                             } catch (e) {
@@ -1108,6 +1112,8 @@
 
                                 var propertyMatching = 0;
 
+
+
                                 angular.forEach(this.getFilter().getPropertyFilters(), function (filter, property) {
 
 
@@ -1140,6 +1146,8 @@
                                     } else {
                                         filterobject = filter.value;
                                     }
+
+
 
 
                                     // filter is object
@@ -2744,12 +2752,46 @@
                             });
                         } else {
                             if (propvalue.length) {
-                                var k = Sha1.hash(JSON.stringify(propvalue));
-                                variants[k] = {
-                                    value: propvalue,
-                                    count: variants[k] === undefined ? 1 : variants[k].count + 1
-                                };
+
+                                if (typeof propvalue === 'string' && (((propvalue.substr(0, 2) === '["' && propvalue.substr(-2, 2) === '"]')) || (propvalue.substr(0, 2) === '[{' && propvalue.substr(-2, 2) === '}]'))) {
+                                    try {
+                                        var valueJson = JSON.parse(propvalue);
+
+                                    } catch (e) {
+                                        valueJson = false;
+                                    }
+
+                                }
+
+                                if (valueJson) {
+
+
+                                    angular.forEach(valueJson, function (variant) {
+
+                                        var k = Sha1.hash(JSON.stringify(variant));
+
+                                        variants[k] = {
+                                            value: variant,
+                                            count: variants[k] === undefined ? 1 : variants[k].count + 1
+                                        };
+
+
+                                    });
+
+                                } else {
+
+                                    var k = Sha1.hash(JSON.stringify(propvalue));
+
+                                    variants[k] = {
+                                        value: propvalue,
+                                        count: variants[k] === undefined ? 1 : variants[k].count + 1
+                                    };
+
+                                }
+
+
                             }
+
 
                         }
 
@@ -2757,13 +2799,18 @@
                     });
 
 
+
+
                     angular.forEach(variants, function (v, k) {
 
 
                         valueJson = false;
-                        if (typeof v.value === 'string' && v.value.substr(0, 2) === '["' && v.value.substr(-2, 2) === '"]') {
+
+
+                        if (typeof v.value === 'string' && (((v.value.substr(0, 2) === '["' && v.value.substr(-2, 2) === '"]')) || (v.value.substr(0, 2) === '[{' && v.value.substr(-2, 2) === '}]'))) {
                             try {
                                 var valueJson = JSON.parse(v.value);
+
                             } catch (e) {
                                 valueJson = false;
                             }
@@ -2771,9 +2818,12 @@
                         }
 
 
+
                         if (valueJson) {
 
                             angular.forEach(valueJson, function (vs) {
+
+
                                 if (vs.length > 0) {
                                     variants[property][k] = {value: vs, count: v.count};
                                 }
@@ -2783,7 +2833,14 @@
                         }
 
 
+
+
+
+
                     });
+
+
+
 
                     self.$$data.distincts[property] = variants;
 
@@ -2915,7 +2972,8 @@
                         angular.forEach(node.properties, function (val, key) {
                             if (value === '' && key.substr(key.length - property.length, property.length) === property) {
                                 value = val !== undefined ? val : '';
-                                if (typeof value === 'string' && value.substr(0, 2) === '["' && value.substr(-2, 2) === '"]') {
+
+                                if (typeof value === 'string' && ((value.substr(0, 2) === '["' && value.substr(-2, 2) === '"]') || (value.substr(0, 2) === '[{' && value.substr(-2, 2) === '}]') )) {
                                     try {
                                         var valueJson = JSON.parse(value);
                                     } catch (e) {
