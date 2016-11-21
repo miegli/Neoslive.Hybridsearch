@@ -2715,11 +2715,18 @@
                 /**
                  * Get all different values from given property
                  * @param {string} property
+                 * @param {boolean} counterGroupedByNode count existences grouped by node
                  * @returns {array} collection of property values
                  */
-                getDistinct: function (property) {
+                getDistinct: function (property, counterGroupedByNode) {
 
-                    var self = this, variants = {}, propvalue = '', variantsfinal = [];
+
+                    if (counterGroupedByNode === undefined) {
+                        counterGroupedByNode = true;
+                    }
+
+
+                    var self = this, variants = {}, variantsByNodes = {}, propvalue = '', variantsfinal = [];
 
                     if (self.$$data.distincts == undefined) {
                         self.$$data.distincts = {};
@@ -2734,6 +2741,9 @@
                     }
 
                     angular.forEach(this.getNodes(), function (node) {
+
+                        variantsByNodes[node.identifier] = {};
+
                         propvalue = self.getPropertyFromNode(node, property);
 
                         if (typeof propvalue == 'object') {
@@ -2742,10 +2752,14 @@
 
                                 if (v !== undefined) {
                                     var k = Sha1.hash(JSON.stringify(v));
+
+
                                     variants[k] = {
                                         value: v,
-                                        count: variants[k] === undefined ? 1 : variants[k].count + 1
+                                        count: variants[k] === undefined ? 1 : (!counterGroupedByNode || variantsByNodes[node.identifier][k] === undefined ? variants[k].count + 1 : variants[k].count)
                                     };
+
+                                    variantsByNodes[node.identifier][k] = true;
                                 }
 
 
@@ -2772,8 +2786,9 @@
 
                                         variants[k] = {
                                             value: variant,
-                                            count: variants[k] === undefined ? 1 : variants[k].count + 1
+                                            count: variants[k] === undefined ? 1 : (!counterGroupedByNode || variantsByNodes[node.identifier][k] === undefined ? variants[k].count + 1 : variants[k].count)
                                         };
+                                        variantsByNodes[node.identifier][k] = true;
 
 
                                     });
@@ -2784,8 +2799,9 @@
 
                                     variants[k] = {
                                         value: propvalue,
-                                        count: variants[k] === undefined ? 1 : variants[k].count + 1
+                                        count: variants[k] === undefined ? 1 : (!counterGroupedByNode || variantsByNodes[node.identifier][k] === undefined ? variants[k].count + 1 : variants[k].count)
                                     };
+                                    variantsByNodes[node.identifier][k] = true;
 
                                 }
 
