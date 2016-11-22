@@ -811,11 +811,9 @@
 
                             if (!self.getFilter().getFullSearchQuery()) {
 
-
-
-
                                 // return all nodes bco no query set
                                 angular.forEach(nodesFromInput, function (node) {
+
                                     if (self.isFiltered(node) === false) {
                                         //nodes[node.identifier] = node;
                                         self.addNodeToSearchResult(node.identifier, 1, nodesFound, items);
@@ -1121,6 +1119,8 @@
                                     var filterApplied = false, filterobject = {};
                                     var propertyValue = self.getPropertyFromNode(node, property);
 
+
+
                                     // filter is null
                                     if (filterApplied === false && filter.value === null) {
                                         propertyMatching++;
@@ -1147,6 +1147,8 @@
                                     } else {
                                         filterobject = filter.value;
                                     }
+
+
 
 
                                     // filter is object

@@ -761,6 +761,8 @@ class SearchIndexFactory
 
         $nt = "__" . $this->getNodeTypeName($node);
         $keywords->$nt = true;
+        $keywords->$identifier = true;
+
 
         $keywordsOfNode = array();
 
