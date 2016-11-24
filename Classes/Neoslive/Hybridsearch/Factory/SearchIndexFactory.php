@@ -834,9 +834,11 @@ class SearchIndexFactory
             if (strlen($w) > 1) {
                 $w = Encoding::UTF8FixWin1252Chars($w);
                 $w = preg_replace('#[^\w()/.%\-&üöäÜÖÄ]#', "", $w);
-                $keywords->$w = 1;
-                $a = "_nodetype" . $w;
-                $keywords->$a = $nodeTypeName;
+                if ($w && strlen($w) > 1) {
+                    $keywords->$w = 1;
+                    $a = "_nodetype" . $w;
+                    $keywords->$a = $nodeTypeName;
+                }
             }
         }
 
