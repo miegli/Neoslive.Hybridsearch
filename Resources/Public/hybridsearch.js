@@ -475,6 +475,15 @@
                         },
 
                         /**
+                         * Get sorting index
+                         * @returns {integer}
+                         */
+                        getSortingIndex: function () {
+
+                            return this.sortingindex === undefined ? 0 : this.sortingindex;
+                        },
+
+                        /**
                          * Parent node.
                          * @returns {HybridsearchResultsNode}
                          */
@@ -508,6 +517,7 @@
                         addNode: function (node) {
                             nodes[node['_node']['identifier']] = node;
                         }
+
 
                     };
 
@@ -788,6 +798,15 @@
 
                             searchCounter = 0;
 
+                        },
+
+                        /**
+                         * Get node by identifier from current search result.
+                         * @param {string} identifier
+                         * @returns {HybridsearchResultsNode}
+                         */
+                        getResultNodeByIdentifier: function (identifier) {
+                            return this.getResults().$$data.nodes[identifier] === undefined ? null : new HybridsearchResultsNode(this.getResults().$$data.nodes[identifier], 1);
                         },
 
                         /**
@@ -1094,6 +1113,7 @@
                             if (this.getFilter().getNodeType() && this.getFilter().getNodeType() !== node.nodeType) {
                                 return true;
                             }
+
 
                             if (this.getFilter().getNodePath().length > 0 && node.uri.path.substr(0, this.getFilter().getNodePath().length) != this.getFilter().getNodePath()) {
                                 return true;
@@ -2859,6 +2879,7 @@
 
 
                 },
+
                 /**
                  * @private
                  * @param {object}

@@ -20,6 +20,7 @@ use TYPO3\Flow\Error\Exception;
 use TYPO3\Flow\Mvc\Controller\ControllerContext;
 use TYPO3\Flow\Mvc\Routing\UriBuilder;
 use TYPO3\Flow\Persistence\Doctrine\PersistenceManager;
+use TYPO3\Flow\Reflection\ObjectAccess;
 use TYPO3\Flow\Resource\ResourceManager;
 use TYPO3\Media\Domain\Model\Asset;
 use TYPO3\TYPO3CR\Domain\Model\NodeData;
@@ -456,7 +457,6 @@ class SearchIndexFactory
 
             $lastSyncCounter++;
 
-
             if ($lastSyncCounter > 1) {
 
 
@@ -492,7 +492,7 @@ class SearchIndexFactory
 
                 }
 
-                sleep(15);
+                sleep(360);
             }
 
             // infinite loop only one thread per workspace
@@ -999,6 +999,7 @@ class SearchIndexFactory
                 }
             }
 
+
             unset($key);
             unset($val);
             unset($prop);
@@ -1028,6 +1029,7 @@ class SearchIndexFactory
             $properties->grandparent = (Encoding::UTF8FixWin1252Chars($grandParentPropertiesText));
             $p = $data->nodeType . "-grandparent";
             $properties->$p = $properties->grandparent;
+
         }
 
 
@@ -1088,7 +1090,7 @@ class SearchIndexFactory
         $data->grandParentNode->identifier = $grandParentNode ? $grandParentNode->getIdentifier() : null;
         $data->grandParentNode->properties = $grandParentProperties;
         $data->grandParentNode->nodeType = $grandParentNode ? $grandParentNode->getNodeType()->getName() : '';
-
+        $data->grandParentNode->sortingindex = ObjectAccess::getProperty($grandParentNode->getNodeData(), 'index');
 
         if ($parentNode) {
             $data->parentNode = new \stdClass();
@@ -1197,9 +1199,9 @@ class SearchIndexFactory
 
 
         if ($chunkcounter < 100 && count($data) > 2 && strlen(json_encode($data)) > 100000000) {
-                $chunkcounter++;
-                $this->addToQueue($path, array_slice($data,0,floor(count($data)/2)), $method,$chunkcounter);
-                $this->addToQueue($path, array_slice($data,ceil(count($data)/2)), $method,$chunkcounter);
+            $chunkcounter++;
+            $this->addToQueue($path, array_slice($data, 0, floor(count($data) / 2)), $method, $chunkcounter);
+            $this->addToQueue($path, array_slice($data, ceil(count($data) / 2)), $method, $chunkcounter);
             unset($data);
             return true;
         } else {
