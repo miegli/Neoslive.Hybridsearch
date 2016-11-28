@@ -1140,7 +1140,6 @@
                                     var propertyValue = self.getPropertyFromNode(node, property);
 
 
-
                                     // filter is null
                                     if (filterApplied === false && filter.value === null) {
                                         propertyMatching++;
@@ -1167,8 +1166,6 @@
                                     } else {
                                         filterobject = filter.value;
                                     }
-
-
 
 
                                     // filter is object
@@ -1851,7 +1848,6 @@
                             angular.forEach(data, function (value, key) {
 
 
-
                                 if (self.isFiltered(value.node) === false) {
 
                                     nodes[value.node.identifier] = value.node;
@@ -2023,7 +2019,6 @@
                     //self.$$app.addNodesByIdentifier(nodesArray);
                     self.$$app.setIsNodesByIdentifier();
 
-
                     angular.forEach(nodesArray, function (node) {
 
                         self.$$app.getIndexByNodeIdentifier(node).once("value", function (data) {
@@ -2040,7 +2035,19 @@
                                 }, nodesArray.length > 50 ? 500 : 100);
                             }
 
+
+                            // wait for updates
+                            self.$$app.getIndexByNodeIdentifier(node).on("value", function (data) {
+                                if (data.val()) {
+                                    self.$$app.addLocalIndex([data.val()]);
+                                    self.$$app.search();
+                                }
+                            });
+
+
                         });
+
+
 
 
                     });
