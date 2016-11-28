@@ -1090,6 +1090,7 @@ class SearchIndexFactory
         $data->grandParentNode->identifier = $grandParentNode ? $grandParentNode->getIdentifier() : null;
         $data->grandParentNode->properties = $grandParentProperties;
         $data->grandParentNode->nodeType = $grandParentNode ? $grandParentNode->getNodeType()->getName() : '';
+
         if ($grandParentNode) {
             $data->grandParentNode->sortingindex = ObjectAccess::getProperty($grandParentNode->getNodeData(), 'index');
         } else {
