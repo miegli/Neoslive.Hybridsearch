@@ -2679,10 +2679,11 @@
 
                 /**
                  * Get all nodes from current search result.
+                 * @param {integer} limit max results
                  * @returns {array} collection of {HybridsearchResultsNode}
                  */
-                getNodes: function () {
-                    return this.getData()._nodes === undefined ? null : this.getData()._nodes;
+                getNodes: function (limit) {
+                    return this.getData()._nodes === undefined ? null : (limit === undefined ? this.getData()._nodes : this.getData()._nodes.slice(0,limit) );
                 },
 
                 /**
