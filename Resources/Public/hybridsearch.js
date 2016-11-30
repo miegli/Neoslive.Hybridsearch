@@ -153,7 +153,7 @@
              */
             var HybridsearchObject = function (hybridsearch) {
 
-                    var hybridsearchInstanceNumber, pendingRequests, results, filter, index, lunrSearch, nodes, nodesLastHash, nodeTypeLabels, propertiesBoost, isRunning, firstfilterhash, searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier, nodesByIdentifier, searchCounter, searchCounterTimeout;
+                    var hybridsearchInstanceNumber, pendingRequests, results, filter, index, lunrSearch, nodes, nodesLastHash, nodeTypeLabels, resultGroupedBy, propertiesBoost, isRunning, firstfilterhash, searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier, nodesByIdentifier, searchCounter, searchCounterTimeout;
 
                     // count instances
                     if (window.hybridsearchInstances === undefined) {
@@ -176,6 +176,7 @@
                     nodes = {};
                     index = {};
                     pendingRequests = [];
+                    resultGroupedBy = {};
                     lunrSearch = elasticlunr(function () {
                         this.setRef('id');
                     });
@@ -677,6 +678,28 @@
                         },
                         /**
                          * @private
+                         * @param nodeType
+                         * @returns {array}
+                         */
+                        getGroupedBy: function (nodeType) {
+
+                            var grouped = resultGroupedBy !== undefined && resultGroupedBy[nodeType] !== undefined ? resultGroupedBy[nodeType] : [];
+
+                            if (nodeTypeLabels[nodeType] !== undefined && grouped.length === 0) {
+                                grouped = resultGroupedBy !== undefined && resultGroupedBy[nodeTypeLabels[nodeType]] !== undefined ? resultGroupedBy[nodeTypeLabels[nodeType]] : [];
+                            }
+
+                            if (typeof grouped === 'string') {
+                                var g = grouped;
+                                grouped = [];
+                                grouped.push(g);
+                            }
+
+                            return grouped;
+
+                        },
+                        /**
+                         * @private
                          * @param labels
                          */
                         setNodeTypeLabels: function (labels) {
@@ -689,6 +712,13 @@
                          */
                         setPropertiesBoost: function (boost) {
                             propertiesBoost = boost;
+                        },
+                        /**
+                         * @private
+                         * @param boost
+                         */
+                        setGroupedBy: function (groupedBy) {
+                            resultGroupedBy = groupedBy;
                         },
                         /**
                          * @private
@@ -931,9 +961,27 @@
                         addNodeToSearchResult: function (nodeId, score, nodesFound, items) {
 
                             var skip = false;
+                            var resultNode = new HybridsearchResultsNode(nodes[nodeId], score);
                             var hash = nodes[nodeId].hash;
+                            var groupedBy = this.getGroupedBy(nodes[nodeId].nodeType);
                             var nodeTypeLabel = nodeTypeLabels[nodes[nodeId].nodeType] !== undefined ? nodeTypeLabels[nodes[nodeId].nodeType] : nodes[nodeId].nodeType;
 
+
+                            if (groupedBy.length) {
+
+                                var groupedString = '';
+
+                                angular.forEach(groupedBy, function (property) {
+                                    groupedString += resultNode.getProperty(property);
+                                });
+
+                                if (groupedString == 0 || groupedString == '') {
+                                    skip = true;
+                                } else {
+                                    hash = Sha1.hash(groupedString);
+                                }
+
+                            }
 
                             if (items['_nodesByType'][nodeTypeLabel] === undefined) {
                                 items['_nodesByType'][nodeTypeLabel] = {};
@@ -948,13 +996,13 @@
                             if (skip === false) {
 
                                 if (nodes[nodeId]['turbonode'] === true) {
-                                    items['_nodesTurbo'][hash] = new HybridsearchResultsNode(nodes[nodeId], score);
+                                    items['_nodesTurbo'][hash] = resultNode;
                                 } else {
-                                    items['_nodes'][hash] = new HybridsearchResultsNode(nodes[nodeId], score);
+                                    items['_nodes'][hash] = resultNode;
                                 }
 
 
-                                items['_nodesByType'][nodeTypeLabel][hash] = new HybridsearchResultsNode(nodes[nodeId], score);
+                                items['_nodesByType'][nodeTypeLabel][hash] = resultNode;
                             }
 
                             nodesFound[hash] = true;
@@ -1114,7 +1162,6 @@
                         isFiltered: function (node) {
 
                             var self = this;
-
 
 
                             if (this.getFilter().getNodeType() && this.getFilter().getNodeType() !== node.nodeType) {
@@ -1806,7 +1853,9 @@
 
                                 // add to local index
                                 angular.forEach(data, function (value) {
-                                    nodes[value.node.identifier] = value.node;
+                                    if (value.node !== undefined) {
+                                        nodes[value.node.identifier] = value.node;
+                                    }
                                 });
 
 
@@ -2278,6 +2327,21 @@
                 setPropertiesBoost: function (propertiesboost) {
                     var self = this;
                     self.$$app.setPropertiesBoost(propertiesboost);
+                    return this;
+                },
+
+                /**
+                 * Sets groupedBy.
+                 * @param {object} groupedBy
+                 * @example var groupedBy = {
+                 *        'nodeType': ['id'],
+                 *        'corporate-contact-': ['name','lastname']
+                 *    }
+                 * @returns {$hybridsearchResultsObject|*}
+                 */
+                setGroupedBy: function (groupedBy) {
+                    var self = this;
+                    self.$$app.setGroupedBy(groupedBy);
                     return this;
                 },
 
@@ -3046,13 +3110,19 @@
 
                     var self = this;
 
+
                     if (self.$$data.groups.count() > 0) {
                         return self.$$data.groups;
                     }
 
                     angular.forEach(this.getData()._nodesByType, function (result, key) {
-                        self.$$data.groups.addItem(result.group, result);
+
+                        if (Object.keys(result).length > 1) {
+                            self.$$data.groups.addItem(result.group, result);
+                        }
+
                     });
+
 
                     return self.$$data.groups;
                 },
