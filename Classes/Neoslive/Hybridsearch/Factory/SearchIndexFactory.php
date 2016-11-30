@@ -348,6 +348,7 @@ class SearchIndexFactory
             $this->deleteIndex($site);
         }
 
+
         $moditifedNodeData = $this->nodeDataRepository->findByWorkspace($this->workspaceRepository->findByIdentifier($workspacename));
 
         $this->output->progressStart(count($moditifedNodeData));

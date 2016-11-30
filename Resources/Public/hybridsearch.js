@@ -866,7 +866,6 @@
                                             bool: "OR"
                                         }), function (item) {
 
-
                                             if (nodes[item.ref] !== undefined) {
 
                                                 if (self.isNodesByIdentifier()) {
@@ -3482,7 +3481,7 @@
                     var uniquarray = [];
 
                     if (lastSearchInstance.$$data !== undefined) {
-                        var term = lastSearchInstance.$$data.keywords.join(" ") + " trendingHour" + d.getHours() + " " + (this.getGa('userGender') ? this.getGa('userGender') : '') + " " + (this.getGa('userGender') ? this.getGa('userAgeBracket') : '')
+                        var term = lastSearchInstance.$$data.keywords.join(" ");
                         var terms = term.split(" ");
 
                         angular.forEach(terms, function (keyword) {
@@ -3582,7 +3581,9 @@
 
 
                         angular.forEach(self.getMagicReplacements(term), function (a, t) {
-                            magickeywords.push(t);
+                            if (t.length > 3) {
+                                magickeywords.push(t);
+                            }
                         });
 
 
