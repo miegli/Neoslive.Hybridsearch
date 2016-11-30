@@ -126,7 +126,7 @@
      * @module Angular main module
      * @returns {hybridsearch}
      */
-    angular.module('hybridsearch.common').factory('$hybridsearchObject', ['$firebaseObject', '$hybridsearchResultsObject', '$hybridsearchFilterObject', '$http', '$q', '$location',
+    angular.module('hybridsearch.common').factory('$hybridsearchObject', ['$firebaseObject', '$hybridsearchResultsObject', '$hybridsearchFilterObject', '$http', '$q', '$location', '$filter',
 
         /**
          * @private
@@ -135,7 +135,7 @@
          * @param $hybridsearchFilterObject
          * @returns {HybridsearchObject}
          */
-            function (firebaseObject, $hybridsearchResultsObject, $hybridsearchFilterObject, $http, $q, $location) {
+            function (firebaseObject, $hybridsearchResultsObject, $hybridsearchFilterObject, $http, $q, $location, $filter) {
 
             /**
              * @example
@@ -153,7 +153,7 @@
              */
             var HybridsearchObject = function (hybridsearch) {
 
-                    var hybridsearchInstanceNumber, pendingRequests, results, filter, index, lunrSearch, nodes, nodesLastHash, nodeTypeLabels, resultGroupedBy, propertiesBoost, isRunning, firstfilterhash, searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier, nodesByIdentifier, searchCounter, searchCounterTimeout;
+                    var hybridsearchInstanceNumber, pendingRequests, results, filter, index, lunrSearch, nodes, nodesLastHash, nodeTypeLabels, resultGroupedBy, resultOrderBy, propertiesBoost, isRunning, firstfilterhash, searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier, nodesByIdentifier, searchCounter, searchCounterTimeout;
 
                     // count instances
                     if (window.hybridsearchInstances === undefined) {
@@ -177,6 +177,7 @@
                     index = {};
                     pendingRequests = [];
                     resultGroupedBy = {};
+                    resultOrderBy = {};
                     lunrSearch = elasticlunr(function () {
                         this.setRef('id');
                     });
@@ -474,7 +475,7 @@
 
                             var preview = this.properties.rawcontent === undefined ? '' : this.properties.rawcontent.substr(0, maxlength) + (this.properties.rawcontent.length >= maxlength ? ' ...' : '');
 
-                            return preview.trim().replace(/\t/g,"/ ");
+                            return preview.trim().replace(/\t/g, "/ ");
                         },
 
                         /**
@@ -702,6 +703,29 @@
                         },
                         /**
                          * @private
+                         * @param nodeType
+                         * @returns {array}
+                         */
+                        getOrderBy: function (nodeType) {
+
+                            var order = resultOrderBy !== undefined && resultOrderBy[nodeType] !== undefined ? resultOrderBy[nodeType] : [];
+
+                            if (nodeTypeLabels[nodeType] !== undefined && order.length === 0) {
+                                order = resultOrderBy !== undefined && resultOrderBy[nodeTypeLabels[nodeType]] !== undefined ? resultOrderBy[nodeTypeLabels[nodeType]] : [];
+                            }
+
+
+                            if (typeof order === 'string') {
+                                var g = order;
+                                order = [];
+                                order.push(g);
+                            }
+
+                            return order;
+
+                        },
+                        /**
+                         * @private
                          * @param labels
                          */
                         setNodeTypeLabels: function (labels) {
@@ -721,6 +745,13 @@
                          */
                         setGroupedBy: function (groupedBy) {
                             resultGroupedBy = groupedBy;
+                        },
+                        /**
+                         * @private
+                         * @param boost
+                         */
+                        setOrderBy: function (orderBy) {
+                            resultOrderBy = orderBy;
                         },
                         /**
                          * @private
@@ -862,32 +893,74 @@
 
                             if (!self.getFilter().getFullSearchQuery()) {
 
+                                var preOrdered = [];
+
                                 // return all nodes bco no query set
                                 angular.forEach(nodesFromInput, function (node) {
 
                                     if (self.isFiltered(node) === false) {
-                                        //nodes[node.identifier] = node;
-                                        self.addNodeToSearchResult(node.identifier, 1, nodesFound, items);
+                                        preOrdered.push(node);
                                     }
                                 });
+
+                                var Ordered = $filter('orderBy')(preOrdered, function (node) {
+                                    var ostring = '';
+
+                                    angular.forEach(self.getOrderBy(node.nodeType), function (property) {
+
+                                        var s = self.getPropertyFromNode(node, property);
+                                        if (typeof s === 'string') {
+                                            ostring += s;
+                                        }
+
+                                    });
+
+                                    return ostring;
+                                });
+
+                                angular.forEach(Ordered, function (node) {
+                                    self.addNodeToSearchResult(node.identifier, 1, nodesFound, items);
+                                });
+
 
                             } else {
 
 
                                 var query = filter.getFinalSearchQuery(lastSearchInstance);
-
+                                var preOrdered = [];
 
                                 if (query === false) {
                                     // return all nodes bco no query set
                                     angular.forEach(nodesFromInput, function (node) {
                                         if (self.isFiltered(node) === false) {
-                                            //nodes[node.identifier] = node;
-                                            self.addNodeToSearchResult(node.identifier, 1, nodesFound, items);
+                                            preOrdered.push(node);
                                         }
                                     });
 
-                                } else {
+                                    var Ordered = $filter('orderBy')(preOrdered, function (node) {
 
+                                        var ostring = '';
+
+                                        angular.forEach(self.getOrderBy(node.nodeType), function (property) {
+
+                                            var s = self.getPropertyFromNode(node, property);
+                                            if (typeof s === 'string') {
+                                                ostring += s;
+                                            }
+
+                                        });
+
+
+                                        return ostring;
+
+
+                                    });
+
+                                    angular.forEach(Ordered, function (node) {
+                                        self.addNodeToSearchResult(node.identifier, 1, nodesFound, items);
+                                    });
+
+                                } else {
 
 
                                     // execute query search
@@ -895,30 +968,58 @@
                                         fields[v] = {boost: self.getBoost(v)}
                                     });
 
+
                                     angular.forEach(lunrSearch.search(query, {
-                                            fields: fields,
-                                            bool: "OR"
-                                        }), function (item) {
+                                        fields: fields,
+                                        bool: "OR"
+                                    }), function (item) {
 
+                                        if (nodes[item.ref] !== undefined) {
 
-                                            if (nodes[item.ref] !== undefined) {
-
-                                                if (self.isNodesByIdentifier()) {
-                                                    // post filter node
-                                                    if (self.isFiltered(nodes[item.ref]) === false) {
-                                                        self.addNodeToSearchResult(item.ref, item.score, nodesFound, items);
-                                                    }
-                                                } else {
-                                                    // dont post filter because filter were applied before while filling search index
-                                                    self.addNodeToSearchResult(item.ref, item.score, nodesFound, items);
+                                            if (self.isNodesByIdentifier()) {
+                                                // post filter node
+                                                if (self.isFiltered(nodes[item.ref]) === false) {
+                                                    preOrdered.push(item);
                                                 }
-
-
+                                            } else {
+                                                // dont post filter because filter were applied before while filling search index
+                                                preOrdered.push(item);
                                             }
 
-                                        }
-                                    );
 
+                                        }
+
+                                    });
+
+
+                                    var Ordered = $filter('orderBy')(preOrdered, function (item) {
+                                        var orderBy = self.getOrderBy(nodes[item.ref].nodeType);
+                                        if (orderBy) {
+
+                                            var ostring = '';
+
+                                            angular.forEach(orderBy, function (property) {
+                                                if (property === 'score') {
+                                                    ostring += item.score;
+                                                } else {
+                                                    var s = self.getPropertyFromNode(nodes[item.ref], property);
+                                                    if (typeof s === 'string') {
+                                                        ostring += s;
+                                                    }
+                                                }
+                                            });
+
+
+                                            return ostring;
+
+                                        } else {
+                                            return -1 * item.score;
+                                        }
+                                    });
+
+                                    angular.forEach(Ordered, function (item) {
+                                        self.addNodeToSearchResult(item.ref, item.score, nodesFound, items);
+                                    });
 
                                 }
 
@@ -939,7 +1040,7 @@
                             }
 
 
-                            results.getApp().setResults(items, nodes);
+                            results.getApp().setResults(items, nodes, this);
 
                             if (searchCounterTimeout) {
                                 clearTimeout(searchCounterTimeout);
@@ -961,6 +1062,7 @@
                          * @returns boolean
                          */
                         addNodeToSearchResult: function (nodeId, score, nodesFound, items) {
+
 
                             var skip = false;
                             var resultNode = new HybridsearchResultsNode(nodes[nodeId], score);
@@ -2341,13 +2443,28 @@
                  * @param {object} groupedBy
                  * @example var groupedBy = {
                  *        'nodeType': ['id'],
-                 *        'corporate-contact-': ['name','lastname']
+                 *        'nodeTypeLabel': ['name','lastname']
                  *    }
                  * @returns {$hybridsearchResultsObject|*}
                  */
                 setGroupedBy: function (groupedBy) {
                     var self = this;
                     self.$$app.setGroupedBy(groupedBy);
+                    return this;
+                },
+
+                /**
+                 * Sets orderBy.
+                 * @param {object} orderBy
+                 * @example var orderBy = {
+                 *        'nodeTypeLabel': ['name'],
+                 *        'nodeTye^e': ['name']
+                 *    }
+                 * @returns {$hybridsearchResultsObject|*}
+                 */
+                setOrderBy: function (orderBy) {
+                    var self = this;
+                    self.$$app.setOrderBy(orderBy);
                     return this;
                 },
 
@@ -2426,10 +2543,11 @@
 
                 /**
                  * Get all nodes for this group from current search result.
+                 * @param {integer} limit max results
                  * @returns {array} collection of {HybridsearchResultsNode}
                  */
-                getNodes: function () {
-                    return this._nodes !== undefined ? this._nodes : [];
+                getNodes: function (limit) {
+                    return this._nodes !== undefined ? (limit === undefined ? this._nodes : this._nodes.slice(0, limit)) : [];
                 }
 
             };
@@ -2533,11 +2651,12 @@
 
                         self.$$data.nodes = nodes;
 
+
                         angular.forEach(results, function (val, key) {
 
                             var sorteable = [];
-
                             angular.forEach(val, function (v, k) {
+
 
                                 if (key === '_nodesByType') {
                                     v.group = k;
