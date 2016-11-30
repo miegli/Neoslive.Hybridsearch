@@ -3664,7 +3664,7 @@
 
 
                         angular.forEach(self.getMagicReplacements(term), function (a, t) {
-                            if (t.length > 3) {
+                            if (t.length > 1) {
                                 magickeywords.push(t);
                             }
                         });
