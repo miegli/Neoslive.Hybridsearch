@@ -856,6 +856,8 @@
 
                                 } else {
 
+
+
                                     // execute query search
                                     angular.forEach(lunrSearch.getFields(), function (v, k) {
                                         fields[v] = {boost: self.getBoost(v)}
@@ -865,6 +867,7 @@
                                             fields: fields,
                                             bool: "OR"
                                         }), function (item) {
+
 
                                             if (nodes[item.ref] !== undefined) {
 
@@ -1043,6 +1046,10 @@
                             var value = '';
                             var self = this;
 
+                            if (node.properties === undefined) {
+                                return value;
+                            }
+
 
                             if (node.properties[property] !== undefined) {
                                 return node.properties[property];
@@ -1109,16 +1116,13 @@
                             var self = this;
 
 
+
                             if (this.getFilter().getNodeType() && this.getFilter().getNodeType() !== node.nodeType) {
                                 return true;
                             }
 
 
                             if (this.getFilter().getNodePath().length > 0 && node.uri.path.substr(0, this.getFilter().getNodePath().length) != this.getFilter().getNodePath()) {
-                                return true;
-                            }
-
-                            if (self.isNodesByIdentifier() && self.isNodeAddedByIdentifier(node.identifier) === false) {
                                 return true;
                             }
 
@@ -2023,30 +2027,33 @@
                         self.$$app.getIndexByNodeIdentifier(node).once("value", function (data) {
 
                             if (data.val()) {
-                                self.$$app.addNodeByIdentifier(data.val());
-                                self.$$app.addLocalIndex([data.val()]);
 
-                                if (timer !== false) {
-                                    clearTimeout(timer);
+                                if (self.$$app.isFiltered(data.val().node) === false) {
+
+                                    self.$$app.addNodeByIdentifier(data.val());
+                                    self.$$app.addLocalIndex([data.val()]);
+
+                                    if (timer !== false) {
+                                        clearTimeout(timer);
+                                    }
+                                    timer = setTimeout(function () {
+                                        self.$$app.search();
+                                    }, nodesArray.length > 50 ? 500 : 100);
+
+
+                                    // wait for updates
+                                    self.$$app.getIndexByNodeIdentifier(node).on("value", function (data) {
+                                        if (data.val()) {
+                                            self.$$app.addLocalIndex([data.val()]);
+                                            self.$$app.search();
+                                        }
+                                    });
                                 }
-                                timer = setTimeout(function () {
-                                    self.$$app.search();
-                                }, nodesArray.length > 50 ? 500 : 100);
+
                             }
 
 
-                            // wait for updates
-                            self.$$app.getIndexByNodeIdentifier(node).on("value", function (data) {
-                                if (data.val()) {
-                                    self.$$app.addLocalIndex([data.val()]);
-                                    self.$$app.search();
-                                }
-                            });
-
-
                         });
-
-
 
 
                     });
@@ -2682,7 +2689,7 @@
                  * @returns {array} collection of {HybridsearchResultsNode}
                  */
                 getNodes: function (limit) {
-                    return this.getData()._nodes === undefined ? null : (limit === undefined ? this.getData()._nodes : this.getData()._nodes.slice(0,limit) );
+                    return this.getData()._nodes === undefined ? null : (limit === undefined ? this.getData()._nodes : this.getData()._nodes.slice(0, limit) );
                 },
 
                 /**
