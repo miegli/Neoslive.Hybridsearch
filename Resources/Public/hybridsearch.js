@@ -472,7 +472,9 @@
                                 maxlength = 512;
                             }
 
-                            return this.properties.rawcontent === undefined ? '' : this.properties.rawcontent.substr(0, maxlength) + (this.properties.rawcontent.length >= maxlength ? ' ...' : '');
+                            var preview = this.properties.rawcontent === undefined ? '' : this.properties.rawcontent.substr(0, maxlength) + (this.properties.rawcontent.length >= maxlength ? ' ...' : '');
+
+                            return preview.trim().replace(/\t/g,"/ ");
                         },
 
                         /**
