@@ -466,16 +466,17 @@
                         /**
                          * Preview html content of node.
                          * @param maxlength
+                         * @param delimiter
                          * @returns {string}
                          */
-                        getPreview: function (maxlength) {
+                        getPreview: function (maxlength,delimiter) {
                             if (maxlength === undefined) {
                                 maxlength = 512;
                             }
 
                             var preview = this.properties.rawcontent === undefined ? '' : this.properties.rawcontent.substr(0, maxlength) + (this.properties.rawcontent.length >= maxlength ? ' ...' : '');
 
-                            return preview.trim().replace(/\t/g, "/ ");
+                            return preview.trim().replace(/\t/g, delimiter === undefined ? " ... " : delimiter);
                         },
 
                         /**
