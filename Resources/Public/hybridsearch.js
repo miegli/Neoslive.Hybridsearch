@@ -974,7 +974,11 @@
                                 var groupedString = '';
 
                                 angular.forEach(groupedBy, function (property) {
-                                    groupedString += resultNode.getProperty(property);
+                                    var p = resultNode.getProperty(property);
+                                    if (typeof p === 'string' && p.trim() === '') {
+                                        skip = true;
+                                    }
+                                    groupedString += p;
                                 });
 
                                 if (groupedString == 0 || groupedString == '') {
