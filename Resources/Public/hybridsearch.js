@@ -2874,10 +2874,11 @@
 
                 /**
                  * Get all turbonodes from current search result.
+                 * @param {integer} limit max results
                  * @returns {array} collection of {HybridsearchResultsNode}
                  */
                 getTurboNodes: function () {
-                    return this.getData()._nodesTurbo === undefined ? null : this.getData()._nodesTurbo;
+                    return this.getData()._nodesTurbo === undefined ? null : (limit === undefined ? this.getData()._nodesTurbo : this.getData()._nodesTurbo.slice(0, limit) );
                 },
 
                 /**

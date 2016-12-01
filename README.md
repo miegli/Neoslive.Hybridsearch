@@ -206,7 +206,7 @@ For each resulting nodeType the search engine creates a group name by the nodeTy
 
 ##### Examples
 
-* setNodeTypeLabels({'vendor-package-contact': 'Persons'},{'vendor-package-customers': 'Persons'}) group contact and customers into one group called "Persons". 
+* `setNodeTypeLabels({'vendor-package-contact': 'Persons'},{'vendor-package-customers': 'Persons'})` group contact and customers into one group called "Persons". 
 
 -------
 
@@ -225,7 +225,7 @@ Adjust the relevance score calculation for each nodeType property. Higher values
 
 ##### Examples
 
-* setPropertiesBoost({'vendor-package-contact-name': 50},{'vendor-package-contact-lastname': 50}) query matchings in lastname are higher scored in 
+* `setPropertiesBoost({'vendor-package-contact-name': 50},{'vendor-package-contact-lastname': 50})` query matchings in lastname are higher scored in 
 
 -------
 
@@ -290,9 +290,9 @@ var persons = [
 ];
 ```
 
-* addPropertyFilter('persons.name',['michael','peter']) finds persons with name 'michael' or 'peter'
-* addPropertyFilter('persons.name',{'michael': true,'peter': false}) finds persons with name 'michael' but not 'peter'
-* addPropertyFilter('persons.*.email','foo@bar.com') finds persons with email 'foo@bar.com' in primary or secondary address.
+* `addPropertyFilter('persons.name',['michael','peter'])` finds persons with name 'michael' or 'peter'
+* `addPropertyFilter('persons.name',{'michael': true,'peter': false})` finds persons with name 'michael' but not 'peter'
+* `addPropertyFilter('persons.*.email','foo@bar.com')` finds persons with email 'foo@bar.com' in primary or secondary address.
 
 
 ### setNodePath
@@ -310,7 +310,7 @@ Sets the node path (or uri segment) that is the entry point searching for. If sc
 
 ##### Examples
 
-* setNodePath('/company/about/') get only search results, that are under the uri path '/company/about/'
+* `setNodePath('/company/about/')` get only search results, that are under the uri path '/company/about/'
 
 -------
 
@@ -332,7 +332,7 @@ Add nodes to local search index by given node identifiers (uuid). If the there a
 
 ##### Examples
 
-* addNodesByIdentifier(['64021902-b7d9-11e6-80f5-76304dec7eb7','57978ed3-6e41-48ce-8421-22d80beacef0']) add the nodes to local search index.
+* `addNodesByIdentifier(['64021902-b7d9-11e6-80f5-76304dec7eb7','57978ed3-6e41-48ce-8421-22d80beacef0'])` add the nodes to local search index.
 
 -------
 
@@ -356,8 +356,8 @@ Sets orderings for the result. You can order the result in template view, but th
 
 ##### Examples
 
-* setOrderBy({'vendor-package-contact': ['name','lastname']}) sorts result by name and lastname for contact nodes
-* setOrderBy({'*': 'title'}) sorts result by title for all other nodes
+* `setOrderBy({'vendor-package-contact': ['name','lastname']})` sorts result by name and lastname for contact nodes
+* `setOrderBy({'*': 'title'})` sorts result by title for all other nodes
 
 -------
 
@@ -377,7 +377,7 @@ Group the result by given identifiers. With this groupedBy function you can filt
 ##### Examples
 
 * `setGroupedBy({'vendor-package-contact': ['name','lastname']})` group result by name and lastname for contact nodes. So only persons with different fullnames were applied to the search result. 
-* setGroupedBy({'*': 'title'}) group result by title for all other nodes
+* `setGroupedBy({'*': 'title'})` group result by title for all other nodes
 
 -------
 
@@ -404,7 +404,7 @@ Bind the {HybridsearchResultsObject} to given scope variable.
 ##### Examples
 
 * `$bind('result',$scope)` The search result is automatically applied to the angular scope variable 'result', that you can use in your controller.
-*
+
 -------
 
 
@@ -412,18 +412,311 @@ Bind the {HybridsearchResultsObject} to given scope variable.
 
 This is the main result object, where all methods are called that are presenting the search result.
 
-## Getter methods
+## Counter methods
+
+The counter methods delivers statistics about current search result.
 
 ### count
-Get number of nodes in current results. 
+Get number of nodes in current result (excluding turbo nodes) 
 
 ##### Returns
-{Integer} number of nodes
+{Integer} number of nodes excluding turbonodes
 
 ##### Examples
 
 * `<div>Results {{result.count()}}</div>` where result is scope variable with binding to HybridsearchResultsObject (see $bind)
 
 -------
+
+### countAll
+Get number of nodes in current result (including turbo nodes) 
+
+##### Returns
+{Integer} number of nodes including turbo nodes
+
+-------
+
+### countTurboNodes
+Get number of turbo nodes nodes in current result
+
+##### Returns
+{Integer} number of turbo nodes
+
+-------
+
+### countByNodeType
+Get number of nodes in current result by node type
+
+##### Arguments
+
+| Param | Type | Details
+| --- | --- | --- |
+| nodeType | String | nodeType |
+
+
+##### Returns
+{Integer} number of nodes 
+
+
+-------
+
+### countByNodeTypeLabel
+Get number of nodes in current result by node type label
+
+##### Arguments
+
+| Param | Type | Details
+| --- | --- | --- |
+| nodeTypeLabel | String | nodeType label |
+
+
+##### Returns
+{Integer} number of nodes 
+
+-------
+
+### getDistinctCount
+Get number of different values (distinct) of current search result.
+
+##### Arguments
+
+| Param | Type | Details
+| --- | --- | --- |
+| property | String | name of the property for distinct calculcation |
+
+
+##### Returns
+{Integer} number of different values 
+
+
+## Getter methods
+
+The getter methods delivers the result as collection {HybridsearchResultsNode}.
+
+### getNodes
+Get result collection (excluding turbo nodes) 
+
+##### Arguments
+
+| Param | Type | Details
+| --- | --- | --- |
+| limit (optional) | Integer | number of results |
+
+##### Returns
+{Array} Collection of HybridsearchResultsNode
+
+##### Examples
+
+* `<ul><li data-ng-repeat="node in result.getNodes()">{{node.getProperty('title')}}</li></ul>` where result is scope variable with binding to HybridsearchResultsObject (see $bind)
+
+-------
+
+### getTurboNodes
+Get result collection (only turbo nodes) 
+
+##### Arguments
+
+| Param | Type | Details
+| --- | --- | --- |
+| limit (optional) | Integer | number of results |
+
+##### Returns
+{Array} Collection of HybridsearchResultsNode
+
+
+-------
+
+### getNodesByNodeType
+Get result collection by node type
+
+##### Arguments
+
+| Param | Type | Details
+| --- | --- | --- |
+| nodeType | String | node type |
+
+##### Returns
+{Array} Collection of HybridsearchResultsNode
+
+-------
+
+### getNodesByNodeTypeLabel
+Get result collection by node type label
+
+##### Arguments
+
+| Param | Type | Details
+| --- | --- | --- |
+| nodeType | String | node type label |
+
+##### Returns
+{Array} Collection of HybridsearchResultsNode
+
+
+-------
+
+### getDistinct
+Get distinct values of given property
+
+##### Arguments
+
+| Param | Type | Details
+| --- | --- | --- |
+| property | String | name of the property for distinct calculcation |
+
+##### Returns
+{Object.value} Value
+{Object.count} Number of nodes containing this value.
+
+
+
+-------
+
+### getGrouped
+Get alle nodes from current search result a grouped object.
+
+##### Returns
+{HybridsearchResultsGroupObject} Result groups
+
+##### Examples
+
+
+```
+<ul>
+ <li data-ng-repeat="group in result.getGrouped().getItems()">
+  <h1>{{group.getLabel()}} ({{group.count()}})</h1>
+    <ul>
+      <li data-ng-repeat="node in group.getNodes()">
+        <h2>{{node.getProperty('title')}} </h2>
+        <div data-ng-bind-html="node.getBreadcrumb()"></div>
+      </li>
+    </ul>
+ </li>
+</ul>
+```
+
+Where result is scope variable with binding to HybridsearchResultsObject (see $bind)
+
+
+
+-------
+
+
+## $HybridsearchResultsNode (define a single result item/node)
+
+This object is representing a single result item.
+
+## Getter methods
+
+The getter methods delivers all informations about the item.
+
+### getNodeType
+Get the node type.
+
+##### Returns
+{String} node type
+
+
+-------
+
+### getScore
+Get the relevance score of the items.
+
+##### Returns
+{integer} relevance score (highest value is highest relevance)
+
+-------
+
+
+### isTurboNode
+Check if its a turbo node or a normal node.
+
+##### Returns
+{boolean} true if is a turbo node, false is default node
+
+-------
+
+### getBreadcrumb
+Get breadcrumb as HTML code (if its a document node).
+
+##### Returns
+{String} HTML
+
+-------
+
+
+### getUrl
+Get Url (if its a document node).
+
+##### Returns
+{String} url
+
+-------
+
+
+### getPreview
+Get rendered preview of node.
+
+##### Arguments
+
+| Param | Type | Details
+| --- | --- | --- |
+| maxlength (optional) | Integer | max. length of preview text |
+
+##### Returns
+{String} preview content
+
+-------
+
+### getSortingIndex
+Get sorting index of node.
+
+
+##### Returns
+{Integer} sorting index value
+
+-------
+
+### getProperty
+Get value by given property.
+
+##### Arguments
+
+| Param | Type | Details
+| --- | --- | --- |
+| property | String | Name of the property |
+
+##### Returns
+{Mixed} Properties value
+
+##### Examples
+
+* `{{node.getProperty('name')}}` return the name of mixed node types
+* `{{node.getProperty('vendor-package-contact-name')}}` return only the name of node type vendor-package-contact
+* `{{node.getProperty('primaryAdress.email')}}` return primary email
+* `{{node.getProperty('*.email')}}` return all email addresses
+
+-------
+
+### getDocumentNode
+Get the nearest document node.
+
+
+##### Returns
+{HybridsearchResultsNode} HybridsearchResultsNode containing breadcrumb and url
+
+##### Examples
+
+```
+<ul>
+  <li data-ng-repeat="node in result.getNodes()">
+    <h2>{{node.getDocumentNode().getProperty('title')}} </h2>
+    <p>Name: {node.getProperty('name')}}</p>
+    <p>Lastname: {node.getProperty('lastname')}}</p>
+   </li>
+</ul>
+```
+
+
 
 
