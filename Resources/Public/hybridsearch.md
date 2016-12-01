@@ -1,169 +1,613 @@
-# HybridSearch
+# HybridsearchObject
 
-HybridSearch is a powerful realtime search engine written in Javascript/AngularJS with an intelligent indexing mechanism combined with by [Google Firebase](http://firebase.google.com/) (noSQL). Hybrid stands for the innovative way of streaming search results. Every search request delivers small and preselected data blocks and then they are processing on client side for calculation the search result. Whenever data of the noSQL database changes, HybridSearch performs a live update of the current search result - that's why we call it realtime search engine. The search engine was invented by Michael Egli in 2016 and it's a free open source software. Special thanks to Oliver Nightingale ([lunr.js](https://github.com/olivernn/lunr.js/)) and Wei Song ([elasticlunr.js](https://github.com/weixsong/elasticlunr.js)).
+**Parameters**
 
-## Features
-* **Search as you type** (autocomplete and autocorrect were done in background).
-* **Realtime binding** (full search index and search results).
-* Analyzes Google Analytics Reports for **better semantics** (optionally).
-* **Provides a javascript framework for creating fantastic user experience**.
-* Minimal, but **powerful configurations** (relevance boosting, filtering, facets, etc.)
-* **High performance**, no Server-side utilization while searching.
+-   `Hybridsearch` **Hybridsearch** see Hybridsearch constructor
+-   `hybridsearch`  
 
-## Implementations
-HybridSearch comes with default integration for [Neos CMS](https://www.neos.io). Other implementations can be done very easy.
+**Examples**
 
-## Installation with Neos
-
-### Backend
-
-#### Minimal configuration
-
- `composer require neoslive/hybridsearch`
-
-Create new a firebase project for [free](https://console.firebase.google.com/). Then you need a database token. Open your firebase project settings and create new database secret/token (see service accounts > Database secrets).
-
-Add to your flow Settings.yaml (minimal configuration)
-
-```
-Neoslive:
-  Hybridsearch:
-    Realtime: true 
-    Firebase:
-      endpoint: 'https://** your firebase project name**.firebaseio.com/'
-      token: '** your firebase token **'
-    Filter:
-      GrantParentNodeTypeFilter: '[instanceof TYPO3.Neos:Document]'
-      ParentNodeTypeFilter: '[instanceof TYPO3.Neos:Contentcollection]'
-      NodeTypeFilter: '[instanceof TYPO3.Neos:Content]'
+```javascript
+var hybridSearch = new $Hybridsearch(
+ 'https://<DATABASE_NAME>.firebaseio.com',
+ 'live',
+ 'fb11fdde869d0a8fcfe00a2fd35c031d',
+ 'site-root-node-name'
+));
+var mySearch = new $HybridsearchObject(hybridSearch);
+     mySearch.setQuery("Foo").addPropertyFilter('title', 'Foo').setNodeType('bar').$watch(function (data) {
+       console.log(data);
+     });
 ```
 
-#### Optimal configuration
+## $bind
 
-Example of Settings.yaml 
+**Parameters**
 
-```
-Neoslive:
-  Hybridsearch:
-    Realtime: true
-    Firebase:
-      endpoint: 'https://** your firebase project name**.firebaseio.com/'
-      token: '** your firebase token **'
-    Filter:
-      GrantParentNodeTypeFilter: '[instanceof TYPO3.Neos:Document]'
-      ParentNodeTypeFilter: '[instanceof TYPO3.Neos:Content]'
-      NodeTypeFilter: '[instanceof Neoslive.Hybridsearch:Content]'
-    TypoScriptPaths:
-      page:
-        Vendor.Package: neosliveHybridsearch
-      breadcrumb:
-        Vendor.Package: neosliveHybridsearchBreadcrumb
+-   `scopevar`  
+-   `scope` **string** variable name
+-   `scope` **scope** 
 
-```
-If you are using optimal configuration, then you need also something like following settings.
+**Examples**
 
-TypoScript (root.ts)
-
-```
-neosliveHybridsearch = TYPO3.TypoScript:Collection {
-    collection = ${q(node)}
-    itemName = 'node'
-    itemRenderer = TYPO3.Neos:ContentCase
-}
-
-neosliveHybridsearchBreadcrumb = TYPO3.TypoScript:Collection {
-    collection = ${q(node)}
-    itemName = 'node'
-    itemRenderer = Breadcrumb
-}
+```javascript
+.$bind(scopevar,scope);
 ```
 
-NodeTypes.yaml
+Returns **HybridsearchObject** 
 
-```
-# Make your contact node searchable
-'Vendor.Package:Contact:
-  superTypes:
-    'Neoslive.Hybridsearch:Content': TRUE
-    
-```
+## $watch
 
-#### Indexing your data
+**Parameters**
 
-Run flow command for initial indexing your Neos Site
+-   `callback` **function** method called whenever results are loaded
 
-`php ./flow hybridsearch:createfullindex`
+**Examples**
 
-For better semantic you should use optimal configuration and don't index all of your node types. The indexer is rendering every node as a standalone front-end view and not simple raw data, so initially it takes time. But the result is magic.
-
-If you have set "Realtime: true", then all further changes are done automatically as an intelligent background job asynchronously and without any performance impacts while editing in Neos backend.
-
-It's recommended to execute full index creating from time to time. Just create a cronjob like this one:
-
-`1 1 * * 1 FLOW_CONTEXT=Production php -d memory_limit=8096M /home/www-data/flow hybridsearch:createfullindex >/dev/null 2>&1`
-
-So, while your index is creating you should not waiting and do the frontend integration.
-
-### Front-End
-
-Add the following javascript files to your layout/template.
-
-```
-<script src="{f:uri.resource(path: 'Vendor/angular/angular.min.js', package: 'Neoslive.Hybridsearch')}"></script>
-<script src="{f:uri.resource(path: 'Vendor/firebase/firebase.js', package: 'Neoslive.Hybridsearch')}"></script>
-<script src="{f:uri.resource(path: 'Vendor/angularfire/dist/angularfire.min.js', package: 'Neoslive.Hybridsearch')}"></script>
-<script src="{f:uri.resource(path: 'Vendor/angular-sanitize/angular-sanitize.min.js', package: 'Neoslive.Hybridsearch')}"></script>
-<script src="{f:uri.resource(path: 'Vendor/elasticlunr.js/elasticlunr.min.js', package: 'Neoslive.Hybridsearch')}"></script>
-<script src="{f:uri.resource(path: 'hybridsearch.js', package: 'Neoslive.Hybridsearch')}"></script>
+```javascript
+.$watch(function (data) {
+          $scope.result = data;
+          setTimeout(function () {
+              $scope.$digest();
+          }, 10);
+  });
 ```
 
-Create an Angular Controller.
+Returns **HybridsearchObject** 
 
+## addAdditionalKeywords
 
-```  
-.controller('searchCtrl', ['$scope', '$hybridsearch', '$hybridsearchObject', '$hybridsearchResultsObject', function ($scope, $hybridsearch, $hybridsearchObject, $hybridsearchResultsObject) {
+**Parameters**
 
-// initialize scope vars
-$scope.result = new $hybridsearchResultsObject();
-$scope.query = '';
+-   `add` **string** hidden keyword uses in search query.
+-   `input`  
+-   `scope` **scope** false if is simple string otherwise angular scope required for binding data
 
-// initialize HybridSearch
-var search = new $hybridsearchObject(
-                new $hybridsearch(
-                    'https://** your firebase project name**.firebaseio.com',
-                    'live',
-                    '** dimensionHash **',
-                    '** nodename of the site'
-        ));
-        
-// set search settings and run HybridSearch
-search
-.setQuery('query',$scope)
-.$bind('result', $scope)
-.run();     
+Returns **HybridsearchObject** 
 
-}]);
+## addNodesByIdentifier
 
+Adds nodes by identifier to search index
 
+**Parameters**
+
+-   `nodesArray` **array** 
+
+Returns **HybridsearchObject** 
+
+## addNodesByNodeTypes
+
+Adds nodes by node types to search index
+
+**Parameters**
+
+-   `nodesTypesArray` **array** 
+
+Returns **HybridsearchObject** 
+
+## addPropertyFilter
+
+Adds a property filter to the query.
+
+**Parameters**
+
+-   `property` **string** to search only for
+-   `value` **string** that property must match
+-   `scope` **scope** false if is simple string otherwise angular scope required for binding data
+-   `boolean`  reverse (true if condition logic is reversed)
+-   `boolean`  booleanmode (true if array values treated with OR conditions)
+-   `reverse`   (optional, default `false`)
+-   `booleanmode`   (optional, default `true`)
+
+Returns **HybridsearchObject** 
+
+## setAgeFilter
+
+Adds an ange filter to the query. Show only nodes, that are visited mostly by given age bracket
+
+**Parameters**
+
+-   `age` **string** [18-24,25-34,35-44,45-54,55-64,65+]
+-   `scope` **scope** false if is simple string otherwise angular scope required for binding data
+
+Returns **HybridsearchObject** 
+
+## setGenderFilter
+
+Adds a gender filter to the query. Show only nodes, that are visited mostly by given gender
+
+**Parameters**
+
+-   `gender` **string** male|female
+-   `scope` **scope** false if is simple string otherwise angular scope required for binding data
+
+Returns **HybridsearchObject** 
+
+## setGroupedBy
+
+Sets groupedBy.
+
+**Parameters**
+
+-   `groupedBy` **object** 
+
+**Examples**
+
+```javascript
+var groupedBy = {
+       'nodeType': ['id'],
+       'nodeTypeLabel': ['name','lastname']
+   }
 ```
-                
-Create an HTML search page.
 
+Returns **$hybridsearchResultsObject or Any** 
 
+## setNodePath
+
+Sets a node path filter.
+
+**Parameters**
+
+-   `nodePath` **string** to search only for
+-   `scope` **scope** false if is simple string otherwise angular scope required for binding data
+
+Returns **HybridsearchObject** 
+
+## setNodeType
+
+**Parameters**
+
+-   `nodeType` **string** to search only for
+-   `scope` **scope** false if is simple string otherwise angular scope required for binding data
+
+Returns **HybridsearchObject** 
+
+## setNodeTypeLabels
+
+Sets node type labels.
+
+**Parameters**
+
+-   `nodetypelabels` **object** 
+
+**Examples**
+
+```javascript
+var nodetypelabels = {
+       'nodeType': 'Label',
+       'corporate-contact': 'Contacts',
+       'corporate-headline': 'Pages',
+       'corporate-onepage': 'Pages',
+       'corporate-table': 'Pages',
+       'corporate-file': 'Files'
+   }
 ```
-<div data-ng-controller="searchCtrl">
-    
-    <h1>Search:</h1> 
-    <input type="text" data-ng-model="query" placeholder="Search for...">
-    
-    <h1>Results {{result.count()}}</h1>
-    
-     <div data-ng-repeat="node in result.getNodes()">
-         <h2>{{node.getProperty('title')}}</h2>
-         <p>{{node.getPreview()}}</p>
-     </div>
-  
-</div>
 
+Returns **$hybridsearchResultsObject or Any** 
+
+## setOrderBy
+
+Sets orderBy.
+
+**Parameters**
+
+-   `orderBy` **object** 
+
+**Examples**
+
+```javascript
+var orderBy = {
+       'nodeTypeLabel': ['name'],
+       'nodeTye^e': ['name']
+   }
 ```
 
+Returns **$hybridsearchResultsObject or Any** 
+
+## setPropertiesBoost
+
+Sets property boost.
+
+**Parameters**
+
+-   `propertiesboost` **object** 
+
+**Examples**
+
+```javascript
+var propertiesboost = {
+       'nodeType-propertyname': 1,
+       'corporate-contact-lastname': 10,
+       'corporate-contact-firstname': 10,
+       'corporate-contact-email': 50,
+       'corporate-headline-text': 60,
+       'corporate-onepage-text': 1,
+       'corporate-table-text': 1,
+       'corporate-file-title': 3'
+   }
+```
+
+Returns **$hybridsearchResultsObject or Any** 
+
+## setQuery
+
+Sets a search string to the query.
+
+**Parameters**
+
+-   `search` **string** string
+-   `input`  
+-   `scope` **scope** false if is simple string otherwise angular scope required for binding data
+
+Returns **HybridsearchObject** 
+
+# Hybridsearch
+
+**Parameters**
+
+-   `databaseURL`  {string} databaseURL, google firebase realtime database endpoint
+-   `workspace`  {string} workspace, identifier of the workspace to use from indexed datebase
+-   `dimension`  {string} dimension, hash of the dimension configuration to use form indexed database
+-   `site`  {string} site identifier (uuid)
+-   `cdnHost`  {string} (optional) cdn host for static data
+-   `debug`  {boolean}
+
+**Examples**
+
+```javascript
+var hybridSearch = new $hybridsearchObject(
+ 'https://<DATABASE_NAME>.firebaseio.com',
+ 'live',
+ 'fb11fdde869d0a8fcfe00a2fd35c031d',
+ 'site-root-node-name'
+));
+```
+
+Returns **Hybridsearch** used for HybridsearchObject constructor.
+
+# HybridsearchResultsGroupObject
+
+HybridsearchResultsGroupObject
+
+## count
+
+Get number of search results.
+
+Returns **integer** Search results length.
+
+## getItems
+
+Get group collection.
+
+Returns **array** collection of {HybridsearchResultsDataObject}
+
+# getPropertyFromNode
+
+Get property.
+
+**Parameters**
+
+-   `node`  
+-   `property` **string** Get single property from node data.
+
+Returns **mixed** 
+
+# getResultNodeByIdentifier
+
+Get node by identifier from current search result.
+
+**Parameters**
+
+-   `identifier` **string** 
+
+Returns **HybridsearchResultsNode** 
+
+# HybridsearchResultsNode
+
+**Parameters**
+
+-   `nodeData`  {object|array} Nodes properties.
+-   `score`  {float} computed Relevance score.
+
+## getBreadcrumb
+
+Breadcrumb if its a document node.
+
+Returns **string** 
+
+## getDocumentNode
+
+Nearest Document node.
+
+Returns **HybridsearchResultsNode** 
+
+## getNodeType
+
+NodeType.
+
+Returns **string** nodeType
+
+## getParent
+
+Parent node.
+
+Returns **HybridsearchResultsNode** 
+
+## getPreview
+
+Preview html content of node.
+
+**Parameters**
+
+-   `maxlength`  
+-   `delimiter`  
+
+Returns **string** 
+
+## getProperties
+
+Properties.
+
+Returns **object** 
+
+## getProperty
+
+Get property.
+
+**Parameters**
+
+-   `property` **string** Get single property from node data.
+
+Returns **mixed** 
+
+## getScore
+
+Relevance score of search result.
+
+Returns **float** 
+
+## getSortingIndex
+
+Get sorting index
+
+Returns **integer** 
+
+## getUrl
+
+Url if its a document node.
+
+Returns **string** 
+
+## isTurboNode
+
+Is result a turbo node or not.
+
+Returns **boolean** 
+
+# HybridsearchResultsObject
+
+Return the search results as {HybridsearchResultsObject}.
+
+Returns **HybridsearchResultsObject** 
+
+## clearDistincts
+
+clear distincts
+
+Returns **void** 
+
+## count
+
+Get number of search results.
+
+Returns **integer** Search results length.
+
+## countAll
+
+Get number of search results including turbonodes.
+
+Returns **integer** Search results length.
+
+## countByNodeType
+
+Get number of search results by given node type..
+
+**Parameters**
+
+-   `nodeType` **string** 
+
+Returns **integer** Search results length.
+
+## countByNodeTypeLabel
+
+Get number of search results by given node type label.
+
+**Parameters**
+
+-   `nodeTypeLabel` **string** 
+
+Returns **integer** Search results length.
+
+## countTurboNodes
+
+Get number of turbo nodes
+
+Returns **integer** Search results length.
+
+## getDistinct
+
+Get all different values from given property
+
+**Parameters**
+
+-   `property` **string** 
+-   `counterGroupedByNode` **boolean** count existences grouped by node
+
+Returns **array** collection of property values
+
+## getDistinctCount
+
+Get distinct count
+
+**Parameters**
+
+-   `property` **string** 
+
+Returns **integer** count collection of property values
+
+## getGrouped
+
+Get alle nodes from current search result a grouped object.
+
+Returns **HybridsearchResultsGroupObject** 
+
+## getHash
+
+Get hash of results
+
+Returns **string** Search results hash
+
+## getNodes
+
+Get all nodes from current search result.
+
+**Parameters**
+
+-   `limit` **integer** max results
+
+Returns **array** collection of {HybridsearchResultsNode}
+
+## getNodesByNodeType
+
+Get all nodes by given nodeType from current search result.
+
+**Parameters**
+
+-   `nodeType` **string** 
+
+Returns **array** collection of {HybridsearchResultsNode}
+
+## getNodesByNodeTypeLabel
+
+Get all nodes by given nodeTypeLabel from current search result.
+
+**Parameters**
+
+-   `nodeTypeLabel` **string** 
+
+Returns **array** collection of {HybridsearchResultsNode}
+
+## getTurboNodes
+
+Get all turbonodes from current search result.
+
+Returns **array** collection of {HybridsearchResultsNode}
+
+## nothingFound
+
+Returns true if given query can't result anyhing
+
+Returns **boolean** True if query is matching nothing
+
+## updateDistincts
+
+update distincts
+
+Returns **HybridsearchResultsObject** 
+
+# HybridsearchResultsDataObject
+
+HybridsearchResultsDataObject
+
+## count
+
+Get number of search results in this group.
+
+Returns **integer** Search results length.
+
+## getLabel
+
+Get groups label.
+
+Returns **string** Group label
+
+## getNodes
+
+Get all nodes for this group from current search result.
+
+**Parameters**
+
+-   `limit` **integer** max results
+
+Returns **array** collection of {HybridsearchResultsNode}
+
+# HybridsearchResultsDataObject
+
+HybridsearchResultsDataObject
+
+## count
+
+Get number of search results in this group.
+
+Returns **integer** Search results length.
+
+## getLabel
+
+Get groups label.
+
+Returns **string** Group label
+
+## getNodes
+
+Get all nodes for this group from current search result.
+
+**Parameters**
+
+-   `limit` **integer** max results
+
+Returns **array** collection of {HybridsearchResultsNode}
+
+# execute
+
+execute search.
+
+**Parameters**
+
+-   `self`  
+-   `lastSearchInstance`  
+
+Returns **SearchIndexInstance** SearchIndexInstance
+
+# Sha1
+
+SHA-1 hash function reference implementation.
+
+## hash
+
+Generates SHA-1 hash of string.
+
+**Parameters**
+
+-   `msg` **string** (Unicode) string to be hashed.
+
+Returns **string** Hash of msg as hex character string.
+
+# getGa
+
+init ga data
+
+# getIndex
+
+Run search.
+
+Returns **SearchIndexInstance** SearchIndexInstance
+
+# utf8Decode
+
+Extend String object with method to decode utf8 string to multi-byte
+
+# utf8Encode
+
+Extend String object with method to encode multi-byte string to utf8
+
+-   monsur.hossa.in/2012/07/20/utf-8-in-javascript.html

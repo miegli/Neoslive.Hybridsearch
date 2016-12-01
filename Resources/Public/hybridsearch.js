@@ -408,6 +408,7 @@
                         getProperty: function (property) {
 
 
+
                             var value = '';
                             var propertyfullname = property;
 
@@ -442,6 +443,10 @@
                                     this.properties[propertyfullname] = valueJson;
                                     return this.properties[propertyfullname];
                                 }
+                            }
+
+                            if (property == 'breadcrumb' && value == '') {
+                                return this.breadcrumb
                             }
 
                             return value;
@@ -663,7 +668,7 @@
                          * @returns {*}
                          */
                         getNodeTypeLabel: function (nodeType) {
-                            return nodeTypeLabels[nodeType] !== undefined ? nodeTypeLabels[nodeType] : nodeType;
+                            return nodeTypeLabels[nodeType] !== undefined ? nodeTypeLabels[nodeType] : (nodeTypeLabels['*'] === undefined ? nodeType : nodeTypeLabels['*']);
                         },
                         /**
                          * @private
@@ -690,8 +695,9 @@
 
                             var grouped = resultGroupedBy !== undefined && resultGroupedBy[nodeType] !== undefined ? resultGroupedBy[nodeType] : [];
 
-                            if (nodeTypeLabels[nodeType] !== undefined && grouped.length === 0) {
-                                grouped = resultGroupedBy !== undefined && resultGroupedBy[nodeTypeLabels[nodeType]] !== undefined ? resultGroupedBy[nodeTypeLabels[nodeType]] : [];
+
+                            if (this.getNodeTypeLabel(nodeType) !== nodeType && grouped.length === 0) {
+                                grouped = resultGroupedBy !== undefined && resultGroupedBy[this.getNodeTypeLabel(nodeType)] !== undefined ? resultGroupedBy[this.getNodeTypeLabel(nodeType)] : [];
                             }
 
                             if (typeof grouped === 'string') {
@@ -712,8 +718,8 @@
 
                             var order = resultOrderBy !== undefined && resultOrderBy[nodeType] !== undefined ? resultOrderBy[nodeType] : [];
 
-                            if (nodeTypeLabels[nodeType] !== undefined && order.length === 0) {
-                                order = resultOrderBy !== undefined && resultOrderBy[nodeTypeLabels[nodeType]] !== undefined ? resultOrderBy[nodeTypeLabels[nodeType]] : [];
+                            if (this.getNodeTypeLabel(nodeType) !== nodeType && order.length === 0) {
+                                order = resultOrderBy !== undefined && resultOrderBy[this.getNodeTypeLabel(nodeType)] !== undefined ? resultOrderBy[this.getNodeTypeLabel(nodeType)] : [];
                             }
 
 
@@ -1070,7 +1076,7 @@
                             var resultNode = new HybridsearchResultsNode(nodes[nodeId], score);
                             var hash = nodes[nodeId].hash;
                             var groupedBy = this.getGroupedBy(nodes[nodeId].nodeType);
-                            var nodeTypeLabel = nodeTypeLabels[nodes[nodeId].nodeType] !== undefined ? nodeTypeLabels[nodes[nodeId].nodeType] : nodes[nodeId].nodeType;
+                            var nodeTypeLabel = this.getNodeTypeLabel(nodes[nodeId].nodeType);
 
 
                             if (groupedBy.length) {
@@ -2460,7 +2466,7 @@
                  * @param {object} orderBy
                  * @example var orderBy = {
                  *        'nodeTypeLabel': ['name'],
-                 *        'nodeTye^e': ['name']
+                 *        'nodeType': ['name']
                  *    }
                  * @returns {$hybridsearchResultsObject|*}
                  */
@@ -2769,7 +2775,7 @@
                      * @returns mixed
                      */
                     getNodeTypeLabel: function (nodeType) {
-                        return nodeTypeLabels[nodeType] !== undefined ? nodeTypeLabels[nodeType] : nodeType;
+                        return nodeTypeLabels[nodeType] !== undefined ? nodeTypeLabels[nodeType] : (nodeTypeLabels['*'] === undefined ? nodeType : nodeTypeLabels['*']);
                     },
 
                     setNodeTypeLabels: function (labels) {
