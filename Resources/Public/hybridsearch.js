@@ -1031,6 +1031,7 @@
 
 
                                     var Ordered = $filter('orderBy')(preOrdered, function (item) {
+
                                         var orderBy = self.getOrderBy(nodes[item.ref].nodeType);
                                         if (orderBy) {
 
@@ -1053,10 +1054,16 @@
                                         } else {
                                             return -1 * item.score;
                                         }
+
+
                                     });
 
                                     angular.forEach(Ordered, function (item) {
-                                        self.addNodeToSearchResult(item.ref, item.score, nodesFound, items, nodeTypeMaxScore);
+
+                                        if (item.score >= 1) {
+                                            self.addNodeToSearchResult(item.ref, item.score, nodesFound, items, nodeTypeMaxScore);
+                                        }
+
                                     });
 
                                 }
