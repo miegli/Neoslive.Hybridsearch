@@ -977,13 +977,14 @@
                                     });
 
                                     var tmp = {};
+                                    var resultAnd = lunrSearch.search(query, {
+                                        fields: fields,
+                                        bool: "AND"
+                                    });
 
 
                                     // do AND search first
-                                    angular.forEach(lunrSearch.search(query, {
-                                            fields: fields,
-                                            bool: "AND"
-                                        }), function (item) {
+                                    angular.forEach(resultAnd, function (item) {
 
                                             if (nodes[item.ref] !== undefined) {
 
@@ -1001,32 +1002,34 @@
                                             }
 
                                         }
-                                    );
+                                    )
+                                    ;
 
+                                    if (resultAnd.length == 0) {
+                                        // merge OR search first with lower score
+                                        angular.forEach(lunrSearch.search(query, {
+                                                fields: fields,
+                                                bool: "OR"
+                                            }), function (item) {
 
-                                    // merge OR search first with lower score
-                                    angular.forEach(lunrSearch.search(query, {
-                                            fields: fields,
-                                            bool: "OR"
-                                        }), function (item) {
+                                                if (nodes[item.ref] !== undefined && tmp[item.ref] === undefined) {
 
-                                            if (nodes[item.ref] !== undefined && tmp[item.ref] === undefined) {
+                                                    item.score = item.score / 25;
 
-                                                item.score = item.score / 25;
-
-                                                if (self.isNodesByIdentifier()) {
-                                                    // post filter node
-                                                    if (self.isFiltered(nodes[item.ref]) === false) {
+                                                    if (self.isNodesByIdentifier()) {
+                                                        // post filter node
+                                                        if (self.isFiltered(nodes[item.ref]) === false) {
+                                                            preOrdered.push(item);
+                                                        }
+                                                    } else {
+                                                        // dont post filter because filter were applied before while filling search index
                                                         preOrdered.push(item);
                                                     }
-                                                } else {
-                                                    // dont post filter because filter were applied before while filling search index
-                                                    preOrdered.push(item);
                                                 }
-                                            }
 
-                                        }
-                                    );
+                                            }
+                                        );
+                                    }
 
                                     // filter out not relevant items
 
@@ -1035,32 +1038,31 @@
                                     });
 
                                     var preOrderedFilteredRelevance = [];
-                                    var nodeTypeTotalScore = {};
                                     var nodeTypeMaxScore = {};
 
-                                    angular.forEach(preOrdered, function (item) {
+                                    if (resultAnd.length == 0) {
+                                        angular.forEach(preOrdered, function (item) {
 
-                                        if (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined) {
-                                            nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = item.score;
-                                        } else {
-                                            if (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] < item.score) {
+                                            if (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined) {
                                                 nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = item.score;
+                                            } else {
+                                                if (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] < item.score) {
+                                                    nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = item.score;
+                                                }
                                             }
-                                        }
-                                    });
+                                        });
+                                    }
 
 
                                     angular.forEach(preOrdered, function (item) {
 
-                                        if (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] - (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] / 3 * 2 ) < item.score) {
+                                        if (resultAnd.length > 0 || (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] - (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] / 3 * 2 ) < item.score)) {
                                             preOrderedFilteredRelevance.push(item);
-                                        } 
+                                        }
 
                                     });
 
-                                    console.log(nodeTypeMaxScore);
-
-
+                               
                                     var Ordered = $filter('orderBy')(preOrderedFilteredRelevance, function (item) {
 
                                         var orderBy = self.getOrderBy(nodes[item.ref].nodeType);
