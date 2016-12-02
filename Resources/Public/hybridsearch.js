@@ -979,6 +979,7 @@
                                     var booleanm = booleanmode === undefined ? "OR" : "AND";
                                     var maxscore = 0;
                                     var minscore = 0;
+                                    var wordcount = query.split(/ /).length;
 
                                     // pre calculate highest score
                                     angular.forEach(lunrSearch.search(query, {
@@ -993,8 +994,9 @@
                                         }
                                     });
 
-                                    if (maxscore / minscore > (maxscore / 3 * 2)) {
-                                        // set boolean mode to AND
+
+                                    if (wordcount > 1 && Math.floor(maxscore * (wordcount / minscore) / maxscore) != wordcount) {
+                                        // magic function to calculate if boolean mode is AND
                                         booleanm = "AND";
                                     }
 
