@@ -976,39 +976,16 @@
                                         fields[v] = {boost: self.getBoost(v)}
                                     });
 
-                                    var booleanm = booleanmode === undefined ? "OR" : "AND";
-                                    var maxscore = 0;
-                                    var minscore = 0;
-                                    var wordcount = query.split(/ /).length;
 
-
-                                    // pre calculate highest score
                                     var searchResults = lunrSearch.search(query, {
                                         fields: fields,
-                                        bool: booleanm
+                                        bool: "AND"
                                     });
-
-                                    angular.forEach(searchResults, function (item) {
-                                        if (item.score > maxscore) {
-                                            maxscore = item.score;
-                                        }
-                                        if (minscore === 0 || item.score < minscore) {
-                                            minscore = item.score;
-                                        }
-                                    });
-
-
-                                    if (wordcount > 1 && Math.floor(maxscore * (wordcount / minscore) / maxscore) != wordcount) {
-                                        // magic function to calculate if boolean mode is AND
-                                        booleanm = "AND";
-                                        var searchResultsAnd = lunrSearch.search(query, {
+                                    if (searchResults.length === 0) {
+                                        searchResults = lunrSearch.search(query, {
                                             fields: fields,
-                                            bool: booleanm
+                                            bool: 'OR'
                                         });
-                                        if (searchResultsAnd.length) {
-                                            searchResults = searchResultsAnd;
-                                        }
-
                                     }
 
 
