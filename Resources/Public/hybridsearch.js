@@ -1012,7 +1012,7 @@
 
                                             if (nodes[item.ref] !== undefined && tmp[item.ref] === undefined) {
 
-                                                item.score = item.score / 3;
+                                                item.score = item.score / 10;
 
                                                 if (self.isNodesByIdentifier()) {
                                                     // post filter node
@@ -1035,22 +1035,24 @@
                                     });
 
                                     var preOrderedFilteredRelevance = [];
+                                    var nodeTypeTotalScore = {};
+                                    var nodeTypeMaxScore = {};
 
                                     angular.forEach(preOrdered, function (item) {
-                                        if (nodeTypeMaxScore[nodes[item.ref].nodeType] === undefined) {
-                                            nodeTypeMaxScore[nodes[item.ref].nodeType] = item.score;
-                                            nodeTypeCount[nodes[item.ref].nodeType] = 0;
+
+                                        if (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined) {
+                                            nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = item.score;
                                         } else {
-                                            nodeTypeCount[nodes[item.ref].nodeType]++;
-                                            nodeTypeMaxScore[nodes[item.ref].nodeType] = nodeTypeMaxScore[nodes[item.ref].nodeType] + item.score;
+                                            if (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] < item.score) {
+                                                nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = item.score;
+                                            }
                                         }
-
-
                                     });
 
+
                                     angular.forEach(preOrdered, function (item) {
 
-                                        if (item.score >= nodeTypeMaxScore[nodes[item.ref].nodeType] / nodeTypeCount[nodes[item.ref].nodeType]) {
+                                        if (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] / 2 < item.score) {
                                             preOrderedFilteredRelevance.push(item);
                                         }
 
@@ -1140,10 +1142,10 @@
                             var nodeTypeLabel = this.getNodeTypeLabel(nodes[nodeId].nodeType);
 
 
-                            if (nodeTypeMaxScore[nodeTypeLabel] !== undefined && nodeTypeMaxScore[nodeTypeLabel] / 3 * 2 > score) {
-                                // filter out not relevant results
-                                return true;
-                            }
+                            // if (nodeTypeMaxScore[nodeTypeLabel] !== undefined && nodeTypeMaxScore[nodeTypeLabel] / 3 * 2 > score) {
+                            // filter out not relevant results
+                            // return true;
+                            //}
 
                             if (groupedBy.length) {
 
