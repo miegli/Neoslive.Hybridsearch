@@ -979,12 +979,16 @@
                                     var booleanm = booleanmode === undefined ? "OR" : "AND";
                                     var maxscore = 0;
                                     var minscore = 0;
+                                    var wordcount = query.split(/ /).length;
+
 
                                     // pre calculate highest score
-                                    angular.forEach(lunrSearch.search(query, {
+                                    var searchResults = lunrSearch.search(query, {
                                         fields: fields,
                                         bool: booleanm
-                                    }), function (item) {
+                                    });
+
+                                    angular.forEach(searchResults, function (item) {
                                         if (item.score > maxscore) {
                                             maxscore = item.score;
                                         }
@@ -993,32 +997,41 @@
                                         }
                                     });
 
-                                    if (maxscore / minscore > (maxscore / 3 * 2)) {
-                                        // set boolean mode to AND
+
+                                    if (wordcount > 1 && Math.floor(maxscore * (wordcount / minscore) / maxscore) != wordcount) {
+                                        // magic function to calculate if boolean mode is AND
                                         booleanm = "AND";
-                                    }
-
-                                    angular.forEach(lunrSearch.search(query, {
-                                        fields: fields,
-                                        bool: booleanm
-                                    }), function (item) {
-
-                                        if (nodes[item.ref] !== undefined) {
-
-                                            if (self.isNodesByIdentifier()) {
-                                                // post filter node
-                                                if (self.isFiltered(nodes[item.ref]) === false) {
-                                                    preOrdered.push(item);
-                                                }
-                                            } else {
-                                                // dont post filter because filter were applied before while filling search index
-                                                preOrdered.push(item);
-                                            }
-
-
+                                        var searchResultsAnd = lunrSearch.search(query, {
+                                            fields: fields,
+                                            bool: booleanm
+                                        });
+                                        if (searchResultsAnd.length) {
+                                            searchResults = searchResultsAnd;
                                         }
 
-                                    });
+                                    }
+
+
+                                    angular.forEach(searchResults, function (item) {
+
+                                            if (nodes[item.ref] !== undefined) {
+
+                                                if (self.isNodesByIdentifier()) {
+                                                    // post filter node
+                                                    if (self.isFiltered(nodes[item.ref]) === false) {
+                                                        preOrdered.push(item);
+                                                    }
+                                                } else {
+                                                    // dont post filter because filter were applied before while filling search index
+                                                    preOrdered.push(item);
+                                                }
+
+
+                                            }
+
+                                        }
+                                    )
+                                    ;
 
 
                                     var Ordered = $filter('orderBy')(preOrdered, function (item) {
