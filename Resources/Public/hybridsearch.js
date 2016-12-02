@@ -1012,7 +1012,7 @@
 
                                             if (nodes[item.ref] !== undefined && tmp[item.ref] === undefined) {
 
-                                                item.score = item.score / 10;
+                                                item.score = item.score / 25;
 
                                                 if (self.isNodesByIdentifier()) {
                                                     // post filter node
@@ -1052,13 +1052,13 @@
 
                                     angular.forEach(preOrdered, function (item) {
 
-                                        if (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] / 3 < item.score) {
+                                        if (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] - (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] / 3 * 2 ) < item.score) {
                                             preOrderedFilteredRelevance.push(item);
-                                        }
+                                        } 
 
                                     });
 
-                                   // console.log(nodeTypeMaxScore);
+                                    console.log(nodeTypeMaxScore);
 
 
                                     var Ordered = $filter('orderBy')(preOrderedFilteredRelevance, function (item) {
