@@ -976,22 +976,17 @@
                                         fields[v] = {boost: self.getBoost(v)}
                                     });
 
+                                    var tmp = {};
 
-                                    var searchResults = lunrSearch.search(query, {
-                                        fields: fields,
-                                        bool: "AND"
-                                    });
-                                    if (searchResults.length === 0) {
-                                        searchResults = lunrSearch.search(query, {
+
+                                    // do AND search first
+                                    angular.forEach(lunrSearch.search(query, {
                                             fields: fields,
-                                            bool: 'OR'
-                                        });
-                                    }
-
-
-                                    angular.forEach(searchResults, function (item) {
+                                            bool: "AND"
+                                        }), function (item) {
 
                                             if (nodes[item.ref] !== undefined) {
+
 
                                                 if (self.isNodesByIdentifier()) {
                                                     // post filter node
@@ -1003,12 +998,36 @@
                                                     preOrdered.push(item);
                                                 }
 
-
+                                                tmp[item.ref] = item.score;
                                             }
 
                                         }
-                                    )
-                                    ;
+                                    );
+
+
+                                    // merge OR search first with lower score
+                                    angular.forEach(lunrSearch.search(query, {
+                                            fields: fields,
+                                            bool: "OR"
+                                        }), function (item) {
+
+                                            if (nodes[item.ref] !== undefined && tmp[item.ref] === undefined) {
+
+                                                item.score = item.score / 3;
+
+                                                if (self.isNodesByIdentifier()) {
+                                                    // post filter node
+                                                    if (self.isFiltered(nodes[item.ref]) === false) {
+                                                        preOrdered.push(item);
+                                                    }
+                                                } else {
+                                                    // dont post filter because filter were applied before while filling search index
+                                                    preOrdered.push(item);
+                                                }
+                                            }
+
+                                        }
+                                    );
 
 
                                     var Ordered = $filter('orderBy')(preOrdered, function (item) {
@@ -1091,9 +1110,9 @@
                             var nodeTypeLabel = this.getNodeTypeLabel(nodes[nodeId].nodeType);
 
 
-                            if (nodeTypeMaxScore[nodeTypeLabel] !== undefined && nodeTypeMaxScore[nodeTypeLabel] / 4 > score) {
+                            if (nodeTypeMaxScore[nodeTypeLabel] !== undefined && nodeTypeMaxScore[nodeTypeLabel] / 3 * 2 > score) {
                                 // filter out not relevant results
-                              //  return true;
+                                return true;
                             }
 
                             if (groupedBy.length) {
