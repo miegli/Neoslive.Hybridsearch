@@ -888,7 +888,7 @@
                         search: function (nodesFromInput, booleanmode) {
 
 
-                            var fields = {}, items = {}, self = this, nodesFound = {}, nodeTypeMaxScore = {};
+                            var fields = {}, items = {}, self = this, nodesFound = {}, nodeTypeMaxScore = {}, nodeTypeCount = {};
 
                             items['_nodes'] = {};
                             items['_nodesTurbo'] = {};
@@ -987,7 +987,6 @@
 
                                             if (nodes[item.ref] !== undefined) {
 
-
                                                 if (self.isNodesByIdentifier()) {
                                                     // post filter node
                                                     if (self.isFiltered(nodes[item.ref]) === false) {
@@ -1029,8 +1028,31 @@
                                         }
                                     );
 
+                                    // filter out not relevant items
 
-                                    var Ordered = $filter('orderBy')(preOrdered, function (item) {
+                                    var preOrdered = $filter('orderBy')(preOrdered, function (item) {
+                                        return -1*item.score;
+                                    });
+
+                                    var preOrderedFilteredRelevance = [];
+
+                                    angular.forEach(preOrdered, function (item) {
+                                        if (nodeTypeMaxScore[nodes[item.ref].nodeType] === undefined) {
+                                            nodeTypeMaxScore[nodes[item.ref].nodeType] = item.score;
+                                            nodeTypeCount[nodes[item.ref].nodeType] = 1;
+                                        } else {
+                                            nodeTypeCount[nodes[item.ref].nodeType]++;
+                                        }
+
+
+                                        if ((nodeTypeCount[nodes[item.ref].nodeType] > 1 && item.score * 3 > nodeTypeMaxScore[nodes[item.ref].nodeType]) || (nodeTypeCount[nodes[item.ref].nodeType] <= 1 && item.score > 2)) {
+                                            preOrderedFilteredRelevance.push(item);
+                                        }
+
+                                    });
+
+
+                                    var Ordered = $filter('orderBy')(preOrderedFilteredRelevance, function (item) {
 
                                         var orderBy = self.getOrderBy(nodes[item.ref].nodeType);
                                         if (orderBy) {
@@ -1059,11 +1081,7 @@
                                     });
 
                                     angular.forEach(Ordered, function (item) {
-
-                                        if (item.score >= 1) {
                                             self.addNodeToSearchResult(item.ref, item.score, nodesFound, items, nodeTypeMaxScore);
-                                        }
-
                                     });
 
                                 }
