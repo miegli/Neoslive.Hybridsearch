@@ -1031,7 +1031,7 @@
                                     // filter out not relevant items
 
                                     var preOrdered = $filter('orderBy')(preOrdered, function (item) {
-                                        return -1*item.score;
+                                        return -1 * item.score;
                                     });
 
                                     var preOrderedFilteredRelevance = [];
@@ -1039,13 +1039,18 @@
                                     angular.forEach(preOrdered, function (item) {
                                         if (nodeTypeMaxScore[nodes[item.ref].nodeType] === undefined) {
                                             nodeTypeMaxScore[nodes[item.ref].nodeType] = item.score;
-                                            nodeTypeCount[nodes[item.ref].nodeType] = 1;
+                                            nodeTypeCount[nodes[item.ref].nodeType] = 0;
                                         } else {
                                             nodeTypeCount[nodes[item.ref].nodeType]++;
+                                            nodeTypeMaxScore[nodes[item.ref].nodeType] = nodeTypeMaxScore[nodes[item.ref].nodeType] + item.score;
                                         }
 
 
-                                        if ((nodeTypeCount[nodes[item.ref].nodeType] > 1 && item.score * 3 > nodeTypeMaxScore[nodes[item.ref].nodeType]) || (nodeTypeCount[nodes[item.ref].nodeType] <= 1 && item.score > 2)) {
+                                    });
+
+                                    angular.forEach(preOrdered, function (item) {
+
+                                        if (item.score >= nodeTypeMaxScore[nodes[item.ref].nodeType] / nodeTypeCount[nodes[item.ref].nodeType]) {
                                             preOrderedFilteredRelevance.push(item);
                                         }
 
@@ -1081,7 +1086,7 @@
                                     });
 
                                     angular.forEach(Ordered, function (item) {
-                                            self.addNodeToSearchResult(item.ref, item.score, nodesFound, items, nodeTypeMaxScore);
+                                        self.addNodeToSearchResult(item.ref, item.score, nodesFound, items, nodeTypeMaxScore);
                                     });
 
                                 }
