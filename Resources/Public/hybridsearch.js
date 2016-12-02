@@ -1091,9 +1091,9 @@
                             var nodeTypeLabel = this.getNodeTypeLabel(nodes[nodeId].nodeType);
 
 
-                            if (nodeTypeMaxScore[nodeTypeLabel] !== undefined && nodeTypeMaxScore[nodeTypeLabel] / 3 * 2 > score) {
+                            if (nodeTypeMaxScore[nodeTypeLabel] !== undefined && nodeTypeMaxScore[nodeTypeLabel] / 4 > score) {
                                 // filter out not relevant results
-                                return true;
+                              //  return true;
                             }
 
                             if (groupedBy.length) {
