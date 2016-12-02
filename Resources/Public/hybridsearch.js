@@ -1052,11 +1052,13 @@
 
                                     angular.forEach(preOrdered, function (item) {
 
-                                        if (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] / 2 < item.score) {
+                                        if (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] / 3 < item.score) {
                                             preOrderedFilteredRelevance.push(item);
                                         }
 
                                     });
+
+                                   // console.log(nodeTypeMaxScore);
 
 
                                     var Ordered = $filter('orderBy')(preOrderedFilteredRelevance, function (item) {
