@@ -408,7 +408,6 @@
                         getProperty: function (property) {
 
 
-
                             var value = '';
                             var propertyfullname = property;
 
@@ -475,7 +474,7 @@
                          * @param delimiter
                          * @returns {string}
                          */
-                        getPreview: function (maxlength,delimiter) {
+                        getPreview: function (maxlength, delimiter) {
                             if (maxlength === undefined) {
                                 maxlength = 512;
                             }
@@ -883,12 +882,13 @@
                         /**
                          * @private
                          * @params nodesFromInput
+                         * @params {boolean} booleanmode
                          * @returns mixed
                          */
-                        search: function (nodesFromInput) {
+                        search: function (nodesFromInput, booleanmode) {
 
 
-                            var fields = {}, items = {}, self = this, nodesFound = {};
+                            var fields = {}, items = {}, self = this, nodesFound = {}, nodeTypeMaxScore = {};
 
                             items['_nodes'] = {};
                             items['_nodesTurbo'] = {};
@@ -927,7 +927,7 @@
                                 });
 
                                 angular.forEach(Ordered, function (node) {
-                                    self.addNodeToSearchResult(node.identifier, 1, nodesFound, items);
+                                    self.addNodeToSearchResult(node.identifier, 1, nodesFound, items, nodeTypeMaxScore);
                                 });
 
 
@@ -965,7 +965,7 @@
                                     });
 
                                     angular.forEach(Ordered, function (node) {
-                                        self.addNodeToSearchResult(node.identifier, 1, nodesFound, items);
+                                        self.addNodeToSearchResult(node.identifier, 1, nodesFound, items, nodeTypeMaxScore);
                                     });
 
                                 } else {
@@ -976,10 +976,31 @@
                                         fields[v] = {boost: self.getBoost(v)}
                                     });
 
+                                    var booleanm = booleanmode === undefined ? "OR" : "AND";
+                                    var maxscore = 0;
+                                    var minscore = 0;
+
+                                    // pre calculate highest score
+                                    angular.forEach(lunrSearch.search(query, {
+                                        fields: fields,
+                                        bool: booleanm
+                                    }), function (item) {
+                                        if (item.score > maxscore) {
+                                            maxscore = item.score;
+                                        }
+                                        if (minscore === 0 || item.score < minscore) {
+                                            minscore = item.score;
+                                        }
+                                    });
+
+                                    if (maxscore / minscore > (maxscore / 3 * 2)) {
+                                        // set boolean mode to AND
+                                        booleanm = "AND";
+                                    }
 
                                     angular.forEach(lunrSearch.search(query, {
                                         fields: fields,
-                                        bool: "OR"
+                                        bool: booleanm
                                     }), function (item) {
 
                                         if (nodes[item.ref] !== undefined) {
@@ -1026,7 +1047,7 @@
                                     });
 
                                     angular.forEach(Ordered, function (item) {
-                                        self.addNodeToSearchResult(item.ref, item.score, nodesFound, items);
+                                        self.addNodeToSearchResult(item.ref, item.score, nodesFound, items, nodeTypeMaxScore);
                                     });
 
                                 }
@@ -1067,9 +1088,10 @@
                          * @param float score relevance
                          * @param array nodesFound list
                          * @param array items list
+                         * @param array nodeTypeMaxScore list
                          * @returns boolean
                          */
-                        addNodeToSearchResult: function (nodeId, score, nodesFound, items) {
+                        addNodeToSearchResult: function (nodeId, score, nodesFound, items, nodeTypeMaxScore) {
 
 
                             var skip = false;
@@ -1078,6 +1100,11 @@
                             var groupedBy = this.getGroupedBy(nodes[nodeId].nodeType);
                             var nodeTypeLabel = this.getNodeTypeLabel(nodes[nodeId].nodeType);
 
+
+                            if (nodeTypeMaxScore[nodeTypeLabel] !== undefined && nodeTypeMaxScore[nodeTypeLabel] / 3 * 2 > score) {
+                                // filter out not relevant results
+                                return true;
+                            }
 
                             if (groupedBy.length) {
 
@@ -1099,6 +1126,7 @@
 
                             }
 
+
                             if (items['_nodesByType'][nodeTypeLabel] === undefined) {
                                 items['_nodesByType'][nodeTypeLabel] = {};
                             }
@@ -1110,6 +1138,8 @@
 
 
                             if (skip === false) {
+
+                                nodeTypeMaxScore[nodeTypeLabel] = score;
 
                                 if (nodes[nodeId]['turbonode'] === true) {
                                     items['_nodesTurbo'][hash] = resultNode;
@@ -2877,7 +2907,7 @@
                  * @param {integer} limit max results
                  * @returns {array} collection of {HybridsearchResultsNode}
                  */
-                getTurboNodes: function () {
+                getTurboNodes: function (limit) {
                     return this.getData()._nodesTurbo === undefined ? null : (limit === undefined ? this.getData()._nodesTurbo : this.getData()._nodesTurbo.slice(0, limit) );
                 },
 
