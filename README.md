@@ -388,6 +388,18 @@ Group the result by given identifiers. With this groupedBy function you can filt
 
 This methods are called not more than once while initializing.
 
+### $watch
+Watching the {HybridsearchResultsObject} for any changes.
+
+##### Returns
+{HybridsearchObject} the search object
+
+##### Examples
+
+* `$watch(function(data) {console.log(data);})` The function argument 'data' contains the current search result.
+
+-------
+
 ### $bind
 Bind the {HybridsearchResultsObject} to given scope variable.
 

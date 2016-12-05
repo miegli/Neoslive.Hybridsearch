@@ -154,7 +154,7 @@
              */
             var HybridsearchObject = function (hybridsearch) {
 
-                    var hybridsearchInstanceNumber, pendingRequests, results, filter, index, lunrSearch, nodes, nodesLastHash, nodeTypeLabels, resultGroupedBy, resultOrderBy, propertiesBoost, isRunning, firstfilterhash, searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier, nodesByIdentifier, searchCounter, searchCounterTimeout;
+                    var hybridsearchInstanceNumber, searchTimer, pendingRequests, results, filter, index, lunrSearch, nodes, nodesLastHash, nodeTypeLabels, resultGroupedBy, resultOrderBy, propertiesBoost, isRunning, firstfilterhash, searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier, nodesByIdentifier, searchCounter, searchCounterTimeout;
 
                     // count instances
                     if (window.hybridsearchInstances === undefined) {
@@ -164,6 +164,7 @@
                     }
 
                     searchCounter = 0;
+                    searchTimer = false;
                     nodesLastHash = 0;
                     searchCounterTimeout = false;
                     isRunning = false;
@@ -887,13 +888,18 @@
                          */
                         search: function (nodesFromInput, booleanmode) {
 
-
                             var fields = {}, items = {}, self = this, nodesFound = {}, nodeTypeMaxScore = {}, nodeTypeCount = {};
+
+
+                            if (lunrSearch.getFields().length == 0 && self.getFilter().getFullSearchQuery() !== false) {
+                                // skip search, search field not ready yet
+                                return false;
+                            }
+
 
                             items['_nodes'] = {};
                             items['_nodesTurbo'] = {};
                             items['_nodesByType'] = {};
-
 
                             if (nodesFromInput == undefined && self.getNodesAddedByIdentifier()) {
                                 nodesFromInput = self.getNodesAddedByIdentifier();
@@ -901,34 +907,38 @@
 
                             if (!self.getFilter().getFullSearchQuery()) {
 
-                                var preOrdered = [];
+                                if (nodesFromInput !== undefined) {
 
-                                // return all nodes bco no query set
-                                angular.forEach(nodesFromInput, function (node) {
+                                    var preOrdered = [];
 
-                                    if (self.isFiltered(node) === false) {
-                                        preOrdered.push(node);
-                                    }
-                                });
+                                    // return all nodes bco no query set
+                                    angular.forEach(nodesFromInput, function (node) {
 
-                                var Ordered = $filter('orderBy')(preOrdered, function (node) {
-                                    var ostring = '';
-
-                                    angular.forEach(self.getOrderBy(node.nodeType), function (property) {
-
-                                        var s = self.getPropertyFromNode(node, property);
-                                        if (typeof s === 'string') {
-                                            ostring += s;
+                                        if (self.isFiltered(node) === false) {
+                                            preOrdered.push(node);
                                         }
-
                                     });
 
-                                    return ostring;
-                                });
+                                    var Ordered = $filter('orderBy')(preOrdered, function (node) {
+                                        var ostring = '';
 
-                                angular.forEach(Ordered, function (node) {
-                                    self.addNodeToSearchResult(node.identifier, 1, nodesFound, items, nodeTypeMaxScore);
-                                });
+                                        angular.forEach(self.getOrderBy(node.nodeType), function (property) {
+
+                                            var s = self.getPropertyFromNode(node, property);
+                                            if (typeof s === 'string') {
+                                                ostring += s;
+                                            }
+
+                                        });
+
+                                        return ostring;
+                                    });
+
+                                    angular.forEach(Ordered, function (node) {
+                                        self.addNodeToSearchResult(node.identifier, 1, nodesFound, items, nodeTypeMaxScore);
+                                    });
+
+                                }
 
 
                             } else {
@@ -971,6 +981,8 @@
                                 } else {
 
 
+
+
                                     // execute query search
                                     angular.forEach(lunrSearch.getFields(), function (v, k) {
                                         fields[v] = {boost: self.getBoost(v)}
@@ -1004,6 +1016,8 @@
                                         }
                                     )
                                     ;
+
+
 
                                     if (resultAnd.length == 0) {
                                         // merge OR search first with lower score
@@ -1043,6 +1057,8 @@
                                     if (resultAnd.length == 0) {
                                         angular.forEach(preOrdered, function (item) {
 
+
+
                                             if (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined) {
                                                 nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = item.score;
                                             } else {
@@ -1062,7 +1078,7 @@
 
                                     });
 
-                               
+
                                     var Ordered = $filter('orderBy')(preOrderedFilteredRelevance, function (item) {
 
                                         var orderBy = self.getOrderBy(nodes[item.ref].nodeType);
@@ -1090,6 +1106,8 @@
 
 
                                     });
+
+
 
                                     angular.forEach(Ordered, function (item) {
                                         self.addNodeToSearchResult(item.ref, item.score, nodesFound, items, nodeTypeMaxScore);
@@ -1122,6 +1140,11 @@
                             searchCounterTimeout = setTimeout(function () {
                                 searchCounter++;
                             }, 2000);
+
+
+
+
+                            clearInterval(self.getIndexInterval());
 
 
                         },
@@ -1537,7 +1560,7 @@
                                         clearInterval(searchInstancesInterval);
                                         lastSearchInstance.execute(self, lastSearchInstance);
                                     }
-                                }, 10);
+                                }, 25);
 
 
                             } else {
@@ -1690,6 +1713,8 @@
 
                                     var cleanedup = false;
 
+
+
                                     angular.forEach(uniquarrayfinal, function (keyword) {
 
 
@@ -1774,6 +1799,8 @@
                                                 angular.forEach(data.val(), function (node, id) {
                                                     nodes[id] = node.node;
                                                 });
+
+
                                                 if (keyword === null) {
                                                     self.search(nodes);
                                                 } else {
@@ -1793,6 +1820,9 @@
 
 
                                     if (lastSearchInstance.$$data.keywords.length) {
+
+
+
                                         // wait for all data and put it together to search index
                                         self.setIndexInterval(setInterval(function () {
 
@@ -1807,11 +1837,13 @@
                                                         self.cleanLocalIndex();
                                                         cleanedup = true;
                                                     }
-
                                                     self.updateLocalIndex(indexdata);
+                                                } else {
+                                                    self.setLastIndexHash(hash);
+                                                    self.search();
                                                 }
-                                                self.setLastIndexHash(hash);
-                                                self.search();
+
+
                                             }
                                             indexintervalcounter++;
 
