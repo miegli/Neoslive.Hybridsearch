@@ -930,6 +930,38 @@ class SearchIndexFactory
                     $properties->$k = $v;
                 }
 
+                if ($val InstanceOf \DateTime) {
+                    \TYPO3\Flow\var_dump($val);
+
+                    $k = mb_strtolower(preg_replace("/[^A-z0-9]/", "-", $node->getNodeType()->getName() . ":" . $key));
+                    $properties->$k = [];
+                    $properties->$k['TIMESTAMP'] = $val->getTimestamp();
+
+
+                    $language = isset($node->getDimensions()['language']) ? current($node->getDimensions()['language']) : 'de';
+                    setlocale(LC_ALL,$language."_".$language);
+                    $properties->$k['RFC822'] = $val->format(DATE_RFC822);
+                    $properties->$k['OBJECT'] = $val;
+                    $properties->$k['FORMAT'] = array(
+                        'A'=>strftime('%A',$val->getTimestamp()),
+                        'a'=>strftime('%a',$val->getTimestamp()),
+                        'B'=>strftime('%B',$val->getTimestamp()),
+                        'b'=>strftime('%b',$val->getTimestamp()),
+                        'd'=>strftime('%d',$val->getTimestamp()),
+                        'e'=>strftime('%e',$val->getTimestamp()),
+                        'H'=>strftime('%H',$val->getTimestamp()),
+                        'I'=>strftime('%I',$val->getTimestamp()),
+                        'm'=>strftime('%m',$val->getTimestamp()),
+                        'M'=>strftime('%M',$val->getTimestamp()),
+                        'p'=>strftime('%p',$val->getTimestamp()),
+                        'Y'=>strftime('%Y',$val->getTimestamp()),
+                        'y'=>strftime('%y',$val->getTimestamp())
+                    );
+
+                }
+
+
+
 
             }
 
