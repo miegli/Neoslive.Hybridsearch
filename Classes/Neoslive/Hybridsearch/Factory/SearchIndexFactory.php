@@ -23,6 +23,7 @@ use TYPO3\Flow\Persistence\Doctrine\PersistenceManager;
 use TYPO3\Flow\Reflection\ObjectAccess;
 use TYPO3\Flow\Resource\ResourceManager;
 use TYPO3\Media\Domain\Model\Asset;
+use TYPO3\Media\Domain\Model\ImageVariant;
 use TYPO3\TYPO3CR\Domain\Model\NodeData;
 use TYPO3\TYPO3CR\Domain\Model\NodeInterface;
 use TYPO3\Flow\Mvc\Controller\Arguments;
@@ -907,7 +908,8 @@ class SearchIndexFactory
 
 
             if (gettype($val) === 'object') {
-                if ($val InstanceOf Asset) {
+
+                if ($val InstanceOf Asset || $val InstanceOf ImageVariant) {
                     if (!$this->baseUri) {
                         $this->getView();
                     }
@@ -931,7 +933,6 @@ class SearchIndexFactory
                 }
 
                 if ($val InstanceOf \DateTime) {
-                    \TYPO3\Flow\var_dump($val);
 
                     $k = mb_strtolower(preg_replace("/[^A-z0-9]/", "-", $node->getNodeType()->getName() . ":" . $key));
                     $properties->$k = [];
@@ -941,7 +942,6 @@ class SearchIndexFactory
                     $language = isset($node->getDimensions()['language']) ? current($node->getDimensions()['language']) : 'de';
                     setlocale(LC_ALL,$language."_".$language);
                     $properties->$k['RFC822'] = $val->format(DATE_RFC822);
-                    $properties->$k['OBJECT'] = $val;
                     $properties->$k['FORMAT'] = array(
                         'A'=>strftime('%A',$val->getTimestamp()),
                         'a'=>strftime('%a',$val->getTimestamp()),
@@ -958,7 +958,7 @@ class SearchIndexFactory
                         'y'=>strftime('%y',$val->getTimestamp())
                     );
 
-                }
+                                    }
 
 
 
