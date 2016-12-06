@@ -367,7 +367,8 @@
                                         } else {
                                             var newvalue = [];
                                             angular.forEach(value, function (v) {
-                                                var n = self.getPropertyFromObject({v}, segment);
+
+                                                var n = self.getPropertyFromObject({0: v}, segment);
                                                 newvalue.push(n[0]);
                                             });
                                             value = newvalue;
@@ -1334,7 +1335,7 @@
                                         } else {
                                             var newvalue = [];
                                             angular.forEach(value, function (v) {
-                                                var n = self.getPropertyFromObject({v}, segment);
+                                                var n = self.getPropertyFromObject({0:v}, segment);
                                                 newvalue.push(n[0]);
                                             });
                                             value = newvalue;
@@ -2228,11 +2229,11 @@
                  * @param {scope} scope false if is simple string otherwise angular scope required for binding data
                  * @returns {HybridsearchObject}
                  */
-                setNodeType: function (nodeType, scope=null) {
+                setNodeType: function (nodeType, scope) {
 
                     var self = this;
 
-                    if (scope) {
+                    if (scope != undefined) {
                         self.$$app.getFilter().setScopeProperty(scope, nodeType, 'nodeType');
                         scope.$watch(nodeType, function (filterNodeInput) {
                             self.$$app.getFilter().setNodeType(filterNodeInput);
@@ -2260,11 +2261,14 @@
                  * @param boolean booleanmode (true if array values treated with OR conditions)
                  * @returns {HybridsearchObject}
                  */
-                addPropertyFilter: function (property, value, scope=null, reverse = false, booleanmode = true) {
+                addPropertyFilter: function (property, value, scope, reverse, booleanmode) {
 
                     var self = this;
+                    if (booleanmode === undefined) {
+                        booleanmode = true;
+                    }
 
-                    if (scope) {
+                    if (scope!=undefined) {
                         self.$$app.getFilter().setScopeProperty(scope, value, 'propertyFilters');
                         scope.$watch(value, function (v) {
                             self.$$app.getFilter().addPropertyFilter(property, v, booleanmode, reverse);
@@ -2383,11 +2387,11 @@
                  * @param {scope} scope false if is simple string otherwise angular scope required for binding data
                  * @returns {HybridsearchObject}
                  */
-                setGenderFilter: function (gender, scope=null) {
+                setGenderFilter: function (gender, scope) {
 
                     var self = this;
 
-                    if (scope) {
+                    if (scope!=undefined) {
                         self.$$app.getFilter().setScopeProperty(scope, input, 'genderFilter');
                         scope.$watch(gender, function (v) {
                             self.$$app.getFilter().setGenderFilter(v);
@@ -2409,11 +2413,11 @@
                  * @param {scope} scope false if is simple string otherwise angular scope required for binding data
                  * @returns {HybridsearchObject}
                  */
-                setAgeFilter: function (age, scope=null) {
+                setAgeFilter: function (age, scope) {
 
                     var self = this;
 
-                    if (scope) {
+                    if (scope!=undefined) {
                         self.$$app.getFilter().setScopeProperty(scope, age, 'ageFilter');
                         scope.$watch(age, function (v) {
                             self.$$app.getFilter().setAgeFilter(v);
@@ -2435,11 +2439,11 @@
                  * @param {scope} scope false if is simple string otherwise angular scope required for binding data
                  * @returns {HybridsearchObject}
                  */
-                setNodePath: function (nodePath, scope=null) {
+                setNodePath: function (nodePath, scope) {
 
                     var self = this;
 
-                    if (scope) {
+                    if (scope!=undefined) {
                         self.$$app.getFilter().setScopeProperty(scope, nodePath, 'nodePath');
                         scope.$watch(nodePath, function (filterNodeInput) {
                             self.$$app.getFilter().setNodePath(filterNodeInput);
@@ -2588,11 +2592,11 @@
                  * @param {scope} scope false if is simple string otherwise angular scope required for binding data
                  * @returns {HybridsearchObject}
                  */
-                addAdditionalKeywords: function (input, scope=null) {
+                addAdditionalKeywords: function (input, scope) {
 
                     var self = this;
 
-                    if (scope) {
+                    if (scope!=undefined) {
                         scope.$watch(input, function (searchInput) {
                             self.$$app.getFilter().setAdditionalKeywords(searchInput);
                         });
@@ -3307,7 +3311,7 @@
                                 } else {
                                     var newvalue = [];
                                     angular.forEach(value, function (v) {
-                                        var n = self.getPropertyFromObject({v}, segment);
+                                        var n = self.getPropertyFromObject({0: v}, segment);
                                         newvalue.push(n[0]);
                                     });
                                     value = newvalue;
@@ -3563,7 +3567,12 @@
                  * @param boolean reverse (true if condition logic is reversed)
                  * @returns HybridsearchObject
                  */
-                addPropertyFilter: function (property, value, booleanmode = true, reverse = false) {
+                addPropertyFilter: function (property, value, booleanmode, reverse) {
+
+                    if (booleanmode === undefined) {
+                        booleanmode = true;
+                    }
+
                     if (this.$$data.propertyFilter == undefined) {
                         this.$$data.propertyFilter = {};
                     }
@@ -3729,7 +3738,7 @@
                  * @param string property
                  * @returns mixed
                  */
-                getGa: function (property=false) {
+                getGa: function (property) {
                     if (property === false) {
                         return this.$$data.ga;
                     } else {
