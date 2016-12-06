@@ -277,6 +277,7 @@ Adds a property filter that restrict the search result. If scope is given, then 
 | scope (optional) | Scope | angular scope |
 | inverted (optional) | boolean | true filter is inverted  |
 | booleanmode (optional) | boolean | false if all array values must match all |
+| nodeType (optional) | string | apply filter only to given nodeType |
 
 ##### Returns
 {HybridsearchObject} the search object

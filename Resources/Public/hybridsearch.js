@@ -1019,7 +1019,6 @@
                                     ;
 
 
-
                                     if (resultAnd.length == 0) {
                                         // merge OR search first with lower score
                                         angular.forEach(lunrSearch.search(query, {
@@ -1057,7 +1056,6 @@
 
                                     if (resultAnd.length == 0) {
                                         angular.forEach(preOrdered, function (item) {
-
 
 
                                             if (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined) {
@@ -1109,7 +1107,6 @@
                                     });
 
 
-
                                     angular.forEach(Ordered, function (item) {
                                         self.addNodeToSearchResult(item.ref, item.score, nodesFound, items, nodeTypeMaxScore);
                                     });
@@ -1141,8 +1138,6 @@
                             searchCounterTimeout = setTimeout(function () {
                                 searchCounter++;
                             }, 2000);
-
-
 
 
                             clearInterval(self.getIndexInterval());
@@ -1335,7 +1330,7 @@
                                         } else {
                                             var newvalue = [];
                                             angular.forEach(value, function (v) {
-                                                var n = self.getPropertyFromObject({0:v}, segment);
+                                                var n = self.getPropertyFromObject({0: v}, segment);
                                                 newvalue.push(n[0]);
                                             });
                                             value = newvalue;
@@ -1400,75 +1395,80 @@
 
                                 angular.forEach(this.getFilter().getPropertyFilters(), function (filter, property) {
 
-
-                                    var filterApplied = false, filterobject = {};
-                                    var propertyValue = self.getPropertyFromNode(node, property);
-
-
-                                    // filter is null
-                                    if (filterApplied === false && filter.value === null) {
+                                    if (filter.nodeType !== undefined && filter.nodeType != node.nodeType) {
                                         propertyMatching++;
-                                        filterApplied = true;
-                                    }
-
-                                    // filter is string
-                                    if (filterApplied === false && typeof filter.value === 'string') {
-
-                                        if (((filter.reverse === false && propertyValue == filter.value) || (filter.reverse === true && propertyValue != filter.value))) {
-                                            propertyMatching++;
-                                        }
-
-                                        filterApplied = true;
-                                    }
-
-
-                                    // convert array to object
-                                    if (filterApplied === false && filter.value.length) {
-                                        var filterobject = {};
-                                        angular.forEach(filter.value, function (value) {
-                                            filterobject[value] = true;
-                                        });
                                     } else {
-                                        filterobject = filter.value;
-                                    }
+
+                                        var filterApplied = false, filterobject = {};
+                                        var propertyValue = self.getPropertyFromNode(node, property);
 
 
-                                    // filter is object
-                                    if (filterApplied === false && Object.keys(filterobject).length > 0) {
+                                        // filter is null
+                                        if (filterApplied === false && filter.value === null) {
+                                            propertyMatching++;
+                                            filterApplied = true;
+                                        }
 
-                                        var isMatching = 0;
+                                        // filter is string
+                                        if (filterApplied === false && typeof filter.value === 'string') {
 
-
-                                        angular.forEach(filterobject, function (value, key) {
-
-
-                                            if (value) {
-                                                if ((filter.reverse === false && (key === propertyValue) || self.inArray(key, propertyValue)) || (filter.reverse === true && key !== propertyValue && self.inArray(key, propertyValue) === false)) {
-
-                                                    isMatching++;
-                                                }
-                                            } else {
-                                                if (filter.booleanmode === false) {
-                                                    isMatching++;
-                                                }
+                                            if (((filter.reverse === false && propertyValue == filter.value) || (filter.reverse === true && propertyValue != filter.value))) {
+                                                propertyMatching++;
                                             }
-                                        });
+
+                                            filterApplied = true;
+                                        }
 
 
-                                        if (filter.booleanmode === false && isMatching === Object.keys(filterobject).length) {
+                                        // convert array to object
+                                        if (filterApplied === false && filter.value.length) {
+                                            var filterobject = {};
+                                            angular.forEach(filter.value, function (value) {
+                                                filterobject[value] = true;
+                                            });
+                                        } else {
+                                            filterobject = filter.value;
+                                        }
+
+
+                                        // filter is object
+                                        if (filterApplied === false && Object.keys(filterobject).length > 0) {
+
+                                            var isMatching = 0;
+
+
+                                            angular.forEach(filterobject, function (value, key) {
+
+
+                                                if (value) {
+                                                    if ((filter.reverse === false && (key === propertyValue) || self.inArray(key, propertyValue)) || (filter.reverse === true && key !== propertyValue && self.inArray(key, propertyValue) === false)) {
+
+                                                        isMatching++;
+                                                    }
+                                                } else {
+                                                    if (filter.booleanmode === false) {
+                                                        isMatching++;
+                                                    }
+                                                }
+                                            });
+
+
+                                            if (filter.booleanmode === false && isMatching === Object.keys(filterobject).length) {
+                                                propertyMatching++;
+                                            }
+
+                                            if (filter.booleanmode === true && isMatching > 0) {
+                                                propertyMatching++;
+                                            }
+
+                                            filterApplied = true;
+
+                                        }
+
+                                        if (filterApplied === false) {
                                             propertyMatching++;
                                         }
 
-                                        if (filter.booleanmode === true && isMatching > 0) {
-                                            propertyMatching++;
-                                        }
-
-                                        filterApplied = true;
-
-                                    }
-
-                                    if (filterApplied === false) {
-                                        propertyMatching++;
                                     }
 
                                 });
@@ -1713,7 +1713,6 @@
                                     var indexdata = {};
 
                                     var cleanedup = false;
-
 
 
                                     angular.forEach(uniquarrayfinal, function (keyword) {
@@ -2259,24 +2258,25 @@
                  * @param {scope} scope false if is simple string otherwise angular scope required for binding data
                  * @param boolean reverse (true if condition logic is reversed)
                  * @param boolean booleanmode (true if array values treated with OR conditions)
+                 * @param nodeType nodeType (apply filter only to given nodeType)
                  * @returns {HybridsearchObject}
                  */
-                addPropertyFilter: function (property, value, scope, reverse, booleanmode) {
+                addPropertyFilter: function (property, value, scope, reverse, booleanmode, nodeType) {
 
                     var self = this;
                     if (booleanmode === undefined) {
                         booleanmode = true;
                     }
 
-                    if (scope!=undefined) {
+                    if (scope != undefined) {
                         self.$$app.getFilter().setScopeProperty(scope, value, 'propertyFilters');
                         scope.$watch(value, function (v) {
-                            self.$$app.getFilter().addPropertyFilter(property, v, booleanmode, reverse);
+                            self.$$app.getFilter().addPropertyFilter(property, v, booleanmode, reverse, nodeType);
                             self.$$app.setSearchIndex();
                         }, true);
 
                     } else {
-                        self.$$app.getFilter().addPropertyFilter(property, value, booleanmode, reverse);
+                        self.$$app.getFilter().addPropertyFilter(property, value, booleanmode, reverse, nodeType);
                         self.$$app.setSearchIndex();
                     }
 
@@ -2391,7 +2391,7 @@
 
                     var self = this;
 
-                    if (scope!=undefined) {
+                    if (scope != undefined) {
                         self.$$app.getFilter().setScopeProperty(scope, input, 'genderFilter');
                         scope.$watch(gender, function (v) {
                             self.$$app.getFilter().setGenderFilter(v);
@@ -2417,7 +2417,7 @@
 
                     var self = this;
 
-                    if (scope!=undefined) {
+                    if (scope != undefined) {
                         self.$$app.getFilter().setScopeProperty(scope, age, 'ageFilter');
                         scope.$watch(age, function (v) {
                             self.$$app.getFilter().setAgeFilter(v);
@@ -2443,7 +2443,7 @@
 
                     var self = this;
 
-                    if (scope!=undefined) {
+                    if (scope != undefined) {
                         self.$$app.getFilter().setScopeProperty(scope, nodePath, 'nodePath');
                         scope.$watch(nodePath, function (filterNodeInput) {
                             self.$$app.getFilter().setNodePath(filterNodeInput);
@@ -2596,7 +2596,7 @@
 
                     var self = this;
 
-                    if (scope!=undefined) {
+                    if (scope != undefined) {
                         scope.$watch(input, function (searchInput) {
                             self.$$app.getFilter().setAdditionalKeywords(searchInput);
                         });
@@ -3565,9 +3565,10 @@
                  * @param string value
                  * @param boolean booleanmode (true if array values treated with OR conditions)
                  * @param boolean reverse (true if condition logic is reversed)
+                 * @param nodeType nodeType (apply filter only to given nodeType)
                  * @returns HybridsearchObject
                  */
-                addPropertyFilter: function (property, value, booleanmode, reverse) {
+                addPropertyFilter: function (property, value, booleanmode, reverse, nodeType) {
 
                     if (booleanmode === undefined) {
                         booleanmode = true;
@@ -3588,7 +3589,8 @@
                     this.$$data.propertyFilter[property] = {
                         value: value,
                         booleanmode: booleanmode,
-                        reverse: reverse
+                        reverse: reverse,
+                        nodeType: nodeType
                     };
                     return this;
                 },
