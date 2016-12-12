@@ -213,6 +213,8 @@
                             self[key] = val;
                         });
                         self.score = score;
+                        self.groupedNodes = [];
+                        self.grouped = false;
 
                     };
 
@@ -224,6 +226,14 @@
                          */
                         getNodeType: function () {
                             return this.nodeType !== undefined ? this.nodeType : '';
+                        },
+
+                        /**
+                         * NodeType.
+                         * @returns {string} node identifier
+                         */
+                        getIdentifier: function () {
+                            return this.identifier !== undefined ? this.identifier : '';
                         },
 
                         /**
@@ -248,6 +258,82 @@
                          */
                         addScore: function (score) {
                             this.score = this.score + score;
+                        },
+
+                        /**
+                         * @private
+                         * @param {HybridsearchResultsNode} node
+                         * @returns {object}
+                         */
+                        addGroupedNode: function (node) {
+                            this.groupedNodes.push(node);
+                        },
+
+                        /**
+                         * @public
+                         * @returns {boolean}
+                         */
+                        isGrouped: function () {
+                            return this.grouped;
+                        },
+
+                        /**
+                         * @private
+                         * @returns {void}
+                         */
+                        setGrouped: function () {
+                            this.grouped = true;
+                        },
+
+                        /**
+                         * @public
+                         * @param {boolean} uniqueByBreadcrumb
+                         * @returns {array}
+                         */
+                        getGroupedNodes: function (uniqueByBreadcrumb) {
+
+                            if (uniqueByBreadcrumb === false) {
+                                return this.groupedNodes;
+                            } else {
+                                return this.getGroupedByUniqueBreadcrumbs();
+                            }
+                        },
+
+                        /**
+                         * @private
+                         * @returns {array}
+                         */
+                        getGroupedByUniqueBreadcrumbs: function () {
+                            var b = [];
+                            var bhash = {};
+
+                            angular.forEach(this.groupedNodes, function (node) {
+                                var h = Sha1.hash(node.getBreadcrumb());
+                                if (bhash[h] === undefined) {
+
+                                    b.push(node);
+                                }
+                                bhash[h] = node.getIdentifier();
+                            });
+
+                            return b;
+
+                        },
+
+                        /**
+                         * @private
+                         * @param {boolean} uniqueByBreadcrumb
+                         * @returns {array}
+                         */
+                        countGroupedNodes: function (uniqueByBreadcrumb) {
+                            if (uniqueByBreadcrumb === false) {
+                                return this.groupedNodes.length;
+                            } else {
+                                return this.getGroupedByUniqueBreadcrumbs().length;
+                            }
+
+
+
                         },
 
                         /**
@@ -1213,9 +1299,23 @@
 
 
                                 items['_nodesByType'][nodeTypeLabel][hash] = resultNode;
+                            } else {
+                                if (items['_nodes'][hash] !== undefined) {
+                                    items['_nodes'][hash].setGrouped();
+                                }
+                                resultNode.setGrouped();
+
                             }
 
-                            nodesFound[hash] = true;
+                            // add item as grouped node
+
+                            if (items['_nodes'][hash] !== undefined) {
+                                items['_nodes'][hash].addGroupedNode(resultNode);
+
+                            }
+
+                            nodesFound[hash] = nodeId;
+
                         },
                         /**
                          * @private
