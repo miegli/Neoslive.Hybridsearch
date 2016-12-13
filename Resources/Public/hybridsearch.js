@@ -1168,9 +1168,7 @@
                                             }
 
                                         }
-                                    )
-                                    ;
-
+                                    );
 
                                     if (resultAnd.length == 0) {
                                         // merge OR search first with lower score
@@ -1317,11 +1315,10 @@
                             var groupedBy = this.getGroupedBy(nodes[nodeId].nodeType);
                             var nodeTypeLabel = this.getNodeTypeLabel(nodes[nodeId].nodeType);
 
-
-                            // if (nodeTypeMaxScore[nodeTypeLabel] !== undefined && nodeTypeMaxScore[nodeTypeLabel] / 3 * 2 > score) {
-                            // filter out not relevant results
-                            // return true;
-                            //}
+                            if (nodeTypeMaxScore[nodeTypeLabel] !== undefined && nodeTypeMaxScore[nodeTypeLabel] / 100 * 10 > score) {
+                                //filter out not relevant results
+                                return true;
+                            }
 
 
                             if (groupedBy.length) {
