@@ -154,7 +154,7 @@
              */
             var HybridsearchObject = function (hybridsearch) {
 
-                    var hybridsearchInstanceNumber, searchTimer, pendingRequests, results, filter, index, lunrSearch, nodes, nodesLastHash, nodeTypeLabels, resultGroupedBy, resultOrderBy, propertiesBoost, isRunning, firstfilterhash, searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier, nodesByIdentifier, searchCounter, searchCounterTimeout;
+                    var hybridsearchInstanceNumber, searchTimer, pendingRequests, results, filter, index, lunrSearch, nodes, nodesLastHash, nodeTypeLabels, resultGroupedBy, resultOrderBy, propertiesBoost, ParentNodeTypeBoostFactor, isRunning, firstfilterhash, searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier, nodesByIdentifier, searchCounter, searchCounterTimeout;
 
                     // count instances
                     if (window.hybridsearchInstances === undefined) {
@@ -197,6 +197,40 @@
                         // });
 
                     }
+
+                    /**
+                     *  extends string prototype
+                     *  finds uri in string
+                     */
+                    String.prototype.HybridsearchResultsValue = function () {
+                        return new HybridsearchResultsValue(this);
+                    };
+
+                    /**
+                     *
+                     * @param value {mixed} a value
+                     * @constructor
+                     */
+                    var HybridsearchResultsValue = function (value) {
+
+                        var self = this;
+
+                        self.value = value;
+
+                    };
+
+                    HybridsearchResultsValue.prototype = {
+                        findUri: function () {
+                            var urlRegex = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
+                            var urls = this.value.match(urlRegex)
+                            return urls && urls.length == 1 ? urls[0] : urls;
+                        },
+
+                        toString: function () {
+                            return this.value;
+                        }
+
+                    };
 
 
                     /**
@@ -291,12 +325,26 @@
                          * @returns {array}
                          */
                         getGroupedNodes: function (uniqueByDocumentNode) {
-
                             if (uniqueByDocumentNode === false) {
                                 return this.groupedNodes;
                             } else {
                                 return this.getGroupedByUniqueDocumentNode();
                             }
+                        },
+
+                        /**
+                         * @private
+                         * @param {boolean} uniqueByDocumentNode
+                         * @returns {array}
+                         */
+                        countGroupedNodes: function (uniqueByDocumentNode) {
+                            if (uniqueByDocumentNode === false) {
+                                return this.groupedNodes.length;
+                            } else {
+                                return this.getGroupedByUniqueDocumentNode().length;
+                            }
+
+
                         },
 
                         /**
@@ -317,21 +365,6 @@
                             });
 
                             return b;
-
-                        },
-
-                        /**
-                         * @private
-                         * @param {boolean} uniqueByDocumentNode
-                         * @returns {array}
-                         */
-                        countGroupedNodes: function (uniqueByDocumentNode) {
-                            if (uniqueByDocumentNode === false) {
-                                return this.groupedNodes.length;
-                            } else {
-                                return this.getGroupedByUniqueDocumentNode().length;
-                            }
-
 
                         },
 
@@ -774,6 +807,34 @@
                         },
                         /**
                          * @private
+                         * @param {node}
+                         * @returns {number}
+                         */
+                        getParentNodeTypeBoostFactor: function (node) {
+
+
+                            if (node.parentNode != undefined) {
+
+                                if (ParentNodeTypeBoostFactor[node.parentNode.nodeType] === undefined) {
+                                    var filterReg = /[^0-9a-zA-ZöäüÖÄÜ]/g;
+                                    var s = node.parentNode.nodeType.replace(filterReg, "-").toLowerCase();
+                                    if (ParentNodeTypeBoostFactor[s] != undefined) {
+                                        ParentNodeTypeBoostFactor[node.parentNode.nodeType] = ParentNodeTypeBoostFactor[s];
+                                    }
+                                }
+
+                                if (ParentNodeTypeBoostFactor[node.parentNode.nodeType] != undefined) {
+                                    return ParentNodeTypeBoostFactor[node.parentNode.nodeType];
+                                }
+
+
+                            }
+
+                            return 1;
+
+                        },
+                        /**
+                         * @private
                          * @param nodeType
                          * @returns {array}
                          */
@@ -832,6 +893,13 @@
                          */
                         setPropertiesBoost: function (boost) {
                             propertiesBoost = boost;
+                        },
+                        /**
+                         * @private
+                         * @param boost
+                         */
+                        setParentNodeTypeBoostFactor: function (boost) {
+                            ParentNodeTypeBoostFactor = boost;
                         },
                         /**
                          * @private
@@ -1130,9 +1198,10 @@
                                         );
                                     }
 
-                                    // filter out not relevant items
+                                    // filter out not relevant items and apply parent node type boost factor
 
                                     var preOrdered = $filter('orderBy')(preOrdered, function (item) {
+                                        item.score = item.score * self.getParentNodeTypeBoostFactor(nodes[item.ref]);
                                         return -1 * item.score;
                                     });
 
@@ -1214,7 +1283,6 @@
 
                             }
 
-
                             results.getApp().setResults(items, nodes, this);
 
                             if (searchCounterTimeout) {
@@ -1254,6 +1322,7 @@
                             // filter out not relevant results
                             // return true;
                             //}
+
 
                             if (groupedBy.length) {
 
@@ -1310,7 +1379,6 @@
 
                             if (items['_nodes'][hash] !== undefined) {
                                 items['_nodes'][hash].addGroupedNode(resultNode);
-
                             }
 
                             nodesFound[hash] = nodeId;
@@ -2653,6 +2721,20 @@
                 setPropertiesBoost: function (propertiesboost) {
                     var self = this;
                     self.$$app.setPropertiesBoost(propertiesboost);
+                    return this;
+                },
+
+                /**
+                 * Sets parent node type boost.
+                 * @param {object} ParentNodeTypeBoostFactor
+                 * @example var ParentNodeTypeBoostFactor = {
+                 *        'corporate-contact-collection': 1.5
+                 *    }
+                 * @returns {$hybridsearchResultsObject|*}
+                 */
+                setParentNodeTypeBoostFactor: function (ParentNodeTypeBoostFactor) {
+                    var self = this;
+                    self.$$app.setParentNodeTypeBoostFactor(ParentNodeTypeBoostFactor);
                     return this;
                 },
 
