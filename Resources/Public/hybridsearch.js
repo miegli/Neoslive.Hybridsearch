@@ -73,9 +73,11 @@
                     workspace: workspace,
                     dimension: dimension,
                     site: site,
+                    branch: '',
                     databaseURL: databaseURL,
                     cdnHost: cdnHost
                 };
+
                 Object.defineProperty(this, '$$conf', {
                     value: this.$$conf
                 });
@@ -104,6 +106,15 @@
                  * @returns Firebase App
                  */
                 $firebase: function () {
+                    return firebase;
+                },
+
+                /**
+                 * @private
+                 * @returns Firebase App
+                 */
+                setBranch: function (branch) {
+                    this.$$conf.branch = branch;
                     return firebase;
                 }
 
@@ -197,6 +208,20 @@
                         // });
 
                     }
+
+                    /**
+                     * init branch master/slave
+                     */
+
+                    var query = hybridsearch.$firebase().database().ref("branches/" + hybridsearch.$$conf.site + "/" + hybridsearch.$$conf.workspace);
+                    query.on("value", function (snapshot) {
+                        if (snapshot.val()) {
+                            hybridsearch.setBranch(snapshot.val());
+                        } else {
+                            hybridsearch.setBranch("");
+                        }
+                    });
+
 
                     /**
                      *  extends string prototype
@@ -2030,7 +2055,7 @@
                          */
                         getKeyword: function (querysegment) {
 
-                            return hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/" + querysegment);
+                            return hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + querysegment);
                         }
 
                         ,
@@ -2061,9 +2086,9 @@
 
 
                             if (parseInt(substrEnd) > 0) {
-                                var ref = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().equalTo(substrEnd).limitToFirst(5);
+                                var ref = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().equalTo(substrEnd).limitToFirst(5);
                             } else {
-                                var ref = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().startAt(substrStart).limitToFirst(5);
+                                var ref = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().startAt(substrStart).limitToFirst(5);
                             }
 
                             ref.once("value", function (data) {
@@ -2120,9 +2145,9 @@
 
 
                                     if (rest) {
-                                        return (hybridsearch.$$conf.cdnHost === undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnHost ) + '/sites/' + hybridsearch.$$conf.site + '/index/live/' + "/" + hybridsearch.$$conf.dimension + "/__" + this.getFilter().getNodeType() + '/.json';
+                                        return (hybridsearch.$$conf.cdnHost === undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnHost ) + '/sites/' + hybridsearch.$$conf.site + '/index/' + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + this.getFilter().getNodeType() + '/.json';
                                     } else {
-                                        query = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/__" + this.getFilter().getNodeType());
+                                        query = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + this.getFilter().getNodeType());
                                     }
 
                                     keyword = this.getFilter().getNodeType();
@@ -2131,11 +2156,11 @@
                                 } else {
 
                                     if (rest) {
-                                        return (hybridsearch.$$conf.cdnHost === undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnHost ) + '/sites/' + hybridsearch.$$conf.site + '/index/live/' + "/" + hybridsearch.$$conf.dimension + "/_" + this.getFilter().getNodeType() + keyword + '/.json';
+                                        return (hybridsearch.$$conf.cdnHost === undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnHost ) + '/sites/' + hybridsearch.$$conf.site + '/index/' + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/_" + this.getFilter().getNodeType() + keyword + '/.json';
                                     } else {
 
 
-                                        query = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/__" + this.getFilter().getNodeType());
+                                        query = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + this.getFilter().getNodeType());
                                     }
 
 
@@ -2149,9 +2174,9 @@
                                 }
 
                                 if (rest) {
-                                    return (hybridsearch.$$conf.cdnHost === undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnHost ) + '/sites/' + hybridsearch.$$conf.site + '/index/live/' + hybridsearch.$$conf.dimension + '/' + keyword + '/.json';
+                                    return (hybridsearch.$$conf.cdnHost === undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnHost ) + '/sites/' + hybridsearch.$$conf.site + '/index/' + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + '/' + keyword + '/.json';
                                 } else {
-                                    query = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + '/' + keyword);
+                                    query = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + '/' + keyword);
                                 }
                             }
 
@@ -2167,7 +2192,7 @@
                          * @returns {firebaseObject}
                          */
                         getIndexByNodeIdentifier: function (identifier) {
-                            return hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/" + identifier + "/" + identifier);
+                            return hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + identifier + "/" + identifier);
                         },
 
                         /**
@@ -2176,7 +2201,7 @@
                          * @returns {firebaseObject}
                          */
                         getIndexByNodeType: function (nodeType) {
-                            return hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/").orderByChild("_nodetype").equalTo(nodeType);
+                            return hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/").orderByChild("_nodetype").equalTo(nodeType);
                         },
 
                         /**
