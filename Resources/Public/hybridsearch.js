@@ -213,7 +213,7 @@
                      * init branch master/slave
                      */
 
-                    var query = hybridsearch.$firebase().database().ref("branches/" + hybridsearch.$$conf.site + "/" + hybridsearch.$$conf.workspace);
+                    var query = hybridsearch.$firebase().database().ref("branches/" + hybridsearch.$$conf.workspace);
                     query.on("value", function (snapshot) {
                         if (snapshot.val()) {
                             hybridsearch.setBranch(snapshot.val());

@@ -34,7 +34,7 @@ Neoslive:
       token: '** your firebase token **'
     Filter:
       GrantParentNodeTypeFilter: '[instanceof TYPO3.Neos:Document]'
-      ParentNodeTypeFilter: '[instanceof TYPO3.Neos:Contentcollection]'
+      ParentNodeTypeFilter: '[instanceof TYPO3.Neos:Node]'
       NodeTypeFilter: '[instanceof TYPO3.Neos:Content]'
 ```
 
@@ -51,7 +51,7 @@ Neoslive:
       token: '** your firebase token **'
     Filter:
       GrantParentNodeTypeFilter: '[instanceof TYPO3.Neos:Document]'
-      ParentNodeTypeFilter: '[instanceof TYPO3.Neos:Content]'
+      ParentNodeTypeFilter: '[instanceof TYPO3.Neos:Node]'
       NodeTypeFilter: '[instanceof Neoslive.Hybridsearch:Content]'
     TypoScriptPaths:
       page:
@@ -226,6 +226,26 @@ Adjust the relevance score calculation for each nodeType property. Higher values
 ##### Examples
 
 * `setPropertiesBoost({'vendor-package-contact-name': 50},{'vendor-package-contact-lastname': 50})` query matchings in lastname are higher scored in 
+
+-------
+
+
+
+### setParentNodeTypeBoostFactor
+Adjust the relevance score calculation for each node by parent node type. The given boost value is the factor that is applied to the relavence score of each node.
+
+##### Arguments
+
+| Param | Type | Details
+| --- | --- | --- |
+| boost | Object | Adjust the relevance score by given factor |
+
+##### Returns
+{HybridsearchObject} the search object
+
+##### Examples
+
+* `setParentNodeTypeBoostFactor({'typo3-neos-contentcollection1': 1.8,'typo3-neos-contentcollection2': 1.5})` nodes in parent node contentcollection1 are higher scored than nodes in contentcollection2 
 
 -------
 
