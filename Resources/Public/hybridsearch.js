@@ -174,6 +174,7 @@
                         window.hybridsearchInstances++;
                     }
 
+
                     searchCounter = 0;
                     searchTimer = false;
                     nodesLastHash = 0;
@@ -230,6 +231,158 @@
                     String.prototype.HybridsearchResultsValue = function () {
                         return new HybridsearchResultsValue(this);
                     };
+
+
+                    /**
+                     * @private
+                     * global function get property from object
+                     */
+                    window.HybridsearchGetPropertyFromObject = function (object, property) {
+
+
+                        if (property === '*') {
+
+                            var values = [];
+
+                            angular.forEach(object, function (val, key) {
+                                angular.forEach(val, function (v) {
+                                    values.push(v);
+                                });
+                            });
+
+                            return values;
+                        }
+
+                        var values = [];
+
+
+                        angular.forEach(object, function (val, key) {
+
+
+                            if (typeof key != 'string' || values.length === 0 && key.substr(key.length - property.length, property.length) === property) {
+
+
+                                if (typeof val === 'string') {
+                                    try {
+                                        var valuesObject = JSON.parse(val);
+
+                                        if (valuesObject) {
+                                            values = valuesObject;
+                                            return values;
+                                        }
+                                    } catch (e) {
+                                        values = [val];
+                                    }
+
+                                    if (property == key) {
+                                        values = object[property];
+                                        return values;
+                                    } else {
+                                        values = object[key];
+                                        return values;
+                                    }
+
+                                }
+
+                            }
+
+
+                            if (values.length === 0 && typeof val === 'object') {
+
+                                values = [];
+                                angular.forEach(val, function (v, k) {
+
+                                    if (values.length == 0 && typeof k == 'string' && (k.substr(k.length - property.length, property.length) === property || k == property)) {
+                                        values.push(val[k]);
+                                        return values;
+                                    }
+
+                                });
+
+
+                            }
+
+
+                        });
+
+
+                        return values;
+
+
+                    };
+
+                    /**
+                     * @private
+                     *  global function get property from node
+                     */
+                    window.HybridsearchGetPropertyFromNode = function (node, property) {
+
+                        var value = '';
+
+                        if (node.properties[property] !== undefined) {
+                            return node.properties[property];
+                        }
+
+                        // handles value as json parsable object if required
+                        if (property.indexOf(".") >= 0) {
+
+                            var propertysegments = property.split(".");
+
+                            var value = node.properties;
+
+
+                            angular.forEach(propertysegments, function (segment) {
+
+
+                                if (value !== undefined) {
+                                    if (value[segment] !== undefined) {
+                                        value = value[segment];
+                                    } else {
+
+                                        if (value.length === undefined) {
+
+                                            value = window.HybridsearchGetPropertyFromObject(value, segment);
+                                        } else {
+
+
+                                            var newvalue = [];
+                                            angular.forEach(value, function (v) {
+
+                                                var n = window.HybridsearchGetPropertyFromObject({0: v}, segment);
+                                                newvalue.push(n[0]);
+                                            });
+                                            value = newvalue;
+
+                                        }
+                                    }
+                                }
+
+
+                            });
+
+
+                        } else {
+                            angular.forEach(node.properties, function (val, key) {
+                                if (value === '' && key.substr(key.length - property.length, property.length) === property) {
+                                    value = val !== undefined ? val : '';
+                                    if (typeof value === 'string' && ((value.substr(0, 2) === '["' && value.substr(-2, 2) === '"]') || (value.substr(0, 2) === '[{' && value.substr(-2, 2) === '}]') )) {
+                                        try {
+                                            var valueJson = JSON.parse(value);
+                                        } catch (e) {
+                                            valueJson = value;
+                                        }
+                                        value = valueJson;
+                                    }
+
+                                }
+                            });
+                        }
+
+
+                        return value;
+
+                    };
+
 
                     /**
                      *
@@ -409,70 +562,7 @@
                          */
                         getPropertyFromObject: function (object, property) {
 
-
-                            if (property === '*') {
-
-                                var values = [];
-                                angular.forEach(object, function (val, key) {
-                                    angular.forEach(val, function (v) {
-                                        values.push(v);
-                                    });
-                                });
-
-                                return values;
-                            }
-
-                            var values = [];
-
-                            angular.forEach(object, function (val, key) {
-
-                                if (typeof key != 'string' || values.length === 0 && key.substr(key.length - property.length, property.length) === property) {
-
-
-                                    if (typeof val === 'string') {
-                                        try {
-                                            var valuesObject = JSON.parse(val);
-                                            if (valuesObject) {
-                                                values = valuesObject;
-                                                return values;
-
-                                            }
-                                        } catch (e) {
-                                            values = [val];
-                                        }
-
-                                        if (property == key) {
-                                            values = object[property];
-                                            return values;
-                                        } else {
-                                            values = object[key];
-                                            return values;
-                                        }
-
-                                    }
-
-                                }
-
-                                if (typeof val === 'object') {
-
-                                    values = [];
-                                    angular.forEach(val, function (v, k) {
-
-                                        if (values.length == 0 && typeof k == 'string' && (k.substr(k.length - property.length, property.length) === property || k == property)) {
-                                            values.push(val[k]);
-                                            return values;
-                                        }
-
-                                    });
-
-
-                                }
-
-
-                            });
-
-
-                            return values;
+                            return window.HybridsearchGetPropertyFromObject(object, property);
 
                         },
 
@@ -484,64 +574,8 @@
                          */
                         getPropertyFromNode: function (node, property) {
 
-                            var value = '';
-                            var self = this;
+                            return window.HybridsearchGetPropertyFromNode(node, property);
 
-
-                            if (node.properties[property] !== undefined) {
-                                return node.properties[property];
-                            }
-
-                            // handles value as json parsable object if required
-                            if (property.indexOf(".") >= 0) {
-
-                                var propertysegments = property.split(".");
-                                var value = node.properties;
-
-                                angular.forEach(propertysegments, function (segment) {
-
-
-                                    if (value[segment] !== undefined) {
-                                        value = value[segment];
-                                    } else {
-
-                                        if (value.length === undefined) {
-                                            value = self.getPropertyFromObject(value, segment);
-                                        } else {
-                                            var newvalue = [];
-                                            angular.forEach(value, function (v) {
-
-                                                var n = self.getPropertyFromObject({0: v}, segment);
-                                                newvalue.push(n[0]);
-                                            });
-                                            value = newvalue;
-
-                                        }
-                                    }
-
-
-                                });
-
-
-                            } else {
-                                angular.forEach(node.properties, function (val, key) {
-                                    if (value === '' && key.substr(key.length - property.length, property.length) === property) {
-                                        value = val !== undefined ? val : '';
-                                        if (typeof value === 'string' && ((value.substr(0, 2) === '["' && value.substr(-2, 2) === '"]') || (value.substr(0, 2) === '[{' && value.substr(-2, 2) === '}]') )) {
-                                            try {
-                                                var valueJson = JSON.parse(value);
-                                            } catch (e) {
-                                                valueJson = value;
-                                            }
-                                            value = valueJson;
-                                        }
-
-                                    }
-                                });
-                            }
-
-
-                            return value;
 
                         },
 
@@ -838,7 +872,7 @@
                         getParentNodeTypeBoostFactor: function (node) {
 
 
-                            if (node.parentNode != undefined) {
+                            if (node.parentNode != undefined && ParentNodeTypeBoostFactor !== undefined) {
 
                                 if (ParentNodeTypeBoostFactor[node.parentNode.nodeType] === undefined) {
                                     var filterReg = /[^0-9a-zA-ZöäüÖÄÜ]/g;
@@ -1340,10 +1374,10 @@
                             var groupedBy = this.getGroupedBy(nodes[nodeId].nodeType);
                             var nodeTypeLabel = this.getNodeTypeLabel(nodes[nodeId].nodeType);
 
-                            if (nodeTypeMaxScore[nodeTypeLabel] !== undefined && nodeTypeMaxScore[nodeTypeLabel] / 100 * 10 > score) {
+                            //if (nodeTypeMaxScore[nodeTypeLabel] !== undefined && nodeTypeMaxScore[nodeTypeLabel] / 100 * 10 > score) {
                                 //filter out not relevant results
-                                return true;
-                            }
+                             //   return true;
+                            //}
 
 
                             if (groupedBy.length) {
@@ -1414,72 +1448,8 @@
                          */
                         getPropertyFromObject: function (object, property) {
 
+                            return window.HybridsearchGetPropertyFromObject(object, property);
 
-                            if (property === '*') {
-
-                                var values = [];
-                                angular.forEach(object, function (val, key) {
-                                    angular.forEach(val, function (v) {
-                                        values.push(v);
-                                    });
-                                });
-
-                                return values;
-                            }
-
-                            var values = [];
-
-                            angular.forEach(object, function (val, key) {
-
-                                if (typeof key != 'string' || values.length === 0 && key.substr(key.length - property.length, property.length) === property) {
-
-
-                                    if (typeof val === 'string') {
-                                        try {
-                                            var valuesObject = JSON.parse(val);
-                                            if (valuesObject) {
-                                                values = valuesObject;
-                                                return values;
-
-                                            }
-                                        } catch (e) {
-                                            values = [val];
-                                        }
-
-                                        if (property == key) {
-                                            values = object[property];
-                                            return values;
-                                        } else {
-                                            values = object[key];
-                                            return values;
-                                        }
-
-                                    }
-
-                                }
-
-
-                                if (typeof val === 'object') {
-
-
-                                    values = [];
-                                    angular.forEach(val, function (v, k) {
-
-                                        if (values.length == 0 && typeof k == 'string' && (k.substr(k.length - property.length, property.length) === property || k == property)) {
-                                            values.push(val[k]);
-                                            return values;
-                                        }
-
-                                    });
-
-
-                                }
-
-
-                            });
-
-
-                            return values;
 
                         },
 
@@ -1490,67 +1460,7 @@
                          */
                         getPropertyFromNode: function (node, property) {
 
-                            var value = '';
-                            var self = this;
-
-                            if (node.properties === undefined) {
-                                return value;
-                            }
-
-
-                            if (node.properties[property] !== undefined) {
-                                return node.properties[property];
-                            }
-
-                            // handles value as json parsable object if required
-                            if (property.indexOf(".") >= 0) {
-
-                                var propertysegments = property.split(".");
-                                var value = node.properties;
-
-                                angular.forEach(propertysegments, function (segment) {
-
-                                    if (value[segment] !== undefined) {
-                                        value = value[segment];
-                                    } else {
-
-                                        if (value.length === undefined) {
-                                            value = self.getPropertyFromObject(value, segment);
-                                        } else {
-                                            var newvalue = [];
-                                            angular.forEach(value, function (v) {
-                                                var n = self.getPropertyFromObject({0: v}, segment);
-                                                newvalue.push(n[0]);
-                                            });
-                                            value = newvalue;
-
-                                        }
-                                    }
-
-
-                                });
-
-
-                            } else {
-                                angular.forEach(node.properties, function (val, key) {
-                                    if (value === '' && key.substr(key.length - property.length, property.length) === property) {
-                                        value = val !== undefined ? val : '';
-
-                                        if (typeof value === 'string' && ((value.substr(0, 2) === '["' && value.substr(-2, 2) === '"]') || (value.substr(0, 2) === '[{' && value.substr(-2, 2) === '}]') )) {
-                                            try {
-                                                var valueJson = JSON.parse(value);
-                                            } catch (e) {
-                                                valueJson = value;
-                                            }
-                                            value = valueJson;
-                                        }
-
-                                    }
-                                });
-                            }
-
-
-                            return value;
+                            return window.HybridsearchGetPropertyFromNode(node, property);
 
                         },
 
@@ -1589,6 +1499,8 @@
                                     } else {
 
                                         var filterApplied = false, filterobject = {};
+
+
                                         var propertyValue = self.getPropertyFromNode(node, property);
 
 
@@ -1630,7 +1542,7 @@
 
 
                                                 if (value) {
-                                                    if ((filter.reverse === false && (key === propertyValue) || self.inArray(key, propertyValue)) || (filter.reverse === true && key !== propertyValue && self.inArray(key, propertyValue) === false)) {
+                                                    if ((filter.reverse === false && (key == propertyValue) || self.inArray(key, propertyValue)) || (filter.reverse == true && key != propertyValue && self.inArray(key, propertyValue) === false)) {
 
                                                         isMatching++;
                                                     }
@@ -1699,10 +1611,12 @@
                          */
                         inArray: function (target, array) {
 
-                            for (var i = 0; i < array.length; i++) {
+                            if (array !== undefined) {
+                                for (var i = 0; i < array.length; i++) {
 
-                                if (array[i] == target) {
-                                    return true;
+                                    if (array[i] == target) {
+                                        return true;
+                                    }
                                 }
                             }
 
@@ -3315,7 +3229,7 @@
 
                             });
                         } else {
-                            if (propvalue.length) {
+                            if (propvalue !== undefined && propvalue.length) {
 
                                 if (typeof propvalue === 'string' && (((propvalue.substr(0, 2) === '["' && propvalue.substr(-2, 2) === '"]')) || (propvalue.substr(0, 2) === '[{' && propvalue.substr(-2, 2) === '}]'))) {
                                     try {
@@ -3414,70 +3328,8 @@
                  */
                 getPropertyFromObject: function (object, property) {
 
+                    return window.HybridsearchGetPropertyFromObject(object, property);
 
-                    if (property === '*') {
-
-                        var values = [];
-                        angular.forEach(object, function (val, key) {
-                            angular.forEach(val, function (v) {
-                                values.push(v);
-                            });
-                        });
-
-                        return values;
-                    }
-
-                    var values = [];
-
-                    angular.forEach(object, function (val, key) {
-
-                        if (typeof key != 'string' || values.length === 0 && key.substr(key.length - property.length, property.length) === property) {
-
-
-                            if (typeof val === 'string') {
-                                try {
-                                    var valuesObject = JSON.parse(val);
-                                    if (valuesObject) {
-                                        values = valuesObject;
-                                        return values;
-
-                                    }
-                                } catch (e) {
-                                    values = [val];
-                                }
-
-                                if (property == key) {
-                                    values = object[property];
-                                    return values;
-                                } else {
-                                    values = object[key];
-                                    return values;
-                                }
-
-                            }
-
-                        }
-
-                        if (typeof val === 'object') {
-
-                            values = [];
-                            angular.forEach(val, function (v, k) {
-
-                                if (values.length == 0 && typeof k == 'string' && (k.substr(k.length - property.length, property.length) === property || k == property)) {
-                                    values.push(val[k]);
-                                    return values;
-                                }
-
-                            });
-
-
-                        }
-
-
-                    });
-
-
-                    return values;
 
                 },
                 /**
@@ -3488,64 +3340,7 @@
                  */
                 getPropertyFromNode: function (node, property) {
 
-                    var value = '';
-                    var self = this;
-
-
-                    if (node.properties[property] !== undefined) {
-                        return node.properties[property];
-                    }
-
-                    // handles value as json parsable object if required
-                    if (property.indexOf(".") >= 0) {
-
-                        var propertysegments = property.split(".");
-                        var value = node.properties;
-
-                        angular.forEach(propertysegments, function (segment) {
-
-
-                            if (value[segment] !== undefined) {
-                                value = value[segment];
-                            } else {
-
-                                if (value.length === undefined) {
-                                    value = self.getPropertyFromObject(value, segment);
-                                } else {
-                                    var newvalue = [];
-                                    angular.forEach(value, function (v) {
-                                        var n = self.getPropertyFromObject({0: v}, segment);
-                                        newvalue.push(n[0]);
-                                    });
-                                    value = newvalue;
-
-                                }
-                            }
-
-
-                        });
-
-
-                    } else {
-                        angular.forEach(node.properties, function (val, key) {
-                            if (value === '' && key.substr(key.length - property.length, property.length) === property) {
-                                value = val !== undefined ? val : '';
-
-                                if (typeof value === 'string' && ((value.substr(0, 2) === '["' && value.substr(-2, 2) === '"]') || (value.substr(0, 2) === '[{' && value.substr(-2, 2) === '}]') )) {
-                                    try {
-                                        var valueJson = JSON.parse(value);
-                                    } catch (e) {
-                                        valueJson = value;
-                                    }
-                                    value = valueJson;
-                                }
-
-                            }
-                        });
-                    }
-
-
-                    return value;
+                    return window.HybridsearchGetPropertyFromNode(node, property);
 
                 },
 
@@ -3792,7 +3587,7 @@
                     this.$$data.propertyFilter[property] = {
                         value: value,
                         booleanmode: booleanmode,
-                        reverse: reverse,
+                        reverse: reverse == undefined ? false : reverse,
                         nodeType: nodeType
                     };
                     return this;
@@ -3852,6 +3647,7 @@
 
 
                     });
+
                     return propertyfilters;
                 },
 
