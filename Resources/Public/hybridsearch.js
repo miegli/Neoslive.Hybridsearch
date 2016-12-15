@@ -165,7 +165,7 @@
              */
             var HybridsearchObject = function (hybridsearch) {
 
-                    var hybridsearchInstanceNumber, searchTimer, pendingRequests, results, filter, index, lunrSearch, nodes, nodesLastHash, nodeTypeLabels, resultGroupedBy, resultOrderBy, propertiesBoost, ParentNodeTypeBoostFactor, isRunning, firstfilterhash, searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier, nodesByIdentifier, searchCounter, searchCounterTimeout;
+                    var hybridsearchInstanceNumber, searchTimer, pendingRequests, results, filter, index, lunrSearch, nodes, nodesLastHash, nodeTypeLabels, resultGroupedBy, resultFacetedBy, resultOrderBy, propertiesBoost, ParentNodeTypeBoostFactor, isRunning, firstfilterhash, searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier, nodesByIdentifier, searchCounter, searchCounterTimeout;
 
                     // count instances
                     if (window.hybridsearchInstances === undefined) {
@@ -192,6 +192,7 @@
                     pendingRequests = [];
                     resultGroupedBy = {};
                     resultOrderBy = {};
+                    resultFacetedBy = 'nodeType';
                     lunrSearch = elasticlunr(function () {
                         this.setRef('id');
                     });
@@ -940,6 +941,14 @@
                         },
                         /**
                          * @private
+                         * @returns string
+                         */
+                        getFacetedBy: function () {
+                            return resultFacetedBy;
+
+                        },
+                        /**
+                         * @private
                          * @param labels
                          */
                         setNodeTypeLabels: function (labels) {
@@ -973,6 +982,13 @@
                          */
                         setOrderBy: function (orderBy) {
                             resultOrderBy = orderBy;
+                        },   
+                        /**
+                         * @private
+                         * @param boost
+                         */
+                        setFacetedBy: function (facetedBy) {
+                            resultFacetedBy = facetedBy;
                         },
                         /**
                          * @private
@@ -1372,15 +1388,9 @@
                             var resultNode = new HybridsearchResultsNode(nodes[nodeId], score);
                             var hash = nodes[nodeId].hash;
                             var groupedBy = this.getGroupedBy(nodes[nodeId].nodeType);
-                            var nodeTypeLabel = this.getNodeTypeLabel(nodes[nodeId].nodeType);
+                            var nodeTypeLabel = this.getFacetedBy() == 'nodeType' ? this.getNodeTypeLabel(nodes[nodeId].nodeType) : resultNode.getProperty(this.getFacetedBy());
 
-                            //if (nodeTypeMaxScore[nodeTypeLabel] !== undefined && nodeTypeMaxScore[nodeTypeLabel] / 100 * 10 > score) {
-                            //filter out not relevant results
-                            //   return true;
-                            //}
-
-
-                            if (groupedBy.length) {
+                                if (groupedBy.length) {
 
                                 var groupedString = '';
 
@@ -2705,6 +2715,18 @@
                 },
 
                 /**
+                 * Sets facetedBy.
+                 * @param {object} facetedBy
+                 * @example var facetedBy = 'property-type'
+                 * @returns {$hybridsearchResultsObject|*}
+                 */
+                setFacetedBy: function (facetedBy) {
+                    var self = this;
+                    self.$$app.setFacetedBy(facetedBy);
+                    return this;
+                },
+
+                /**
                  * @param {string} add hidden keyword uses in search query.
                  * @param {scope} scope false if is simple string otherwise angular scope required for binding data
                  * @returns {HybridsearchObject}
@@ -3231,7 +3253,8 @@
                         } else {
                             if (propvalue !== undefined && propvalue.length) {
 
-                                if (typeof propvalue === 'string' && (((propvalue.substr(0, 2) === '["' && propvalue.substr(-2, 2) === '"]')) || (propvalue.substr(0, 2) === '[{' && propvalue.substr(-2, 2) === '}]'))) {
+
+                                if (typeof propvalue === 'string' && ((propvalue.substr(0, 1) == '{') || ((propvalue.substr(0, 2) === '["' && propvalue.substr(-2, 2) === '"]')) || (propvalue.substr(0, 2) === '[{' && propvalue.substr(-2, 2) === '}]'))) {
                                     try {
                                         var valueJson = JSON.parse(propvalue);
 
@@ -3243,19 +3266,31 @@
 
                                 if (valueJson) {
 
+                                    if (propvalue.substr(0, 1) == '{') {
 
-                                    angular.forEach(valueJson, function (variant) {
-
-                                        var k = Sha1.hash(JSON.stringify(variant));
+                                        var k = Sha1.hash(JSON.stringify(valueJson));
 
                                         variants[k] = {
-                                            value: variant,
+                                            value: valueJson,
                                             count: variants[k] === undefined ? 1 : (!counterGroupedByNode || variantsByNodes[node.identifier][k] === undefined ? variants[k].count + 1 : variants[k].count)
                                         };
                                         variantsByNodes[node.identifier][k] = true;
 
 
-                                    });
+                                    } else {
+                                        // treat variants as array
+                                        angular.forEach(valueJson, function (variant) {
+                                            var k = Sha1.hash(JSON.stringify(variant));
+
+                                            variants[k] = {
+                                                value: variant,
+                                                count: variants[k] === undefined ? 1 : (!counterGroupedByNode || variantsByNodes[node.identifier][k] === undefined ? variants[k].count + 1 : variants[k].count)
+                                            };
+                                            variantsByNodes[node.identifier][k] = true;
+                                        });
+                                    }
+
+
 
                                 } else {
 
