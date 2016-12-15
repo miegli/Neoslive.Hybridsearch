@@ -1375,8 +1375,8 @@
                             var nodeTypeLabel = this.getNodeTypeLabel(nodes[nodeId].nodeType);
 
                             //if (nodeTypeMaxScore[nodeTypeLabel] !== undefined && nodeTypeMaxScore[nodeTypeLabel] / 100 * 10 > score) {
-                                //filter out not relevant results
-                             //   return true;
+                            //filter out not relevant results
+                            //   return true;
                             //}
 
 
