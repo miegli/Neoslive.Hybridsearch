@@ -982,7 +982,7 @@
                          */
                         setOrderBy: function (orderBy) {
                             resultOrderBy = orderBy;
-                        },   
+                        },
                         /**
                          * @private
                          * @param boost
@@ -1028,7 +1028,7 @@
                                                     setTimeout(function () {
                                                         self.getFilter().getScopeByIdentifier(identifier).$apply(function () {
                                                         });
-                                                    }, 10);
+                                                    }, 5);
                                                 }
                                             });
                                             break;
@@ -1039,7 +1039,7 @@
                                                 setTimeout(function () {
                                                     self.getFilter().getScopeByIdentifier(identifier).$apply(function () {
                                                     });
-                                                }, 10);
+                                                }, 5);
                                             }
                                             break;
 
@@ -1057,7 +1057,7 @@
                                             setTimeout(function () {
                                                 self.getFilter().getScopeByIdentifier(identifier).$apply(function () {
                                                 });
-                                            }, 10);
+                                            }, 5);
                                     }
 
 
@@ -1118,6 +1118,7 @@
                         search: function (nodesFromInput, booleanmode) {
 
                             var fields = {}, items = {}, self = this, nodesFound = {}, nodeTypeMaxScore = {}, nodeTypeCount = {};
+
 
 
                             if (lunrSearch.getFields().length == 0 && self.getFilter().getFullSearchQuery() !== false) {
@@ -1358,15 +1359,17 @@
 
                             results.getApp().setResults(items, nodes, this);
 
-                            if (searchCounterTimeout) {
-                                clearTimeout(searchCounterTimeout);
-                            }
-                            searchCounterTimeout = setTimeout(function () {
-                                searchCounter++;
-                            }, 2000);
+                            // if (searchCounterTimeout) {
+                            //     clearTimeout(searchCounterTimeout);
+                            // }
+                            // searchCounterTimeout = setTimeout(function () {
+                            //     searchCounter++;
+                            //     console.log(searchCounter);
+                            // }, 2000);
+                            //
+                            //
+                            // clearInterval(self.getIndexInterval());
 
-
-                            clearInterval(self.getIndexInterval());
 
 
                         },
@@ -1390,7 +1393,7 @@
                             var groupedBy = this.getGroupedBy(nodes[nodeId].nodeType);
                             var nodeTypeLabel = this.getFacetedBy() == 'nodeType' ? this.getNodeTypeLabel(nodes[nodeId].nodeType) : resultNode.getProperty(this.getFacetedBy());
 
-                                if (groupedBy.length) {
+                            if (groupedBy.length) {
 
                                 var groupedString = '';
 
@@ -1674,7 +1677,7 @@
                                         clearInterval(searchInstancesInterval);
                                         lastSearchInstance.execute(self, lastSearchInstance);
                                     }
-                                }, 25);
+                                }, 4);
 
 
                             } else {
@@ -1715,6 +1718,7 @@
                                 var instance = this;
 
                                 if (keywords !== undefined) {
+
 
                                     angular.forEach(keywords, function (keyword) {
                                         if (keyword.length > 2 || (keyword.length === 2 && isNaN(keyword) === false)) {
@@ -1933,13 +1937,10 @@
 
 
                                     if (lastSearchInstance.$$data.keywords.length) {
-
-
-
                                         // wait for all data and put it together to search index
                                         self.setIndexInterval(setInterval(function () {
 
-                                            if (indexintervalcounter > 100 || indexcounter >= uniquarrayfinal.length) {
+                                            if (indexintervalcounter > 200 || indexcounter >= uniquarrayfinal.length) {
                                                 clearInterval(self.getIndexInterval());
 
                                                 var hash = self.getFilter().getHash() + " " + Sha1.hash(JSON.stringify(indexdata));
@@ -1960,7 +1961,7 @@
                                             }
                                             indexintervalcounter++;
 
-                                        }, 10));
+                                        }, 5));
                                     }
 
 
@@ -2427,7 +2428,7 @@
                                     }
                                     timer = setTimeout(function () {
                                         self.$$app.search();
-                                    }, nodesArray.length > 50 ? 500 : 100);
+                                    }, nodesArray.length > 50 ? 500 : 10);
 
 
                                     // wait for updates
@@ -2613,7 +2614,7 @@
                                 }
 
 
-                            }, 100);
+                            }, 5);
 
 
                         });
@@ -2893,6 +2894,7 @@
                     results: new HybridsearchResultsDataObject(),
                     groups: new HybridsearchResultsGroupObject(),
                     notfound: null,
+                    searchCounter: 0,
                 };
 
                 this.$$app = {
@@ -2931,7 +2933,7 @@
 
                         });
 
-
+                        self.$$data.searchCounter++;
                         this.executeCallbackMethod(self);
 
                         return self;
@@ -3009,7 +3011,7 @@
                             setTimeout(function () {
                                 self.getScope().$digest(function () {
                                 });
-                            }, 10);
+                            }, 5);
                         }
                         this.callbackMethod(obj);
                     },
@@ -3073,6 +3075,13 @@
                  */
                 getHash: function () {
                     return Sha1.hash(JSON.stringify(this.$$data.results));
+                },
+                /**
+                 * Is search executed
+                 * @returns {boolean} true if a search was executed
+                 */
+                isStarted: function () {
+                    return this.$$data.searchCounter > 0 ? true : false
                 },
                 /**
                  * Get number of search results.
@@ -3289,7 +3298,6 @@
                                             variantsByNodes[node.identifier][k] = true;
                                         });
                                     }
-
 
 
                                 } else {
