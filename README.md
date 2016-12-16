@@ -404,8 +404,21 @@ Group the result by given identifiers. With this groupedBy function you can filt
 
 
 
-
 ## Runtime methods
+
+This methods are called not more than once while initializing.
+
+### isLoading
+Check if search is in progress. Return false when current search is done.
+
+##### Returns
+{boolean} if search is done or not
+
+##### Examples
+
+* `$scope.status = isLoading() ? 'please wait' : countAll()+' results found'` 
+
+-------
 
 This methods are called not more than once while initializing.
 
@@ -444,6 +457,8 @@ Bind the {HybridsearchResultsObject} to given scope variable.
 ## $HybridsearchResultsObject (define the search result)
 
 This is the main result object, where all methods are called that are presenting the search result.
+
+
 
 ## Counter methods
 

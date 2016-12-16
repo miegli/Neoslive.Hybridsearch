@@ -1117,8 +1117,19 @@
                          */
                         search: function (nodesFromInput, booleanmode) {
 
+
                             var fields = {}, items = {}, self = this, nodesFound = {}, nodeTypeMaxScore = {}, nodeTypeCount = {};
 
+
+                            // set not found if search was timed out withou any results
+                            if (searchCounterTimeout) {
+                                clearTimeout(searchCounterTimeout);
+                            }
+                            searchCounterTimeout = setTimeout(function () {
+                                if (self.getResults().countAll() === 0) {
+                                 self.getResults().getApp().setNotFound(true);
+                                }
+                            }, 3000);
 
 
                             if (lunrSearch.getFields().length == 0 && self.getFilter().getFullSearchQuery() !== false) {
@@ -1362,14 +1373,9 @@
                             // if (searchCounterTimeout) {
                             //     clearTimeout(searchCounterTimeout);
                             // }
-                            // searchCounterTimeout = setTimeout(function () {
-                            //     searchCounter++;
-                            //     console.log(searchCounter);
-                            // }, 2000);
-                            //
-                            //
-                            // clearInterval(self.getIndexInterval());
 
+
+                            //clearInterval(self.getIndexInterval());
 
 
                         },
@@ -1641,6 +1647,7 @@
                          * @returns mixed
                          */
                         setSearchIndex: function () {
+
 
                             var self = this;
                             nodes = {};
@@ -2296,7 +2303,15 @@
 
                     this.$$app.getResults().getApp().setCallbackMethod(callback);
 
+                    return this;
+                },
 
+                /**
+                 * @param {scope} angular scope
+                 * @returns {HybridsearchObject}
+                 */
+                setScope: function (scope) {
+                    this.$$app.getResults().$$app.setScope(scope);
                     return this;
                 },
 
@@ -2309,6 +2324,7 @@
                  * @returns {HybridsearchObject}
                  */
                 $bind: function (scopevar, scope) {
+
                     this.$$app.getResults().$$app.setScope(scope);
                     scope[scopevar] = this.$$app.getResults();
 
@@ -2893,7 +2909,7 @@
                 this.$$data = {
                     results: new HybridsearchResultsDataObject(),
                     groups: new HybridsearchResultsGroupObject(),
-                    notfound: null,
+                    notfound: false,
                     searchCounter: 0,
                 };
 
@@ -2934,6 +2950,9 @@
                         });
 
                         self.$$data.searchCounter++;
+
+                        self.getApp().setNotFound(false);
+
                         this.executeCallbackMethod(self);
 
                         return self;
@@ -2945,7 +2964,27 @@
                     clearResults: function () {
                         self.$$data.results = new HybridsearchResultsDataObject();
                         self.$$data.groups = new HybridsearchResultsGroupObject();
-                        self.$$data.notfound = null;
+                        self.$$data.notfound = false;
+                    },
+                    /**
+                     * @param {boolean}
+                     * @private
+                     */
+                    setNotFound: function (status) {
+
+                        var selfthis = this;
+
+                        self.$$data.notfound = status;
+
+
+                        if (this.getScope() !== undefined) {
+                            setTimeout(function () {
+                                selfthis.getScope().$digest(function () {
+                                });
+                            }, 5);
+                        }
+
+
                     },
                     /**
                      * @private
@@ -3084,6 +3123,19 @@
                     return this.$$data.searchCounter > 0 ? true : false
                 },
                 /**
+                 * Is search executed
+                 * @returns {boolean} true if a search was executed
+                 */
+                isLoading: function () {
+
+                    if (this.$$data.searchCounter === 0) {
+                        return true;
+                    } else {
+                        return this.$$data.notfound == true ? false : (this.countAll() > 0) ? false : true;
+                    }
+
+                },
+                /**
                  * Get number of search results.
                  * @returns {integer} Search results length.
                  */
@@ -3096,13 +3148,6 @@
                  */
                 countAll: function () {
                     return this.count() + this.countTurboNodes();
-                },
-                /**
-                 * Returns true if given query can't result anyhing
-                 * @returns {boolean} True if query is matching nothing
-                 */
-                nothingFound: function () {
-                    return this.$$data.notfound === true ? true : false;
                 },
                 /**
                  *
