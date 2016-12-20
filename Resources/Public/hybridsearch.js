@@ -3656,6 +3656,8 @@
                  */
                 addPropertyFilter: function (property, value, booleanmode, reverse, nodeType) {
 
+
+
                     if (booleanmode === undefined) {
                         booleanmode = true;
                     }
@@ -3665,12 +3667,17 @@
                     }
 
                     if (value !== undefined && value !== null && typeof value === 'object' && (value.length === 0 || Object.keys(value).length === 0)) {
+                        if (this.$$data.propertyFilter[property] !== undefined) {
+                            delete this.$$data.propertyFilter[property];
+                        }
                         return this;
                     }
 
                     if (value == undefined || value == null) {
                         return this;
                     }
+
+
 
                     this.$$data.propertyFilter[property] = {
                         value: value,
