@@ -1,17 +1,20 @@
 # HybridSearch
 
-HybridSearch is a powerful realtime search engine written in Javascript/AngularJS with an intelligent indexing mechanism combined with by [Google Firebase](http://firebase.google.com/) (noSQL). Hybrid stands for the innovative way of streaming search results. Every search request delivers small and preselected data blocks and then they are processing on client side for calculation the search result. Whenever data of the noSQL database changes, HybridSearch performs a live update of the current search result - that's why we call it realtime search engine. The search engine was invented by Michael Egli in 2016 and it's a free open source software. Special thanks to Oliver Nightingale ([lunr.js](https://github.com/olivernn/lunr.js/)) and Wei Song ([elasticlunr.js](https://github.com/weixsong/elasticlunr.js)).
+HybridSearch is a powerful realtime search engine written in Javascript/AngularJS based on an intelligent indexing mechanism powered by [Google Firebase](http://firebase.google.com/) (noSQL). Hybrid stands for the innovative way of streaming search results. Every search request delivers small and preselected data blocks and then they are processed client side for calculation the search result. Whenever data of the source application (Neos CMS, Magento, etc.) was changed, HybridSearch updates the search index und performs a live update of current search results - that's why we call it realtime search engine. The search engine was invented by [Michael Egli](http://www.assoftware.ch) in 2016 and it's a free open source software. Special thanks to Oliver Nightingale ([lunr.js](https://github.com/olivernn/lunr.js/)) and Wei Song ([elasticlunr.js](https://github.com/weixsong/elasticlunr.js)).
 
 ## Features
 * **Search as you type** (autocomplete and autocorrect were done in background).
-* **Realtime binding** (full search index and search results).
+* **Realtime binding** (search index and results view).
 * Analyzes Google Analytics Reports for **better semantics** (optionally).
+* Creates search index from rendered and structured data, not just from raw data.
+* No configuration needed while indexing.
 * **Provides a javascript framework for creating fantastic user experience**.
 * Minimal, but **powerful configurations** (relevance boosting, filtering, facets, etc.)
 * **High performance**, no Server-side utilization while searching.
+* Supports up to 10'000 parallel/concurrency search requests.
 
 ## Implementations
-HybridSearch comes with default integration for [Neos CMS](https://www.neos.io). Other implementations can be done very easy.
+HybridSearch comes with default integration for [Neos CMS](https://www.neos.io). Other implementations can be done very easy. Default Implementation for Magento is coming soon.
 
 ## Installation with Neos
 
