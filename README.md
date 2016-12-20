@@ -2,7 +2,7 @@
 
 HybridSearch is a powerful realtime search engine written in Javascript/AngularJS based on an intelligent indexing mechanism powered by [Google Firebase](http://firebase.google.com/) (noSQL). Hybrid stands for the innovative way of streaming search results. Every search request delivers small and preselected data blocks and then they are processed client side for calculation the search result. Whenever data of the source application (Neos CMS, Magento, etc.) was changed, HybridSearch updates the search index und performs a live update of current search results - that's why we call it realtime search engine. The search engine was invented by [Michael Egli](http://www.assoftware.ch) in 2016 and it's a free open source software. Special thanks to Oliver Nightingale ([lunr.js](https://github.com/olivernn/lunr.js/)) and Wei Song ([elasticlunr.js](https://github.com/weixsong/elasticlunr.js)).
 
-![](https://github.com/miegli/Neoslive.Hybridsearch/tree/master/Resources/Public/hybridsearch.gif)
+![](https://github.com/miegli/Neoslive.Hybridsearch/raw/master/Resources/Public/hybridsearch.gif)
 
 ## Features
 * **Search as you type** (autocomplete and autocorrect were done in background).
