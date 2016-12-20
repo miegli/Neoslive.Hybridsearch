@@ -2815,6 +2815,14 @@
                     return this.label !== undefined ? this.label : '';
                 },
 
+                /**
+                 * Get property of group.
+                 * @returns {string} Group label
+                 */
+                getProperty: function (property) {
+                    return this._nodes[0].getProperty(property);
+
+                },
 
                 /**
                  * Get all nodes for this group from current search result.

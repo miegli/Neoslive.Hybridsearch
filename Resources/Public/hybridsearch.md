@@ -531,6 +531,12 @@ Get groups label.
 
 Returns **string** Group label
 
+## getProperty(property)
+
+Get property of group (getProperty of first group item)
+
+Returns **mixed** Property of group
+
 ## getNodes
 
 Get all nodes for this group from current search result.
