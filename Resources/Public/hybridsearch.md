@@ -537,13 +537,13 @@ Get property of group (getProperty of first group item)
 
 Returns **mixed** Property of group
 
-## getFacetedNodes
+## getCategorizedNodes
 
-Get all nodes faceted for this group from current search result.
+Get all nodes categorized for this group from current search result.
 
 **Parameters**
 
--   `faceted` **string** property for facet/grouping
+-   `categorized` **string** property for categorize/grouping
 
 Returns **array** collection of {HybridsearchResultsDataNode}
 

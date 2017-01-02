@@ -165,7 +165,7 @@
              */
             var HybridsearchObject = function (hybridsearch) {
 
-                    var hybridsearchInstanceNumber, searchTimer, pendingRequests, results, filter, index, lunrSearch, nodes, nodesLastHash, nodeTypeLabels, resultGroupedBy, resultFacetedBy, resultOrderBy, propertiesBoost, ParentNodeTypeBoostFactor, isRunning, firstfilterhash, searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier, nodesByIdentifier, searchCounter, searchCounterTimeout;
+                    var hybridsearchInstanceNumber, searchTimer, pendingRequests, results, filter, index, lunrSearch, nodes, nodesLastHash, nodeTypeLabels, resultGroupedBy, resultCategorizedBy, resultOrderBy, propertiesBoost, ParentNodeTypeBoostFactor, isRunning, firstfilterhash, searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier, nodesByIdentifier, searchCounter, searchCounterTimeout;
 
                     // count instances
                     if (window.hybridsearchInstances === undefined) {
@@ -192,7 +192,7 @@
                     pendingRequests = [];
                     resultGroupedBy = {};
                     resultOrderBy = {};
-                    resultFacetedBy = 'nodeType';
+                    resultCategorizedBy = 'nodeType';
                     lunrSearch = elasticlunr(function () {
                         this.setRef('id');
                     });
@@ -943,8 +943,8 @@
                          * @private
                          * @returns string
                          */
-                        getFacetedBy: function () {
-                            return resultFacetedBy;
+                        getCategorizedBy: function () {
+                            return resultCategorizedBy;
 
                         },
                         /**
@@ -985,10 +985,10 @@
                         },
                         /**
                          * @private
-                         * @param facetedBy
+                         * @param categorizedBy
                          */
-                        setFacetedBy: function (facetedBy) {
-                            resultFacetedBy = facetedBy;
+                        setCategorizedBy: function (categorizedBy) {
+                            resultCategorizedBy = categorizedBy;
                         },
                         /**
                          * @private
@@ -1397,7 +1397,7 @@
                             var resultNode = new HybridsearchResultsNode(nodes[nodeId], score);
                             var hash = nodes[nodeId].hash;
                             var groupedBy = this.getGroupedBy(nodes[nodeId].nodeType);
-                            var nodeTypeLabel = this.getFacetedBy() == 'nodeType' ? this.getNodeTypeLabel(nodes[nodeId].nodeType) : resultNode.getProperty(this.getFacetedBy());
+                            var nodeTypeLabel = this.getCategorizedBy() == 'nodeType' ? this.getNodeTypeLabel(nodes[nodeId].nodeType) : resultNode.getProperty(this.getCategorizedBy());
 
                             if (groupedBy.length) {
 
@@ -2732,14 +2732,14 @@
                 },
 
                 /**
-                 * Sets facetedBy.
-                 * @param {object} facetedBy
-                 * @example var facetedBy = 'property-type'
+                 * Sets categorizedBy.
+                 * @param {object} categorizedBy
+                 * @example var categorizedBy = 'property-type'
                  * @returns {$hybridsearchResultsObject|*}
                  */
-                setFacetedBy: function (facetedBy) {
+                setCategorizedBy: function (categorizedBy) {
                     var self = this;
-                    self.$$app.setFacetedBy(facetedBy);
+                    self.$$app.setCategorizedBy(categorizedBy);
                     return this;
                 },
 
@@ -2840,10 +2840,10 @@
 
                 /**
                  * Get all nodes grouped by given facet.
-                 * @param {facetedBy} string
+                 * @param {categorizedBy} string
                  * @returns {array} collection of {HybridsearchResultsDataObject}
                  */
-                getFacetedNodes: function (facetedBy) {
+                getCategorizedNodes: function (categorizedBy) {
 
                     var self = this;
 
@@ -2857,7 +2857,7 @@
 
 
                     angular.forEach(this._nodes, function (node) {
-                        var p = node.getProperty(facetedBy);
+                        var p = node.getProperty(categorizedBy);
                         if (g[p] == undefined) {
                             g[p] = [];
                         }
