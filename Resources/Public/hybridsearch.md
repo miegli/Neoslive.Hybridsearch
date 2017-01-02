@@ -537,6 +537,17 @@ Get property of group (getProperty of first group item)
 
 Returns **mixed** Property of group
 
+## getFacetedNodes
+
+Get all nodes faceted for this group from current search result.
+
+**Parameters**
+
+-   `faceted` **string** property for facet/grouping
+
+Returns **array** collection of {HybridsearchResultsDataNode}
+
+
 ## getNodes
 
 Get all nodes for this group from current search result.

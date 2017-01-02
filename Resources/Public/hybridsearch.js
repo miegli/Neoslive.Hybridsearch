@@ -985,7 +985,7 @@
                         },
                         /**
                          * @private
-                         * @param boost
+                         * @param facetedBy
                          */
                         setFacetedBy: function (facetedBy) {
                             resultFacetedBy = facetedBy;
@@ -1127,7 +1127,7 @@
                             }
                             searchCounterTimeout = setTimeout(function () {
                                 if (self.getResults().countAll() === 0) {
-                                 self.getResults().getApp().setNotFound(true);
+                                    self.getResults().getApp().setNotFound(true);
                                 }
                             }, 3000);
 
@@ -2795,7 +2795,12 @@
              */
             var HybridsearchResultsDataObject = function () {
 
+                this.$$data = {
+                    grouped: null
+                };
+
             };
+
 
             HybridsearchResultsDataObject.prototype = {
 
@@ -2831,6 +2836,45 @@
                  */
                 getNodes: function (limit) {
                     return this._nodes !== undefined ? (limit === undefined ? this._nodes : this._nodes.slice(0, limit)) : [];
+                },
+
+                /**
+                 * Get all nodes grouped by given facet.
+                 * @param {facetedBy} string
+                 * @returns {array} collection of {HybridsearchResultsDataObject}
+                 */
+                getFacetedNodes: function (facetedBy) {
+
+                    var self = this;
+
+                    if (self.$$data.grouped !== null) {
+                        return self.$$data.grouped.getItems();
+                    } else {
+                        self.$$data.grouped = new HybridsearchResultsGroupObject();
+                    }
+
+                    var g = {};
+
+
+                    angular.forEach(this._nodes, function (node) {
+                        var p = node.getProperty(facetedBy);
+                        if (g[p] == undefined) {
+                            g[p] = [];
+                        }
+
+                        g[p].push(node);
+
+
+                    });
+
+                    angular.forEach(g, function (v, k) {
+                        self.$$data.grouped.addItem(k, v);
+                    });
+
+
+                    return self.$$data.grouped.getItems();
+
+
                 }
 
             };
@@ -3447,6 +3491,7 @@
                  */
                 getGrouped: function () {
 
+
                     var self = this;
 
 
@@ -3665,7 +3710,6 @@
                 addPropertyFilter: function (property, value, booleanmode, reverse, nodeType) {
 
 
-
                     if (booleanmode === undefined) {
                         booleanmode = true;
                     }
@@ -3684,7 +3728,6 @@
                     if (value == undefined || value == null) {
                         return this;
                     }
-
 
 
                     this.$$data.propertyFilter[property] = {
