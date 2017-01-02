@@ -537,13 +537,13 @@ Get property of group (getProperty of first group item)
 
 Returns **mixed** Property of group
 
-## getCategorizedNodes
+## getCategorizedNodes(property)
 
 Get all nodes categorized for this group from current search result.
 
 **Parameters**
 
--   `categorized` **string** property for categorize/grouping
+-   `property` **string** property for categorize/grouping
 
 Returns **array** collection of {HybridsearchResultsDataNode}
 
