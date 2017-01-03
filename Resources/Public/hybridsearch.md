@@ -96,8 +96,9 @@ Adds a property filter to the query.
 -   `scope` **scope** false if is simple string otherwise angular scope required for binding data
 -   `boolean`  reverse (true if condition logic is reversed)
 -   `boolean`  booleanmode (true if array values treated with OR conditions)
--   `reverse`   (optional, default `false`)
--   `booleanmode`   (optional, default `true`)
+-   `reverse`  
+-   `booleanmode`  
+-   `nodeType`  nodeType (apply filter only to given nodeType)
 
 Returns **HybridsearchObject** 
 
@@ -111,6 +112,22 @@ Adds an ange filter to the query. Show only nodes, that are visited mostly by gi
 -   `scope` **scope** false if is simple string otherwise angular scope required for binding data
 
 Returns **HybridsearchObject** 
+
+## setCategorizedBy
+
+Sets categorizedBy.
+
+**Parameters**
+
+-   `categorizedBy` **object** 
+
+**Examples**
+
+```javascript
+var categorizedBy = 'property-type'
+```
+
+Returns **$hybridsearchResultsObject or Any** 
 
 ## setGenderFilter
 
@@ -198,7 +215,25 @@ Sets orderBy.
 ```javascript
 var orderBy = {
        'nodeTypeLabel': ['name'],
-       'nodeTye^e': ['name']
+       'nodeType': ['name']
+   }
+```
+
+Returns **$hybridsearchResultsObject or Any** 
+
+## setParentNodeTypeBoostFactor
+
+Sets parent node type boost.
+
+**Parameters**
+
+-   `ParentNodeTypeBoostFactor` **object** 
+
+**Examples**
+
+```javascript
+var ParentNodeTypeBoostFactor = {
+       'corporate-contact-collection': 1.5
    }
 ```
 
@@ -241,6 +276,15 @@ Sets a search string to the query.
 
 Returns **HybridsearchObject** 
 
+## setScope
+
+**Parameters**
+
+-   `angular` **scope** scope
+-   `scope`  
+
+Returns **HybridsearchObject** 
+
 # Hybridsearch
 
 **Parameters**
@@ -265,43 +309,6 @@ var hybridSearch = new $hybridsearchObject(
 
 Returns **Hybridsearch** used for HybridsearchObject constructor.
 
-# HybridsearchResultsGroupObject
-
-HybridsearchResultsGroupObject
-
-## count
-
-Get number of search results.
-
-Returns **integer** Search results length.
-
-## getItems
-
-Get group collection.
-
-Returns **array** collection of {HybridsearchResultsDataObject}
-
-# getPropertyFromNode
-
-Get property.
-
-**Parameters**
-
--   `node`  
--   `property` **string** Get single property from node data.
-
-Returns **mixed** 
-
-# getResultNodeByIdentifier
-
-Get node by identifier from current search result.
-
-**Parameters**
-
--   `identifier` **string** 
-
-Returns **HybridsearchResultsNode** 
-
 # HybridsearchResultsNode
 
 **Parameters**
@@ -320,6 +327,20 @@ Returns **string**
 Nearest Document node.
 
 Returns **HybridsearchResultsNode** 
+
+## getGroupedNodes
+
+**Parameters**
+
+-   `uniqueByDocumentNode` **boolean** 
+
+Returns **array** 
+
+## getIdentifier
+
+NodeType.
+
+Returns **string** node identifier
 
 ## getNodeType
 
@@ -378,11 +399,52 @@ Url if its a document node.
 
 Returns **string** 
 
+## isGrouped
+
+Returns **boolean** 
+
 ## isTurboNode
 
 Is result a turbo node or not.
 
 Returns **boolean** 
+
+# HybridsearchResultsGroupObject
+
+HybridsearchResultsGroupObject
+
+## count
+
+Get number of search results.
+
+Returns **integer** Search results length.
+
+## getItems
+
+Get group collection.
+
+Returns **array** collection of {HybridsearchResultsDataObject}
+
+# getPropertyFromNode
+
+Get property.
+
+**Parameters**
+
+-   `node`  
+-   `property` **string** Get single property from node data.
+
+Returns **mixed** 
+
+# getResultNodeByIdentifier
+
+Get node by identifier from current search result.
+
+**Parameters**
+
+-   `identifier` **string** 
+
+Returns **HybridsearchResultsNode** 
 
 # HybridsearchResultsObject
 
@@ -501,13 +563,23 @@ Returns **array** collection of {HybridsearchResultsNode}
 
 Get all turbonodes from current search result.
 
+**Parameters**
+
+-   `limit` **integer** max results
+
 Returns **array** collection of {HybridsearchResultsNode}
 
-## nothingFound
+## isLoading
 
-Returns true if given query can't result anyhing
+Is search executed
 
-Returns **boolean** True if query is matching nothing
+Returns **boolean** true if a search was executed
+
+## isStarted
+
+Is search executed
+
+Returns **boolean** true if a search was executed
 
 ## updateDistincts
 
@@ -525,28 +597,22 @@ Get number of search results in this group.
 
 Returns **integer** Search results length.
 
+## getCategorizedNodes
+
+Get all nodes grouped by given facet.
+
+**Parameters**
+
+-   `string` **categorizedBy** 
+-   `categorizedBy`  
+
+Returns **array** collection of {HybridsearchResultsDataObject}
+
 ## getLabel
 
 Get groups label.
 
 Returns **string** Group label
-
-## getProperty(property)
-
-Get property of group (getProperty of first group item)
-
-Returns **mixed** Property of group
-
-## getCategorizedNodes(property)
-
-Get all nodes categorized for this group from current search result.
-
-**Parameters**
-
--   `property` **string** property for categorize/grouping
-
-Returns **array** collection of {HybridsearchResultsDataNode}
-
 
 ## getNodes
 
@@ -557,6 +623,16 @@ Get all nodes for this group from current search result.
 -   `limit` **integer** max results
 
 Returns **array** collection of {HybridsearchResultsNode}
+
+## getProperty
+
+Get property of group.
+
+**Parameters**
+
+-   `property`  
+
+Returns **string** Group label
 
 # HybridsearchResultsDataObject
 
@@ -568,6 +644,17 @@ Get number of search results in this group.
 
 Returns **integer** Search results length.
 
+## getCategorizedNodes
+
+Get all nodes grouped by given facet.
+
+**Parameters**
+
+-   `string` **categorizedBy** 
+-   `categorizedBy`  
+
+Returns **array** collection of {HybridsearchResultsDataObject}
+
 ## getLabel
 
 Get groups label.
@@ -583,6 +670,16 @@ Get all nodes for this group from current search result.
 -   `limit` **integer** max results
 
 Returns **array** collection of {HybridsearchResultsNode}
+
+## getProperty
+
+Get property of group.
+
+**Parameters**
+
+-   `property`  
+
+Returns **string** Group label
 
 # execute
 
@@ -618,6 +715,21 @@ init ga data
 Run search.
 
 Returns **SearchIndexInstance** SearchIndexInstance
+
+# HybridsearchResultsValue
+
+**Parameters**
+
+-   `value`  {mixed} a value
+
+# HybridsearchResultsValue
+
+extends string prototype
+ finds uri in string
+
+# query
+
+init branch master/slave
 
 # utf8Decode
 

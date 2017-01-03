@@ -75,8 +75,10 @@
                     site: site,
                     branch: '',
                     databaseURL: databaseURL,
-                    cdnHost: cdnHost
+                    cdnHost: cdnHost,
+                    branchInitialized: false
                 };
+
 
                 Object.defineProperty(this, '$$conf', {
                     value: this.$$conf
@@ -219,6 +221,7 @@
                     query.on("value", function (snapshot) {
                         if (snapshot.val()) {
                             hybridsearch.setBranch(snapshot.val());
+
                         } else {
                             hybridsearch.setBranch("");
                         }
@@ -410,7 +413,7 @@
 
                             var urlRegex = /(href="|href=')[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|]("|')/ig;
                             var urls = this.value.match(urlRegex)
-                            return urls[urls.length-1].replace("href=","").replace(/"/g,'').replace(/'/g,'');
+                            return urls[urls.length - 1].replace("href=", "").replace(/"/g, '').replace(/'/g, '');
                         },
 
 
@@ -842,6 +845,13 @@
                          */
                         isRunning: function () {
                             return isRunning;
+                        },
+                        /**
+                         * @private
+                         * @returns {boolean}
+                         */
+                        getHybridsearch: function () {
+                            return hybridsearch;
                         },
                         /**
                          * @private
@@ -1929,6 +1939,8 @@
                                             // called asynchronously if an error occurs
                                             // or server returns response with an error status.
                                             self.getIndex(keyword).on("value", function (data) {
+
+
                                                 angular.forEach(data.val(), function (node, id) {
                                                     nodes[id] = node.node;
                                                 });
@@ -2054,6 +2066,8 @@
 
 
                         }
+
+
                         ,
                         /**
                          * @private
@@ -2065,6 +2079,7 @@
 
 
                             var self = this;
+
 
                             // remove old bindings
                             angular.forEach(index, function (ref, keyw) {
@@ -2349,12 +2364,34 @@
 
                     var self = this;
 
-                    if (self.$$app.isRunning() === false) {
 
-                        self.$$app.setHybridsearchInstanceNumber();
-                        self.$$app.setFirstFilterHash(self.$$app.getFilter().getHash());
-                        self.$$app.setIsRunning();
-                        self.$$app.setSearchIndex();
+                    if (self.$$app.getHybridsearch().$$conf.branchInitialized === false) {
+
+                        var counter = 0;
+                        var branchInitInterval = setInterval(function () {
+                            counter++;
+                            if (counter > 100 || self.$$app.getHybridsearch().$$conf.branch.length > 1) {
+                                clearInterval(branchInitInterval);
+                                self.$$app.setHybridsearchInstanceNumber();
+                                self.$$app.setFirstFilterHash(self.$$app.getFilter().getHash());
+                                self.$$app.setIsRunning();
+                                self.$$app.setSearchIndex();
+                            }
+
+                        }, 10);
+
+                        self.$$app.getHybridsearch().$$conf.branchInitialized = true;
+
+
+                    } else {
+
+                        if (self.$$app.isRunning() === false) {
+
+                            self.$$app.setHybridsearchInstanceNumber();
+                            self.$$app.setFirstFilterHash(self.$$app.getFilter().getHash());
+                            self.$$app.setIsRunning();
+                            self.$$app.setSearchIndex();
+                        }
 
                     }
 

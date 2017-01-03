@@ -2,7 +2,6 @@
 
 HybridSearch is a powerful realtime search engine written in Javascript/AngularJS based on an intelligent indexing mechanism powered by [Google Firebase](http://firebase.google.com/) (noSQL). Hybrid stands for the innovative way of streaming search results. Every search request delivers small and preselected data blocks and then they are processed client side for calculation the search result. Whenever data of the source application (Neos CMS, Magento, etc.) was changed, HybridSearch updates the search index und performs a live update of current search results - that's why we call it realtime search engine. The search engine was invented by [Michael Egli](http://www.assoftware.ch) in 2016 and it's a free open source software. Special thanks to Oliver Nightingale ([lunr.js](https://github.com/olivernn/lunr.js/)) and Wei Song ([elasticlunr.js](https://github.com/weixsong/elasticlunr.js)).
 
-![](https://github.com/miegli/Neoslive.Hybridsearch/raw/master/Resources/Public/hybridsearch.gif)
 
 ## Features
 * **Search as you type** (autocomplete and autocorrect were done in background).
@@ -647,6 +646,85 @@ Get alle nodes from current search result a grouped object.
 ```
 
 Where result is scope variable with binding to HybridsearchResultsObject (see $bind)
+
+
+
+
+-------
+
+
+## $HybridsearchResultsGroupObject (define a group of result)
+
+This object is representing a grouped result.
+
+
+### count
+Get number of items in group object
+
+##### Returns
+{Integer} number of items
+
+
+### getItems
+Get group items as array
+
+##### Returns
+{array} collection of {HybridsearchResultsDataObject}
+
+
+
+
+-------
+
+
+## $HybridsearchResultsDataObject (define a set of results)
+
+This object is representing a group of result items.
+
+
+### count
+Get number of items in this group
+
+##### Returns
+{Integer} number of items
+
+### getLabel
+Get groups label
+
+##### Returns
+{String} label of group
+
+### getNodes
+Get result collection (excluding turbo nodes) 
+
+##### Arguments
+
+| Param | Type | Details
+| --- | --- | --- |
+| limit (optional) | Integer | number of results |
+
+##### Returns
+{Array} Collection of HybridsearchResultsNode
+
+### getProperty
+Get value of first node in the group by given property. This is useful for getting values for grouped objects.
+
+##### Arguments
+
+| Param | Type | Details
+| --- | --- | --- |
+| property | String | Name of the property |
+
+##### Returns
+{Mixed} Properties value
+
+
+
+
+
+
+
+
 
 
 
