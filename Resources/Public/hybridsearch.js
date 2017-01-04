@@ -1137,7 +1137,7 @@
                         search: function (nodesFromInput, booleanmode) {
 
 
-                            var fields = {}, items = {}, self = this, nodesFound = {}, nodeTypeMaxScore = {}, nodeTypeCount = {};
+                            var fields = {}, items = {}, self = this, nodesFound = {}, nodeTypeMaxScore = {},nodeTypeMinScore = {}, nodeTypeScoreCount = {}, nodeTypeCount = {};
 
 
                             // set not found if search was timed out withou any results
@@ -1195,7 +1195,7 @@
                                     });
 
                                     angular.forEach(Ordered, function (node) {
-                                        self.addNodeToSearchResult(node.identifier, 1, nodesFound, items, nodeTypeMaxScore);
+                                        self.addNodeToSearchResult(node.identifier, 1, nodesFound, items, nodeTypeMaxScore, nodeTypeMinScore, nodeTypeScoreCount);
                                     });
 
                                 }
@@ -1235,7 +1235,7 @@
                                     });
 
                                     angular.forEach(Ordered, function (node) {
-                                        self.addNodeToSearchResult(node.identifier, 1, nodesFound, items, nodeTypeMaxScore);
+                                        self.addNodeToSearchResult(node.identifier, 1, nodesFound, items, nodeTypeMaxScore,nodeTypeMinScore, nodeTypeScoreCount);
                                     });
 
                                 } else {
@@ -1310,11 +1310,10 @@
                                     });
 
                                     var preOrderedFilteredRelevance = [];
-                                    var nodeTypeMaxScore = {};
 
-                                    if (resultAnd.length == 0) {
+
+                                   // if (resultAnd.length == 0) {
                                         angular.forEach(preOrdered, function (item) {
-
 
                                             if (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined) {
                                                 nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = item.score;
@@ -1323,14 +1322,43 @@
                                                     nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = item.score;
                                                 }
                                             }
+
+                                            if (nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined) {
+                                                nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = item.score;
+                                            } else {
+                                                if (nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] >= item.score) {
+                                                    nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = item.score;
+                                                }
+                                            }
+
+                                            if (nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined) {
+                                                nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = {};
+                                            }
+
+                                            if (nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)][item.score] === undefined) {
+                                                nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)][item.score] = 1;
+                                            } else {
+                                                nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)][item.score]++;
+                                            }
+
+
+
+                                            
+                                            
                                         });
-                                    }
+                                  //  }
 
 
                                     angular.forEach(preOrdered, function (item) {
 
-                                        if (resultAnd.length > 0 || (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] - (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] / 3 * 2 ) < item.score)) {
-                                            preOrderedFilteredRelevance.push(item);
+                                        if (nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined || Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length == 2 || nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] == item.score || 1 / (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] / (nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)]/item.score)) < 1) {
+
+                                            if ((Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length > 2) && (nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] == item.score && nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] != nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)])) {
+                                             // skip lowest score
+                                            } else {
+                                                preOrderedFilteredRelevance.push(item);
+                                            }
+
                                         }
 
                                     });
@@ -1366,7 +1394,7 @@
 
 
                                     angular.forEach(Ordered, function (item) {
-                                        self.addNodeToSearchResult(item.ref, item.score, nodesFound, items, nodeTypeMaxScore);
+                                        self.addNodeToSearchResult(item.ref, item.score, nodesFound, items, nodeTypeMaxScore,nodeTypeMinScore, nodeTypeScoreCount);
                                     });
 
                                 }
@@ -1407,9 +1435,11 @@
                          * @param array nodesFound list
                          * @param array items list
                          * @param array nodeTypeMaxScore list
+                         * @param array nodeTypeMinScore list
+                         * @param array nodeTypeScoreCount list
                          * @returns boolean
                          */
-                        addNodeToSearchResult: function (nodeId, score, nodesFound, items, nodeTypeMaxScore) {
+                        addNodeToSearchResult: function (nodeId, score, nodesFound, items, nodeTypeMaxScore, nodeTypeMinScore, nodeTypeScoreCount) {
 
 
                             var skip = false;
@@ -1451,7 +1481,8 @@
 
                             if (skip === false) {
 
-                                nodeTypeMaxScore[nodeTypeLabel] = score;
+                               // nodeTypeMaxScore[nodeTypeLabel] = score;
+                               // nodeTypeMinScore[nodeTypeLabel] = score;
 
                                 if (nodes[nodeId]['turbonode'] === true) {
                                     items['_nodesTurbo'][hash] = resultNode;
