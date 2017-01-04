@@ -2324,10 +2324,10 @@
                                                 if (valueJson) {
                                                     angular.forEach(valueJson, function (val, subproperty) {
                                                         if (typeof val == 'string') {
-                                                            additionproperties[property+"-"+subproperty] = true;
-                                                            doc[property+"-"+subproperty] = val;
+                                                            additionproperties[property + "-" + subproperty] = true;
+                                                            doc[property + "-" + subproperty] = val;
                                                         } else {
-                                                           try {
+                                                            try {
                                                                 angular.forEach(val, function (val2, subsubproperty) {
                                                                     if (typeof val2 == 'string') {
                                                                         additionproperties[property + "-" + subproperty + "-" + subsubproperty] = true;
@@ -2350,7 +2350,6 @@
 
 
                                         });
-
 
 
                                         angular.forEach(doc, function (val, key) {
@@ -2727,6 +2726,8 @@
                     if (scope) {
                         self.$$app.getFilter().setScopeProperty(scope, input, 'query');
 
+                        scope['__query'] = input;
+
                         scope.$watch(input, function (searchInput, searchInputLast) {
 
                             if (scope["_hybridsearchSetQeuryInterval"] !== undefined) {
@@ -3086,6 +3087,7 @@
                     groups: new HybridsearchResultsGroupObject(),
                     notfound: false,
                     searchCounter: 0,
+                    quickinfo: false,
                 };
 
                 this.$$app = {
@@ -3140,6 +3142,7 @@
                         self.$$data.results = new HybridsearchResultsDataObject();
                         self.$$data.groups = new HybridsearchResultsGroupObject();
                         self.$$data.notfound = false;
+                        self.$$data.quickinfo = false;
                     },
                     /**
                      * @param {boolean}
@@ -3308,6 +3311,51 @@
                     } else {
                         return this.$$data.notfound == true ? false : (this.countAll() > 0) ? false : true;
                     }
+
+                },
+
+                /**
+                 * Get quick info of asked query
+                 * @returns {array}
+                 */
+                getQuickInfo: function () {
+
+                    var self = this;
+
+                    if (self.$$data.quickinfo !== false) {
+                        return self.$$data.quickinfo;
+                    }
+
+                    if (this.isLoading() === false && this.count() > 0) {
+                        var topnode = this.getNodes(1)[0];
+                        var s = this.$$app.getScope()[this.$$app.getScope()['__query']];
+
+                        self.$$data.quickinfo = {
+                            query: '',
+                            items: []
+                        };
+
+
+
+                        angular.forEach(s.split(" "), function (term) {
+
+                            var term2 = term.split(".");
+                            var u = topnode.getProperty(term2[0]);
+                            if (term2[1]) {
+                                u = u[term2.splice(1).join(".")];
+                            }
+                            if (typeof u == 'string' && u.length > 1) {
+                                console.log(self.$$data.quickinfo.query.replace(/term/g,""),term);
+                                self.$$data.quickinfo.items.push({term: term, value: u});
+                            } else {
+                                self.$$data.quickinfo.query = self.$$data.quickinfo.query + term + " ";
+                            }
+                        });
+
+                    }
+
+                    return self.$$data.quickinfo;
+
 
                 },
                 /**
