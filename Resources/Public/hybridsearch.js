@@ -1137,7 +1137,7 @@
                         search: function (nodesFromInput, booleanmode) {
 
 
-                            var fields = {}, items = {}, self = this, nodesFound = {}, nodeTypeMaxScore = {},nodeTypeMinScore = {}, nodeTypeScoreCount = {}, nodeTypeCount = {};
+                            var fields = {}, items = {}, self = this, nodesFound = {}, nodeTypeMaxScore = {}, nodeTypeMinScore = {}, nodeTypeScoreCount = {}, nodeTypeCount = {};
 
 
                             // set not found if search was timed out withou any results
@@ -1235,7 +1235,7 @@
                                     });
 
                                     angular.forEach(Ordered, function (node) {
-                                        self.addNodeToSearchResult(node.identifier, 1, nodesFound, items, nodeTypeMaxScore,nodeTypeMinScore, nodeTypeScoreCount);
+                                        self.addNodeToSearchResult(node.identifier, 1, nodesFound, items, nodeTypeMaxScore, nodeTypeMinScore, nodeTypeScoreCount);
                                     });
 
                                 } else {
@@ -1312,55 +1312,55 @@
                                     var preOrderedFilteredRelevance = [];
 
 
-                                   // if (resultAnd.length == 0) {
-                                        angular.forEach(preOrdered, function (item) {
+                                    // if (resultAnd.length == 0) {
+                                    angular.forEach(preOrdered, function (item) {
 
-                                            if (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined) {
+                                        if (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined) {
+                                            nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = item.score;
+                                        } else {
+                                            if (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] < item.score) {
                                                 nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = item.score;
-                                            } else {
-                                                if (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] < item.score) {
-                                                    nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = item.score;
-                                                }
                                             }
+                                        }
 
-                                            if (nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined) {
+                                        if (nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined) {
+                                            nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = item.score;
+                                        } else {
+                                            if (nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] >= item.score) {
                                                 nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = item.score;
-                                            } else {
-                                                if (nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] >= item.score) {
-                                                    nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = item.score;
-                                                }
                                             }
+                                        }
 
-                                            if (nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined) {
-                                                nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = {};
-                                            }
+                                        if (nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined) {
+                                            nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = {};
+                                        }
 
-                                            if (nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)][item.score] === undefined) {
-                                                nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)][item.score] = 1;
-                                            } else {
-                                                nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)][item.score]++;
-                                            }
+                                        if (nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)][item.score] === undefined) {
+                                            nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)][item.score] = 1;
+                                        } else {
+                                            nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)][item.score]++;
+                                        }
 
 
-
-                                            
-                                            
-                                        });
-                                  //  }
-
+                                    });
+                                    //  }
 
                                     angular.forEach(preOrdered, function (item) {
 
-                                        if (nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined || Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length == 2 || nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] == item.score || 1 / (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] / (nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)]/item.score)) < 1) {
+                                        if (Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length > 20) {
+                                            preOrderedFilteredRelevance.push(item);
+                                        } else {
 
-                                            if ((Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length > 2) && (nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] == item.score && nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] != nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)])) {
-                                             // skip lowest score
-                                            } else {
-                                                preOrderedFilteredRelevance.push(item);
+                                            if (nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined || Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length == 2 || nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] == item.score || 1 / (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] / (nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] / item.score)) < 1) {
+
+                                                if ((Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length > 2) && (nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] == item.score && nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] != nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)])) {
+                                                    // skip lowest score
+                                                } else {
+                                                    preOrderedFilteredRelevance.push(item);
+                                                }
+
                                             }
-
                                         }
-
                                     });
 
 
@@ -1394,7 +1394,7 @@
 
 
                                     angular.forEach(Ordered, function (item) {
-                                        self.addNodeToSearchResult(item.ref, item.score, nodesFound, items, nodeTypeMaxScore,nodeTypeMinScore, nodeTypeScoreCount);
+                                        self.addNodeToSearchResult(item.ref, item.score, nodesFound, items, nodeTypeMaxScore, nodeTypeMinScore, nodeTypeScoreCount);
                                     });
 
                                 }
@@ -1481,8 +1481,8 @@
 
                             if (skip === false) {
 
-                               // nodeTypeMaxScore[nodeTypeLabel] = score;
-                               // nodeTypeMinScore[nodeTypeLabel] = score;
+                                // nodeTypeMaxScore[nodeTypeLabel] = score;
+                                // nodeTypeMinScore[nodeTypeLabel] = score;
 
                                 if (nodes[nodeId]['turbonode'] === true) {
                                     items['_nodesTurbo'][hash] = resultNode;
@@ -2308,8 +2308,54 @@
 
                                         var doc = value.node.properties;
 
-                                        angular.forEach(value.node.properties, function (val, key) {
+                                        // calculate additional fields based on json object
+                                        var additionproperties = {};
+
+                                        angular.forEach(doc, function (propvalue, property) {
+
+
+                                            if (typeof propvalue === 'string' && ((propvalue.substr(0, 1) == '{') || ((propvalue.substr(0, 2) === '["' && propvalue.substr(-2, 2) === '"]')) || (propvalue.substr(0, 2) === '[{' && propvalue.substr(-2, 2) === '}]'))) {
+                                                try {
+                                                    var valueJson = JSON.parse(propvalue);
+                                                } catch (e) {
+                                                    valueJson = false;
+                                                }
+
+                                                if (valueJson) {
+                                                    angular.forEach(valueJson, function (val, subproperty) {
+                                                        if (typeof val == 'string') {
+                                                            additionproperties[property+"-"+subproperty] = true;
+                                                            doc[property+"-"+subproperty] = val;
+                                                        } else {
+                                                           try {
+                                                                angular.forEach(val, function (val2, subsubproperty) {
+                                                                    if (typeof val2 == 'string') {
+                                                                        additionproperties[property + "-" + subproperty + "-" + subsubproperty] = true;
+                                                                        doc[property + "-" + subproperty + "-" + subsubproperty] = val2;
+                                                                    }
+
+                                                                });
+                                                            } catch (e) {
+                                                                // skpp
+                                                            }
+
+                                                        }
+
+
+                                                    });
+
+                                                }
+
+                                            }
+
+
+                                        });
+
+
+
+                                        angular.forEach(doc, function (val, key) {
                                             if (lunrSearch.getFields().indexOf(key) < 0) {
+
                                                 lunrSearch.addField(key);
                                             }
                                         });
