@@ -3332,7 +3332,8 @@
 
                         self.$$data.quickinfo = {
                             query: '',
-                            items: []
+                            items: [],
+                            node: topnode
                         };
 
 
