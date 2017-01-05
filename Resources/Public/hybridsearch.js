@@ -1207,6 +1207,8 @@
                                 var query = filter.getFinalSearchQuery(lastSearchInstance);
                                 var preOrdered = [];
 
+
+
                                 if (query === false) {
                                     // return all nodes bco no query set
                                     angular.forEach(nodesFromInput, function (node) {
@@ -1253,6 +1255,7 @@
                                         fields: fields,
                                         bool: "AND"
                                     });
+
 
 
 
@@ -1313,6 +1316,9 @@
                                     var preOrderedFilteredRelevance = [];
 
 
+
+
+
                                     // if (resultAnd.length == 0) {
                                     angular.forEach(preOrdered, function (item) {
 
@@ -1348,8 +1354,12 @@
 
                                     angular.forEach(preOrdered, function (item) {
 
-                                        if (Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length > 20) {
+
+
+
+                                        if (Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length == 1 || Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length > 20) {
                                             preOrderedFilteredRelevance.push(item);
+
                                         } else {
 
                                             if (nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined || Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length == 2 || nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] == item.score || 1 / (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] / (nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] / item.score)) < 1) {
@@ -1363,6 +1373,8 @@
                                             }
                                         }
                                     });
+
+
 
 
                                     var Ordered = $filter('orderBy')(preOrderedFilteredRelevance, function (item) {
@@ -1392,6 +1404,9 @@
 
 
                                     });
+
+
+
 
 
                                     angular.forEach(Ordered, function (item) {
@@ -1461,6 +1476,7 @@
                                     groupedString += p;
                                 });
 
+
                                 if (groupedString == 0 || groupedString == '') {
                                     skip = true;
                                 } else {
@@ -1473,6 +1489,7 @@
                             if (items['_nodesByType'][nodeTypeLabel] === undefined) {
                                 items['_nodesByType'][nodeTypeLabel] = {};
                             }
+
 
 
                             if (nodesFound[hash] !== undefined) {
