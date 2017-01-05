@@ -167,7 +167,7 @@
              */
             var HybridsearchObject = function (hybridsearch) {
 
-                    var hybridsearchInstanceNumber, searchTimer, pendingRequests, results, filter, index, lunrSearch, nodes, nodesLastHash, nodeTypeLabels, resultGroupedBy, resultCategorizedBy, resultOrderBy, propertiesBoost, ParentNodeTypeBoostFactor, isRunning, firstfilterhash, searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier, nodesByIdentifier, searchCounter, searchCounterTimeout;
+                    var hybridsearchInstanceNumber, searchTimer, pendingRequests, results, filter, index, lunrSearch, nodes, nodesLastHash, nodeTypeLabels, resultGroupedBy, resultCategorizedBy, resultOrderBy, propertiesBoost, ParentNodeTypeBoostFactor, isRunning, firstfilterhash, searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier, nodesByIdentifier, searchCounter, searchCounterTimeout, nodeTypeProperties;
 
                     // count instances
                     if (window.hybridsearchInstances === undefined) {
@@ -189,6 +189,7 @@
                     filter = new $hybridsearchFilterObject();
                     nodesByIdentifier = {};
                     nodeTypeLabels = {};
+                    nodeTypeProperties = {};
                     nodes = {};
                     index = {};
                     pendingRequests = [];
@@ -976,6 +977,14 @@
                         },
                         /**
                          * @private
+                         * @param properties
+                         */
+                        setNodeTypeProperties: function (properties) {
+                            results.$$app.setNodeTypeProperties(properties);
+                            nodeTypeProperties = properties;
+                        },
+                        /**
+                         * @private
                          * @param boost
                          */
                         setPropertiesBoost: function (boost) {
@@ -1208,7 +1217,6 @@
                                 var preOrdered = [];
 
 
-
                                 if (query === false) {
                                     // return all nodes bco no query set
                                     angular.forEach(nodesFromInput, function (node) {
@@ -1255,8 +1263,6 @@
                                         fields: fields,
                                         bool: "AND"
                                     });
-
-
 
 
                                     // do AND search first
@@ -1316,9 +1322,6 @@
                                     var preOrderedFilteredRelevance = [];
 
 
-
-
-
                                     // if (resultAnd.length == 0) {
                                     angular.forEach(preOrdered, function (item) {
 
@@ -1355,8 +1358,6 @@
                                     angular.forEach(preOrdered, function (item) {
 
 
-
-
                                         if (Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length == 1 || Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length > 20) {
                                             preOrderedFilteredRelevance.push(item);
 
@@ -1373,8 +1374,6 @@
                                             }
                                         }
                                     });
-
-
 
 
                                     var Ordered = $filter('orderBy')(preOrderedFilteredRelevance, function (item) {
@@ -1404,9 +1403,6 @@
 
 
                                     });
-
-
-
 
 
                                     angular.forEach(Ordered, function (item) {
@@ -1489,7 +1485,6 @@
                             if (items['_nodesByType'][nodeTypeLabel] === undefined) {
                                 items['_nodesByType'][nodeTypeLabel] = {};
                             }
-
 
 
                             if (nodesFound[hash] !== undefined) {
@@ -1837,7 +1832,6 @@
                                             }
 
                                         });
-
 
 
                                         if (matchexact.length) {
@@ -2812,6 +2806,22 @@
                 },
 
                 /**
+                 * Sets node type properties used for magic property search.
+                 * @param {object} nodetypeproperties
+                 * @example var nodetypeproperties = {
+                 *        'nodeType': {'propertyname': {label: 'property label', 'description': 'property description'}
+                 *    }
+                 * @returns {$hybridsearchResultsObject|*}
+                 */
+                setNodeTypeProperties: function (nodetypeproperties) {
+                    var self = this;
+                    if (nodetypeproperties !== undefined) {
+                        self.$$app.setNodeTypeProperties(nodetypeproperties);
+                    }
+                    return this;
+                },
+
+                /**
                  * Sets property boost.
                  * @param {object} propertiesboost
                  * @example var propertiesboost = {
@@ -3085,6 +3095,7 @@
             function HybridsearchResultsObject() {
 
                 var nodeTypeLabels = {};
+                var nodeTypeProperties = {};
 
                 /**
                  * HybridsearchResultsDataObject
@@ -3267,10 +3278,27 @@
                     getNodeTypeLabel: function (nodeType) {
                         return nodeTypeLabels[nodeType] !== undefined ? nodeTypeLabels[nodeType] : (nodeTypeLabels['*'] === undefined ? nodeType : nodeTypeLabels['*']);
                     },
-
+                    /**
+                     * @private
+                     * @returns mixed
+                     */
                     setNodeTypeLabels: function (labels) {
                         nodeTypeLabels = labels;
-                    }
+                    },
+                    /**
+                     * @private
+                     * @returns mixed
+                     */
+                    setNodeTypeProperties: function (properties) {
+                        nodeTypeProperties = properties;
+                    },
+                    /**
+                     * @private
+                     * @returns mixed
+                     */
+                    getNodeTypeProperties: function (nodeType) {
+                        return nodeTypeProperties[nodeType] !== undefined ? nodeTypeProperties[nodeType] : null;
+                    },
 
                 };
 
@@ -3351,6 +3379,9 @@
 
                         var topnode = this.getNodes(1)[0];
                         var s = this.$$app.getScope()[this.$$app.getScope()['__query']];
+                        var properties = this.$$app.getNodeTypeProperties(topnode.getNodeType());
+
+
 
                         self.$$data.quickinfo = {
                             query: '',
@@ -3358,33 +3389,36 @@
                             node: topnode
                         };
 
-                        angular.forEach(s.split(" "), function (term) {
+                        if (properties) {
 
-                            if (term.length > 2) {
-                                var term2 = term.split(".");
-                                var u = topnode.getProperty(term2[0]);
-                                if (term2[1]) {
-                                    u = u[term2.splice(1).join(".")];
+                            angular.forEach(s.split(" "), function (term) {
+                                term = term.toLowerCase();
+
+                                if (term.length > 2) {
+
+                                    angular.forEach(properties, function (val, key) {
+                                        var v = val.label + " " + val.description;
+
+                                        if (v.indexOf(term) >= 0) {
+                                            var u = topnode.getProperty(key);
+                                            if (typeof u == 'string' && u.length > 1) {
+                                                self.$$data.quickinfo.items.push({term: val.label, value: u});
+                                            }
+                                        }
+                                    });
+
                                 }
-                                if (typeof u == 'string' && u.length > 1) {
-                                    self.$$data.quickinfo.items.push({term: term, value: u});
-                                } else {
-                                    self.$$data.quickinfo.query = self.$$data.quickinfo.query + term + " ";
-                                }
-                            }
 
 
-                        });
+                            });
+                        }
 
                         if (self.$$data.quickinfo.items.length === 0 && this.count() > 1) {
 
                             if (this.getNodes(2)[1].getNodeType() !== this.getNodes(1)[0].getNodeType()) {
-
                                 if (typeof this.getNodes(1)[0].getProperty('image') == 'object') {
                                     self.$$data.quickinfo.items.push({term: '', value: ''});
                                 }
-
-
                             }
 
                         }
