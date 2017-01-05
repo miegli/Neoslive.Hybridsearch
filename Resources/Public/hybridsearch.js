@@ -1255,6 +1255,7 @@
                                     });
 
 
+
                                     // do AND search first
                                     angular.forEach(resultAnd, function (item) {
 
@@ -1812,10 +1813,14 @@
                                             if (v == query || query.search(" " + v + " ") >= 0 || (
                                                 v.length > 6 && query.search(" " + v.substr(0, 6)) >= 0 )
                                             ) {
-                                                matchexact.push(v);
+                                                if (query.search(v) > 0) {
+                                                    matchexact.push(v);
+                                                }
+
                                             }
 
                                         });
+
 
 
                                         if (matchexact.length) {
@@ -2076,7 +2081,6 @@
                             }
 
                             ref.once("value", function (data) {
-
 
                                 if (data !== undefined) {
                                     angular.forEach(data.val(), function (v, k) {
@@ -3327,6 +3331,7 @@
                     }
 
                     if (this.isLoading() === false && this.count() > 0) {
+
                         var topnode = this.getNodes(1)[0];
                         var s = this.$$app.getScope()[this.$$app.getScope()['__query']];
 
@@ -3336,22 +3341,37 @@
                             node: topnode
                         };
 
-
-
                         angular.forEach(s.split(" "), function (term) {
 
-                            var term2 = term.split(".");
-                            var u = topnode.getProperty(term2[0]);
-                            if (term2[1]) {
-                                u = u[term2.splice(1).join(".")];
+                            if (term.length > 2) {
+                                var term2 = term.split(".");
+                                var u = topnode.getProperty(term2[0]);
+                                if (term2[1]) {
+                                    u = u[term2.splice(1).join(".")];
+                                }
+                                if (typeof u == 'string' && u.length > 1) {
+                                    self.$$data.quickinfo.items.push({term: term, value: u});
+                                } else {
+                                    self.$$data.quickinfo.query = self.$$data.quickinfo.query + term + " ";
+                                }
                             }
-                            if (typeof u == 'string' && u.length > 1) {
-                                console.log(self.$$data.quickinfo.query.replace(/term/g,""),term);
-                                self.$$data.quickinfo.items.push({term: term, value: u});
-                            } else {
-                                self.$$data.quickinfo.query = self.$$data.quickinfo.query + term + " ";
-                            }
+
+
                         });
+
+                        if (self.$$data.quickinfo.items.length === 0 && this.count() > 1) {
+
+                            if (this.getNodes(2)[1].getNodeType() !== this.getNodes(1)[0].getNodeType()) {
+
+                                if (typeof this.getNodes(1)[0].getProperty('image') == 'object') {
+                                    self.$$data.quickinfo.items.push({term: '', value: ''});
+                                }
+
+
+                            }
+
+                        }
+
 
                     }
 
