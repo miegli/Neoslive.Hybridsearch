@@ -863,6 +863,19 @@
                         },
                         /**
                          * @private
+                         * @returns mixed
+                         */
+                        getNodeTypeProperties: function (nodeType) {
+
+                            if (nodeType === undefined) {
+                                return nodeTypeProperties === undefined ? {} : nodeTypeProperties;
+                            } else {
+                                return nodeTypeProperties[nodeType] !== undefined ? nodeTypeProperties[nodeType] : null;
+                            }
+
+                        },
+                        /**
+                         * @private
                          * @param nodeType
                          * @returns {*}
                          */
@@ -1213,7 +1226,16 @@
                             } else {
 
 
-                                var query = filter.getFinalSearchQuery(lastSearchInstance);
+                                var ignoreterms = '';
+                                angular.forEach(this.getNodeTypeProperties(), function (property) {
+                                    angular.forEach(property, function (v) {
+                                        ignoreterms += ' ' + v.label + ' ' + v.description;
+                                    });
+                                });
+
+
+                                var query = filter.getFinalSearchQuery(lastSearchInstance, ignoreterms);
+
                                 var preOrdered = [];
 
 
@@ -3297,8 +3319,18 @@
                      * @returns mixed
                      */
                     getNodeTypeProperties: function (nodeType) {
-                        return nodeTypeProperties[nodeType] !== undefined ? nodeTypeProperties[nodeType] : null;
-                    },
+
+                        if (nodeType === undefined) {
+
+                            angular.forEach(nodeType, function (v, k) {
+                                console.log(v);
+                            });
+
+                        } else {
+                            return nodeTypeProperties[nodeType] !== undefined ? nodeTypeProperties[nodeType] : null;
+                        }
+
+                    }
 
                 };
 
@@ -3380,7 +3412,6 @@
                         var topnode = this.getNodes(1)[0];
                         var s = this.$$app.getScope()[this.$$app.getScope()['__query']];
                         var properties = this.$$app.getNodeTypeProperties(topnode.getNodeType());
-
 
 
                         self.$$data.quickinfo = {
@@ -4186,7 +4217,7 @@
                 /**
                  * @returns string
                  */
-                getFinalSearchQuery: function (lastSearchInstance) {
+                getFinalSearchQuery: function (lastSearchInstance, ignoredtermsstring) {
 
 
                     // restrict search query to current request
@@ -4203,7 +4234,7 @@
 
                         angular.forEach(terms, function (keyword) {
 
-                            if (uniqueobject[keyword] === undefined && self.isBlockedKeyword(keyword) === false) {
+                            if (uniqueobject[keyword] === undefined && self.isBlockedKeyword(keyword) === false && ignoredtermsstring.indexOf(keyword) === -1) {
                                 uniquarray.push(keyword);
                             }
                             uniqueobject[keyword] = true;
