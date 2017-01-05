@@ -3428,9 +3428,9 @@
                                 if (term.length > 2) {
 
                                     angular.forEach(properties, function (val, key) {
-                                        var v = val.label + " " + val.description;
+                                        var v = " " + val.label + " " + val.description + " ";
 
-                                        if (v.indexOf(term) >= 0) {
+                                        if (v.indexOf(" "+term+" ") >= 0) {
                                             var u = topnode.getProperty(key);
                                             if (typeof u == 'string' && u.length > 1) {
                                                 self.$$data.quickinfo.items.push({term: val.label, value: u});
