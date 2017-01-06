@@ -1274,13 +1274,12 @@
                                 } else {
 
 
-
-
                                     // execute query search
                                     angular.forEach(lunrSearch.getFields(), function (v, k) {
-                                        fields[v] = {boost: self.getBoost(v)}
+                                        if (self.getBoost(v) >= 0) {
+                                            fields[v] = {boost: self.getBoost(v)}
+                                        }
                                     });
-
 
 
                                     var tmp = {};
