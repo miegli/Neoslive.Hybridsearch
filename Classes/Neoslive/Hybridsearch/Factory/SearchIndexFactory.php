@@ -918,7 +918,7 @@ class SearchIndexFactory
             if (gettype($value) !== 'string') {
                 $value = json_encode($value);
             }
-            $text .= (preg_replace("/[^A-z0-9öäüÖÄÜ ]/", "", mb_strtolower(strip_tags(preg_replace("/[^A-z0-9öäüÖÄÜ]/", " ", $value)))) . " ");
+            $text .= strip_tags(preg_replace("/[^A-z0-9öäüÖÄÜ ]/", "", mb_strtolower(strip_tags(preg_replace("/[^A-z0-9öäüÖÄÜ]/", " ", $value)))) . " ");
         }
 
         $words = explode(" ", $text);
@@ -989,7 +989,7 @@ class SearchIndexFactory
 
             if (gettype($val) === 'string' || gettype($val) === 'integer') {
                 $k = mb_strtolower(preg_replace("/[^A-z0-9]/", "-", $node->getNodeType()->getName() . ":" . $key));
-                $properties->$k = (Encoding::UTF8FixWin1252Chars($val));
+                $properties->$k = strip_tags(($val));
             }
 
             if (gettype($val) === 'array' && count($val) > 0) {

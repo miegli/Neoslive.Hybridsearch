@@ -674,7 +674,7 @@
 
                             var preview = this.properties.rawcontent === undefined ? '' : this.properties.rawcontent.substr(0, maxlength) + (this.properties.rawcontent.length >= maxlength ? ' ...' : '');
 
-                            return preview.trim().replace(/\t/g, delimiter === undefined ? " ... " : delimiter);
+                            return preview.trim().replace(/<\/?[a-z][a-z0-9]*[^<>]*>/ig, "").replace(/\t/g, delimiter === undefined ? " ... " : delimiter);
                         },
 
                         /**
@@ -948,6 +948,13 @@
 
                             return grouped;
 
+                        },
+                        /**
+                         * @private
+                         * @returns {boolean}
+                         */
+                        hasOrderBy: function () {
+                            return resultOrderBy !== undefined && Object.keys(resultOrderBy).length > 0 ? true : false;
                         },
                         /**
                          * @private
@@ -1225,16 +1232,7 @@
 
                             } else {
 
-
-                                var ignoreterms = '';
-                                angular.forEach(this.getNodeTypeProperties(), function (property) {
-                                    angular.forEach(property, function (v) {
-                                        ignoreterms += ' ' + v.label + ' ' + v.description;
-                                    });
-                                });
-
-
-                                var query = filter.getFinalSearchQuery(lastSearchInstance, ignoreterms);
+                                var query = filter.getFinalSearchQuery(lastSearchInstance);
 
                                 var preOrdered = [];
 
@@ -1246,25 +1244,28 @@
                                             preOrdered.push(node);
                                         }
                                     });
+                                    if (self.hasOrderBy()) {
+                                        var Ordered = $filter('orderBy')(preOrdered, function (node) {
 
-                                    var Ordered = $filter('orderBy')(preOrdered, function (node) {
+                                            var ostring = '';
 
-                                        var ostring = '';
+                                            angular.forEach(self.getOrderBy(node.nodeType), function (property) {
 
-                                        angular.forEach(self.getOrderBy(node.nodeType), function (property) {
+                                                var s = self.getPropertyFromNode(node, property);
+                                                if (typeof s === 'string') {
+                                                    ostring += s;
+                                                }
 
-                                            var s = self.getPropertyFromNode(node, property);
-                                            if (typeof s === 'string') {
-                                                ostring += s;
-                                            }
+                                            });
+
+
+                                            return ostring;
+
 
                                         });
-
-
-                                        return ostring;
-
-
-                                    });
+                                    } else {
+                                        var Ordered = preOrdered;
+                                    }
 
                                     angular.forEach(Ordered, function (node) {
                                         self.addNodeToSearchResult(node.identifier, 1, nodesFound, items, nodeTypeMaxScore, nodeTypeMinScore, nodeTypeScoreCount);
@@ -1280,11 +1281,14 @@
                                         fields[v] = {boost: self.getBoost(v)}
                                     });
 
+
+
                                     var tmp = {};
                                     var resultAnd = lunrSearch.search(query, {
                                         fields: fields,
                                         bool: "AND"
                                     });
+
 
 
                                     // do AND search first
@@ -1343,88 +1347,95 @@
 
                                     var preOrderedFilteredRelevance = [];
 
+                                    //
+                                    //
+                                    // angular.forEach(preOrdered, function (item) {
+                                    //
+                                    //     if (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined) {
+                                    //         nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = item.score;
+                                    //     } else {
+                                    //         if (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] < item.score) {
+                                    //             nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = item.score;
+                                    //         }
+                                    //     }
+                                    //
+                                    //     if (nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined) {
+                                    //         nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = item.score;
+                                    //     } else {
+                                    //         if (nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] >= item.score) {
+                                    //             nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = item.score;
+                                    //         }
+                                    //     }
+                                    //
+                                    //     if (nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined) {
+                                    //         nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = {};
+                                    //     }
+                                    //
+                                    //     if (nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)][item.score] === undefined) {
+                                    //         nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)][item.score] = 1;
+                                    //     } else {
+                                    //         nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)][item.score]++;
+                                    //     }
+                                    //
+                                    //
+                                    // });
+                                    //
+                                    //
 
-                                    // if (resultAnd.length == 0) {
                                     angular.forEach(preOrdered, function (item) {
 
-                                        if (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined) {
-                                            nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = item.score;
-                                        } else {
-                                            if (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] < item.score) {
-                                                nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = item.score;
-                                            }
-                                        }
+                                        preOrderedFilteredRelevance.push(item);
 
-                                        if (nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined) {
-                                            nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = item.score;
-                                        } else {
-                                            if (nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] >= item.score) {
-                                                nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = item.score;
-                                            }
-                                        }
-
-                                        if (nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined) {
-                                            nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = {};
-                                        }
-
-                                        if (nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)][item.score] === undefined) {
-                                            nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)][item.score] = 1;
-                                        } else {
-                                            nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)][item.score]++;
-                                        }
-
-
-                                    });
-                                    //  }
-
-                                    angular.forEach(preOrdered, function (item) {
-
-
-                                        if (Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length == 1 || Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length > 20) {
-                                            preOrderedFilteredRelevance.push(item);
-
-                                        } else {
-
-                                            if (nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined || Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length == 2 || nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] == item.score || 1 / (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] / (nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] / item.score)) < 1) {
-
-                                                if ((Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length > 2) && (nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] == item.score && nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] != nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)])) {
-                                                    // skip lowest score
-                                                } else {
-                                                    preOrderedFilteredRelevance.push(item);
-                                                }
-
-                                            }
-                                        }
+//                                         if (Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length == 1 || Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length > 20) {
+//                                             preOrderedFilteredRelevance.push(item);
+//
+//                                         } else {
+//
+//
+//                                             if (nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined || Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length == 2 || nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] == item.score || 1 / (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] / (nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] / item.score)) < 1) {
+//
+//                                                // if ((Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length > 2) && (nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] == item.score && nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] != nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)])) {
+//                                                     // skip lowest score
+// //console.log(nodes[item.ref].nodeType,item.score);
+//                                                // } else {
+//                                                     preOrderedFilteredRelevance.push(item);
+//                                               //  }
+//
+//                                             }
+//                                         }
                                     });
 
+                                    if (self.hasOrderBy()) {
+                                        var Ordered = $filter('orderBy')(preOrdered, function (item) {
 
-                                    var Ordered = $filter('orderBy')(preOrderedFilteredRelevance, function (item) {
+                                            var orderBy = self.getOrderBy(nodes[item.ref].nodeType);
+                                            if (orderBy) {
 
-                                        var orderBy = self.getOrderBy(nodes[item.ref].nodeType);
-                                        if (orderBy) {
+                                                var ostring = '';
 
-                                            var ostring = '';
-
-                                            angular.forEach(orderBy, function (property) {
-                                                if (property === 'score') {
-                                                    ostring += item.score;
-                                                } else {
-                                                    var s = self.getPropertyFromNode(nodes[item.ref], property);
-                                                    if (typeof s === 'string') {
-                                                        ostring += s;
+                                                angular.forEach(orderBy, function (property) {
+                                                    if (property === 'score') {
+                                                        ostring += item.score;
+                                                    } else {
+                                                        var s = self.getPropertyFromNode(nodes[item.ref], property);
+                                                        if (typeof s === 'string') {
+                                                            ostring += s;
+                                                        }
                                                     }
-                                                }
-                                            });
+                                                });
 
 
-                                            return ostring;
+                                                return ostring;
 
-                                        } else {
-                                            return -1 * item.score;
-                                        }
+                                            } else {
+                                                return -1 * item.score;
+                                            }
 
 
-                                    });
+                                        });
+                                    } else {
+                                        var Ordered = preOrdered;
+                                    }
 
 
                                     angular.forEach(Ordered, function (item) {
@@ -2281,7 +2292,7 @@
 
 
                                 angular.forEach(data, function (val, keyword) {
-                                    self.addLocalIndex(val);
+                                    self.addLocalIndex(val, keyword);
                                 });
 
 
@@ -2324,11 +2335,11 @@
                         ,
                         /**
                          * @private
-                         * @param string keyword
                          * @param object data
+                         * @param string keyword
                          * @returns mixed
                          */
-                        addLocalIndex: function (data) {
+                        addLocalIndex: function (data, keyword) {
 
                             var self = this;
 
@@ -2343,10 +2354,8 @@
 
                                     if (value.node != undefined && value.node.properties != undefined) {
 
-                                        var doc = value.node.properties;
+                                        var doc = JSON.parse(JSON.stringify(value.node.properties));
 
-                                        // calculate additional fields based on json object
-                                        var additionproperties = {};
 
                                         angular.forEach(doc, function (propvalue, property) {
 
@@ -2359,16 +2368,16 @@
                                                 }
 
                                                 if (valueJson) {
+
                                                     angular.forEach(valueJson, function (val, subproperty) {
                                                         if (typeof val == 'string') {
-                                                            additionproperties[property + "-" + subproperty] = true;
-                                                            doc[property + "-" + subproperty] = val;
+
+                                                            doc[property + "-" + subproperty] = val.replace(/<\/?[a-z][a-z0-9]*[^<>]*>/ig, "").trim().toLowerCase();
                                                         } else {
                                                             try {
                                                                 angular.forEach(val, function (val2, subsubproperty) {
                                                                     if (typeof val2 == 'string') {
-                                                                        additionproperties[property + "-" + subproperty + "-" + subsubproperty] = true;
-                                                                        doc[property + "-" + subproperty + "-" + subsubproperty] = val2;
+                                                                        doc[property + "-" + subproperty + "-" + subsubproperty] = val2.replace(/<\/?[a-z][a-z0-9]*[^<>]*>/ig, "").trim().toLowerCase();
                                                                     }
 
                                                                 });
@@ -2385,18 +2394,47 @@
 
                                             }
 
+                                            if (typeof propvalue == 'string') {
+                                                doc[property] = propvalue.replace(/<\/?[a-z][a-z0-9]*[^<>]*>/ig, "").trim().toLowerCase();
+                                            }
+
 
                                         });
 
+                                        if (keyword !== undefined) {
 
-                                        angular.forEach(doc, function (val, key) {
+                                            angular.forEach(Object.keys(doc), function (property) {
+
+                                                var propvalue = doc[property];
+                                                var i = typeof propvalue == 'string' ? propvalue.indexOf(keyword) : -2;
+
+                                                if (i == -1) {
+                                                    delete doc[property];
+                                                } else {
+                                                    if (i != -2 && propvalue.length > 60) {
+                                                        doc[property] = propvalue.substr(i - 30, keyword.length + 30);
+                                                    } else {
+                                                        if (propvalue.length < 3) {
+                                                            delete doc[property];
+                                                        }
+                                                    }
+                                                }
+
+                                            });
+                                        }
+
+
+                                        angular.forEach(Object.keys(doc), function (key) {
                                             if (lunrSearch.getFields().indexOf(key) < 0) {
-
                                                 lunrSearch.addField(key);
                                             }
                                         });
+
+
                                         doc.id = value.node.identifier;
                                         lunrSearch.addDoc(doc);
+                                        //  console.log(doc, nodes[value.node.identifier]);
+
                                     }
 
                                 }
@@ -3321,11 +3359,6 @@
                     getNodeTypeProperties: function (nodeType) {
 
                         if (nodeType === undefined) {
-
-                            angular.forEach(nodeType, function (v, k) {
-                                console.log(v);
-                            });
-
                         } else {
                             return nodeTypeProperties[nodeType] !== undefined ? nodeTypeProperties[nodeType] : null;
                         }
@@ -3430,7 +3463,7 @@
                                     angular.forEach(properties, function (val, key) {
                                         var v = " " + val.label + " " + val.description + " ";
 
-                                        if (v.indexOf(" "+term+" ") >= 0) {
+                                        if (v.indexOf(" " + term + " ") >= 0) {
                                             var u = topnode.getProperty(key);
                                             if (typeof u == 'string' && u.length > 1) {
                                                 self.$$data.quickinfo.items.push({term: val.label, value: u});
@@ -4234,7 +4267,7 @@
 
                         angular.forEach(terms, function (keyword) {
 
-                            if (uniqueobject[keyword] === undefined && self.isBlockedKeyword(keyword) === false && ignoredtermsstring.indexOf(keyword) === -1) {
+                            if (uniqueobject[keyword] === undefined && self.isBlockedKeyword(keyword) === false && (ignoredtermsstring == undefined || ignoredtermsstring.indexOf(keyword) === -1)) {
                                 uniquarray.push(keyword);
                             }
                             uniqueobject[keyword] = true;
