@@ -53,16 +53,15 @@ class PropertiesViewHelper extends AbstractViewHelper
             $groups = isset($nodeTypeConfiguration['ui']['inspector']['groups']) ? $nodeTypeConfiguration['ui']['inspector']['groups'] : array();
             $propes = isset($nodeTypeConfiguration['properties']) ? $nodeTypeConfiguration['properties'] : array();
 
-
             foreach ($propes as $key => $val) {
 
-                if (substr($key,0,1) !== '_') {
+                if (substr($key,0,1) !== '_' && isset($val['ui'])) {
                     if (isset($properties->$n) == false) {
                         $properties->$n = new \StdClass;
                     }
                     $properties->$n->$key = new \StdClass;
                     $properties->$n->$key->label = strtolower(isset($val['ui']['label']) ? $val['ui']['label'] : $key);
-                    $properties->$n->$key->description = strtolower(isset($val['ui']['inspector']['group']) ? (isset($groups[$val['ui']['inspector']['group']]) ? isset($groups[$val['ui']['inspector']['group']]['label']) ? $groups[$val['ui']['inspector']['group']]['label'] : '' : '') : '');
+                    $properties->$n->$key->description = " ".preg_replace("[^A-z ]"," ",strtolower(isset($val['ui']['inspector']['group']) ? (isset($groups[$val['ui']['inspector']['group']]) ? json_encode($groups[$val['ui']['inspector']['group']],JSON_UNESCAPED_UNICODE) : '') : (isset($val['ui']['keywords']) ? $val['ui']['keywords'] : '')))." ";
 
                 }
 

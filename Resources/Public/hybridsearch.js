@@ -3454,18 +3454,20 @@
 
                         if (properties) {
 
+                            var t = {};
+
                             angular.forEach(s.split(" "), function (term) {
                                 term = term.toLowerCase();
 
-                                if (term.length > 2) {
+                                if (term.length > 1) {
 
                                     angular.forEach(properties, function (val, key) {
                                         var v = " " + val.label + " " + val.description + " ";
-
-                                        if (v.indexOf(" " + term + " ") >= 0) {
+                                        if (v.indexOf(term) >= 0) {
                                             var u = topnode.getProperty(key);
-                                            if (typeof u == 'string' && u.length > 1) {
+                                            if (typeof u == 'string' && u.length > 1 && t[val.label] === undefined) {
                                                 self.$$data.quickinfo.items.push({term: val.label, value: u});
+                                                t[val.label] = true;
                                             }
                                         }
                                     });
