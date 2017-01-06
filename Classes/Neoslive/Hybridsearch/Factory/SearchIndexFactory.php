@@ -989,7 +989,7 @@ class SearchIndexFactory
 
             if (gettype($val) === 'string' || gettype($val) === 'integer') {
                 $k = mb_strtolower(preg_replace("/[^A-z0-9]/", "-", $node->getNodeType()->getName() . ":" . $key));
-                $properties->$k = strip_tags(($val));
+                $properties->$k = (($val));
             }
 
             if (gettype($val) === 'array' && count($val) > 0) {

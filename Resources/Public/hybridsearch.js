@@ -2409,10 +2409,11 @@
                                                 var i = typeof propvalue == 'string' ? propvalue.indexOf(keyword) : -2;
 
                                                 if (i == -1) {
+
                                                     delete doc[property];
                                                 } else {
-                                                    if (i != -2 && propvalue.length > 60) {
-                                                        doc[property] = propvalue.substr(i - 30, keyword.length + 30);
+                                                    if (i != -2 && propvalue.length > 120) {
+                                                        doc[property] = propvalue.substr(i - 60 > 0 ? i - 60 : 0, keyword.length + 60);
                                                     } else {
                                                         if (propvalue.length < 3) {
                                                             delete doc[property];
@@ -2433,7 +2434,6 @@
 
                                         doc.id = value.node.identifier;
                                         lunrSearch.addDoc(doc);
-                                        //  console.log(doc, nodes[value.node.identifier]);
 
                                     }
 
