@@ -1234,6 +1234,7 @@
 
                                 var query = filter.getFinalSearchQuery(lastSearchInstance);
 
+
                                 var preOrdered = [];
 
 
@@ -1287,7 +1288,6 @@
                                         fields: fields,
                                         bool: "AND"
                                     });
-
 
 
                                     // do AND search first
@@ -1346,66 +1346,55 @@
 
                                     var preOrderedFilteredRelevance = [];
 
-                                    //
-                                    //
-                                    // angular.forEach(preOrdered, function (item) {
-                                    //
-                                    //     if (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined) {
-                                    //         nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = item.score;
-                                    //     } else {
-                                    //         if (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] < item.score) {
-                                    //             nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = item.score;
-                                    //         }
-                                    //     }
-                                    //
-                                    //     if (nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined) {
-                                    //         nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = item.score;
-                                    //     } else {
-                                    //         if (nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] >= item.score) {
-                                    //             nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = item.score;
-                                    //         }
-                                    //     }
-                                    //
-                                    //     if (nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined) {
-                                    //         nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = {};
-                                    //     }
-                                    //
-                                    //     if (nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)][item.score] === undefined) {
-                                    //         nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)][item.score] = 1;
-                                    //     } else {
-                                    //         nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)][item.score]++;
-                                    //     }
-                                    //
-                                    //
-                                    // });
-                                    //
-                                    //
 
                                     angular.forEach(preOrdered, function (item) {
 
-                                        preOrderedFilteredRelevance.push(item);
+                                        if (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined) {
+                                            nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = item.score;
+                                        } else {
+                                            if (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] < item.score) {
+                                                nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = item.score;
+                                            }
+                                        }
 
-//                                         if (Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length == 1 || Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length > 20) {
-//                                             preOrderedFilteredRelevance.push(item);
-//
-//                                         } else {
-//
-//
-//                                             if (nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined || Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length == 2 || nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] == item.score || 1 / (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] / (nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] / item.score)) < 1) {
-//
-//                                                // if ((Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length > 2) && (nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] == item.score && nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] != nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)])) {
-//                                                     // skip lowest score
-// //console.log(nodes[item.ref].nodeType,item.score);
-//                                                // } else {
-//                                                     preOrderedFilteredRelevance.push(item);
-//                                               //  }
-//
-//                                             }
-//                                         }
+                                        // if (nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined) {
+                                        //     nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = item.score;
+                                        // } else {
+                                        //     if (nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] >= item.score) {
+                                        //         nodeTypeMinScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = item.score;
+                                        //     }
+                                        // }
+
+                                        if (nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined) {
+                                            nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = {};
+                                        }
+
+                                        if (nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)][item.score] === undefined) {
+                                            nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)][item.score] = 1;
+                                        } else {
+                                            nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)][item.score]++;
+                                        }
+
+
+                                    });
+
+
+                                    var ql = query.split(" ").length + 1;
+
+                                    angular.forEach(preOrdered, function (item) {
+                                        if (Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length == 1 || Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length > 10) {
+                                            preOrderedFilteredRelevance.push(item);
+                                        } else {
+                                            if (item.score / nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] < 1 / ql) {
+                                                // skip irelevant score
+                                            } else {
+                                                preOrderedFilteredRelevance.push(item);
+                                            }
+                                        }
                                     });
 
                                     if (self.hasOrderBy()) {
-                                        var Ordered = $filter('orderBy')(preOrdered, function (item) {
+                                        var Ordered = $filter('orderBy')(preOrderedFilteredRelevance, function (item) {
 
                                             var orderBy = self.getOrderBy(nodes[item.ref].nodeType);
                                             if (orderBy) {
@@ -1433,7 +1422,7 @@
 
                                         });
                                     } else {
-                                        var Ordered = preOrdered;
+                                        var Ordered = preOrderedFilteredRelevance;
                                     }
 
 
@@ -1485,6 +1474,10 @@
                          */
                         addNodeToSearchResult: function (nodeId, score, nodesFound, items, nodeTypeMaxScore, nodeTypeMinScore, nodeTypeScoreCount) {
 
+
+                            if (nodes[nodeId] == undefined) {
+                                return false;
+                            }
 
                             var skip = false;
                             var resultNode = new HybridsearchResultsNode(nodes[nodeId], score);
@@ -1889,10 +1882,13 @@
                                         var uniquarrayfinal = [];
 
                                         angular.forEach(lastSearchInstance.$$data.keywords, function (keyword) {
-                                            if (uniqueobject[keyword.substr(0, 6)] === undefined) {
-                                                uniqueobject[keyword.substr(0, 6)] = {};
+
+                                            if (self.getFilter().isBlockedKeyword(keyword) === false) {
+                                                if (uniqueobject[keyword.substr(0, 6)] === undefined) {
+                                                    uniqueobject[keyword.substr(0, 6)] = {};
+                                                }
+                                                uniqueobject[keyword.substr(0, 6)][keyword] = keyword;
                                             }
-                                            uniqueobject[keyword.substr(0, 6)][keyword] = keyword;
                                         });
 
 
@@ -2117,25 +2113,37 @@
                             instance.$$data.running++;
 
 
-                            if (parseInt(substrEnd) > 0) {
-                                var ref = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().equalTo(substrEnd).limitToFirst(5);
-                            } else {
-                                var ref = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().startAt(substrStart).limitToFirst(5);
-                            }
+                            //  if (parseInt(substrEnd) > 0) {
+                            //   var ref = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().equalTo(substrEnd).limitToFirst(5);
+                            //   } else {
+                            //      var ref = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().startAt(substrStart).limitToFirst(5);
+                            // }
+
+
+                            var ref = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + querysegment.toLowerCase());
+
 
                             ref.once("value", function (data) {
 
+
                                 if (data !== undefined) {
-                                    angular.forEach(data.val(), function (v, k) {
 
-                                        if (self.getFilter().getNodeType()) {
-                                            instance.$$data.keywords.push(k.substring(self.getFilter().getNodeType().length + 1));
-                                        } else {
-                                            instance.$$data.keywords.push(k);
-                                        }
+                                    //
+                                    //
+                                    // angular.forEach(data.val(), function (v, k) {
+                                    //
+                                    //     if (self.getFilter().getNodeType()) {
+                                    //         instance.$$data.keywords.push(k.substring(self.getFilter().getNodeType().length + 1));
+                                    //     } else {
+                                    //         console.log(k,v);
+                                    //         instance.$$data.keywords.push(k);
+                                    //     }
+                                    //
+                                    //
+                                    // });
 
+                                    instance.$$data.keywords.push(querysegment.toLowerCase());
 
-                                    });
                                 }
 
                                 instance.$$data.proceeded.push(1);
@@ -2170,7 +2178,6 @@
                             if (keyword === undefined || keyword === null) {
                                 keyword = this.getFilter().getQuery() ? this.getFilter().getQuery() : '';
                             }
-
 
                             var query = false;
 
@@ -2399,6 +2406,7 @@
 
 
                                         });
+
 
                                         if (keyword !== undefined) {
 
@@ -4389,13 +4397,16 @@
                  */
                 getMagicReplacements: function (string) {
 
+
                     var magicreplacements = {};
 
                     // keep original term
                     magicreplacements[string] = true;
 
+                    return magicreplacements;
 
-                    if (string.length > 5) {
+
+                    if (string.length > 12) {
                         // double consonants
                         var d = string.replace(/([bcdfghjklmnpqrstvwxyz])\1+/, "$1");
 
@@ -4434,6 +4445,7 @@
                         magicreplacements[d.replace(/(.*)i(.*)/, "$1ie$2")] = true;
                         magicreplacements[d.replace(/(.*)v(.*)/, "$1w$2")] = true;
                         magicreplacements[d.replace(/(.*)w(.*)/, "$1v$2")] = true;
+
 
                     }
 
