@@ -3057,7 +3057,7 @@
                  * @param {categorizedBy} string
                  * @returns {array} collection of {HybridsearchResultsDataObject}
                  */
-                getCategorizedNodes: function (categorizedBy) {
+                getCategorizedNodes: function (categorizedBy,limit) {
 
                     var self = this;
 
