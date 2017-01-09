@@ -167,7 +167,7 @@
              */
             var HybridsearchObject = function (hybridsearch) {
 
-                    var hybridsearchInstanceNumber, searchTimer, pendingRequests, results, filter, index, lunrSearch, nodes, nodesLastHash, nodeTypeLabels, resultGroupedBy, resultCategorizedBy, resultOrderBy, propertiesBoost, ParentNodeTypeBoostFactor, isRunning, firstfilterhash, searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier, nodesByIdentifier, searchCounter, searchCounterTimeout, nodeTypeProperties;
+                    var hybridsearchInstanceNumber, pendingRequests, results, filter, index, lunrSearch, nodes, nodesLastHash, nodeTypeLabels, resultGroupedBy, resultCategorizedBy, resultOrderBy, propertiesBoost, ParentNodeTypeBoostFactor, isRunning, firstfilterhash, searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier, nodesByIdentifier, searchCounter, searchCounterTimeout, nodeTypeProperties;
 
                     // count instances
                     if (window.hybridsearchInstances === undefined) {
@@ -178,7 +178,6 @@
 
 
                     searchCounter = 0;
-                    searchTimer = false;
                     nodesLastHash = 0;
                     searchCounterTimeout = false;
                     isRunning = false;
@@ -213,20 +212,6 @@
                         // });
 
                     }
-
-                    /**
-                     * init branch master/slave
-                     */
-
-                    var query = hybridsearch.$firebase().database().ref("branches/" + hybridsearch.$$conf.workspace);
-                    query.on("value", function (snapshot) {
-                        if (snapshot.val()) {
-                            hybridsearch.setBranch(snapshot.val());
-
-                        } else {
-                            hybridsearch.setBranch("");
-                        }
-                    });
 
 
                     /**
@@ -792,7 +777,23 @@
                          * @private
                          */
                         setIsRunning: function () {
-                            isRunning = true;
+
+                            /**
+                             * init branch master/slave
+                             */
+                            var query = hybridsearch.$firebase().database().ref("branches/" + hybridsearch.$$conf.workspace);
+                            query.on("value", function (snapshot) {
+                                if (snapshot.val()) {
+                                    hybridsearch.setBranch(snapshot.val());
+                                } else {
+                                    hybridsearch.setBranch("");
+                                }
+
+                                isRunning = true;
+
+                            });
+
+
                         },
                         /**
                          * @private
@@ -2525,6 +2526,8 @@
 
                     if (self.$$app.getHybridsearch().$$conf.branchInitialized === false) {
 
+                        self.$$app.setIsRunning();
+
                         var counter = 0;
                         var branchInitInterval = setInterval(function () {
                             counter++;
@@ -2532,7 +2535,6 @@
                                 clearInterval(branchInitInterval);
                                 self.$$app.setHybridsearchInstanceNumber();
                                 self.$$app.setFirstFilterHash(self.$$app.getFilter().getHash());
-                                self.$$app.setIsRunning();
                                 self.$$app.setSearchIndex();
                             }
 
