@@ -2110,40 +2110,30 @@
                                 substrEnd = "_" + this.getFilter().getNodeType() + substrEnd;
                             }
 
-
                             instance.$$data.running++;
 
-
-                            //  if (parseInt(substrEnd) > 0) {
-                            //   var ref = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().equalTo(substrEnd).limitToFirst(5);
-                            //   } else {
-                            //      var ref = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().startAt(substrStart).limitToFirst(5);
-                            // }
-
-
-                            var ref = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + querysegment.toLowerCase());
-
+                             if (parseInt(substrEnd) > 0) {
+                              var ref = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().equalTo(substrEnd).limitToFirst(5);
+                              } else {
+                                 var ref = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().startAt(substrStart).limitToFirst(5);
+                            }
 
                             ref.once("value", function (data) {
 
-
                                 if (data !== undefined) {
 
-                                    //
-                                    //
-                                    // angular.forEach(data.val(), function (v, k) {
-                                    //
-                                    //     if (self.getFilter().getNodeType()) {
-                                    //         instance.$$data.keywords.push(k.substring(self.getFilter().getNodeType().length + 1));
-                                    //     } else {
-                                    //         console.log(k,v);
-                                    //         instance.$$data.keywords.push(k);
-                                    //     }
-                                    //
-                                    //
-                                    // });
+                                    angular.forEach(data.val(), function (v, k) {
 
-                                    instance.$$data.keywords.push(querysegment.toLowerCase());
+                                        if (k.substr(0,querysegment.length) == querysegment) {
+                                            if (self.getFilter().getNodeType()) {
+                                                instance.$$data.keywords.push(k.substring(self.getFilter().getNodeType().length + 1));
+                                            } else {
+                                                instance.$$data.keywords.push(k);
+                                            }
+                                        }
+
+                                    });
+
 
                                 }
 
