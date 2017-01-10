@@ -2118,25 +2118,47 @@
                                  var ref = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().startAt(substrStart).limitToFirst(5);
                             }
 
+
+
                             ref.once("value", function (data) {
 
                                 if (data !== undefined) {
 
                                     angular.forEach(data.val(), function (v, k) {
 
-                                        if (k.substr(0,querysegment.length) == querysegment) {
+
                                             if (self.getFilter().getNodeType()) {
-                                                instance.$$data.keywords.push(k.substring(self.getFilter().getNodeType().length + 1));
+                                                var kk = k.substr(self.getFilter().getNodeType().length+1);
+                                                if (kk.substr(0,querysegment.length) == querysegment) {
+                                                    instance.$$data.keywords.push(kk);
+                                                }
+
                                             } else {
-                                                instance.$$data.keywords.push(k);
+                                                if (k.substr(0,querysegment.length) == querysegment) {
+                                                    instance.$$data.keywords.push(k);
+                                                }
                                             }
-                                        }
+
 
                                     });
 
+                                    var ismatchexact = false;
+                                    angular.forEach(instance.$$data.keywords, function (k) {
+
+                                        if (ismatchexact === false && k == querysegment) {
+                                            ismatchexact = true;
+                                        }
+
+                                    });
+                                    if (ismatchexact) {
+                                        instance.$$data.keywords = [];
+                                        instance.$$data.keywords.push(querysegment);
+                                    }
+
+
 
                                 }
-
+                          
                                 instance.$$data.proceeded.push(1);
 
                             });
