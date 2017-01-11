@@ -1195,6 +1195,10 @@
                                 nodesFromInput = self.getNodesAddedByIdentifier();
                             }
 
+
+
+
+
                             if (!self.getFilter().getFullSearchQuery()) {
 
                                 if (nodesFromInput !== undefined) {
@@ -1235,6 +1239,7 @@
 
                                 var query = filter.getFinalSearchQuery(lastSearchInstance);
 
+                                console.log(query);
 
                                 var preOrdered = [];
 
@@ -1848,7 +1853,9 @@
 
                                         angular.forEach(lastSearchInstance.$$data.keywords, function (v, k) {
 
-                                            if (v == query || query.search(" " + v + " ") >= 0 || (
+
+
+                                            if (v == query || query.search(" " + v + " ") >= 0 || query.indexOf(v) >= 0 || (
                                                 v.length > 6 && query.search(" " + v.substr(0, 6)) >= 0 )
                                             ) {
                                                 if (query.search(v) > 0) {
@@ -1865,6 +1872,8 @@
                                             lastSearchInstance.$$data.keywords = matchexact;
 
                                         }
+
+
 
                                         // get unique
                                         var uniqueobject = {};
@@ -1897,9 +1906,10 @@
 
                                             var match = false;
                                             angular.forEach(short, function (term) {
-                                                if (query.search(" " + term + " ") >= 0) {
+
+                                                //if (query.search(" " + term + " ") >= 0) {
                                                     match = term;
-                                                }
+                                                //}
                                             });
 
                                             if (match) {
@@ -1927,6 +1937,9 @@
                                         }
 
                                     }
+
+
+
 
 
                                     // fetch index data
@@ -2127,6 +2140,8 @@
 
                                 if (data !== undefined) {
 
+
+
                                     angular.forEach(data.val(), function (v, k) {
 
 
@@ -2154,14 +2169,15 @@
 
                                     });
                                     if (ismatchexact) {
-                                        instance.$$data.keywords = [];
                                         instance.$$data.keywords.push(querysegment);
                                     }
 
 
 
                                 }
-                          
+
+
+
                                 instance.$$data.proceeded.push(1);
 
                             });
@@ -4360,7 +4376,7 @@
 
                     var s = this.$$data.query.replace(filterReg, " ");
 
-                    var t = s.replace(/([0-9])( )/i, '$1').replace(/([0-9]{2})/gi, '$1 ');
+                    var t = s.replace(/([0-9-])( )/i, '$1').replace(/([0-9]{2})/gi, '$1 ');
 
                     s = s + " " + t;
                     s = s.toLowerCase();
