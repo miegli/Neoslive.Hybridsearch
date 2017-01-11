@@ -63,7 +63,6 @@ class PropertiesViewHelper extends AbstractViewHelper
             /* @var $nodeType NodeType */
             $nodeTypeConfiguration = $nodeType->getFullConfiguration();
 
-
             $n = $this->getNodeTypeName($nodeType->getName());
 
             $groups = isset($nodeTypeConfiguration['ui']['inspector']['groups']) ? $nodeTypeConfiguration['ui']['inspector']['groups'] : array();
