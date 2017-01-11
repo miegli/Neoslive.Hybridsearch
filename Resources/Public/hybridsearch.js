@@ -1918,9 +1918,12 @@
 
                                     } else {
 
+
                                         // fetch index from non query request
                                         if (self.getFilter().getQuery() === '') {
                                             uniquarrayfinal = [null];
+                                        } else {
+                                            self.search();
                                         }
 
                                     }
