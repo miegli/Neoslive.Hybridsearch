@@ -15,6 +15,8 @@ use TYPO3\Flow\Annotations as Flow;
 use TYPO3\Fluid\Core\ViewHelper\AbstractViewHelper;
 use TYPO3\TYPO3CR\Domain\Model\Node;
 use TYPO3\Eel\FlowQuery\FlowQuery;
+use TYPO3\TYPO3CR\Domain\Model\NodeType;
+use TYPO3\TYPO3CR\Domain\Service\NodeTypeManager;
 
 /**
  * properties view helper
@@ -28,12 +30,21 @@ class PropertiesViewHelper extends AbstractViewHelper
      */
     protected $configurationManager;
 
+
+
     /**
      * Disable escaping of tag based ViewHelpers so that the rendered tag is not htmlspecialchar'd
      *
      * @var boolean
      */
     protected $escapeOutput = FALSE;
+
+    /**
+     * @Flow\Inject
+     * @var NodeTypeManager
+     */
+    protected $nodeTypeManager;
+
 
 
     /**
@@ -46,9 +57,14 @@ class PropertiesViewHelper extends AbstractViewHelper
         $properties = new \StdClass;
 
 
-        foreach ($this->configurationManager->getConfiguration('NodeTypes') as $nodeType => $nodeTypeConfiguration) {
 
-            $n = $this->getNodeTypeName($nodeType);
+
+        foreach ($this->nodeTypeManager->getNodeTypes(false) as $nodeType) {
+            /* @var $nodeType NodeType */
+            $nodeTypeConfiguration = $nodeType->getFullConfiguration();
+
+
+            $n = $this->getNodeTypeName($nodeType->getName());
 
             $groups = isset($nodeTypeConfiguration['ui']['inspector']['groups']) ? $nodeTypeConfiguration['ui']['inspector']['groups'] : array();
             $propes = isset($nodeTypeConfiguration['properties']) ? $nodeTypeConfiguration['properties'] : array();

@@ -1296,7 +1296,7 @@
                                     });
 
                                     if (resultAnd.length > 0) {
-                                        
+
                                         // do AND search first
                                         angular.forEach(resultAnd, function (item) {
 
@@ -3506,9 +3506,14 @@
                                 if (term.length > 1) {
 
                                     angular.forEach(properties, function (val, key) {
+
+
+
                                         var v = " " + val.label + " " + val.description + " ";
                                         if (v.indexOf(term) >= 0) {
+
                                             var u = topnode.getProperty(key);
+
                                             if (typeof u == 'string' && u.length > 1 && t[val.label] === undefined) {
                                                 self.$$data.quickinfo.items.push({term: val.label, value: u});
                                                 t[val.label] = true;
