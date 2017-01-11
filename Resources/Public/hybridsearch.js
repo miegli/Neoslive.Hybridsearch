@@ -1239,7 +1239,7 @@
 
                                 var query = filter.getFinalSearchQuery(lastSearchInstance);
 
-                                console.log(query);
+
 
                                 var preOrdered = [];
 
@@ -1295,31 +1295,34 @@
                                         bool: "AND"
                                     });
 
+                                    if (resultAnd.length > 0) {
+                                        
+                                        // do AND search first
+                                        angular.forEach(resultAnd, function (item) {
 
-                                    // do AND search first
-                                    angular.forEach(resultAnd, function (item) {
+                                                if (nodes[item.ref] !== undefined) {
 
-                                            if (nodes[item.ref] !== undefined) {
-
-                                                if (self.isNodesByIdentifier()) {
-                                                    // post filter node
-                                                    if (self.isFiltered(nodes[item.ref]) === false) {
+                                                    if (self.isNodesByIdentifier()) {
+                                                        // post filter node
+                                                        if (self.isFiltered(nodes[item.ref]) === false) {
+                                                            preOrdered.push(item);
+                                                        }
+                                                    } else {
+                                                        // dont post filter because filter were applied before while filling search index
                                                         preOrdered.push(item);
                                                     }
-                                                } else {
-                                                    // dont post filter because filter were applied before while filling search index
-                                                    preOrdered.push(item);
+
+                                                    tmp[item.ref] = item.score;
                                                 }
 
-                                                tmp[item.ref] = item.score;
                                             }
-
-                                        }
-                                    );
+                                        );
+                                    }
 
                                     if (resultAnd.length == 0) {
+
                                         // merge OR search first with lower score
-                                        angular.forEach(lunrSearch.search(query, {
+                                        angular.forEach(lunrSearch.search(query+ ' '+self.getFilter().$$data.query, {
                                                 fields: fields,
                                                 bool: "OR"
                                             }), function (item) {
