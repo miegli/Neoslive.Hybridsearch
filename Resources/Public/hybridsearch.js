@@ -231,6 +231,7 @@
                     window.HybridsearchGetPropertyFromObject = function (object, property) {
 
 
+
                         if (property === '*') {
 
                             var values = [];
@@ -278,17 +279,23 @@
                             }
 
 
-                            if (values.length === 0 && typeof val === 'object') {
+                            if (typeof val === 'object') {
 
-                                values = [];
-                                angular.forEach(val, function (v, k) {
 
-                                    if (values.length == 0 && typeof k == 'string' && (k.substr(k.length - property.length, property.length) === property || k == property)) {
-                                        values.push(val[k]);
-                                        return values;
-                                    }
+                                if (val[property] !== undefined) {
+                                    values.push(val[property]);
+                                } else {
+                                    values = [];
+                                    angular.forEach(val, function (v, k) {
+                                        if (values.length == 0 && typeof k == 'string' && (k.substr(k.length - property.length, property.length) === property || k == property)) {
+                                            values.push(val[k]);
+                                            return values;
+                                        }
 
-                                });
+                                    });
+
+                                }
+
 
 
                             }
@@ -308,6 +315,8 @@
                      */
                     window.HybridsearchGetPropertyFromNode = function (node, property) {
 
+
+
                         var value = '';
 
                         if (node.properties[property] !== undefined) {
@@ -319,43 +328,65 @@
 
                             var propertysegments = property.split(".");
 
-                            var value = node.properties;
+                            var value = null;
 
 
-                            angular.forEach(propertysegments, function (segment) {
+                            angular.forEach(propertysegments, function (segment,c) {
 
 
-                                if (value !== undefined) {
-                                    if (value[segment] !== undefined) {
-                                        value = value[segment];
+                                if (c == 0) {
+                                    value = window.HybridsearchGetPropertyFromNode(node, segment);
+                                } else {
+
+                                    if (typeof value === 'string' && ((value.substr(0, 1) == '{') || ((value.substr(0, 2) === '["' && value.substr(-2, 2) === '"]')) || (value.substr(0, 2) === '[{' && value.substr(-2, 2) === '}]'))) {
+                                        try {
+                                            var valueJson = JSON.parse(value);
+                                        } catch (e) {
+                                            valueJson = false;
+                                        }
+
+                                    }
+                                    if (valueJson) {
+                                        value = valueJson;
+                                    }
+
+                                    if (segment == '*') {
+                                        var valuetmp = [];
+                                        angular.forEach(value, function (v) {
+
+                                            if (typeof v !== 'object') {
+                                                valuetmp.push(v);
+                                            } else {
+                                                angular.forEach(v, function (vv) {
+                                                    valuetmp.push(vv);
+                                                });
+                                            }
+
+                                        });
+                                        value = valuetmp;
+
                                     } else {
 
-                                        if (value.length === undefined) {
+                                       value = window.HybridsearchGetPropertyFromObject(value, segment);
 
-                                            value = window.HybridsearchGetPropertyFromObject(value, segment);
-                                        } else {
-
-
-                                            var newvalue = [];
-                                            angular.forEach(value, function (v) {
-
-                                                var n = window.HybridsearchGetPropertyFromObject({0: v}, segment);
-                                                newvalue.push(n[0]);
-                                            });
-                                            value = newvalue;
-
-                                        }
                                     }
+
                                 }
 
 
+
                             });
+
+
+
+                            return value;
 
 
                         } else {
                             angular.forEach(node.properties, function (val, key) {
                                 if (value === '' && key.substr(key.length - property.length, property.length) === property) {
                                     value = val !== undefined ? val : '';
+
                                     if (typeof value === 'string' && ((value.substr(0, 2) === '["' && value.substr(-2, 2) === '"]') || (value.substr(0, 2) === '[{' && value.substr(-2, 2) === '}]') )) {
                                         try {
                                             var valueJson = JSON.parse(value);
@@ -599,8 +630,8 @@
                             }
 
                             if (property.indexOf(".") >= 0) {
-
                                 return this.getPropertyFromNode(this, property);
+
                             }
 
 
@@ -1195,6 +1226,8 @@
                             }, 3000);
 
 
+
+
                             if (lunrSearch.getFields().length == 0 && self.getFilter().getFullSearchQuery() !== false) {
                                 // skip search, search field not ready yet
                                 return false;
@@ -1223,6 +1256,7 @@
                                     }
                                 });
 
+
                                 var Ordered = $filter('orderBy')(preOrdered, function (node) {
                                     var ostring = '';
 
@@ -1239,7 +1273,7 @@
                                 });
 
                                 angular.forEach(Ordered, function (node) {
-                                    self.addNodeToSearchResult(node.identifier, 1, nodesFound, items, nodeTypeMaxScore, nodeTypeMinScore, nodeTypeScoreCount);
+                                         self.addNodeToSearchResult(node.identifier, 1, nodesFound, items, nodeTypeMaxScore, nodeTypeMinScore, nodeTypeScoreCount);
                                 });
 
 
@@ -1311,7 +1345,6 @@
 
                                     } else {
 
-                                        console.log(query,fields);
 
                                         var resultAnd = lunrSearch.search(query, {
                                             fields: fields,
@@ -1342,18 +1375,18 @@
                                             );
                                         }
 
-                                        if (resultAnd.length == 0) {
+                                        if (resultAnd.length == 0 && query !== false) {
+
+
+
 
                                             // merge OR search first with lower score
-                                            angular.forEach(lunrSearch.search(query + ' ' + self.getFilter().$$data.query, {
+                                            angular.forEach(lunrSearch.search(query, {
                                                     fields: fields,
                                                     bool: "OR"
                                                 }), function (item) {
-
                                                     if (nodes[item.ref] !== undefined && tmp[item.ref] === undefined) {
-
-                                                        item.score = item.score / 25;
-
+                                                       item.score = item.score / 25;
                                                         if (self.isNodesByIdentifier()) {
                                                             // post filter node
                                                             if (self.isFiltered(nodes[item.ref]) === false) {
@@ -1368,6 +1401,8 @@
                                                 }
                                             );
                                         }
+
+
                                     }
 
 
@@ -1625,9 +1660,12 @@
                             }
 
 
+
                             if (this.getFilter().getNodePath().length > 0 && node.uri.path.substr(0, this.getFilter().getNodePath().length) != this.getFilter().getNodePath()) {
                                 return true;
                             }
+
+
 
 
                             var propertyFiltered = Object.keys(this.getFilter().getPropertyFilters()).length > 0 ? true : false;
@@ -1635,6 +1673,8 @@
 
 
                             if (propertyFiltered) {
+
+
 
                                 var propertyMatching = 0;
 
@@ -1687,8 +1727,10 @@
 
                                             angular.forEach(filterobject, function (value, key) {
 
-
                                                 if (value) {
+
+
+
                                                     if ((filter.reverse === false && (key == propertyValue) || self.inArray(key, propertyValue)) || (filter.reverse == true && key != propertyValue && self.inArray(key, propertyValue) === false)) {
 
                                                         isMatching++;
@@ -1699,6 +1741,8 @@
                                                     }
                                                 }
                                             });
+
+
 
 
                                             if (filter.booleanmode === false && isMatching === Object.keys(filterobject).length) {
@@ -1723,6 +1767,7 @@
 
 
                                 if (propertyMatching !== propertyFilteredLength) {
+
                                     return true;
 
                                 } else {
@@ -1732,17 +1777,19 @@
                             }
 
 
-                            if (propertyFiltered === false && this.getFilter().getAgeFilter() != '') {
-                                if (this.getFilter().getPropertyFilters() != node.__userAgeBracket) {
-                                    return true;
-                                }
-                            }
 
-                            if (propertyFiltered === false && this.getFilter().getGenderFilter() != '') {
-                                if (this.getFilter().getGenderFilter() != node.__userGender) {
-                                    return true;
-                                }
-                            }
+                            //
+                            // if (propertyFiltered === false && this.getFilter().getAgeFilter() != '') {
+                            //     if (this.getFilter().getPropertyFilters() != node.__userAgeBracket) {
+                            //         return true;
+                            //     }
+                            // }
+                            //
+                            // if (propertyFiltered === false && this.getFilter().getGenderFilter() != '') {
+                            //     if (this.getFilter().getGenderFilter() != node.__userGender) {
+                            //         return true;
+                            //     }
+                            // }
 
 
                             return propertyFiltered;
@@ -1983,10 +2030,10 @@
 
                                     if (self.isLoadedAll() === false) {
 
-
-                                        if (uniquarrayfinal === undefined) {
+                                        if (uniquarrayfinal === undefined && self.getFilter().getQuery().length == 0) {
                                             uniquarrayfinal = [null];
                                         }
+
 
                                         angular.forEach(uniquarrayfinal, function (keyword) {
 
