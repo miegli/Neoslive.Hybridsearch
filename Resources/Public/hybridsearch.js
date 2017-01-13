@@ -98,7 +98,7 @@
                     // firebase was initizalized before
                 }
 
-                // firebase.database.enableLogging(true);
+                 //firebase.database.enableLogging(true);
 
             }
 
@@ -322,6 +322,10 @@
 
 
                         var value = '';
+
+                        if (node.properties === undefined) {
+                            return null;
+                        }
 
                         if (node.properties[property] !== undefined) {
                             return node.properties[property];
@@ -1231,6 +1235,7 @@
 
 
 
+
                             if (lunrSearch.getFields().length == 0 && self.getFilter().getFullSearchQuery() !== false) {
                                 // skip search, search field not ready yet
                                 return false;
@@ -1658,8 +1663,21 @@
                             var self = this;
 
 
-                            if (this.getFilter().getNodeType() && this.getFilter().getNodeType() !== node.nodeType) {
-                                return true;
+                            if (this.getFilter().getNodeType()) {
+
+                                if (typeof this.getFilter().getNodeType() == 'string') {
+                                    if (this.getFilter().getNodeType() !== node.nodeType) {
+                                        return true;
+                                    }
+                                } else {
+
+                                    if (self.inArray(node.nodeType, this.getFilter().getNodeType()) === false) {
+                                        return true;
+                                    }
+
+                                }
+
+
                             }
 
 
@@ -2043,32 +2061,35 @@
 
                                             // called asynchronously if an error occurs
                                             // or server returns response with an error status.
-                                            self.getIndex(keyword).on("value", function (data) {
+                                            var ref = self.getIndex(keyword);
+                                            if (ref) {
+                                                ref.on("value", function (data) {
 
 
-                                                if (keyword === null) {
+                                                    if (keyword === null) {
 
-                                                    indexdata['__'] = [];
-                                                    angular.forEach(data.val(), function (node, id) {
-                                                        nodes[id] = node.node;
-                                                        indexdata['__'].push(node);
-                                                    });
+                                                        indexdata['__'] = [];
+                                                        angular.forEach(data.val(), function (node, id) {
+                                                            nodes[id] = node.node;
+                                                            indexdata['__'].push(node);
+                                                        });
 
-                                                    self.updateLocalIndex(indexdata);
-                                                    self.search(nodes);
-                                                    self.setIsLoadedAll();
+                                                        self.updateLocalIndex(indexdata);
+                                                        self.search(nodes);
+                                                        self.setIsLoadedAll();
 
 
-                                                } else {
-                                                    indexdata[keyword] = [];
-                                                    angular.forEach(data.val(), function (node, id) {
-                                                        nodes[id] = node;
-                                                        indexdata[keyword].push(node);
-                                                    });
-                                                    self.updateLocalIndex(indexdata);
-                                                    indexcounter++;
-                                                }
-                                            });
+                                                    } else {
+                                                        indexdata[keyword] = [];
+                                                        angular.forEach(data.val(), function (node, id) {
+                                                            nodes[id] = node;
+                                                            indexdata[keyword].push(node);
+                                                        });
+                                                        self.updateLocalIndex(indexdata);
+                                                        indexcounter++;
+                                                    }
+                                                });
+                                        }
 
 
                                         });
@@ -2145,10 +2166,12 @@
                             }
 
 
-                            if (this.getFilter().getNodeType()) {
+                            if (this.getFilter().getNodeType() && typeof this.getFilter().getNodeType() == 'string') {
                                 substrStart = "_" + this.getFilter().getNodeType() + substrStart;
                                 substrEnd = "_" + this.getFilter().getNodeType() + substrEnd;
                             }
+
+
 
                             instance.$$data.running++;
 
@@ -2159,15 +2182,14 @@
                             }
 
 
+
                             ref.once("value", function (data) {
 
                                 if (data !== undefined) {
 
-
                                     angular.forEach(data.val(), function (v, k) {
 
-
-                                        if (self.getFilter().getNodeType()) {
+                                        if (self.getFilter().getNodeType() && typeof self.getFilter().getNodeType() == 'string') {
                                             var kk = k.substr(self.getFilter().getNodeType().length + 1);
                                             if (kk.substr(0, querysegment.length) == querysegment) {
                                                 instance.$$data.keywords.push(kk);
@@ -2233,7 +2255,7 @@
 
                             var query = false;
 
-                            if (query === false && this.getFilter().getNodeType()) {
+                            if (query === false && this.getFilter().getNodeType() && typeof this.getFilter().getNodeType() == 'string') {
                                 if (keyword === "") {
 
 
@@ -2266,6 +2288,10 @@
                                     return null;
                                 }
 
+                                if (keyword.length < 2) {
+                                    return null;
+                                }
+
                                 if (rest) {
                                     return (hybridsearch.$$conf.cdnHost === undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnHost ) + '/sites/' + hybridsearch.$$conf.site + '/index/' + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + '/' + keyword + '/.json';
                                 } else {
@@ -2294,7 +2320,9 @@
                          * @returns {firebaseObject}
                          */
                         getIndexByNodeType: function (nodeType) {
-                            return hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/").orderByChild("_nodetype").equalTo(nodeType);
+
+                            return  hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + nodeType);
+
                         },
 
                         /**
@@ -2719,13 +2747,20 @@
 
                     self.$$app.setIsNodesByIdentifier();
 
+
+
                     angular.forEach(nodesTypesArray, function (nodetype) {
 
+
+                        console.log(nodetype);
                         self.$$app.getIndexByNodeType(nodetype).once("value", function (data) {
 
                             var addnodes = [];
 
+                            console.log(data.val());
+
                             if (data.val()) {
+
 
                                 angular.forEach(data.val(), function (node) {
                                     addnodes.push(node);
