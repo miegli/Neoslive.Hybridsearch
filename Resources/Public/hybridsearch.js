@@ -247,6 +247,10 @@
 
                         var values = [];
 
+                        if (object[property] !== undefined) {
+                            return object[property];
+                        }
+
 
                         angular.forEach(object, function (val, key) {
 
@@ -344,10 +348,9 @@
                                         } catch (e) {
                                             valueJson = false;
                                         }
-
-                                    }
-                                    if (valueJson) {
-                                        value = valueJson;
+                                        if (valueJson) {
+                                            value = valueJson;
+                                        }
                                     }
 
                                     if (segment == '*') {
