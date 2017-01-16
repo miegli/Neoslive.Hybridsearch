@@ -2256,6 +2256,7 @@
                             var query = false;
 
                             if (query === false && this.getFilter().getNodeType() && typeof this.getFilter().getNodeType() == 'string') {
+
                                 if (keyword === "") {
 
 
@@ -3995,6 +3996,11 @@
                  * @returns HybridsearchObject
                  */
                 setNodeType: function (nodeType) {
+
+                    if (typeof nodeType == 'object' && nodeType.length == 1) {
+                        this.$$data.nodeType = nodeType[0];
+                        return this;
+                    }
                     this.$$data.nodeType = nodeType;
                     return this;
                 },
