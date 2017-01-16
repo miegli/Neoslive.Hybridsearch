@@ -469,6 +469,9 @@ class SearchIndexFactory
             $this->deleteIndex($s, $this->branch);
         }
 
+        // remove trash
+        $this->firebase->delete("/trash");
+
         $this->output->progressFinish();
 
 
