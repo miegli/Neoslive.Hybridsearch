@@ -562,10 +562,10 @@ class SearchIndexFactory
 
             if ($this->isLockReltimeIndexer() === false) {
 
-                $this->proceedQueue();
+                $this->lockReltimeIndexer();
+
                 $this->removeTrashedNodes();
 
-                $this->lockReltimeIndexer();
 
 
                 $lastsync = $this->firebase->get("/lastsync/$workspaceName/" . $this->branch);
@@ -606,7 +606,7 @@ class SearchIndexFactory
             } else {
                 $this->output->outputLine('realtime sync is locked');
             }
-        
+
 
 
     }
