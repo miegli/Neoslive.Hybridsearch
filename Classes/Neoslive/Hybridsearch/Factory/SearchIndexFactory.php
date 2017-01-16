@@ -560,9 +560,6 @@ class SearchIndexFactory
     {
 
 
-        $counter = 1;
-
-        while ($counter < 3) {
             if ($this->isLockReltimeIndexer() === false) {
 
                 $this->proceedQueue();
@@ -609,11 +606,7 @@ class SearchIndexFactory
             } else {
                 $this->output->outputLine('realtime sync is locked');
             }
-
-            sleep(15);
-            $counter++;
-        }
-
+        
 
 
     }
