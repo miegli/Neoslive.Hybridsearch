@@ -419,10 +419,26 @@ class SearchIndexFactory
             array_push($sites, $this->getSiteIdentifier());
         }
 
+//
 
-        $moditifedNodeData = $this->nodeDataRepository->findByWorkspace($this->workspaceRepository->findByIdentifier($workspacename));
+        $basenodedata = $this->nodeDataRepository->findOneByPath("/sites/" . $this->site->getNodeName(), $this->workspaceRepository->findByIdentifier($workspacename));
+        $context = $this->createContext($basenodedata->getWorkspace()->getName(), $basenodedata->getDimensions(), array(), $this->site);
 
-        $this->output->progressStart(count($moditifedNodeData));
+
+        /** @var Node $node */
+
+        $basenode = new Node(
+            $basenodedata,
+            $context
+        );
+
+        $flowQuery = new FlowQuery(array($basenode));
+
+
+        $moditifedNodeData = $flowQuery->find($this->settings['Filter']['NodeTypeFilter']);
+
+
+        $this->output->progressStart($moditifedNodeData->count());
 
         $counter = 0;
         foreach ($moditifedNodeData as $nodedata) {
@@ -543,57 +559,62 @@ class SearchIndexFactory
     public function sync($workspaceName = 'live', $lastSyncPid = 0, $lastSyncCounter = 0)
     {
 
-        if ($this->settings['Realtime']) {
 
-            $lastSyncCounter++;
+        $counter = 1;
 
-            if ($lastSyncCounter > 1) {
+        while ($counter < 3) {
+            if ($this->isLockReltimeIndexer() === false) {
 
+                $this->proceedQueue();
+                $this->removeTrashedNodes();
 
-                if ($this->isLockReltimeIndexer() === false) {
-
-                    $this->proceedQueue();
-                    $this->removeTrashedNodes();
-
-
-                    $lastsync = $this->firebase->get("/lastsync/$workspaceName/" . $this->branch);
-                    $date = new \DateTime();
-
-                    if ($lastsync) {
-                        $date->setTimestamp(intval($lastsync));
-                    }
-
-                    $lastSyncDateTime = new \DateTime();
-                    $lastSyncTimestamp = $lastSyncDateTime->getTimeStamp();
-
-                    $this->branch = $this->getBranch($workspaceName);
-
-                    $this->firebase->set("/lastsync/$workspaceName/" . $this->branch, $lastSyncTimestamp);
-                    $moditifedNodeData = $this->neosliveHybridsearchNodeDataRepository->findByWorkspaceAndLastModificationDateTimeDate($this->workspaceRepository->findByIdentifier($workspaceName), $date);
+                $this->lockReltimeIndexer();
 
 
-                    foreach ($moditifedNodeData as $nodedata) {
-                        $this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace());
-                    }
+                $lastsync = $this->firebase->get("/lastsync/$workspaceName/" . $this->branch);
+                $date = new \DateTime();
 
-                    if (count($moditifedNodeData)) {
-                        $this->save();
-                        $this->proceedQueue();
+                if ($lastsync) {
+                    $date->setTimestamp(intval($lastsync));
+                }
 
-                    }
+                $lastSyncDateTime = new \DateTime();
+                $lastSyncTimestamp = $lastSyncDateTime->getTimeStamp();
+
+                $this->output->outputLine("sync from " . $lastSyncDateTime->format("d.m.Y H:i:s"));
+
+                $this->branch = $this->getBranch($workspaceName);
+
+                $this->firebase->set("/lastsync/$workspaceName/" . $this->branch, $lastSyncTimestamp);
+                $moditifedNodeData = $this->neosliveHybridsearchNodeDataRepository->findByWorkspaceAndLastModificationDateTimeDate($this->workspaceRepository->findByIdentifier($workspaceName), $date);
+                $this->output->outputLine('sync ' . count($moditifedNodeData) . ' nodes');
+
+
+                foreach ($moditifedNodeData as $nodedata) {
+                    $this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace());
 
                 }
 
-                sleep(360);
+
+                if (count($moditifedNodeData)) {
+                    $this->save();
+                    $this->unlockReltimeIndexer();
+                    $this->proceedQueue();
+
+                }
+
+                $this->unlockReltimeIndexer();
+
+
+            } else {
+                $this->output->outputLine('realtime sync is locked');
             }
 
-            // infinite loop only one thread per workspace
-            if ($lastSyncPid === 0 || $this->firebase->get("/pid/$workspaceName") == $lastSyncPid) {
-                $this->firebase->set("pid/$workspaceName", getmypid());
-                Scripts::executeCommandAsync('hybridsearch:sync', $this->flowSettings, array('lastSyncPid' => getmypid(), 'workspace' => $workspaceName, 'lastSyncCounter' => $lastSyncCounter));
-            }
-
+            sleep(15);
+            $counter++;
         }
+
+
 
     }
 
@@ -645,6 +666,7 @@ class SearchIndexFactory
 
 
                         } else {
+
                             if ($noparentcheck === false) {
                                 $node = $flowQuery->parent()->closest($this->settings['Filter']['NodeTypeFilter'])->get(0);
                                 if ($node) {
