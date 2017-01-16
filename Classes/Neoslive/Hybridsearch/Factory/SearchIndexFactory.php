@@ -581,7 +581,7 @@ class SearchIndexFactory
                 $lastSyncDateTime = new \DateTime();
                 $lastSyncTimestamp = $lastSyncDateTime->getTimeStamp();
 
-                $this->output->outputLine("sync from " . $lastSyncDateTime->format("d.m.Y H:i:s"));
+                $this->output->outputLine("sync from " . $date->format("d.m.Y H:i:s"));
 
                 $this->branch = $this->getBranch($workspaceName);
 
@@ -591,6 +591,7 @@ class SearchIndexFactory
 
 
                 foreach ($moditifedNodeData as $nodedata) {
+                    \TYPO3\Flow\var_dump($nodedata->getIdentifier());
                     $this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace());
 
                 }
