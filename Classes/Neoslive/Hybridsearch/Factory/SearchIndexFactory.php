@@ -545,7 +545,6 @@ class SearchIndexFactory
 
                 }
 
-                //$this->firebase->delete("trash/$site");
 
             }
         }
@@ -563,54 +562,51 @@ class SearchIndexFactory
     {
 
 
-            if ($this->isLockReltimeIndexer() === false) {
+        if ($this->isLockReltimeIndexer() === false) {
 
-                $this->lockReltimeIndexer();
+            $this->lockReltimeIndexer();
+            $this->branch = $this->getBranch($workspaceName);
+            $this->removeTrashedNodes();
 
-                $this->removeTrashedNodes();
-
-
-
-                $lastsync = $this->firebase->get("/lastsync/$workspaceName/" . $this->branch);
-                $date = new \DateTime();
-
-                if ($lastsync) {
-                    $date->setTimestamp(intval($lastsync));
-                }
-
-                $lastSyncDateTime = new \DateTime();
-                $lastSyncTimestamp = $lastSyncDateTime->getTimeStamp();
-
-                $this->output->outputLine("sync from " . $date->format("d.m.Y H:i:s"));
-
-                $this->branch = $this->getBranch($workspaceName);
-
-                $this->firebase->set("/lastsync/$workspaceName/" . $this->branch, $lastSyncTimestamp);
-                $moditifedNodeData = $this->neosliveHybridsearchNodeDataRepository->findByWorkspaceAndLastModificationDateTimeDate($this->workspaceRepository->findByIdentifier($workspaceName), $date);
-                $this->output->outputLine('sync ' . count($moditifedNodeData) . ' nodes');
+            $lastsync = $this->firebase->get("/lastsync/$workspaceName/" . $this->branch);
 
 
-                foreach ($moditifedNodeData as $nodedata) {
-                    \TYPO3\Flow\var_dump($nodedata->getIdentifier());
-                    $this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace());
+            $date = new \DateTime();
 
-                }
-
-
-                if (count($moditifedNodeData)) {
-                    $this->save();
-                    $this->unlockReltimeIndexer();
-                    $this->proceedQueue();
-
-                }
-
-                $this->unlockReltimeIndexer();
-
-
-            } else {
-                $this->output->outputLine('realtime sync is locked');
+            if ($lastsync) {
+                $date->setTimestamp(intval($lastsync));
             }
 
+            $lastSyncDateTime = new \DateTime();
+            $lastSyncTimestamp = $lastSyncDateTime->getTimeStamp();
+
+            $this->output->outputLine("sync from " . $date->format("d.m.Y H:i:s"));
+
+
+            $moditifedNodeData = $this->neosliveHybridsearchNodeDataRepository->findByWorkspaceAndLastModificationDateTimeDate($this->workspaceRepository->findByIdentifier($workspaceName), $date);
+            $this->output->outputLine('sync ' . count($moditifedNodeData) . ' nodes');
+
+            if (count($moditifedNodeData)) {
+                $this->firebase->set("/lastsync/$workspaceName/" . $this->branch, $lastSyncTimestamp);
+            }
+
+            foreach ($moditifedNodeData as $nodedata) {
+                $this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace());
+            }
+
+
+            if (count($moditifedNodeData)) {
+                $this->save();
+                $this->unlockReltimeIndexer();
+                $this->proceedQueue();
+            }
+
+
+            $this->unlockReltimeIndexer();
+
+        } else {
+            $this->output->outputLine('realtime sync is locked');
+        }
 
 
     }
@@ -703,6 +699,8 @@ class SearchIndexFactory
 
         if ($this->settings['Realtime']) {
 
+            $this->lockReltimeIndexer();
+
             $p = explode("/", $nodedata->getContextPath());
 
             $this->site = $this->siteRepository->findByIdentifier($p[2]);
@@ -718,9 +716,43 @@ class SearchIndexFactory
             $flowQuery = new FlowQuery(array($node));
 
             if ($flowQuery->is($this->settings['Filter']['NodeTypeFilter']) === true) {
+
                 $this->site = $node->getContext()->getCurrentSite();
-                $this->firebase->set("/trash/" . $p[2] . "/" . $this->getWorkspaceHash($nodedata->getWorkspace()) . "/" . $this->branch . "/" . $this->getDimensionConfiugurationHash($node->getDimensions()) . "/" . $node->getIdentifier(), time());
+
+                $this->firebase->set("/trash/" . $p[2] . "/" . $this->getWorkspaceHash($nodedata->getWorkspace()) . "/" . $this->branch . "/" . $this->getDimensionConfiugurationHash($node->getDimensions()) . "/" . $nodedata->getIdentifier(), time());
+
+                // remove parent nodes from index and set last modification time for reindexing
+                $counter = 0;
+                $parentNode = $node;
+                $lastpublicationsdate = new \DateTime();
+
+                while ($parentNode && $counter < 100) {
+
+                    $flowQuery = new FlowQuery(array($parentNode));
+
+                    /* @var Node $parentNode */
+                    $parentNode->getNodeData()->setLastPublicationDateTime($lastpublicationsdate);
+                    $this->nodeDataRepository->update($parentNode->getNodeData());
+                    $this->firebase->set("/trash/" . $p[2] . "/" . $this->getWorkspaceHash($nodedata->getWorkspace()) . "/" . $this->branch . "/" . $this->getDimensionConfiugurationHash($node->getDimensions()) . "/" . $parentNode->getIdentifier(), $counter);
+                    $this->persistenceManager->persistAll();
+
+
+                    if ($flowQuery->is($this->settings['Filter']['GrantParentNodeTypeFilter']) === true) {
+                        $parentNode = null;
+                    } else {
+                        $parentNode = $parentNode->getParent();
+                    }
+
+
+                    $counter++;
+
+                }
+
+
             }
+
+            $this->unlockReltimeIndexer();
+            $this->syncIndexRealtime($nodedata->getWorkspace()->getName());
         }
 
     }
@@ -814,6 +846,7 @@ class SearchIndexFactory
 
         $keywords = \json_decode($this->firebase->get("sites/" . $siteIdentifier . "/index/$workspaceHash/$branch/$dimensionConfigurationHash" . "/___keywords/" . urlencode($nodeIdentifier)));
 
+
         if ($keywords) {
             $keywordsremove = array();
             foreach ($keywords as $keyword) {
@@ -826,6 +859,9 @@ class SearchIndexFactory
                 $this->firebase->delete("sites/" . $siteIdentifier . "/index/$workspaceHash/$branch/$dimensionConfigurationHash" . "/___keywords/" . urlencode($nodeIdentifier));
             }
         }
+
+        $this->firebase->delete("trash/$siteIdentifier/$workspaceHash/$branch/$dimensionConfigurationHash/$nodeIdentifier");
+
 
     }
 

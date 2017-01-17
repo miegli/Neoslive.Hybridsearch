@@ -32,7 +32,7 @@ class NodeDataRepositoryAspect
 
 
     /**
-     * @Flow\AfterReturning("within(TYPO3\TYPO3CR\Domain\Repository\NodeDataRepository) && method(public .+->(remove)())")
+     * @Flow\Before("within(TYPO3\TYPO3CR\Domain\Repository\NodeDataRepository) && method(public .+->(remove)())")
      * @return void
      */
     public function publishNodesAction(JoinPointInterface $joinPoint)
