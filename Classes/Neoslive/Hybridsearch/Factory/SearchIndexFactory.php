@@ -1241,7 +1241,9 @@ class SearchIndexFactory
                     $gaData = $this->googleAnalyticsFactory->getGaDataByDestinationPage($data->uriResource['host'], isset($data->uriResource['path']) ? $data->uriResource['path'] : "/");
                 }
             } else {
-                $gaData = $this->googleAnalyticsFactory->getGaDataByDestinationPage($data->uri['host'], $data->uri['path']);
+                if (isset($data->uri['host'])) {
+                    $gaData = $this->googleAnalyticsFactory->getGaDataByDestinationPage($data->uri['host'], $data->uri['path']);
+                }
             }
 
             if ($gaData) {
