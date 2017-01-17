@@ -726,14 +726,14 @@ class SearchIndexFactory
                 $parentNode = $node;
                 $lastpublicationsdate = new \DateTime();
 
-                while ($parentNode && $counter < 100) {
+                while ($parentNode && $counter < 10) {
 
                     $flowQuery = new FlowQuery(array($parentNode));
 
                     /* @var Node $parentNode */
                     $parentNode->getNodeData()->setLastPublicationDateTime($lastpublicationsdate);
                     $this->nodeDataRepository->update($parentNode->getNodeData());
-                    $this->firebase->set("/trash/" . $p[2] . "/" . $this->getWorkspaceHash($nodedata->getWorkspace()) . "/" . $this->branch . "/" . $this->getDimensionConfiugurationHash($node->getDimensions()) . "/" . $parentNode->getIdentifier(), $counter);
+                    $this->firebase->set("/trash/" . $p[2] . "/" . $this->getWorkspaceHash($nodedata->getWorkspace()) . "/" . $this->branch . "/" . $this->getDimensionConfiugurationHash($node->getDimensions()) . "/" . $parentNode->getIdentifier(), time());
                     $this->persistenceManager->persistAll();
 
 
