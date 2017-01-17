@@ -566,7 +566,7 @@ class SearchIndexFactory
 
             $this->lockReltimeIndexer();
             $this->branch = $this->getBranch($workspaceName);
-            $this->removeTrashedNodes();
+
 
             $lastsync = $this->firebase->get("/lastsync/$workspaceName/" . $this->branch);
 
@@ -588,6 +588,7 @@ class SearchIndexFactory
 
             if (count($moditifedNodeData)) {
                 $this->firebase->set("/lastsync/$workspaceName/" . $this->branch, $lastSyncTimestamp);
+                $this->removeTrashedNodes();
             }
 
             foreach ($moditifedNodeData as $nodedata) {
