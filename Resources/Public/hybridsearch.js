@@ -98,7 +98,7 @@
                     // firebase was initizalized before
                 }
 
-                 //firebase.database.enableLogging(true);
+                //firebase.database.enableLogging(true);
 
             }
 
@@ -231,7 +231,6 @@
                     window.HybridsearchGetPropertyFromObject = function (object, property) {
 
 
-
                         if (property === '*') {
 
                             var values = [];
@@ -301,7 +300,6 @@
                                 }
 
 
-
                             }
 
 
@@ -318,7 +316,6 @@
                      *  global function get property from node
                      */
                     window.HybridsearchGetPropertyFromNode = function (node, property) {
-
 
 
                         var value = '';
@@ -339,7 +336,7 @@
                             var value = null;
 
 
-                            angular.forEach(propertysegments, function (segment,c) {
+                            angular.forEach(propertysegments, function (segment, c) {
 
 
                                 if (c == 0) {
@@ -374,16 +371,14 @@
 
                                     } else {
 
-                                       value = window.HybridsearchGetPropertyFromObject(value, segment);
+                                        value = window.HybridsearchGetPropertyFromObject(value, segment);
 
                                     }
 
                                 }
 
 
-
                             });
-
 
 
                             return value;
@@ -1233,9 +1228,6 @@
                             }, 3000);
 
 
-
-
-
                             if (lunrSearch.getFields().length == 0 && self.getFilter().getFullSearchQuery() !== false) {
                                 // skip search, search field not ready yet
                                 return false;
@@ -1281,7 +1273,7 @@
                                 });
 
                                 angular.forEach(Ordered, function (node) {
-                                         self.addNodeToSearchResult(node.identifier, 1, nodesFound, items, nodeTypeMaxScore, nodeTypeMinScore, nodeTypeScoreCount);
+                                    self.addNodeToSearchResult(node.identifier, 1, nodesFound, items, nodeTypeMaxScore, nodeTypeMinScore, nodeTypeScoreCount);
                                 });
 
 
@@ -1394,7 +1386,7 @@
                                                     bool: "OR"
                                                 }), function (item) {
                                                     if (nodes[item.ref] !== undefined && tmp[item.ref] === undefined) {
-                                                       item.score = item.score / 25;
+                                                        item.score = item.score / 25;
                                                         if (self.isNodesByIdentifier()) {
                                                             // post filter node
                                                             if (self.isFiltered(nodes[item.ref]) === false) {
@@ -1681,12 +1673,9 @@
                             }
 
 
-
                             if (this.getFilter().getNodePath().length > 0 && node.uri.path.substr(0, this.getFilter().getNodePath().length) != this.getFilter().getNodePath()) {
                                 return true;
                             }
-
-
 
 
                             var propertyFiltered = Object.keys(this.getFilter().getPropertyFilters()).length > 0 ? true : false;
@@ -1694,7 +1683,6 @@
 
 
                             if (propertyFiltered) {
-
 
 
                                 var propertyMatching = 0;
@@ -1751,7 +1739,6 @@
                                                 if (value) {
 
 
-
                                                     if ((filter.reverse === false && (key == propertyValue) || self.inArray(key, propertyValue)) || (filter.reverse == true && key != propertyValue && self.inArray(key, propertyValue) === false)) {
 
                                                         isMatching++;
@@ -1762,8 +1749,6 @@
                                                     }
                                                 }
                                             });
-
-
 
 
                                             if (filter.booleanmode === false && isMatching === Object.keys(filterobject).length) {
@@ -1796,7 +1781,6 @@
                                 }
 
                             }
-
 
 
                             //
@@ -1847,9 +1831,17 @@
 
                             var self = this;
 
+                            if (self.isRunning() === false) {
+                                return false;
+                            }
+
                             if (self.isLoadedAll() === false) {
                                 nodes = {};
                             }
+
+
+
+
 
                             self.cancelAllPendingRequest();
 
@@ -1876,6 +1868,7 @@
                                 // fetch index from given keywords
                                 var searchIndex = new this.SearchIndexInstance(self, keywords);
                                 lastSearchInstance = searchIndex.getIndex();
+
 
                                 var counter = 0;
                                 searchInstancesInterval = setInterval(function () {
@@ -2037,7 +2030,8 @@
                                         });
 
                                     } else {
-                                        self.search();
+                                        //console.log(1);
+                                        //self.search();
                                     }
 
 
@@ -2061,35 +2055,47 @@
 
                                             // called asynchronously if an error occurs
                                             // or server returns response with an error status.
-                                            var ref = self.getIndex(keyword);
-                                            if (ref) {
-                                                ref.on("value", function (data) {
 
 
-                                                    if (keyword === null) {
-
-                                                        indexdata['__'] = [];
-                                                        angular.forEach(data.val(), function (node, id) {
-                                                            nodes[id] = node.node;
-                                                            indexdata['__'].push(node);
-                                                        });
-
-                                                        self.updateLocalIndex(indexdata);
-                                                        self.search(nodes);
-                                                        self.setIsLoadedAll();
+                                            var refs = self.getIndex(keyword);
 
 
-                                                    } else {
-                                                        indexdata[keyword] = [];
-                                                        angular.forEach(data.val(), function (node, id) {
-                                                            nodes[id] = node;
-                                                            indexdata[keyword].push(node);
-                                                        });
-                                                        self.updateLocalIndex(indexdata);
-                                                        indexcounter++;
-                                                    }
+                                            if (refs !== null && refs.length) {
+
+                                                angular.forEach(refs, function (ref) {
+
+
+                                                    ref.on("value", function (data) {
+
+
+                                                        if (keyword === null) {
+
+                                                            indexdata['__'] = [];
+                                                            angular.forEach(data.val(), function (node, id) {
+                                                                nodes[id] = node.node;
+                                                                indexdata['__'].push(node);
+                                                            });
+
+                                                            self.updateLocalIndex(indexdata);
+                                                            self.search(nodes);
+                                                            self.setIsLoadedAll();
+
+
+                                                        } else {
+                                                            indexdata[keyword] = [];
+                                                            angular.forEach(data.val(), function (node, id) {
+                                                                nodes[id] = node;
+                                                                indexdata[keyword].push(node);
+                                                            });
+                                                            self.updateLocalIndex(indexdata);
+                                                            indexcounter++;
+                                                        }
+                                                    });
+
+
                                                 });
-                                        }
+
+                                            }
 
 
                                         });
@@ -2172,7 +2178,6 @@
                             }
 
 
-
                             instance.$$data.running++;
 
                             if (parseInt(substrEnd) > 0) {
@@ -2180,7 +2185,6 @@
                             } else {
                                 var ref = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().startAt(substrStart).limitToFirst(5);
                             }
-
 
 
                             ref.once("value", function (data) {
@@ -2232,19 +2236,21 @@
                         /**
                          * @private
                          * @param string keyword
-                         * @param boolan rest using rest
                          * @returns {firebaseObject}
                          */
-                        getIndex: function (keyword, rest) {
+                        getIndex: function (keyword) {
 
 
                             var self = this;
+                            var queries = [];
 
 
                             // remove old bindings
-                            angular.forEach(index, function (ref, keyw) {
+                            angular.forEach(index, function (refs, keyw) {
                                 if (self.getFilter().isInQuery(keyw) === false || keyword == keyw) {
-                                    ref.off('value');
+                                    angular.forEach(refs, function (ref) {
+                                        ref.off('value');
+                                    });
                                 }
                             });
 
@@ -2253,30 +2259,31 @@
                                 keyword = this.getFilter().getQuery() ? this.getFilter().getQuery() : '';
                             }
 
-                            var query = false;
 
-                            if (query === false && this.getFilter().getNodeType() && typeof this.getFilter().getNodeType() == 'string') {
+
+
+                            if (queries.length === 0 && this.getFilter().getNodeType()) {
 
                                 if (keyword === "") {
 
-
-                                    if (rest) {
-                                        return (hybridsearch.$$conf.cdnHost === undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnHost ) + '/sites/' + hybridsearch.$$conf.site + '/index/' + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + this.getFilter().getNodeType() + '/.json';
+                                    if (typeof this.getFilter().getNodeType() == 'string') {
+                                        queries.push(hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + this.getFilter().getNodeType()));
+                                        index[this.getFilter().getNodeType()] = queries;
                                     } else {
-                                        query = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + this.getFilter().getNodeType());
+
+                                        angular.forEach(this.getFilter().getNodeType(), function (nodeType) {
+                                            queries.push(hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + nodeType));
+                                        });
+
+                                        index[this.getFilter().getNodeType()] = queries;
+
+
                                     }
-
-                                    keyword = this.getFilter().getNodeType();
-
 
                                 } else {
 
-                                    if (rest) {
-                                        return (hybridsearch.$$conf.cdnHost === undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnHost ) + '/sites/' + hybridsearch.$$conf.site + '/index/' + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/_" + this.getFilter().getNodeType() + keyword + '/.json';
-                                    } else {
-
-
-                                        query = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + this.getFilter().getNodeType());
+                                    if (typeof this.getFilter().getNodeType() == 'string') {
+                                        queries.push(hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + this.getFilter().getNodeType() + keyword));
                                     }
 
 
@@ -2284,7 +2291,7 @@
                             }
 
 
-                            if (query === false) {
+                            if (queries.length === 0) {
                                 if (keyword === null) {
                                     return null;
                                 }
@@ -2293,16 +2300,14 @@
                                     return null;
                                 }
 
-                                if (rest) {
-                                    return (hybridsearch.$$conf.cdnHost === undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnHost ) + '/sites/' + hybridsearch.$$conf.site + '/index/' + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + '/' + keyword + '/.json';
-                                } else {
-                                    query = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + '/' + keyword);
-                                }
+
+                                queries.push(hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + '/' + keyword));
+
                             }
 
-                            index[keyword] = query;
+                            index[keyword] = queries;
 
-                            return query;
+                            return queries;
 
                         },
 
@@ -2322,7 +2327,7 @@
                          */
                         getIndexByNodeType: function (nodeType) {
 
-                            return  hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + nodeType);
+                            return hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + nodeType);
 
                         },
 
@@ -2674,7 +2679,9 @@
 
                     } else {
                         self.$$app.getFilter().addPropertyFilter(property, value, booleanmode, reverse, nodeType);
+
                         self.$$app.setSearchIndex();
+
                     }
 
                     return this;
@@ -2749,16 +2756,14 @@
                     self.$$app.setIsNodesByIdentifier();
 
 
-
                     angular.forEach(nodesTypesArray, function (nodetype) {
 
 
-                        console.log(nodetype);
+
                         self.$$app.getIndexByNodeType(nodetype).once("value", function (data) {
 
                             var addnodes = [];
 
-                            console.log(data.val());
 
                             if (data.val()) {
 
