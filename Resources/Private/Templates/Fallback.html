@@ -1,6 +1,0 @@
-{namespace neos=TYPO3\Neos\ViewHelpers}
-<f:for each="{node.properties}" as="property">
-    <f:if condition="{neos:getType(value: property)} == 'string'">
-        {property}
-    </f:if>
-</f:for>

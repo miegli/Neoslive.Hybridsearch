@@ -92,6 +92,9 @@ class SearchIndexFactory
      */
     protected $output;
 
+
+
+
     /**
      * @Flow\Inject
      * @var WorkspaceRepository
@@ -273,6 +276,12 @@ class SearchIndexFactory
 
 
     /**
+     * @var integer
+     */
+    protected $firstMemoryPeak;
+
+
+    /**
      * @var FirebaseLib
      */
     protected $firebase;
@@ -287,6 +296,11 @@ class SearchIndexFactory
      * @var array
      */
     protected $nodeProceeded = [];
+
+    /**
+     * @var array
+     */
+    protected $nodeRenderedInFallbackMode = [];
 
 
     /**
@@ -341,7 +355,9 @@ class SearchIndexFactory
         $this->keywords = new \stdClass();
         $this->branch = "master";
         $this->branchSwitch = "slave";
+        $this->firstMemoryPeak = 0;
         $GLOBALS["neoslive.hybridsearch.insyncmode"] = true;
+        gc_enable();
 
 
     }
@@ -652,23 +668,18 @@ class SearchIndexFactory
 
                     $flowQuery = new FlowQuery(array($node));
 
-                    if ($flowQuery->is($this->settings['Filter']['NodeTypeFilter'])) {
 
-                        if ($node->isHidden() || $node->isRemoved()) {
+
+                        if (($node->isHidden() || $node->isRemoved() && $flowQuery->is($this->settings['Filter']['NodeTypeFilter']))) {
                             foreach ($this->allSiteKeys as $siteKey => $siteKeyVal) {
                                 $this->removeSingleIndex($node->getIdentifier(), $this->getWorkspaceHash($workspace), $this->branch, $this->getDimensionConfiugurationHash($dimensionConfiguration));
                             }
                         }
 
-                    } else {
-
 
                         if ($flowQuery->is($this->settings['Filter']['NodeTypeFilter'])) {
-
                             $this->generateSingleIndex($node, $workspace, $this->getDimensionConfiugurationHash($node->getContext()->getDimensions()));
                             $counter++;
-
-
                         } else {
 
                             if ($noparentcheck === false) {
@@ -679,7 +690,7 @@ class SearchIndexFactory
                                 }
                             }
                         }
-                    }
+
 
 
                 }
@@ -881,6 +892,7 @@ class SearchIndexFactory
 
         $workspaceHash = $this->getWorkspaceHash($workspace);
 
+
         if (isset($this->nodeProceeded[sha1(json_encode(array($workspaceHash, $dimensionConfigurationHash, $node->getIdentifier())))]) === false) {
 
 
@@ -950,6 +962,15 @@ class SearchIndexFactory
             unset($indexData);
             unset($keywords);
             gc_collect_cycles();
+
+
+            if ($this->firstMemoryPeak === 0) {
+                $this->firstMemoryPeak = memory_get_peak_usage();
+            }
+
+            if (memory_get_peak_usage() - $this->firstMemoryPeak > 100000000) {
+                $this->save();
+            };
 
         }
 
@@ -1847,8 +1868,10 @@ class SearchIndexFactory
     {
 
 
+
         if ($node->getContext()->getCurrentSite()) {
             $this->site = $node->getContext()->getCurrentSite();
+
 
 
             if (isset($this->settings['TypoScriptPaths'][$typoscriptPath][$this->site->getSiteResourcesPackageKey()])) {
@@ -1862,11 +1885,19 @@ class SearchIndexFactory
                 }
             }
 
+            if (isset($this->nodeRenderedInFallbackMode[$node->getNodeType()->getName()+"-"+$typoscriptPath])) {
+                return '';
+            }
 
             if ($this->getView() && $node->getContext()->getCurrentSiteNode()) {
                 $this->getView()->assign('value', $node);
                 $this->getView()->setTypoScriptPath($typoscriptPath);
-                return $this->view->render();
+                $content = $this->view->render();
+
+                if ($content == '') {
+                    $this->nodeRenderedInFallbackMode[$node->getNodeType()->getName()+"-"+$typoscriptPath] = true;
+                }
+                return $content;
             } else {
                 return '';
             }
@@ -1922,6 +1953,7 @@ class SearchIndexFactory
                     $controllerContext = new \TYPO3\Flow\Mvc\Controller\ControllerContext($request, $response, $arguments);
                     $this->controllerContext = $controllerContext;
                     $this->view = new HybridSearchTypoScriptView();
+                    $this->view->setOption('enableContentCache',true);
                     $this->view->setControllerContext($controllerContext);
                 }
             }
