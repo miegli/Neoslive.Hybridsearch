@@ -1444,6 +1444,8 @@ class SearchIndexFactory
             );
             fwrite($fp, $content);
             fclose($fp);
+            $content = null;
+            $fp = null;
             unset($content);
             unset($fp);
 
@@ -1671,7 +1673,6 @@ class SearchIndexFactory
         $this->keywords = new \stdClass();
 
         gc_collect_cycles();
-\TYPO3\Flow\var_dump(memory_get_peak_usage());
 
     }
 
