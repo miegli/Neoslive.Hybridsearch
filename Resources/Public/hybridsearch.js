@@ -2034,9 +2034,6 @@
 
                                         });
 
-                                    } else {
-                                        //console.log(1);
-                                        //self.search();
                                     }
 
 
