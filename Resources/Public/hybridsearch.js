@@ -119,6 +119,14 @@
                 setBranch: function (branch) {
                     this.$$conf.branch = branch;
                     return firebase;
+                },
+
+                /**
+                 * @private
+                 * @returns Firebase App
+                 */
+                getBranch: function () {
+                    return this.$$conf.branch.length > 1 ? this.$$conf.branch : false;
                 }
 
 
@@ -1840,9 +1848,6 @@
                             }
 
 
-
-
-
                             self.cancelAllPendingRequest();
 
                             if (self.isNodesByIdentifier() === false && self.isRunning() && filter.hasFilters()) {
@@ -2258,8 +2263,6 @@
                             if (keyword === undefined || keyword === null) {
                                 keyword = this.getFilter().getQuery() ? this.getFilter().getQuery() : '';
                             }
-
-
 
 
                             if (queries.length === 0 && this.getFilter().getNodeType()) {
@@ -2699,44 +2702,67 @@
                     var self = this;
                     var timer = false;
 
-                    //self.$$app.addNodesByIdentifier(nodesArray);
-                    self.$$app.setIsNodesByIdentifier();
+                    var execute = function (nodesArray) {
+                        angular.forEach(nodesArray, function (node) {
 
-                    angular.forEach(nodesArray, function (node) {
+                            self.$$app.getIndexByNodeIdentifier(node).once("value", function (data) {
 
-                        self.$$app.getIndexByNodeIdentifier(node).once("value", function (data) {
+                                if (data.val()) {
 
-                            if (data.val()) {
+                                    if (self.$$app.isFiltered(data.val().node) === false) {
 
-                                if (self.$$app.isFiltered(data.val().node) === false) {
+                                        self.$$app.addNodeByIdentifier(data.val());
+                                        self.$$app.addLocalIndex([data.val()]);
 
-                                    self.$$app.addNodeByIdentifier(data.val());
-                                    self.$$app.addLocalIndex([data.val()]);
-
-                                    if (timer !== false) {
-                                        clearTimeout(timer);
-                                    }
-                                    timer = setTimeout(function () {
-                                        self.$$app.search();
-                                    }, nodesArray.length > 50 ? 500 : 10);
-
-
-                                    // wait for updates
-                                    self.$$app.getIndexByNodeIdentifier(node).on("value", function (data) {
-                                        if (data.val()) {
-                                            self.$$app.addLocalIndex([data.val()]);
-                                            self.$$app.search();
+                                        if (timer !== false) {
+                                            clearTimeout(timer);
                                         }
-                                    });
+                                        timer = setTimeout(function () {
+                                            self.$$app.search();
+                                        }, nodesArray.length > 50 ? 500 : 10);
+
+
+                                        // wait for updates
+                                        self.$$app.getIndexByNodeIdentifier(node).on("value", function (data) {
+                                            if (data.val()) {
+                                                self.$$app.addLocalIndex([data.val()]);
+                                                self.$$app.search();
+                                            }
+                                        });
+                                    }
+
                                 }
 
-                            }
+
+                            });
 
 
                         });
 
 
-                    });
+                    };
+
+
+                    self.$$app.setIsNodesByIdentifier();
+
+                    if (self.$$app.isRunning() === false) {
+                        self.$$app.setIsRunning()
+                    }
+
+                    if (self.$$app.getHybridsearch().getBranch() === false) {
+                        var counter = 0;
+                        var branchInitInterval = setInterval(function () {
+                            counter++;
+                            if (counter > 100 || self.$$app.getHybridsearch().getBranch()) {
+                                clearInterval(branchInitInterval);
+                                execute(nodesArray);
+                            }
+
+                        }, 10);
+                    } else {
+                        execute(nodesArray);
+                    }
+
 
                     return this;
 
@@ -2757,7 +2783,6 @@
 
 
                     angular.forEach(nodesTypesArray, function (nodetype) {
-
 
 
                         self.$$app.getIndexByNodeType(nodetype).once("value", function (data) {
