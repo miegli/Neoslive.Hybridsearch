@@ -283,6 +283,11 @@ class SearchIndexFactory
      */
     protected $creatingFullIndex = false;
 
+    /**
+     * @var array
+     */
+    protected $nodeProceeded = [];
+
 
     /**
      * Inject the settings
@@ -645,13 +650,18 @@ class SearchIndexFactory
 
                 if (isset($this->settings['Filter']['NodeTypeFilter'])) {
 
-                    if ($node->isHidden() || $node->isRemoved()) {
-                        foreach ($this->allSiteKeys as $siteKey => $siteKeyVal) {
-                            $this->removeSingleIndex($node->getIdentifier(), $this->getWorkspaceHash($workspace), $this->branch, $this->getDimensionConfiugurationHash($dimensionConfiguration));
+                    $flowQuery = new FlowQuery(array($node));
+
+                    if ($flowQuery->is($this->settings['Filter']['NodeTypeFilter'])) {
+
+                        if ($node->isHidden() || $node->isRemoved()) {
+                            foreach ($this->allSiteKeys as $siteKey => $siteKeyVal) {
+                                $this->removeSingleIndex($node->getIdentifier(), $this->getWorkspaceHash($workspace), $this->branch, $this->getDimensionConfiugurationHash($dimensionConfiguration));
+                            }
                         }
+
                     } else {
 
-                        $flowQuery = new FlowQuery(array($node));
 
                         if ($flowQuery->is($this->settings['Filter']['NodeTypeFilter'])) {
 
@@ -869,76 +879,79 @@ class SearchIndexFactory
 
         $this->indexcounter++;
 
-
         $workspaceHash = $this->getWorkspaceHash($workspace);
 
-
-        if (isset($this->index->$workspaceHash) === false) {
-            $this->index->$workspaceHash = new \stdClass();
-        }
-
-        if (isset($this->index->$workspaceHash->$dimensionConfigurationHash) === false) {
-            $this->index->$workspaceHash->$dimensionConfigurationHash = new \stdClass();
-        }
+        if (isset($this->nodeProceeded[sha1(json_encode(array($workspaceHash, $dimensionConfigurationHash, $node->getIdentifier())))]) === false) {
 
 
-        if (isset($this->keywords->$workspaceHash) === false) {
-            $this->keywords->$workspaceHash = new \stdClass();
-        }
-
-        if (isset($this->keywords->$workspaceHash->$dimensionConfigurationHash) === false) {
-            $this->keywords->$workspaceHash->$dimensionConfigurationHash = array();
-        }
-
-
-        $indexData = $this->convertNodeToSearchIndexResult($node);
-
-
-        $identifier = $indexData->identifier;
-
-        $keywords = $this->generateSearchIndexFromProperties($indexData->properties, $indexData->nodeType);
-
-        $nt = "__" . $this->getNodeTypeName($node);
-        $keywords->$nt = true;
-        $keywords->$identifier = true;
-
-
-        $keywordsOfNode = array();
-
-        foreach ($keywords as $keyword => $val) {
-            $k = strval($keyword);
-            if (substr($k, 0, 9) === "_nodetype") {
-                $k = "_" . $this->getNodeTypeName($node) . substr($k, 9);
+            if (isset($this->index->$workspaceHash) === false) {
+                $this->index->$workspaceHash = new \stdClass();
             }
 
-            if ($k) {
-                $this->keywords->$workspaceHash->$dimensionConfigurationHash[$k] = 1;
+            if (isset($this->index->$workspaceHash->$dimensionConfigurationHash) === false) {
+                $this->index->$workspaceHash->$dimensionConfigurationHash = new \stdClass();
             }
-            if (isset($this->index->$workspaceHash->$dimensionConfigurationHash->$k) === false) {
-                $this->index->$workspaceHash->$dimensionConfigurationHash->$k = new \stdClass();
+
+
+            if (isset($this->keywords->$workspaceHash) === false) {
+                $this->keywords->$workspaceHash = new \stdClass();
             }
-            $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier = array('node' => $indexData, 'nodeType' => $indexData->nodeType);
-            array_push($keywordsOfNode, $k);
+
+            if (isset($this->keywords->$workspaceHash->$dimensionConfigurationHash) === false) {
+                $this->keywords->$workspaceHash->$dimensionConfigurationHash = array();
+            }
+
+
+            $indexData = $this->convertNodeToSearchIndexResult($node);
+
+
+            $identifier = $indexData->identifier;
+
+            $keywords = $this->generateSearchIndexFromProperties($indexData->properties, $indexData->nodeType);
+
+            $nt = "__" . $this->getNodeTypeName($node);
+            $keywords->$nt = true;
+            $keywords->$identifier = true;
+
+
+            $keywordsOfNode = array();
+
+            foreach ($keywords as $keyword => $val) {
+                $k = strval($keyword);
+                if (substr($k, 0, 9) === "_nodetype") {
+                    $k = "_" . $this->getNodeTypeName($node) . substr($k, 9);
+                }
+
+                if ($k) {
+                    $this->keywords->$workspaceHash->$dimensionConfigurationHash[$k] = 1;
+                }
+                if (isset($this->index->$workspaceHash->$dimensionConfigurationHash->$k) === false) {
+                    $this->index->$workspaceHash->$dimensionConfigurationHash->$k = new \stdClass();
+                }
+                $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier = array('node' => $indexData, 'nodeType' => $indexData->nodeType);
+                array_push($keywordsOfNode, $k);
+
+            }
+
+
+            if (isset($this->index->$workspaceHash->$dimensionConfigurationHash->___keywords) === false) {
+                $this->index->$workspaceHash->$dimensionConfigurationHash->___keywords = new \stdClass();
+            }
+            $this->index->$workspaceHash->$dimensionConfigurationHash->___keywords->$identifier = $keywordsOfNode;
+
+
+            if ($this->creatingFullIndex === false) {
+                $this->removeSingleIndex($node->getIdentifier(), $workspaceHash, $this->branch, $dimensionConfigurationHash, $keywordsOfNode);
+            }
+
+
+            $this->nodeProceeded[sha1(json_encode(array($workspaceHash, $dimensionConfigurationHash, $node->getIdentifier())))] = true;
+            unset($node);
+            unset($indexData);
+            unset($keywords);
+            gc_collect_cycles();
 
         }
-
-
-        if (isset($this->index->$workspaceHash->$dimensionConfigurationHash->___keywords) === false) {
-            $this->index->$workspaceHash->$dimensionConfigurationHash->___keywords = new \stdClass();
-        }
-        $this->index->$workspaceHash->$dimensionConfigurationHash->___keywords->$identifier = $keywordsOfNode;
-
-
-        if ($this->creatingFullIndex === false) {
-            $this->removeSingleIndex($node->getIdentifier(), $workspaceHash, $this->branch, $dimensionConfigurationHash, $keywordsOfNode);
-        }
-
-
-        unset($node);
-        unset($indexData);
-        unset($keywords);
-        gc_collect_cycles();
-
 
     }
 
@@ -1431,56 +1444,54 @@ class SearchIndexFactory
     {
 
 
+        $files = array();
 
-            $files = array();
+        $fp = opendir($this->temporaryDirectory);
+        while (false !== ($entry = readdir($fp))) {
 
-            $fp = opendir($this->temporaryDirectory);
-            while (false !== ($entry = readdir($fp))) {
-
-                if (substr($entry, 0, 6) === 'queued') {
-                    list($name, $number, $uuid) = explode("_", $entry);
-                    $files[$number][] = $this->temporaryDirectory . $entry;
-                }
-
+            if (substr($entry, 0, 6) === 'queued') {
+                list($name, $number, $uuid) = explode("_", $entry);
+                $files[$number][] = $this->temporaryDirectory . $entry;
             }
 
-
-            ksort($files);
-            $this->output->outputLine(count($files) . ' files found for proceeding');
+        }
 
 
-            foreach ($files as $filecollection) {
+        ksort($files);
+        $this->output->outputLine(count($files) . ' files found for proceeding');
 
 
-                foreach ($filecollection as $file) {
+        foreach ($files as $filecollection) {
 
-                    $this->output->outputLine("uploading " . $file . " (" . filesize($file) . ")");
 
-                    $content = json_decode(file_get_contents($file));
+            foreach ($filecollection as $file) {
 
-                    if ($content) {
+                $this->output->outputLine("uploading " . $file . " (" . filesize($file) . ")");
 
-                        switch ($content->method) {
-                            case 'update':
-                                $this->firebase->update($content->path, $content->data);
-                                break;
+                $content = json_decode(file_get_contents($file));
 
-                            case 'delete':
-                                $this->firebase->delete($content->path);
-                                break;
+                if ($content) {
 
-                            case 'set':
-                                $this->firebase->set($content->path, $content->data);
-                                break;
-                        }
+                    switch ($content->method) {
+                        case 'update':
+                            $this->firebase->update($content->path, $content->data);
+                            break;
+
+                        case 'delete':
+                            $this->firebase->delete($content->path);
+                            break;
+
+                        case 'set':
+                            $this->firebase->set($content->path, $content->data);
+                            break;
                     }
-                    unlink($file);
-
-
                 }
+                unlink($file);
+
 
             }
 
+        }
 
 
     }
