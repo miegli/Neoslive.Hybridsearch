@@ -270,6 +270,11 @@ class SearchIndexFactory
     protected $branch;
 
     /**
+     * @var boolean
+     */
+    protected $branchWasSet;
+
+    /**
      * @var string
      */
     protected $branchSwitch;
@@ -1419,7 +1424,7 @@ class SearchIndexFactory
     {
 
 
-        if ($chunkcounter < 100 && count($data) > 2 && strlen(json_encode($data)) > 100000000) {
+        if (1 === 2 && $chunkcounter < 100 && count($data) > 2 && strlen(json_encode($data)) > 100000000) {
             $chunkcounter++;
             $this->addToQueue($path, array_slice($data, 0, floor(count($data) / 2)), $method, $chunkcounter);
             $this->addToQueue($path, array_slice($data, ceil(count($data) / 2)), $method, $chunkcounter);
@@ -1625,7 +1630,11 @@ class SearchIndexFactory
 
                 if ($this->creatingFullIndex) {
                     $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $this->branch, $patch);
-                    $this->setBranch($workspace, $this->branch);
+                    if ($this->branchWasSet !== true) {
+                        $this->setBranch($workspace, $this->branch);
+                        $this->branchWasSet = true;
+                    }
+
                 } else {
                     $this->firebase->update("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $this->branch, $patch);
                 }
