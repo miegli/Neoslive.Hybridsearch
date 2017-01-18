@@ -475,7 +475,7 @@ class SearchIndexFactory
                 $counter++;
             }
 
-            if ($counter % 200 === 0) {
+            if ($counter % 500 === 0) {
                 $this->save();
             }
 
@@ -590,9 +590,7 @@ class SearchIndexFactory
 
         if ($this->isLockReltimeIndexer() === false) {
 
-            $this->lockReltimeIndexer();
             $this->branch = $this->getBranch($workspaceName);
-
 
             $lastsync = $this->firebase->get("/lastsync/$workspaceName/" . $this->branch);
 
@@ -605,6 +603,7 @@ class SearchIndexFactory
 
             $lastSyncDateTime = new \DateTime();
             $lastSyncTimestamp = $lastSyncDateTime->getTimeStamp();
+            $this->firebase->set("/lastsync/$workspaceName/" . $this->branch, $lastSyncTimestamp);
 
             $this->output->outputLine("sync from " . $date->format("d.m.Y H:i:s"));
 
@@ -613,7 +612,6 @@ class SearchIndexFactory
             $this->output->outputLine('sync ' . count($moditifedNodeData) . ' nodes');
 
             if (count($moditifedNodeData)) {
-                $this->firebase->set("/lastsync/$workspaceName/" . $this->branch, $lastSyncTimestamp);
                 $this->removeTrashedNodes();
             }
 
@@ -621,15 +619,10 @@ class SearchIndexFactory
                 $this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace());
             }
 
-
             if (count($moditifedNodeData)) {
                 $this->save();
-                $this->unlockReltimeIndexer();
                 $this->proceedQueue();
             }
-
-
-            $this->unlockReltimeIndexer();
 
         } else {
             $this->output->outputLine('realtime sync is locked');
