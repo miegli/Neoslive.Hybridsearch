@@ -970,6 +970,8 @@ class SearchIndexFactory
 
             if (memory_get_peak_usage() - $this->firstMemoryPeak > 100000000) {
                 $this->save();
+                $this->firstMemoryPeak = memory_get_peak_usage();
+                \TYPO3\Flow\var_dump('save',$this->firstMemoryPeak);
             };
 
         }
