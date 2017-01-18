@@ -305,7 +305,8 @@ class SearchIndexFactory
     /**
      * @var array
      */
-    protected $nodeRenderedInFallbackMode = [];
+    protected $nodeTypeConfiguration = [];
+
 
 
     /**
@@ -1344,6 +1345,8 @@ class SearchIndexFactory
     }
 
 
+
+
     /**
      * Get dimension confiuguration hash (replace critical strings)
      * @param array $dimensionConfiguration
@@ -1896,10 +1899,14 @@ class SearchIndexFactory
     {
 
 
+        if ($node->getNodeType()->getConfiguration('hybridsearch.render') === false) {
+            return false;
+        }
+
+
 
         if ($node->getContext()->getCurrentSite()) {
             $this->site = $node->getContext()->getCurrentSite();
-
 
 
             if (isset($this->settings['TypoScriptPaths'][$typoscriptPath][$this->site->getSiteResourcesPackageKey()])) {
@@ -1922,9 +1929,7 @@ class SearchIndexFactory
                 $this->getView()->setTypoScriptPath($typoscriptPath);
                 $content = $this->view->render();
 
-                if ($content == '') {
-                    $this->nodeRenderedInFallbackMode[$node->getNodeType()->getName()+"-"+$typoscriptPath] = true;
-                }
+
                 return $content;
             } else {
                 return '';
