@@ -1441,15 +1441,6 @@ class SearchIndexFactory
     {
 
 
-        if ($this->isLockReltimeIndexer() === true) {
-
-            $this->output->outputLine('Queue is locked. Aborted.');
-            return true;
-
-        } else {
-
-
-            $this->lockReltimeIndexer();
 
             $files = array();
 
@@ -1500,10 +1491,6 @@ class SearchIndexFactory
 
             }
 
-
-            $this->unlockReltimeIndexer();
-
-        }
 
 
     }
