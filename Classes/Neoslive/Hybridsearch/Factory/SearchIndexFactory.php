@@ -698,9 +698,15 @@ class SearchIndexFactory
 
             }
 
+
+            $context = null;
+            $node = null;
+
+
             unset($context);
             unset($node);
             if (isset($flowQuery)) {
+                $flowQuery = null;
                 unset($flowQuery);
             }
 
@@ -958,6 +964,10 @@ class SearchIndexFactory
 
 
             $this->nodeProceeded[sha1(json_encode(array($workspaceHash, $dimensionConfigurationHash, $node->getIdentifier())))] = true;
+
+            $node = null;
+            $indexData = null;
+            $keywords = null;
             unset($node);
             unset($indexData);
             unset($keywords);
@@ -1016,6 +1026,7 @@ class SearchIndexFactory
             }
         }
 
+        $properties = null;
         unset($properties);
 
         return $keywords;
@@ -1639,16 +1650,19 @@ class SearchIndexFactory
         }
 
 
+        $this->index = null;
+        $this->keywords = null;
+        $path = null;
+
         unset($this->index);
         unset($this->keywords);
         unset($path);
-
 
         $this->index = new \stdClass();
         $this->keywords = new \stdClass();
 
         gc_collect_cycles();
-
+\TYPO3\Flow\var_dump(memory_get_peak_usage());
 
     }
 
