@@ -1319,6 +1319,14 @@ class SearchIndexFactory
         }
 
 
+        $rendered = null;
+        $grandParentNode  = null;
+        $parentNode = null;
+        $documentNode = null;
+        $flowQuery = null;
+        $properties = null;
+        $node = null;
+
         unset($rendered);
         unset($grandParentNode);
         unset($parentNode);
