@@ -115,6 +115,7 @@
                  * @returns Firebase App
                  */
                 setBranch: function (branch) {
+                    console.log(branch);
                     this.$$conf.branch = branch;
                     return firebase;
                 },
@@ -818,21 +819,22 @@
                          */
                         setIsRunning: function () {
 
-                            /**
-                             * init branch master/slave
-                             */
-                            var query = hybridsearch.$firebase().database().ref("branches/" + hybridsearch.$$conf.workspace);
-                            query.on("value", function (snapshot) {
-                                if (snapshot.val()) {
-                                    hybridsearch.setBranch(snapshot.val());
-                                } else {
-                                    hybridsearch.setBranch("");
-                                }
-
+                            $http.get(hybridsearch.$$conf.databaseURL+"/branches/"+hybridsearch.$$conf.workspace+".json?shallow=true").success(function(data) {
+                                hybridsearch.setBranch(data);
                                 isRunning = true;
 
-                            });
+                                /**
+                                 * watch branch
+                                 */
+                                var query = hybridsearch.$firebase().database().ref("branches/" + hybridsearch.$$conf.workspace);
+                                query.on("value", function (snapshot) {
+                                    if (snapshot.val() !== hybridsearch.getBranch()) {
+                                        hybridsearch.setBranch(snapshot.val());
+                                    }
 
+                                });
+
+                            });
 
                         },
                         /**
@@ -2605,7 +2607,9 @@
                 run: function () {
 
                     var self = this;
-                    self.$$app.setIsRunning();
+                    if (self.$$app.isRunning() === false) {
+                        self.$$app.setIsRunning();
+                    }
 
                     if (self.$$app.getHybridsearch().getBranch() === false) {
 
@@ -2614,9 +2618,6 @@
                             counter++;
                             if (counter > 10000 || self.$$app.getHybridsearch().getBranch()) {
                                 clearInterval(branchInitInterval);
-                                if (self.$$app.getHybridsearch().getBranch() === false) {
-                                    self.$$app.getHybridsearch().setBranch('master');
-                                }
                                 self.$$app.setHybridsearchInstanceNumber();
                                 self.$$app.setFirstFilterHash(self.$$app.getFilter().getHash());
                                 self.$$app.setSearchIndex();
