@@ -2034,6 +2034,8 @@
 
                                         });
 
+                                    } else {
+                                        self.search();
                                     }
 
 
