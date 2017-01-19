@@ -174,7 +174,7 @@
              */
             var HybridsearchObject = function (hybridsearch) {
 
-                    var hybridsearchInstanceNumber, pendingRequests, results, filter, index, lunrSearch, nodes, nodesLastHash, nodeTypeLabels, resultGroupedBy, resultCategorizedBy, resultOrderBy, propertiesBoost, ParentNodeTypeBoostFactor, isRunning, firstfilterhash, searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier, nodesByIdentifier, searchCounter, searchCounterTimeout, nodeTypeProperties, isloadedall, firstruntimestamp;
+                    var hybridsearchInstanceNumber, pendingRequests, results, filter, index, lunrSearch, nodes, nodesLastHash, nodeTypeLabels, resultGroupedBy, resultCategorizedBy, resultOrderBy, propertiesBoost, ParentNodeTypeBoostFactor, isRunning, firstfilterhash, searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier, nodesByIdentifier, searchCounter, searchCounterTimeout, nodeTypeProperties, isloadedall;
 
                     // count instances
                     if (window.hybridsearchInstances === undefined) {
@@ -182,7 +182,6 @@
                     } else {
                         window.hybridsearchInstances++;
                     }
-                    firstruntimestamp = 0;
                     isloadedall = false;
                     searchCounter = 0;
                     nodesLastHash = 0;

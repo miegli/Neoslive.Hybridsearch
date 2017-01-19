@@ -459,6 +459,7 @@ class SearchIndexFactory
 
 
         $this->save();
+        $this->unlockReltimeIndexer();
         $this->proceedQueue();
         $this->updateFireBaseRules();
 
@@ -471,9 +472,8 @@ class SearchIndexFactory
 
         // remove trash
         $this->firebase->delete("/trash");
-
         $this->output->progressFinish();
-        $this->unlockReltimeIndexer();
+
 
         return true;
 
@@ -562,7 +562,6 @@ class SearchIndexFactory
     {
 
 
-        if ($this->isLockReltimeIndexer() === false) {
 
             $this->branch = $this->getBranch($workspaceName);
 
@@ -598,9 +597,7 @@ class SearchIndexFactory
                 $this->proceedQueue();
             }
 
-        } else {
-            $this->output->outputLine('realtime sync is locked');
-        }
+
 
 
     }
@@ -1444,56 +1441,56 @@ class SearchIndexFactory
     function proceedQueue()
     {
 
+        if ($this->isLockReltimeIndexer() === false) {
+            $files = array();
 
-        $files = array();
+            $fp = opendir($this->temporaryDirectory);
+            while (false !== ($entry = readdir($fp))) {
 
-        $fp = opendir($this->temporaryDirectory);
-        while (false !== ($entry = readdir($fp))) {
-
-            if (substr($entry, 0, 6) === 'queued') {
-                list($name, $number, $uuid) = explode("_", $entry);
-                $files[$number][] = $this->temporaryDirectory . $entry;
-            }
-
-        }
-
-
-        ksort($files);
-        $this->output->outputLine(count($files) . ' files found for proceeding');
-
-
-        foreach ($files as $filecollection) {
-
-
-            foreach ($filecollection as $file) {
-
-                $this->output->outputLine("uploading " . $file . " (" . filesize($file) . ")");
-
-                $content = json_decode(file_get_contents($file));
-
-                if ($content) {
-
-                    switch ($content->method) {
-                        case 'update':
-                            $this->firebase->update($content->path, $content->data);
-                            break;
-
-                        case 'delete':
-                            $this->firebase->delete($content->path);
-                            break;
-
-                        case 'set':
-                            $this->firebase->set($content->path, $content->data);
-                            break;
-                    }
+                if (substr($entry, 0, 6) === 'queued') {
+                    list($name, $number, $uuid) = explode("_", $entry);
+                    $files[$number][] = $this->temporaryDirectory . $entry;
                 }
-                unlink($file);
-
 
             }
 
-        }
 
+            ksort($files);
+            $this->output->outputLine(count($files) . ' files found for proceeding');
+
+
+            foreach ($files as $filecollection) {
+
+
+                foreach ($filecollection as $file) {
+
+                    $this->output->outputLine("uploading " . $file . " (" . filesize($file) . ")");
+
+                    $content = json_decode(file_get_contents($file));
+
+                    if ($content) {
+
+                        switch ($content->method) {
+                            case 'update':
+                                $this->firebase->update($content->path, $content->data);
+                                break;
+
+                            case 'delete':
+                                $this->firebase->delete($content->path);
+                                break;
+
+                            case 'set':
+                                $this->firebase->set($content->path, $content->data);
+                                break;
+                        }
+                    }
+                    unlink($file);
+
+
+                }
+
+            }
+        }
 
     }
 
