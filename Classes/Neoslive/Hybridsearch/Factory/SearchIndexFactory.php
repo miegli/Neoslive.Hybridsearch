@@ -93,8 +93,6 @@ class SearchIndexFactory
     protected $output;
 
 
-
-
     /**
      * @Flow\Inject
      * @var WorkspaceRepository
@@ -306,7 +304,6 @@ class SearchIndexFactory
      * @var array
      */
     protected $nodeTypeConfiguration = [];
-
 
 
     /**
@@ -667,30 +664,15 @@ class SearchIndexFactory
 
                     $flowQuery = new FlowQuery(array($node));
 
-
-
-                        if (($node->isHidden() || $node->isRemoved() && $flowQuery->is($this->settings['Filter']['NodeTypeFilter']))) {
-                            foreach ($this->allSiteKeys as $siteKey => $siteKeyVal) {
-                                $this->removeSingleIndex($node->getIdentifier(), $this->getWorkspaceHash($workspace), $this->branch, $this->getDimensionConfiugurationHash($dimensionConfiguration));
-                            }
-                        }
-
-
-                        if ($flowQuery->is($this->settings['Filter']['NodeTypeFilter'])) {
+                    if ($flowQuery->is($this->settings['Filter']['NodeTypeFilter'])) {
+                        if ($node->isHidden() || $node->isRemoved()) {
+                           $this->removeSingleIndex($node->getIdentifier(), $this->getWorkspaceHash($workspace), $this->branch, $this->getDimensionConfiugurationHash($dimensionConfiguration));
+                        } else {
                             $this->generateSingleIndex($node, $workspace, $this->getDimensionConfiugurationHash($node->getContext()->getDimensions()));
                             $counter++;
-                        } else {
-
-                            if ($noparentcheck === false) {
-                                $node = $flowQuery->parent()->closest($this->settings['Filter']['NodeTypeFilter'])->get(0);
-                                if ($node) {
-                                    $this->generateIndex($node, $workspace, $node->getContext()->getDimensions());
-                                    $counter++;
-                                }
-                            }
                         }
 
-
+                    }
 
                 }
 
@@ -983,7 +965,6 @@ class SearchIndexFactory
             };
 
         }
-
 
 
     }
@@ -1323,7 +1304,7 @@ class SearchIndexFactory
 
 
         $rendered = null;
-        $grandParentNode  = null;
+        $grandParentNode = null;
         $parentNode = null;
         $documentNode = null;
         $flowQuery = null;
@@ -1343,8 +1324,6 @@ class SearchIndexFactory
 
 
     }
-
-
 
 
     /**
@@ -1904,7 +1883,6 @@ class SearchIndexFactory
         }
 
 
-
         if ($node->getContext()->getCurrentSite()) {
             $this->site = $node->getContext()->getCurrentSite();
 
@@ -1920,7 +1898,7 @@ class SearchIndexFactory
                 }
             }
 
-            if (isset($this->nodeRenderedInFallbackMode[$node->getNodeType()->getName()+"-"+$typoscriptPath])) {
+            if (isset($this->nodeRenderedInFallbackMode[$node->getNodeType()->getName() + "-" + $typoscriptPath])) {
                 return '';
             }
 
@@ -1986,7 +1964,7 @@ class SearchIndexFactory
                     $controllerContext = new \TYPO3\Flow\Mvc\Controller\ControllerContext($request, $response, $arguments);
                     $this->controllerContext = $controllerContext;
                     $this->view = new HybridSearchTypoScriptView();
-                    $this->view->setOption('enableContentCache',true);
+                    $this->view->setOption('enableContentCache', true);
                     $this->view->setControllerContext($controllerContext);
                 }
             }
