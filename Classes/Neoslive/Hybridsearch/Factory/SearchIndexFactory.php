@@ -450,23 +450,11 @@ class SearchIndexFactory
 
         $moditifedNodeData = $flowQuery->find($this->settings['Filter']['NodeTypeFilter']);
 
-
         $this->output->progressStart($moditifedNodeData->count());
-
-        $counter = 0;
+        
         foreach ($moditifedNodeData as $nodedata) {
-
             $this->output->progressAdvance(1);
-
-            if ($this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace(), true) > 0) {
-                $counter++;
-            }
-
-            if ($counter % 500 === 0) {
-                $this->save();
-            }
-
-
+            $this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace(), true);
         }
 
 
@@ -650,9 +638,10 @@ class SearchIndexFactory
 
                 if (isset($this->settings['Filter']['NodeTypeFilter'])) {
 
-                    $flowQuery = new FlowQuery(array($node));
 
-                    if ($flowQuery->is($this->settings['Filter']['NodeTypeFilter'])) {
+                    $flowQuery = $noparentcheck ? null : new FlowQuery(array($node));
+
+                    if ($noparentcheck === true || $flowQuery->is($this->settings['Filter']['NodeTypeFilter'])) {
                         if ($node->isHidden() || $node->isRemoved()) {
                            $this->removeSingleIndex($node->getIdentifier(), $this->getWorkspaceHash($workspace), $this->branch, $this->getDimensionConfiugurationHash($dimensionConfiguration));
                         } else {
