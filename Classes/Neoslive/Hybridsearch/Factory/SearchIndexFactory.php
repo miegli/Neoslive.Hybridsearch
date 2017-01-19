@@ -14,7 +14,6 @@ namespace Neoslive\Hybridsearch\Factory;
 
 use Neoslive\Hybridsearch\Domain\Repository\NeosliveHybridsearchNodeDataRepository;
 use Neoslive\Hybridsearch\View\HybridSearchTypoScriptView;
-use org\bovigo\vfs\vfsStreamWrapperAlreadyRegisteredTestCase;
 use TYPO3\Flow\Annotations as Flow;
 use TYPO3\Flow\Configuration\ConfigurationManager;
 use TYPO3\Flow\Error\Exception;
@@ -38,7 +37,6 @@ use TYPO3\TYPO3CR\Domain\Repository\NodeDataRepository;
 use TYPO3\TYPO3CR\Domain\Repository\WorkspaceRepository;
 use TYPO3\TYPO3CR\Domain\Service\ContentDimensionCombinator;
 use TYPO3\Eel\FlowQuery\FlowQuery;
-use \Org\Heigl\Hyphenator as h;
 use \ForceUTF8\Encoding;
 use Firebase\FirebaseLib;
 use TYPO3\Flow\Utility\Algorithms;
@@ -202,10 +200,6 @@ class SearchIndexFactory
     protected $allSiteKeys;
 
 
-    /**
-     * @var mixed
-     */
-    protected $hyphenator;
 
 
     /**
@@ -243,11 +237,6 @@ class SearchIndexFactory
      */
     protected $indexcounter;
 
-
-    /**
-     * @var integer
-     */
-    protected $magicSplit = 4;
 
 
     /**
@@ -999,7 +988,7 @@ class SearchIndexFactory
         foreach ($words as $w) {
             if (strlen($w) > 1) {
                 $w = Encoding::UTF8FixWin1252Chars($w);
-                $w = preg_replace('#[^\w()/.%\-&üöäÜÖÄ]#', "", $w);
+                //$w = preg_replace('#[^\w()/.%\-&üöäÜÖÄ]#', "", $w);
                 if ($w && strlen($w) > 1) {
                     $keywords->$w = 1;
                     $a = "_nodetype" . $w;
@@ -1731,37 +1720,6 @@ class SearchIndexFactory
     }
 
 
-    /**
-     * Get Hyphenator instance
-     *
-     * @return h\Hyphenator
-     */
-    protected
-    function getHyphenator()
-    {
-
-
-        if ($this->hyphenator) {
-            return $this->hyphenator;
-        }
-
-        $o = new h\Options();
-        $o->setHyphen(' ')
-            ->setDefaultLocale('de_DE')
-            ->setRightMin(4)
-            ->setLeftMin(4)
-            ->setWordMin(4)
-            ->setQuality(100)
-            ->setMinWordLength(10)
-            ->setFilters('Simple')
-            ->setTokenizers('Whitespace', 'Punctuation');
-        $this->hyphenator = new h\Hyphenator();
-        $this->hyphenator->setOptions($o);
-
-        return $this->hyphenator;
-
-
-    }
 
     /**
      * Creates a content context for given workspace
