@@ -174,7 +174,7 @@
              */
             var HybridsearchObject = function (hybridsearch) {
 
-                    var hybridsearchInstanceNumber, pendingRequests, results, filter, index, lunrSearch, nodes, nodesLastHash, nodeTypeLabels, resultGroupedBy, resultCategorizedBy, resultOrderBy, propertiesBoost, ParentNodeTypeBoostFactor, isRunning, firstfilterhash, searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier, nodesByIdentifier, searchCounter, searchCounterTimeout, nodeTypeProperties, isloadedall;
+                    var hybridsearchInstanceNumber, pendingRequests, results, filter, index, lunrSearch, nodes, nodesLastHash, nodeTypeLabels, resultGroupedBy, resultCategorizedBy, resultOrderBy, propertiesBoost, ParentNodeTypeBoostFactor, isRunning, firstfilterhash, searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier, nodesByIdentifier, searchCounter, searchCounterTimeout, nodeTypeProperties, isloadedall, firstruntimestamp;
 
                     // count instances
                     if (window.hybridsearchInstances === undefined) {
@@ -182,7 +182,7 @@
                     } else {
                         window.hybridsearchInstances++;
                     }
-
+                    firstruntimestamp = 0;
                     isloadedall = false;
                     searchCounter = 0;
                     nodesLastHash = 0;
@@ -817,6 +817,9 @@
                          * @private
                          */
                         setIsRunning: function () {
+
+
+
 
                             $http.get(hybridsearch.$$conf.databaseURL + "/branches/" + hybridsearch.$$conf.workspace + ".json?shallow=true").success(function (data) {
                                 hybridsearch.setBranch(data);
@@ -1528,12 +1531,6 @@
 
                             results.getApp().setResults(items, nodes, this);
 
-                            // if (searchCounterTimeout) {
-                            //     clearTimeout(searchCounterTimeout);
-                            // }
-
-
-                            //clearInterval(self.getIndexInterval());
 
 
                         },
@@ -2618,6 +2615,8 @@
                         self.$$app.setIsRunning();
                     }
 
+                    this.$$app.getResults().$$data.isrunningfirsttimestamp = Date.now();
+
                     if (self.$$app.getHybridsearch().getBranch() === false) {
 
                         var counter = 0;
@@ -3308,6 +3307,8 @@
                     notfound: false,
                     searchCounter: 0,
                     quickinfo: false,
+                    isrunningfirsttimestamp: 0
+
                 };
 
                 this.$$app = {
@@ -3547,6 +3548,19 @@
                  * @returns {boolean} true if a search was executed
                  */
                 isLoading: function () {
+
+
+                    if (this.$$data.isrunningfirsttimestamp === 0) {
+                        return false;
+                    } else {
+                        if (this.$$data.isrunningfirsttimestamp > 0) {
+                            if (Date.now() - this.$$data.isrunningfirsttimestamp < 800) {
+                                return false;
+                            } else {
+                                this.$$data.isrunningfirsttimestamp = -1;
+                            }
+                        } else {}
+                    }
 
                     if (this.$$data.searchCounter === 0) {
                         return true;
