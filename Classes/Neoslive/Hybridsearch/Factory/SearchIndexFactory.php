@@ -1878,8 +1878,8 @@ class SearchIndexFactory
     {
 
 
-        if ($node->getNodeType()->getConfiguration('hybridsearch.render') === false) {
-            return false;
+        if ($typoscriptPath !== 'breadcrumb' && $node->getNodeType()->getConfiguration('hybridsearch.render') === false) {
+            return '';
         }
 
 
