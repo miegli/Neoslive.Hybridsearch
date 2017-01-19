@@ -471,7 +471,6 @@ class SearchIndexFactory
 
 
         $this->save();
-        $this->unlockReltimeIndexer();
         $this->proceedQueue();
         $this->updateFireBaseRules();
 
@@ -486,7 +485,7 @@ class SearchIndexFactory
         $this->firebase->delete("/trash");
 
         $this->output->progressFinish();
-
+        $this->unlockReltimeIndexer();
 
         return true;
 
