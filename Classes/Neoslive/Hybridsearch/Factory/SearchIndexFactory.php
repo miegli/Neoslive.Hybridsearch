@@ -739,7 +739,6 @@ class SearchIndexFactory
 
             }
 
-            $this->unlockReltimeIndexer();
             $this->syncIndexRealtime($nodedata->getWorkspace()->getName());
         }
 
