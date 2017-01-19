@@ -49,7 +49,6 @@
              * @param workspace {string} workspace, identifier of the workspace to use from indexed datebase
              * @param dimension {string} dimension, hash of the dimension configuration to use form indexed database
              * @param site {string} site identifier (uuid)
-             * @param cdnHost {string} (optional) cdn host for static data
              * @param debug {boolean}
              * @example
              * var hybridSearch = new $hybridsearchObject(
@@ -60,7 +59,7 @@
              * ));
              * @returns {Hybridsearch} used for HybridsearchObject constructor.
              */
-            function Hybridsearch(databaseURL, workspace, dimension, site, cdnHost, debug) {
+            function Hybridsearch(databaseURL, workspace, dimension, site, debug) {
 
 
                 if (!(this instanceof Hybridsearch)) {
@@ -75,7 +74,6 @@
                     site: site,
                     branch: '',
                     databaseURL: databaseURL,
-                    cdnHost: cdnHost,
                     branchInitialized: false
                 };
 
@@ -91,7 +89,7 @@
                 };
                 try {
                     firebase.initializeApp(firebaseconfig);
-                    if (debug !== undefined) {
+                    if (debug == true) {
                         firebase.database.enableLogging(true);
                     }
                 } catch (e) {
@@ -1132,7 +1130,7 @@
                                                     setTimeout(function () {
                                                         self.getFilter().getScopeByIdentifier(identifier).$apply(function () {
                                                         });
-                                                    }, 5);
+                                                    }, 2);
                                                 }
                                             });
                                             break;
@@ -1143,7 +1141,7 @@
                                                 setTimeout(function () {
                                                     self.getFilter().getScopeByIdentifier(identifier).$apply(function () {
                                                     });
-                                                }, 5);
+                                                }, 2);
                                             }
                                             break;
 
@@ -1161,7 +1159,7 @@
                                             setTimeout(function () {
                                                 self.getFilter().getScopeByIdentifier(identifier).$apply(function () {
                                                 });
-                                            }, 5);
+                                            }, 2);
                                     }
 
 
@@ -1223,7 +1221,6 @@
 
 
                             var fields = {}, items = {}, self = this, nodesFound = {}, nodeTypeMaxScore = {}, nodeTypeMinScore = {}, nodeTypeScoreCount = {}, nodeTypeCount = {};
-
 
                             // set not found if search was timed out withou any results
                             if (searchCounterTimeout) {
@@ -1878,7 +1875,8 @@
                                 var counter = 0;
                                 searchInstancesInterval = setInterval(function () {
                                     counter++;
-                                    if (lastSearchInstance.$$data.canceled === true || counter > 15000 || lastSearchInstance.$$data.proceeded.length >= lastSearchInstance.$$data.running) {
+
+                                    if (lastSearchInstance.$$data.canceled === true || counter > 55000 || lastSearchInstance.$$data.proceeded.length >= lastSearchInstance.$$data.running) {
                                         clearInterval(searchInstancesInterval);
                                         if (self.isLoadedAll() === false) {
                                             lastSearchInstance.execute(self, lastSearchInstance);
@@ -1888,7 +1886,7 @@
 
 
                                     }
-                                }, 4);
+                                }, 5);
 
 
                             } else {
@@ -2108,7 +2106,7 @@
                                             // wait for all data and put it together to search index
                                             self.setIndexInterval(setInterval(function () {
 
-                                                if (indexintervalcounter > 200 || indexcounter >= uniquarrayfinal.length) {
+                                                if (indexintervalcounter > 2000 || indexcounter >= uniquarrayfinal.length) {
                                                     clearInterval(self.getIndexInterval());
 
                                                     var hash = self.getFilter().getHash() + " " + Sha1.hash(JSON.stringify(indexdata));
@@ -2129,7 +2127,7 @@
                                                 }
                                                 indexintervalcounter++;
 
-                                            }, 5));
+                                            }, 10));
                                         }
 
                                     } else {
@@ -2590,17 +2588,18 @@
                 run: function () {
 
                     var self = this;
+                    self.$$app.setIsRunning();
 
-
-                    if (self.$$app.getHybridsearch().$$conf.branchInitialized === false) {
-
-                        self.$$app.setIsRunning();
+                    if (self.$$app.getHybridsearch().getBranch() === false) {
 
                         var counter = 0;
                         var branchInitInterval = setInterval(function () {
                             counter++;
-                            if (counter > 100 || self.$$app.getHybridsearch().$$conf.branch.length > 1) {
+                            if (counter > 10000 || self.$$app.getHybridsearch().getBranch()) {
                                 clearInterval(branchInitInterval);
+                                if (self.$$app.getHybridsearch().getBranch() === false) {
+                                    self.$$app.getHybridsearch().setBranch('master');
+                                }
                                 self.$$app.setHybridsearchInstanceNumber();
                                 self.$$app.setFirstFilterHash(self.$$app.getFilter().getHash());
                                 self.$$app.setSearchIndex();
@@ -2614,10 +2613,8 @@
                     } else {
 
                         if (self.$$app.isRunning() === false) {
-
                             self.$$app.setHybridsearchInstanceNumber();
                             self.$$app.setFirstFilterHash(self.$$app.getFilter().getHash());
-                            self.$$app.setIsRunning();
                             self.$$app.setSearchIndex();
                         }
 
@@ -2718,7 +2715,7 @@
                                         }
                                         timer = setTimeout(function () {
                                             self.$$app.search();
-                                        }, nodesArray.length > 50 ? 500 : 10);
+                                        }, nodesArray.length > 50 ? 100 : 10);
 
 
                                         // wait for updates
@@ -2752,7 +2749,7 @@
                         var counter = 0;
                         var branchInitInterval = setInterval(function () {
                             counter++;
-                            if (counter > 100 || self.$$app.getHybridsearch().getBranch()) {
+                            if (counter > 10000 || self.$$app.getHybridsearch().getBranch()) {
                                 clearInterval(branchInitInterval);
                                 execute(nodesArray);
                             }
@@ -2802,7 +2799,7 @@
                                 }
                                 timer = setTimeout(function () {
                                     self.$$app.search();
-                                }, 50);
+                                }, 5);
                             }
 
                         });
@@ -3357,7 +3354,7 @@
                             setTimeout(function () {
                                 selfthis.getScope().$digest(function () {
                                 });
-                            }, 5);
+                            }, 1);
                         }
 
 
