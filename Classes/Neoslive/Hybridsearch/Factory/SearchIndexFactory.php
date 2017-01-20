@@ -1820,9 +1820,6 @@ class SearchIndexFactory
     {
 
 
-        if ($typoscriptPath !== 'breadcrumb' && $node->getNodeType()->getConfiguration('hybridsearch.render') === false) {
-            return '';
-        }
 
 
         if ($node->getContext()->getCurrentSite()) {
@@ -1838,6 +1835,11 @@ class SearchIndexFactory
                 if ($typoscriptPath === 'page') {
                     $typoscriptPath = 'neosliveHybridsearchRawContent';
                 }
+
+            }
+
+            if ($typoscriptPath === 'neosliveHybridsearchRawContent' && $node->getNodeType()->getConfiguration('hybridsearch.render') === false) {
+                return '';
             }
 
             if (isset($this->nodeRenderedInFallbackMode[$node->getNodeType()->getName() + "-" + $typoscriptPath])) {
