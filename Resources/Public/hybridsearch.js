@@ -395,7 +395,7 @@
 
                             angular.forEach(node.properties, function (val, key) {
 
-                                    if (value === '' && key.substr(key.length - property.length, property.length) === property) {
+                                if (value === '' && key.substr(key.length - property.length, property.length) === property) {
                                     value = val !== undefined ? val : '';
 
                                     if (typeof value === 'string' && ((value.substr(0, 2) === '["' && value.substr(-2, 2) === '"]') || (value.substr(0, 2) === '[{' && value.substr(-2, 2) === '}]') )) {
@@ -827,8 +827,6 @@
                          * @private
                          */
                         setIsRunning: function () {
-
-
 
 
                             $http.get(hybridsearch.$$conf.databaseURL + "/branches/" + hybridsearch.$$conf.workspace + ".json?shallow=true").success(function (data) {
@@ -1526,19 +1524,20 @@
 
 
                             if (results.hasDistincts()) {
-                                if (nodesLastHash > 0 && this.getLocalIndexHash() !== nodesLastHash) {
+
+
+                                //if (nodesLastHash > 0 && this.getLocalIndexHash() !== nodesLastHash) {
                                     results.updateDistincts();
 
-                                }
-                                if (nodesLastHash === 1) {
-                                    nodesLastHash = this.getLocalIndexHash();
-                                }
+                                //}
+                                //if (nodesLastHash === 1) {
+                                //    nodesLastHash = this.getLocalIndexHash();
+                                //}
 
 
                             }
 
                             results.getApp().setResults(items, nodes, this);
-
 
 
                         },
@@ -1676,7 +1675,6 @@
                             var self = this;
 
 
-
                             if (this.getFilter().getNodeType()) {
 
                                 if (typeof this.getFilter().getNodeType() == 'string') {
@@ -1695,7 +1693,7 @@
                             }
 
 
-                            if (this.getFilter().getNodePath().length > 0 && node.uri.path.substr(0, this.getFilter().getNodePath().length) != this.getFilter().getNodePath()) {
+                            if (this.getFilter().getNodePath().length > 0 && node.uri !== undefined && node.uri.path.substr(0, this.getFilter().getNodePath().length) != this.getFilter().getNodePath()) {
                                 return true;
                             }
 
@@ -2285,7 +2283,7 @@
                                         queries.push(
                                             {
                                                 socket: hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + this.getFilter().getNodeType()),
-                                                http: hybridsearch.$$conf.databaseURL+"/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + this.getFilter().getNodeType()+".json"
+                                                http: hybridsearch.$$conf.databaseURL + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + this.getFilter().getNodeType() + ".json"
                                             }
                                         );
                                         index[this.getFilter().getNodeType()] = queries;
@@ -2295,7 +2293,7 @@
                                             queries.push(
                                                 {
                                                     socket: hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + nodeType),
-                                                    http: hybridsearch.$$conf.databaseURL+"/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + nodeType +".json"
+                                                    http: hybridsearch.$$conf.databaseURL + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + nodeType + ".json"
                                                 }
                                             );
                                         });
@@ -2310,7 +2308,7 @@
                                     if (typeof this.getFilter().getNodeType() == 'string') {
                                         queries.push({
                                             socket: hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + this.getFilter().getNodeType() + keyword),
-                                            http: hybridsearch.$$conf.databaseURL+"/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + this.getFilter().getNodeType() + keyword + ".json"
+                                            http: hybridsearch.$$conf.databaseURL + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + this.getFilter().getNodeType() + keyword + ".json"
                                         });
                                     }
 
@@ -2331,7 +2329,7 @@
 
                                 queries.push({
                                     socket: hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + '/' + keyword),
-                                    http: hybridsearch.$$conf.databaseURL+"/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + '/' + keyword + ".json"
+                                    http: hybridsearch.$$conf.databaseURL + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + '/' + keyword + ".json"
                                 });
 
                             }
@@ -3570,7 +3568,8 @@
                             } else {
                                 this.$$data.isrunningfirsttimestamp = -1;
                             }
-                        } else {}
+                        } else {
+                        }
                     }
 
                     if (this.$$data.searchCounter === 0) {
@@ -3769,14 +3768,25 @@
                 getDistinctCount: function (property) {
                     return Object.keys(this.getDistinct(property)).length;
                 },
-
                 /**
-                 * Get all different values from given property
+                 * Check if given value string is in distinct result
+                 * @param {string} property
+                 * @param {value} string search for
+                 * @returns {boolean} true if value is part of distinct property values
+                 */
+                isInDistinct: function (property, value) {
+                   return this.getDistinct(property,false,true).indexOf(value) < 0 ? false : true;
+
+                }
+                ,
+                /**
+                 * Get all different values and counter from given property
                  * @param {string} property
                  * @param {boolean} counterGroupedByNode count existences grouped by node
+                 * @param {boolean} valuesOnly return only values
                  * @returns {array} collection of property values
                  */
-                getDistinct: function (property, counterGroupedByNode) {
+                getDistinct: function (property, counterGroupedByNode, valuesOnly) {
 
 
                     if (counterGroupedByNode === undefined) {
@@ -3795,7 +3805,19 @@
                     }
 
                     if (Object.keys(self.$$data.distincts[property]).length) {
-                        return self.$$data.distincts[property];
+
+
+                        if (valuesOnly === undefined || valuesOnly === false) {
+                            return self.$$data.distincts[property];
+                        } else {
+
+                            var v = [];
+                            angular.forEach(self.$$data.distincts[property], function(i) {
+                                v.push(i.value);
+                            });
+                            return v;
+                        }
+
                     }
 
                     angular.forEach(this.getNodes(), function (node) {
@@ -3922,10 +3944,21 @@
 
                     self.$$data.distincts[property] = variants;
 
-                    return self.$$data.distincts[property];
+
+                    if (valuesOnly === undefined || valuesOnly === false) {
+                        return self.$$data.distincts[property];
+                    } else {
+
+                        var v = [];
+                        angular.forEach(self.$$data.distincts[property], function(i) {
+                            v.push(i.value);
+                        });
+                        return v;
+                    }
 
 
-                },
+                }
+                ,
 
                 /**
                  * @private
@@ -3938,7 +3971,8 @@
                     return window.HybridsearchGetPropertyFromObject(object, property);
 
 
-                },
+                }
+                ,
                 /**
                  * @private
                  * Get property.
@@ -3949,7 +3983,8 @@
 
                     return window.HybridsearchGetPropertyFromNode(node, property);
 
-                },
+                }
+                ,
 
                 /**
                  *
@@ -3976,7 +4011,8 @@
 
 
                     return self.$$data.groups;
-                },
+                }
+                ,
 
 
             };
@@ -3984,7 +4020,8 @@
 
             return HybridsearchResultsObject;
         }
-    ]);
+    ])
+    ;
 
 
 })();
