@@ -333,6 +333,7 @@
                             return node.properties[property];
                         }
 
+
                         // handles value as json parsable object if required
                         if (property.indexOf(".") >= 0) {
 
@@ -390,8 +391,11 @@
 
 
                         } else {
+
+
                             angular.forEach(node.properties, function (val, key) {
-                                if (value === '' && key.substr(key.length - property.length, property.length) === property) {
+
+                                    if (value === '' && key.substr(key.length - property.length, property.length) === property) {
                                     value = val !== undefined ? val : '';
 
                                     if (typeof value === 'string' && ((value.substr(0, 2) === '["' && value.substr(-2, 2) === '"]') || (value.substr(0, 2) === '[{' && value.substr(-2, 2) === '}]') )) {
@@ -465,6 +469,13 @@
                         self.score = score;
                         self.groupedNodes = [];
                         self.grouped = false;
+
+                        if (self.url !== undefined) {
+                            self.properties.url = self.url;
+                        }
+                        if (self.uri !== undefined) {
+                            self.properties.uri = self.uri;
+                        }
 
                     };
 
@@ -992,7 +1003,6 @@
 
                             var grouped = resultGroupedBy !== undefined && resultGroupedBy[nodeType] !== undefined ? resultGroupedBy[nodeType] : [];
 
-
                             if (this.getNodeTypeLabel(nodeType) !== nodeType && grouped.length === 0) {
                                 grouped = resultGroupedBy !== undefined && resultGroupedBy[this.getNodeTypeLabel(nodeType)] !== undefined ? resultGroupedBy[this.getNodeTypeLabel(nodeType)] : [];
                             }
@@ -1353,7 +1363,6 @@
 
                                     } else {
 
-
                                         var resultAnd = lunrSearch.search(query, {
                                             fields: fields,
                                             bool: "AND"
@@ -1667,6 +1676,7 @@
                             var self = this;
 
 
+
                             if (this.getFilter().getNodeType()) {
 
                                 if (typeof this.getFilter().getNodeType() == 'string') {
@@ -1969,8 +1979,7 @@
                                         angular.forEach(lastSearchInstance.$$data.keywords, function (v, k) {
 
 
-                                            if (v == query || query.search(" " + v + " ") >= 0 || query.indexOf(v) >= 0 || (
-                                                v.length > 6 && query.search(" " + v.substr(0, 6)) >= 0 )
+                                            if (v == query || query.indexOf(" " + v + " ") >= 0
                                             ) {
                                                 if (query.search(v) > 0) {
                                                     matchexact.push(v);
@@ -2598,7 +2607,6 @@
 
                     this.$$app.getResults().$$app.setScope(scope);
                     scope[scopevar] = this.$$app.getResults();
-
                     return this;
                 },
 
@@ -2939,7 +2947,9 @@
                                 if (searchInput !== searchInputLast) {
 
                                     self.$$app.getFilter().setQuery(scope[input]);
-
+                                    if (self.$$app.isRunning() === false) {
+                                        self.run();
+                                    }
                                     if (searchInput !== undefined) {
                                         if (searchInput.length === 0) {
 
@@ -3350,7 +3360,9 @@
 
                         self.getApp().setNotFound(false);
 
+
                         this.executeCallbackMethod(self);
+
 
                         return self;
 
@@ -3791,6 +3803,7 @@
                         variantsByNodes[node.identifier] = {};
 
                         propvalue = self.getPropertyFromNode(node, property);
+
 
                         if (typeof propvalue == 'object') {
 
