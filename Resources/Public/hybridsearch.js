@@ -1524,17 +1524,12 @@
 
 
                             if (results.hasDistincts()) {
-
-
-                                //if (nodesLastHash > 0 && this.getLocalIndexHash() !== nodesLastHash) {
+                                if (nodesLastHash !== 0 && this.getLocalIndexHash() !== nodesLastHash) {
                                     results.updateDistincts();
-
-                                //}
-                                //if (nodesLastHash === 1) {
-                                //    nodesLastHash = this.getLocalIndexHash();
-                                //}
-
-
+                                }
+                                if (nodesLastHash === 1) {
+                                   nodesLastHash = this.getLocalIndexHash();
+                                }
                             }
 
                             results.getApp().setResults(items, nodes, this);
