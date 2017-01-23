@@ -1838,7 +1838,7 @@ class SearchIndexFactory
 
             }
 
-            if ($typoscriptPath === 'neosliveHybridsearchRawContent' && $node->getNodeType()->getConfiguration('hybridsearch.render') === false) {
+            if ($typoscriptPath == 'neosliveHybridsearchRawContent' && $node->getNodeType()->getConfiguration('hybridsearch.render') == false) {
                 return '';
             }
 
