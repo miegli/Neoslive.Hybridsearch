@@ -1479,15 +1479,24 @@ class SearchIndexFactory
 
                         switch ($content->method) {
                             case 'update':
-                                $this->output->outputLine($this->firebase->update($content->path, $content->data));
+                                $out = $this->firebase->update($content->path, $content->data);
+                                if (strlen($out) < 255) {
+                                    $this->output->outputLine($out);
+                                }
                                 break;
 
                             case 'delete':
-                                $this->output->outputLine($this->firebase->delete($content->path));
+                                $out = $this->firebase->delete($content->path);
+                                if (strlen($out) < 255) {
+                                    $this->output->outputLine($out);
+                                }
                                 break;
 
                             case 'set':
-                                $this->output->outputLine($this->firebase->set($content->path, $content->data));
+                                $out = $this->firebase->set($content->path, $content->data);
+                                if (strlen($out) < 255) {
+                                    $this->output->outputLine($out);
+                                }
                                 break;
                         }
                     }
