@@ -296,6 +296,12 @@ class SearchIndexFactory
 
 
     /**
+     * @var array
+     */
+    protected $breadcrumbcache = [];
+
+
+    /**
      * Inject the settings
      *
      * @param array $settings
@@ -348,6 +354,7 @@ class SearchIndexFactory
         $this->branch = "master";
         $this->branchSwitch = "slave";
         $this->firstMemoryPeak = 0;
+        $this->breadcrumbcache = [];
         $GLOBALS["neoslive.hybridsearch.insyncmode"] = true;
         gc_enable();
 
@@ -1151,8 +1158,8 @@ class SearchIndexFactory
             }
         }
 
-        if ($documentNode) {
-            $breadcrumb = $this->getRenderedNode($documentNode, 'breadcrumb');
+        if ($breadcrumb == '' && $documentNode) {
+           $breadcrumb = $this->getRenderedNode($documentNode, 'breadcrumb');
         }
 
         $parentProperties = new \stdClass();
@@ -1821,6 +1828,19 @@ class SearchIndexFactory
 
 
 
+        $isbreadcrumb = $typoscriptPath == 'breadcrumb' ? true : false;
+
+        if ($isbreadcrumb) {
+            if (isset($this->breadcrumbcache[$node->getIdentifier()])) {
+                return $this->breadcrumbcache[$node->getIdentifier()];
+            }
+        }
+
+        if ($typoscriptPath == 'page' && $node->getNodeType()->getConfiguration('hybridsearch.render') == false) {
+            return '';
+        }
+
+
 
         if ($node->getContext()->getCurrentSite()) {
             $this->site = $node->getContext()->getCurrentSite();
@@ -1838,6 +1858,10 @@ class SearchIndexFactory
 
             }
 
+            if ($typoscriptPath == false) {
+                return '';
+            }
+
             if ($typoscriptPath == 'neosliveHybridsearchRawContent' && $node->getNodeType()->getConfiguration('hybridsearch.render') == false) {
                 return '';
             }
@@ -1851,6 +1875,9 @@ class SearchIndexFactory
                 $this->getView()->setTypoScriptPath($typoscriptPath);
                 $content = $this->view->render();
 
+                if ($isbreadcrumb) {
+                    $this->breadcrumbcache[$node->getIdentifier()] = $content;
+                }
 
                 return $content;
             } else {
