@@ -458,10 +458,13 @@ class SearchIndexFactory
         $moditifedNodeData = $flowQuery->find($this->settings['Filter']['NodeTypeFilter']);
 
         $this->output->progressStart($moditifedNodeData->count());
-        
+
+
         foreach ($moditifedNodeData as $nodedata) {
             $this->output->progressAdvance(1);
             $this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace(), true);
+
+
         }
 
 
@@ -979,7 +982,7 @@ class SearchIndexFactory
         foreach ($words as $w) {
             if (strlen($w) > 1) {
                 $w = Encoding::UTF8FixWin1252Chars($w);
-                //$w = preg_replace('#[^\w()/.%\-&üöäÜÖÄ]#', "", $w);
+                $w = preg_replace('#[^\w()/.%\-&üöäÜÖÄ]#', "", $w);
                 if ($w && strlen($w) > 1) {
                     $keywords->$w = 1;
                     $a = "_nodetype" . $w;
@@ -1500,6 +1503,7 @@ class SearchIndexFactory
                                 break;
                         }
                     }
+
                     unlink($file);
 
 
