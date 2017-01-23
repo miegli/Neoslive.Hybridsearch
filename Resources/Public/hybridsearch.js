@@ -775,6 +775,7 @@
                          * @return void
                          */
                         cancelAllPendingRequest: function () {
+
                             angular.forEach($http.pendingRequests, function (request) {
                                 if (request.cancel && request.timeout) {
                                     request.cancel.resolve();
@@ -829,22 +830,29 @@
                         setIsRunning: function () {
 
 
-                            $http.get(hybridsearch.$$conf.databaseURL + "/branches/" + hybridsearch.$$conf.workspace + ".json?shallow=true").success(function (data) {
-                                hybridsearch.setBranch(data);
-                                isRunning = true;
 
-                                /**
-                                 * watch branch
-                                 */
-                                var query = hybridsearch.$firebase().database().ref("branches/" + hybridsearch.$$conf.workspace);
-                                query.on("value", function (snapshot) {
-                                    if (snapshot.val() !== hybridsearch.getBranch()) {
-                                        hybridsearch.setBranch(snapshot.val());
-                                    }
+                            if (hybridsearch.$$conf.branchisloading === undefined) {
+                           
+                                hybridsearch.$$conf.branchisloading = true;
+
+                                $http.get(hybridsearch.$$conf.databaseURL + "/branches/" + hybridsearch.$$conf.workspace + ".json?shallow=true").success(function (data) {
+                                    hybridsearch.setBranch(data);
+                                    isRunning = true;
+
+                                    /**
+                                     * watch branch
+                                     */
+                                    var query = hybridsearch.$firebase().database().ref("branches/" + hybridsearch.$$conf.workspace);
+                                    query.on("value", function (snapshot) {
+                                        if (snapshot.val() !== hybridsearch.getBranch()) {
+                                            hybridsearch.setBranch(snapshot.val());
+                                        }
+
+                                    });
 
                                 });
 
-                            });
+                            }
 
                         },
                         /**
@@ -2085,29 +2093,40 @@
 
                                         };
 
+                                        clearTimeout(self.getIndexInterval());
 
-                                        angular.forEach(uniquarrayfinal, function (keyword) {
+                                        self.setIndexInterval(setTimeout(function () {
+
+                                            angular.forEach(uniquarrayfinal, function (keyword) {
+
+                                                var refs = self.getIndex(keyword);
+                                                if (refs !== null && refs.length) {
+                                                    angular.forEach(refs, function (ref) {
 
 
-                                            var refs = self.getIndex(keyword);
-                                            if (refs !== null && refs.length) {
-                                                angular.forEach(refs, function (ref) {
+                                                        self.addPendingRequest($http({
+                                                            method: 'get',
+                                                            url: ref.http,
+                                                            cancel: $q.defer()
+                                                        }).success(function (data) {
+                                                            execute(keyword, data);
+                                                        }));
 
-                                                    $http.get(ref.http).success(function (data) {
-                                                        execute(keyword, data);
+
+                                                        ref.socket.on("value", function (data) {
+                                                            execute(keyword, data.val());
+                                                        });
+
+
                                                     });
 
-                                                    ref.socket.on("value", function (data) {
-                                                        execute(keyword, data.val());
-                                                    });
+                                                }
 
 
-                                                });
+                                            });
 
-                                            }
+                                        },50));
 
-
-                                        });
 
                                         if (lastSearchInstance.$$data.keywords.length) {
                                             // wait for all data and put it together to search index
