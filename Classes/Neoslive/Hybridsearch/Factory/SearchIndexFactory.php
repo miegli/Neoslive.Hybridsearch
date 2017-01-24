@@ -1853,8 +1853,6 @@ class SearchIndexFactory
             return '';
         }
 
-
-
         if ($node->getContext()->getCurrentSite()) {
             $this->site = $node->getContext()->getCurrentSite();
 

@@ -1,6 +1,6 @@
 'Neoslive.Hybridsearch:Content':
   hybridsearch:
-    render: false
+    render: FALSE
   ui:
     inspector:
       groups:

@@ -832,7 +832,7 @@
 
 
                             if (hybridsearch.$$conf.branchisloading === undefined) {
-                           
+
                                 hybridsearch.$$conf.branchisloading = true;
 
                                 $http.get(hybridsearch.$$conf.databaseURL + "/branches/" + hybridsearch.$$conf.workspace + ".json?shallow=true").success(function (data) {
