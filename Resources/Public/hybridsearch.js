@@ -1484,7 +1484,7 @@
                                             } else {
                                                 if (item.score / nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] < 1 / ql) {
                                                     // skip irelevant score
-                                                   
+
 
                                                 } else {
                                                     preOrderedFilteredRelevance.push(item);
