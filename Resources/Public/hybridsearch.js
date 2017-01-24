@@ -96,7 +96,7 @@
                     // firebase was initizalized before
                 }
 
-                //firebase.database.enableLogging(true);
+
 
             }
 
@@ -829,8 +829,6 @@
                          */
                         setIsRunning: function () {
 
-
-
                             if (hybridsearch.$$conf.branchisloading === undefined) {
 
                                 hybridsearch.$$conf.branchisloading = true;
@@ -852,6 +850,8 @@
 
                                 });
 
+                            } else {
+                                isRunning = true;
                             }
 
                         },
