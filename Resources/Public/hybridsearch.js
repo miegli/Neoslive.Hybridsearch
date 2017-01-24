@@ -1440,28 +1440,34 @@
                                     var preOrderedFilteredRelevance = [];
 
 
-                                    angular.forEach(preOrdered, function (item) {
 
-                                        if (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined) {
-                                            nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = item.score;
-                                        } else {
-                                            if (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] < item.score) {
+                                    if (self.getFilter().getNodeType() == false) {
+                                        angular.forEach(preOrdered, function (item) {
+
+
+
+                                            if (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined) {
                                                 nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = item.score;
+                                            } else {
+                                                if (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] < item.score) {
+                                                    nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = item.score;
+                                                }
                                             }
-                                        }
 
-                                        if (nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined) {
-                                            nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = {};
-                                        }
+                                            if (nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined) {
+                                                nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = {};
+                                            }
 
-                                        if (nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)][item.score] === undefined) {
-                                            nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)][item.score] = 1;
-                                        } else {
-                                            nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)][item.score]++;
-                                        }
+                                            if (nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)][item.score] === undefined) {
+                                                nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)][item.score] = 1;
+                                            } else {
+                                                nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)][item.score]++;
+                                            }
 
 
-                                    });
+                                        });
+                                    }
+
 
 
                                     var ql = query.split(" ").length + 1;
@@ -1469,7 +1475,7 @@
 
                                     angular.forEach(preOrdered, function (item) {
 
-                                        if (Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length > 5) {
+                                        if (self.getFilter().getNodeType() !== false || Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length > 5) {
                                             preOrderedFilteredRelevance.push(item);
                                         } else {
 
@@ -1478,6 +1484,7 @@
                                             } else {
                                                 if (item.score / nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] < 1 / ql) {
                                                     // skip irelevant score
+                                                   
 
                                                 } else {
                                                     preOrderedFilteredRelevance.push(item);
