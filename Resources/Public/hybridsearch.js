@@ -1306,6 +1306,8 @@
                                 var query = filter.getFinalSearchQuery(lastSearchInstance);
 
 
+
+
                                 var preOrdered = [];
 
 
@@ -1484,8 +1486,6 @@
                                             } else {
                                                 if (item.score / nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] < 1 / ql) {
                                                     // skip irelevant score
-
-
                                                 } else {
                                                     preOrderedFilteredRelevance.push(item);
                                                 }
@@ -2056,6 +2056,9 @@
                                             }
 
                                         });
+
+
+
 
                                     } else {
                                         self.search();
@@ -4501,6 +4504,17 @@
 
                     }
 
+                    // double check match exact terms
+                    var matchexact = true;
+                    angular.forEach(self.getQuery().split(" "), function (keyword) {
+                        if (uniquarray.indexOf(keyword) == -1) {
+                            matchexact = false;
+                        }
+                    });
+
+                    if (matchexact) {
+                        return self.getQuery();
+                    }
 
                     return uniquarray.join(" ");
 
