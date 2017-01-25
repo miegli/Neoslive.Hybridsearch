@@ -2124,7 +2124,11 @@
 
 
                                                         ref.socket.on("value", function (data) {
-                                                            execute(keyword, data.val());
+                                                            if (ref.updated !== undefined) {
+                                                                execute(keyword, data.val());
+                                                            }
+                                                            ref.updated = true;
+
                                                         });
 
 
@@ -2135,7 +2139,7 @@
 
                                             });
 
-                                        },50));
+                                        },80));
 
 
                                         if (lastSearchInstance.$$data.keywords.length) {
