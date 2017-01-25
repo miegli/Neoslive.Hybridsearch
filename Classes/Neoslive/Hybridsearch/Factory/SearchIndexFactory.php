@@ -200,8 +200,6 @@ class SearchIndexFactory
     protected $allSiteKeys;
 
 
-
-
     /**
      * @var \stdClass
      */
@@ -236,7 +234,6 @@ class SearchIndexFactory
      * @var integer
      */
     protected $indexcounter;
-
 
 
     /**
@@ -298,7 +295,7 @@ class SearchIndexFactory
     /**
      * @var array
      */
-    protected $breadcrumbcache = [];
+    protected $renderedcache = [];
 
 
     /**
@@ -354,7 +351,7 @@ class SearchIndexFactory
         $this->branch = "master";
         $this->branchSwitch = "slave";
         $this->firstMemoryPeak = 0;
-        $this->breadcrumbcache = [];
+        $this->renderedcache = [];
         $GLOBALS["neoslive.hybridsearch.insyncmode"] = true;
         gc_enable();
 
@@ -572,42 +569,39 @@ class SearchIndexFactory
     {
 
 
+        $this->branch = $this->getBranch($workspaceName);
 
-            $this->branch = $this->getBranch($workspaceName);
-
-            $lastsync = $this->firebase->get("/lastsync/$workspaceName/" . $this->branch);
-
-
-            $date = new \DateTime();
-
-            if ($lastsync) {
-                $date->setTimestamp(intval($lastsync));
-            }
-
-            $lastSyncDateTime = new \DateTime();
-            $lastSyncTimestamp = $lastSyncDateTime->getTimeStamp();
-            $this->firebase->set("/lastsync/$workspaceName/" . $this->branch, $lastSyncTimestamp);
-
-            $this->output->outputLine("sync from " . $date->format("d.m.Y H:i:s"));
+        $lastsync = $this->firebase->get("/lastsync/$workspaceName/" . $this->branch);
 
 
-            $moditifedNodeData = $this->neosliveHybridsearchNodeDataRepository->findByWorkspaceAndLastModificationDateTimeDate($this->workspaceRepository->findByIdentifier($workspaceName), $date);
-            $this->output->outputLine('sync ' . count($moditifedNodeData) . ' nodes');
+        $date = new \DateTime();
 
-            if (count($moditifedNodeData)) {
-                $this->removeTrashedNodes();
-            }
+        if ($lastsync) {
+            $date->setTimestamp(intval($lastsync));
+        }
 
-            foreach ($moditifedNodeData as $nodedata) {
-                $this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace());
-            }
+        $lastSyncDateTime = new \DateTime();
+        $lastSyncTimestamp = $lastSyncDateTime->getTimeStamp();
+        $this->firebase->set("/lastsync/$workspaceName/" . $this->branch, $lastSyncTimestamp);
 
-            if (count($moditifedNodeData)) {
-                $this->save();
-                $this->proceedQueue();
-            }
+        $this->output->outputLine("sync from " . $date->format("d.m.Y H:i:s"));
 
 
+        $moditifedNodeData = $this->neosliveHybridsearchNodeDataRepository->findByWorkspaceAndLastModificationDateTimeDate($this->workspaceRepository->findByIdentifier($workspaceName), $date);
+        $this->output->outputLine('sync ' . count($moditifedNodeData) . ' nodes');
+
+        if (count($moditifedNodeData)) {
+            $this->removeTrashedNodes();
+        }
+
+        foreach ($moditifedNodeData as $nodedata) {
+            $this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace());
+        }
+
+        if (count($moditifedNodeData)) {
+            $this->save();
+            $this->proceedQueue();
+        }
 
 
     }
@@ -650,7 +644,7 @@ class SearchIndexFactory
 
                     if ($noparentcheck === true || $flowQuery->is($this->settings['Filter']['NodeTypeFilter'])) {
                         if ($node->isHidden() || $node->isRemoved()) {
-                           $this->removeSingleIndex($node->getIdentifier(), $this->getWorkspaceHash($workspace), $this->branch, $this->getDimensionConfiugurationHash($dimensionConfiguration));
+                            $this->removeSingleIndex($node->getIdentifier(), $this->getWorkspaceHash($workspace), $this->branch, $this->getDimensionConfiugurationHash($dimensionConfiguration));
                         } else {
                             $this->generateSingleIndex($node, $workspace, $this->getDimensionConfiugurationHash($node->getContext()->getDimensions()));
                             $counter++;
@@ -1162,7 +1156,7 @@ class SearchIndexFactory
         }
 
         if ($breadcrumb == '' && $documentNode) {
-           $breadcrumb = $this->getRenderedNode($documentNode, 'breadcrumb');
+            $breadcrumb = $this->getRenderedNode($documentNode, 'breadcrumb');
         }
 
         $parentProperties = new \stdClass();
@@ -1724,7 +1718,6 @@ class SearchIndexFactory
     }
 
 
-
     /**
      * Creates a content context for given workspace
      *
@@ -1840,18 +1833,17 @@ class SearchIndexFactory
     {
 
 
-
         $isbreadcrumb = $typoscriptPath == 'breadcrumb' ? true : false;
+        $ispage = $typoscriptPath == 'page' ? true : false;
 
-        if ($isbreadcrumb) {
-            if (isset($this->breadcrumbcache[$node->getIdentifier()])) {
-                return $this->breadcrumbcache[$node->getIdentifier()];
-            }
-        }
+
+        $i = $node->getNodeType()->getConfiguration('hybridsearch.render') ? 1 : 0;
+
 
         if ($typoscriptPath == 'page' && $node->getNodeType()->getConfiguration('hybridsearch.render') == false) {
             return '';
         }
+
 
         if ($node->getContext()->getCurrentSite()) {
             $this->site = $node->getContext()->getCurrentSite();
@@ -1873,22 +1865,25 @@ class SearchIndexFactory
                 return '';
             }
 
-            if ($typoscriptPath == 'neosliveHybridsearchRawContent' && $node->getNodeType()->getConfiguration('hybridsearch.render') == false) {
+            if ($ispage && $node->getNodeType()->getConfiguration('hybridsearch.render') == false) {
                 return '';
             }
 
-            if (isset($this->nodeRenderedInFallbackMode[$node->getNodeType()->getName() + "-" + $typoscriptPath])) {
-                return '';
+
+            if ($ispage === false && isset($this->renderedcache[$node->getIdentifier() . "-" . $typoscriptPath])) {
+                return $this->renderedcache[$node->getIdentifier() . "-" . $typoscriptPath];
             }
+
 
             if ($this->getView() && $node->getContext()->getCurrentSiteNode()) {
                 $this->getView()->assign('value', $node);
                 $this->getView()->setTypoScriptPath($typoscriptPath);
                 $content = $this->view->render();
 
-                if ($isbreadcrumb) {
-                    $this->breadcrumbcache[$node->getIdentifier()] = $content;
+                if ($ispage === false) {
+                    $this->renderedcache[$node->getIdentifier() . "-" . $typoscriptPath] = $content;
                 }
+
 
                 return $content;
             } else {
