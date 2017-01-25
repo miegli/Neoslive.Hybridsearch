@@ -1222,7 +1222,6 @@ class SearchIndexFactory
         }
         $properties->rawcontent = $properties->$p;
 
-
         $data->hash = sha1(json_encode($properties));
         $data->url = $uri;
         $data->uri = parse_url($uri);
