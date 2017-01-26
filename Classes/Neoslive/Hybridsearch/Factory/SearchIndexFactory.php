@@ -646,6 +646,17 @@ class SearchIndexFactory
                         if ($node->isHidden() || $node->isRemoved()) {
                             $this->removeSingleIndex($node->getIdentifier(), $this->getWorkspaceHash($workspace), $this->branch, $this->getDimensionConfiugurationHash($dimensionConfiguration));
                         } else {
+
+                            if ($noparentcheck === false) {
+
+                                $parent = $flowQuery->closest($this->settings['Filter']['NodeTypeFilter'])->get(0);
+                                if ($parent) {
+                                    $this->generateSingleIndex($parent, $workspace, $this->getDimensionConfiugurationHash($parent->getContext()->getDimensions()));
+                                }
+
+                            }
+
+
                             $this->generateSingleIndex($node, $workspace, $this->getDimensionConfiugurationHash($node->getContext()->getDimensions()));
                             $counter++;
                         }
