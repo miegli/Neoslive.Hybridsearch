@@ -649,9 +649,16 @@ class SearchIndexFactory
 
                             if ($noparentcheck === false) {
 
-                                $parent = $flowQuery->closest($this->settings['Filter']['NodeTypeFilter'])->get(0);
+                                $parent = $flowQuery->closest($this->settings['Filter']['GrantParentNodeTypeFilter'])->get(0);
                                 if ($parent) {
-                                    $this->generateSingleIndex($parent, $workspace, $this->getDimensionConfiugurationHash($parent->getContext()->getDimensions()));
+
+                                    $flowQueryParent = new FlowQuery(array($parent));
+                                    $parentNode = $flowQueryParent->closest($this->settings['Filter']['NodeTypeFilter'])->get(0);
+                                    if ($parentNode) {
+                                        $this->generateSingleIndex($parentNode, $workspace, $this->getDimensionConfiugurationHash($parentNode->getContext()->getDimensions()));
+                                    }
+
+
                                 }
 
                             }
