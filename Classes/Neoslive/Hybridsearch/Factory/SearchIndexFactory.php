@@ -668,6 +668,31 @@ class SearchIndexFactory
                             $counter++;
                         }
 
+                    } else {
+
+                        $nextnode = $flowQuery->closest($this->settings['Filter']['NodeTypeFilter'])->get(0);
+                        if ($nextnode) {
+
+                            $this->generateSingleIndex($nextnode, $workspace, $this->getDimensionConfiugurationHash($nextnode->getContext()->getDimensions()));
+
+                            $flowQueryNext = new FlowQuery(array($nextnode));
+                            $parent = $flowQueryNext->closest($this->settings['Filter']['GrantParentNodeTypeFilter'])->get(0);
+
+                            if ($parent) {
+
+                                $flowQueryParent = new FlowQuery(array($parent));
+                                $parentNode = $flowQueryParent->closest($this->settings['Filter']['NodeTypeFilter'])->get(0);
+                                if ($parentNode) {
+                                    $this->generateSingleIndex($parentNode, $workspace, $this->getDimensionConfiugurationHash($parentNode->getContext()->getDimensions()));
+                                }
+
+
+                            }
+
+
+
+                        }
+
                     }
 
                 }
