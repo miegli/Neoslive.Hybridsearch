@@ -219,8 +219,6 @@
                     }
 
 
-
-
                     /**
                      * @private
                      * global function get property from object
@@ -760,7 +758,9 @@
                          * @return void
                          */
                         addPendingRequest: function (request) {
-                            pendingRequests.push(request);
+
+
+
                         },
                         /**
                          * @private
@@ -769,10 +769,15 @@
                         cancelAllPendingRequest: function () {
 
                             angular.forEach($http.pendingRequests, function (request) {
-                                if (request.cancel && request.timeout) {
-                                    request.cancel.resolve();
+                                if (request.cancel) {
+                                    request.cancel(request);
+                                }
+                                if (request.timeoutRef !== undefined) {
+                                    clearTimeout(request.timeoutRef);
                                 }
                             });
+                            pendingRequests = [];
+
                         },
                         /**
                          * @private
@@ -1233,6 +1238,7 @@
 
                             var fields = {}, items = {}, self = this, nodesFound = {}, nodeTypeMaxScore = {}, nodeTypeMinScore = {}, nodeTypeScoreCount = {}, nodeTypeCount = {};
 
+
                             // set not found if search was timed out withou any results
                             if (searchCounterTimeout) {
                                 clearTimeout(searchCounterTimeout);
@@ -1457,32 +1463,32 @@
                                     // }
 
 
-                                  //  var ql = query.split(" ").length + 1;
+                                    //  var ql = query.split(" ").length + 1;
 
 
-                                   // angular.forEach(preOrdered, function (item) {
-                                       // preOrderedFilteredRelevance.push(item);
-                                        //
-                                        // if (self.getFilter().getNodeType() !== false || Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length > 5) {
-                                        //     preOrderedFilteredRelevance.push(item);
-                                        // } else {
-                                        //
-                                        //     if (Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length == 1 || Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length > 10) {
-                                        //         preOrderedFilteredRelevance.push(item);
-                                        //     } else {
-                                        //
-                                        //
-                                        //         if (item.score / nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] < 1 / ql) {
-                                        //             // skip irelevant score
-                                        //           //  console.log(nodes[item.ref],'skipped');
-                                        //         } else {
-                                        //          //   console.log(item.score / nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)],nodes[item.ref]);
-                                        //             preOrderedFilteredRelevance.push(item);
-                                        //         }
-                                        //     }
-                                        // }
+                                    // angular.forEach(preOrdered, function (item) {
+                                    // preOrderedFilteredRelevance.push(item);
+                                    //
+                                    // if (self.getFilter().getNodeType() !== false || Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length > 5) {
+                                    //     preOrderedFilteredRelevance.push(item);
+                                    // } else {
+                                    //
+                                    //     if (Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length == 1 || Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length > 10) {
+                                    //         preOrderedFilteredRelevance.push(item);
+                                    //     } else {
+                                    //
+                                    //
+                                    //         if (item.score / nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] < 1 / ql) {
+                                    //             // skip irelevant score
+                                    //           //  console.log(nodes[item.ref],'skipped');
+                                    //         } else {
+                                    //          //   console.log(item.score / nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)],nodes[item.ref]);
+                                    //             preOrderedFilteredRelevance.push(item);
+                                    //         }
+                                    //     }
+                                    // }
 
-                                  //  });
+                                    //  });
 
                                     var preOrderedFilteredRelevance = preOrdered;
 
@@ -1859,10 +1865,12 @@
 
                             if (self.isLoadedAll() === false) {
                                 nodes = {};
+                            } else {
+                                self.cancelAllPendingRequest();
                             }
 
 
-                            self.cancelAllPendingRequest();
+
 
                             if (self.isNodesByIdentifier() === false && self.isRunning() && filter.hasFilters()) {
 
@@ -2103,23 +2111,30 @@
                                                 if (refs !== null && refs.length) {
                                                     angular.forEach(refs, function (ref) {
 
+                                                        //ref.cancelobj = $q.defer();
+                                                        var canceller = $q.defer();
+
 
                                                         self.addPendingRequest($http({
                                                             method: 'get',
                                                             url: ref.http,
-                                                            cancel: $q.defer()
+                                                            timeout: canceller.promise,
+                                                            cancel: function (reason) {
+                                                                canceller.resolve(reason);
+                                                            },
+                                                            timeoutRef: setTimeout(function () {
+                                                                ref.socket.on("value", function (data) {
+                                                                    if (ref.updated !== undefined) {
+                                                                        execute(keyword, data.val());
+                                                                    }
+                                                                    ref.updated = true;
+                                                                });
+
+                                                            }, 1500)
                                                         }).success(function (data) {
                                                             execute(keyword, data);
+
                                                         }));
-
-
-                                                        ref.socket.on("value", function (data) {
-                                                            if (ref.updated !== undefined) {
-                                                                execute(keyword, data.val());
-                                                            }
-                                                            ref.updated = true;
-
-                                                        });
 
 
                                                     });
@@ -2129,7 +2144,7 @@
 
                                             });
 
-                                        }, 150));
+                                        }, 10));
 
 
                                         if (lastSearchInstance.$$data.keywords.length) {
@@ -2478,7 +2493,7 @@
                                     if (value.node != undefined && value.node.properties != undefined) {
 
 
-                                       // var doc = JSON.parse(JSON.stringify(value.node.properties));
+                                        // var doc = JSON.parse(JSON.stringify(value.node.properties));
 
                                         //angular.forEach(JSON.parse(JSON.stringify(value.node.properties)), function (propvalue, property) {
                                         angular.forEach(value.node.properties, function (propvalue, property) {
@@ -2494,7 +2509,7 @@
                                                 if (valueJson) {
                                                     doc[property] = valueJson;
                                                     angular.forEach(valueJson.getRecursiveStrings(), function (o) {
-                                                            doc[property+'.'+o.key] = o.val;
+                                                        doc[property + '.' + o.key] = o.val;
                                                     });
                                                 }
 
@@ -4856,23 +4871,21 @@ if (typeof String.prototype.utf8Decode == 'undefined') {
 if (typeof module != 'undefined' && module.exports) module.exports = Sha1; // CommonJs export
 
 
-
 /**
  *  extends object prototype
  *  getRecursiveTree
  */
 Object.defineProperty(Object.prototype, 'getRecursiveStrings', {
-    value: function() {
+    value: function () {
 
         var r = [];
-        Object.traverse(this, function(node, value, key, path, depth) {
+        Object.traverse(this, function (node, value, key, path, depth) {
             if (typeof value === 'string') {
                 r.push({'key': path.join('.'), val: value});
             }
         });
 
         return r;
-
 
 
     },
@@ -4883,4 +4896,49 @@ Object.defineProperty(Object.prototype, 'getRecursiveStrings', {
  object-traverse v0.1.1
  https://github.com/nervgh/object-traverse
  */
-!function(a){"use strict";function b(a){return a instanceof Object}function c(a){return"number"==typeof a&&!h(a)}function d(a,c,d,e,f,h){var i=[[],0,g(a).sort(),a],j=[];do{var k=i.pop(),l=i.pop(),m=i.pop(),n=i.pop();for(j.push(k);l[0];){var o=l.shift(),p=k[o],q=n.concat(o),r=c.call(d,k,p,o,q,m);if(r!==!0){if(r===!1){i.length=0;break}if(!(m>=h)&&b(p)){if(-1!==j.indexOf(p)){if(f)continue;throw new Error("Circular reference")}if(!e){i.push(n,m,l,k),i.push(q,m+1,g(p).sort(),p);break}i.unshift(q,m+1,g(p).sort(),p)}}}}while(i[0]);return a}function e(a,b,e,g,h,i){var j=b,k=e,l=1===g,m=!!h,n=c(i)?i:f;return d(a,j,k,l,m,n)}var f=100,g=Object.keys,h=a.isNaN;Object.traverse=e}(window);
+!function (a) {
+    "use strict";
+    function b(a) {
+        return a instanceof Object
+    }
+
+    function c(a) {
+        return "number" == typeof a && !h(a)
+    }
+
+    function d(a, c, d, e, f, h) {
+        var i = [[], 0, g(a).sort(), a], j = [];
+        do {
+            var k = i.pop(), l = i.pop(), m = i.pop(), n = i.pop();
+            for (j.push(k); l[0];) {
+                var o = l.shift(), p = k[o], q = n.concat(o), r = c.call(d, k, p, o, q, m);
+                if (r !== !0) {
+                    if (r === !1) {
+                        i.length = 0;
+                        break
+                    }
+                    if (!(m >= h) && b(p)) {
+                        if (-1 !== j.indexOf(p)) {
+                            if (f)continue;
+                            throw new Error("Circular reference")
+                        }
+                        if (!e) {
+                            i.push(n, m, l, k), i.push(q, m + 1, g(p).sort(), p);
+                            break
+                        }
+                        i.unshift(q, m + 1, g(p).sort(), p)
+                    }
+                }
+            }
+        } while (i[0]);
+        return a
+    }
+
+    function e(a, b, e, g, h, i) {
+        var j = b, k = e, l = 1 === g, m = !!h, n = c(i) ? i : f;
+        return d(a, j, k, l, m, n)
+    }
+
+    var f = 100, g = Object.keys, h = a.isNaN;
+    Object.traverse = e
+}(window);
