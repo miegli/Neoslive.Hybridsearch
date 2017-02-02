@@ -97,7 +97,6 @@
                 }
 
 
-
             }
 
             Hybridsearch.prototype = {
@@ -220,13 +219,6 @@
                     }
 
 
-                    /**
-                     *  extends string prototype
-                     *  finds uri in string
-                     */
-                    String.prototype.HybridsearchResultsValue = function () {
-                        return new HybridsearchResultsValue(this);
-                    };
 
 
                     /**
@@ -1306,8 +1298,6 @@
                                 var query = filter.getFinalSearchQuery(lastSearchInstance);
 
 
-
-
                                 var preOrdered = [];
 
 
@@ -1439,60 +1429,62 @@
                                         return -1 * item.score;
                                     });
 
-                                    var preOrderedFilteredRelevance = [];
+                                    //var preOrderedFilteredRelevance = [];
+                                    // if (self.getFilter().getNodeType() == false) {
+                                    //     angular.forEach(preOrdered, function (item) {
+                                    //
+                                    //
+                                    //         if (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined) {
+                                    //             nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = item.score;
+                                    //         } else {
+                                    //             if (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] < item.score) {
+                                    //                 nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = item.score;
+                                    //             }
+                                    //         }
+                                    //
+                                    //         if (nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined) {
+                                    //             nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = {};
+                                    //         }
+                                    //
+                                    //         if (nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)][item.score] === undefined) {
+                                    //             nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)][item.score] = 1;
+                                    //         } else {
+                                    //             nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)][item.score]++;
+                                    //         }
+                                    //
+                                    //
+                                    //     });
+                                    // }
 
 
-
-                                    if (self.getFilter().getNodeType() == false) {
-                                        angular.forEach(preOrdered, function (item) {
+                                  //  var ql = query.split(" ").length + 1;
 
 
+                                   // angular.forEach(preOrdered, function (item) {
+                                       // preOrderedFilteredRelevance.push(item);
+                                        //
+                                        // if (self.getFilter().getNodeType() !== false || Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length > 5) {
+                                        //     preOrderedFilteredRelevance.push(item);
+                                        // } else {
+                                        //
+                                        //     if (Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length == 1 || Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length > 10) {
+                                        //         preOrderedFilteredRelevance.push(item);
+                                        //     } else {
+                                        //
+                                        //
+                                        //         if (item.score / nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] < 1 / ql) {
+                                        //             // skip irelevant score
+                                        //           //  console.log(nodes[item.ref],'skipped');
+                                        //         } else {
+                                        //          //   console.log(item.score / nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)],nodes[item.ref]);
+                                        //             preOrderedFilteredRelevance.push(item);
+                                        //         }
+                                        //     }
+                                        // }
 
-                                            if (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined) {
-                                                nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = item.score;
-                                            } else {
-                                                if (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] < item.score) {
-                                                    nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = item.score;
-                                                }
-                                            }
+                                  //  });
 
-                                            if (nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined) {
-                                                nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = {};
-                                            }
-
-                                            if (nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)][item.score] === undefined) {
-                                                nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)][item.score] = 1;
-                                            } else {
-                                                nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)][item.score]++;
-                                            }
-
-
-                                        });
-                                    }
-
-
-
-                                    var ql = query.split(" ").length + 1;
-
-
-                                    angular.forEach(preOrdered, function (item) {
-
-                                        if (self.getFilter().getNodeType() !== false || Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length > 5) {
-                                            preOrderedFilteredRelevance.push(item);
-                                        } else {
-
-                                            if (Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length == 1 || Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length > 10) {
-                                                preOrderedFilteredRelevance.push(item);
-                                            } else {
-                                                if (item.score / nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] < 1 / ql) {
-                                                    // skip irelevant score
-                                                } else {
-                                                    preOrderedFilteredRelevance.push(item);
-                                                }
-                                            }
-                                        }
-
-                                    });
+                                    var preOrderedFilteredRelevance = preOrdered;
 
 
                                     if (self.hasOrderBy()) {
@@ -1543,7 +1535,7 @@
                                     results.updateDistincts();
                                 }
                                 if (nodesLastHash === 1) {
-                                   nodesLastHash = this.getLocalIndexHash();
+                                    nodesLastHash = this.getLocalIndexHash();
                                 }
                             }
 
@@ -1911,7 +1903,7 @@
 
 
                                     }
-                                }, 5);
+                                }, 50);
 
 
                             } else {
@@ -2058,8 +2050,6 @@
                                         });
 
 
-
-
                                     } else {
                                         self.search();
                                     }
@@ -2139,7 +2129,7 @@
 
                                             });
 
-                                        },80));
+                                        }, 150));
 
 
                                         if (lastSearchInstance.$$data.keywords.length) {
@@ -2167,7 +2157,7 @@
                                                 }
                                                 indexintervalcounter++;
 
-                                            }, 10));
+                                            }, 100));
                                         }
 
                                     } else {
@@ -2478,6 +2468,8 @@
                             angular.forEach(data, function (value, key) {
 
 
+                                var doc = {};
+
                                 if (self.isFiltered(value.node) === false) {
 
                                     nodes[value.node.identifier] = value.node;
@@ -2485,9 +2477,11 @@
 
                                     if (value.node != undefined && value.node.properties != undefined) {
 
-                                        var doc = JSON.parse(JSON.stringify(value.node.properties));
 
-                                        angular.forEach(doc, function (propvalue, property) {
+                                       // var doc = JSON.parse(JSON.stringify(value.node.properties));
+
+                                        //angular.forEach(JSON.parse(JSON.stringify(value.node.properties)), function (propvalue, property) {
+                                        angular.forEach(value.node.properties, function (propvalue, property) {
 
 
                                             if (typeof propvalue === 'string' && ((propvalue.substr(0, 1) == '{') || ((propvalue.substr(0, 2) === '["' && propvalue.substr(-2, 2) === '"]')) || (propvalue.substr(0, 2) === '[{' && propvalue.substr(-2, 2) === '}]'))) {
@@ -2498,62 +2492,52 @@
                                                 }
 
                                                 if (valueJson) {
-
-                                                    angular.forEach(valueJson, function (val, subproperty) {
-                                                        if (typeof val == 'string') {
-
-                                                            doc[property + "-" + subproperty] = val.replace(/<\/?[a-z][a-z0-9]*[^<>]*>/ig, "").trim().toLowerCase();
-                                                        } else {
-                                                            try {
-                                                                angular.forEach(val, function (val2, subsubproperty) {
-                                                                    if (typeof val2 == 'string') {
-                                                                        doc[property + "-" + subproperty + "-" + subsubproperty] = val2.replace(/<\/?[a-z][a-z0-9]*[^<>]*>/ig, "").trim().toLowerCase();
-                                                                    }
-
-                                                                });
-                                                            } catch (e) {
-                                                                // skpp
-                                                            }
-
-                                                        }
-
-
+                                                    doc[property] = valueJson;
+                                                    angular.forEach(valueJson.getRecursiveStrings(), function (o) {
+                                                            doc[property+'.'+o.key] = o.val;
                                                     });
-
                                                 }
 
-                                            }
+                                            } else {
+                                                if (typeof propvalue === 'string') {
 
-                                            if (typeof propvalue == 'string') {
-                                                doc[property] = propvalue.replace(/<\/?[a-z][a-z0-9]*[^<>]*>/ig, "").trim().toLowerCase();
+                                                    if (propvalue.length < 60) {
+                                                        doc[property] = propvalue;
+                                                    } else {
+                                                        var i = propvalue.toLowerCase().indexOf(keyword);
+                                                        doc[property] = propvalue.substr(i - 30 > 0 ? i - 30 : 0, 60);
+                                                    }
+
+
+                                                }
                                             }
 
 
                                         });
 
 
-                                        if (keyword !== undefined && keyword !== '__') {
-
-                                            angular.forEach(Object.keys(doc), function (property) {
-
-                                                var propvalue = doc[property];
-                                                var i = typeof propvalue == 'string' ? propvalue.indexOf(keyword) : -2;
-
-                                                if (i == -1) {
-
-                                                    delete doc[property];
-                                                } else {
-                                                    if (i != -2 && propvalue.length > 120) {
-                                                        doc[property] = propvalue.substr(i - 60 > 0 ? i - 60 : 0, keyword.length + 60);
-                                                    } else {
-                                                        if (propvalue.length < 3) {
-                                                            delete doc[property];
-                                                        }
-                                                    }
-                                                }
-
-                                            });
-                                        }
+                                        //
+                                        // if (keyword !== undefined && keyword !== '__') {
+                                        //
+                                        //     angular.forEach(Object.keys(doc), function (property) {
+                                        //
+                                        //         var propvalue = doc[property];
+                                        //         var i = typeof propvalue == 'string' ? propvalue.toLowerCase().indexOf(keyword) : -2;
+                                        //
+                                        //         if (i == -1) {
+                                        //             delete doc[property];
+                                        //         } else {
+                                        //             if (i != -2 && propvalue.length > 120) {
+                                        //                 doc[property] = propvalue.substr(i - 60 > 0 ? i - 60 : 0, keyword.length + 60);
+                                        //             } else {
+                                        //                 if (propvalue.length < 3) {
+                                        //                     delete doc[property];
+                                        //                 }
+                                        //             }
+                                        //         }
+                                        //
+                                        //     });
+                                        // }
 
 
                                         angular.forEach(Object.keys(doc), function (key) {
@@ -3669,6 +3653,10 @@
                                 if (typeof this.getNodes(1)[0].getProperty('image') == 'object') {
                                     self.$$data.quickinfo.items.push({term: '', value: ''});
                                 }
+                            } else {
+                                if (this.getNodes(2)[1].getScore() / this.getNodes(1)[0].getScore() > 1) {
+                                    self.$$data.quickinfo.items.push({term: '', value: ''});
+                                }
                             }
 
                         }
@@ -3803,7 +3791,7 @@
                  * @returns {boolean} true if value is part of distinct property values
                  */
                 isInDistinct: function (property, value) {
-                   return this.getDistinct(property,false,true).indexOf(value) < 0 ? false : true;
+                    return this.getDistinct(property, false, true).indexOf(value) < 0 ? false : true;
 
                 }
                 ,
@@ -3840,7 +3828,7 @@
                         } else {
 
                             var v = [];
-                            angular.forEach(self.$$data.distincts[property], function(i) {
+                            angular.forEach(self.$$data.distincts[property], function (i) {
                                 v.push(i.value);
                             });
                             return v;
@@ -3978,7 +3966,7 @@
                     } else {
 
                         var v = [];
-                        angular.forEach(self.$$data.distincts[property], function(i) {
+                        angular.forEach(self.$$data.distincts[property], function (i) {
                             v.push(i.value);
                         });
                         return v;
@@ -4866,3 +4854,33 @@ if (typeof String.prototype.utf8Decode == 'undefined') {
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  */
 if (typeof module != 'undefined' && module.exports) module.exports = Sha1; // CommonJs export
+
+
+
+/**
+ *  extends object prototype
+ *  getRecursiveTree
+ */
+Object.defineProperty(Object.prototype, 'getRecursiveStrings', {
+    value: function() {
+
+        var r = [];
+        Object.traverse(this, function(node, value, key, path, depth) {
+            if (typeof value === 'string') {
+                r.push({'key': path.join('.'), val: value});
+            }
+        });
+
+        return r;
+
+
+
+    },
+    enumerable: false
+});
+
+/*
+ object-traverse v0.1.1
+ https://github.com/nervgh/object-traverse
+ */
+!function(a){"use strict";function b(a){return a instanceof Object}function c(a){return"number"==typeof a&&!h(a)}function d(a,c,d,e,f,h){var i=[[],0,g(a).sort(),a],j=[];do{var k=i.pop(),l=i.pop(),m=i.pop(),n=i.pop();for(j.push(k);l[0];){var o=l.shift(),p=k[o],q=n.concat(o),r=c.call(d,k,p,o,q,m);if(r!==!0){if(r===!1){i.length=0;break}if(!(m>=h)&&b(p)){if(-1!==j.indexOf(p)){if(f)continue;throw new Error("Circular reference")}if(!e){i.push(n,m,l,k),i.push(q,m+1,g(p).sort(),p);break}i.unshift(q,m+1,g(p).sort(),p)}}}}while(i[0]);return a}function e(a,b,e,g,h,i){var j=b,k=e,l=1===g,m=!!h,n=c(i)?i:f;return d(a,j,k,l,m,n)}var f=100,g=Object.keys,h=a.isNaN;Object.traverse=e}(window);
