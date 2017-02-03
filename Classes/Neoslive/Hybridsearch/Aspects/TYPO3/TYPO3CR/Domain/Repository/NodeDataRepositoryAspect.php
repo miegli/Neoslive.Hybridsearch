@@ -40,7 +40,7 @@ class NodeDataRepositoryAspect
         /** @var NodeData $nodeData */
         $nodeData = $joinPoint->getMethodArgument('object');
         if ($nodeData->getWorkspace()->getName() == 'live') {
-            $this->searchIndexFactory->checkIndexRealtimeForRemovingNodeData($nodeData);
+            //$this->searchIndexFactory->checkIndexRealtimeForRemovingNodeData($nodeData);
         }
 
     }
