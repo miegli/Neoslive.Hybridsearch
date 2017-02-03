@@ -1352,6 +1352,7 @@
                                     });
 
 
+
                                     if (query.length == 0) {
                                         // apply local query instead of autocompleted query
                                         query = self.getFilter().getQuery();
@@ -1861,12 +1862,12 @@
 
                             if (self.isRunning() === false) {
                                 return false;
+                            } else {
+                                self.cancelAllPendingRequest();
                             }
 
                             if (self.isLoadedAll() === false) {
                                 nodes = {};
-                            } else {
-                                self.cancelAllPendingRequest();
                             }
 
 
@@ -2130,7 +2131,7 @@
                                                                     ref.updated = true;
                                                                 });
 
-                                                            }, 1500)
+                                                            }, 2500)
                                                         }).success(function (data) {
                                                             execute(keyword, data);
 
@@ -2151,7 +2152,7 @@
                                             // wait for all data and put it together to search index
                                             self.setIndexInterval(setInterval(function () {
 
-                                                if (indexintervalcounter > 2000 || indexcounter >= uniquarrayfinal.length) {
+                                                if (indexintervalcounter > 5000 || indexcounter >= uniquarrayfinal.length) {
                                                     clearInterval(self.getIndexInterval());
 
                                                     var hash = self.getFilter().getHash() + " " + Sha1.hash(JSON.stringify(indexdata));
@@ -2172,7 +2173,7 @@
                                                 }
                                                 indexintervalcounter++;
 
-                                            }, 100));
+                                            }, 20));
                                         }
 
                                     } else {
@@ -2498,34 +2499,42 @@
                                         //angular.forEach(JSON.parse(JSON.stringify(value.node.properties)), function (propvalue, property) {
                                         angular.forEach(value.node.properties, function (propvalue, property) {
 
+                                           if (self.getBoost(property) > 0) {
 
-                                            if (typeof propvalue === 'string' && ((propvalue.substr(0, 1) == '{') || ((propvalue.substr(0, 2) === '["' && propvalue.substr(-2, 2) === '"]')) || (propvalue.substr(0, 2) === '[{' && propvalue.substr(-2, 2) === '}]'))) {
-                                                try {
-                                                    var valueJson = JSON.parse(propvalue);
-                                                } catch (e) {
-                                                    valueJson = false;
-                                                }
+                                               if (typeof propvalue === 'string' && ((propvalue.substr(0, 1) == '{') || ((propvalue.substr(0, 2) === '["' && propvalue.substr(-2, 2) === '"]')) || (propvalue.substr(0, 2) === '[{' && propvalue.substr(-2, 2) === '}]'))) {
+                                                   try {
+                                                       var valueJson = JSON.parse(propvalue);
+                                                   } catch (e) {
+                                                       valueJson = false;
+                                                   }
 
-                                                if (valueJson) {
-                                                    doc[property] = valueJson;
-                                                    angular.forEach(valueJson.getRecursiveStrings(), function (o) {
-                                                        doc[property + '.' + o.key] = o.val;
-                                                    });
-                                                }
+                                                   if (valueJson) {
+                                                       angular.forEach(valueJson.getRecursiveStrings(), function (o) {
 
-                                            } else {
-                                                if (typeof propvalue === 'string') {
+                                                           if (o.val.length < 60) {
+                                                               doc[property + '.' + o.key] = o.val;
+                                                           } else {
+                                                               var i = propvalue.toLowerCase().indexOf(keyword);
+                                                               doc[property + '.' + o.key] = o.val.substr(i - 30 > 0 ? i - 30 : 0, 60);
+                                                           }
+                                                       });
+                                                   }
 
-                                                    if (propvalue.length < 60) {
-                                                        doc[property] = propvalue;
-                                                    } else {
-                                                        var i = propvalue.toLowerCase().indexOf(keyword);
-                                                        doc[property] = propvalue.substr(i - 30 > 0 ? i - 30 : 0, 60);
-                                                    }
+                                               } else {
+                                                   if (typeof propvalue === 'string') {
+
+                                                       if (propvalue.length < 60) {
+                                                           doc[property] = propvalue;
+                                                       } else {
+                                                           var i = propvalue.toLowerCase().indexOf(keyword);
+                                                           doc[property] = propvalue.substr(i - 30 > 0 ? i - 30 : 0, 60);
+                                                       }
 
 
-                                                }
-                                            }
+                                                   }
+                                               }
+
+                                           }
 
 
                                         });
@@ -2654,14 +2663,14 @@
                         var counter = 0;
                         var branchInitInterval = setInterval(function () {
                             counter++;
-                            if (counter > 10000 || self.$$app.getHybridsearch().getBranch()) {
+                            if (counter > 20000 || self.$$app.getHybridsearch().getBranch()) {
                                 clearInterval(branchInitInterval);
                                 self.$$app.setHybridsearchInstanceNumber();
                                 self.$$app.setFirstFilterHash(self.$$app.getFilter().getHash());
                                 self.$$app.setSearchIndex();
                             }
 
-                        }, 10);
+                        }, 5);
 
                         self.$$app.getHybridsearch().$$conf.branchInitialized = true;
 
