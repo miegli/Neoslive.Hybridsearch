@@ -34,7 +34,7 @@ class Package extends BasePackage
 
 
         $dispatcher = $bootstrap->getSignalSlotDispatcher();
-        $dispatcher->connect(PublishingService::class, 'nodePublished', SearchIndexFactory::class, 'checkIndexRealtimeForRemovingNode');
+       // $dispatcher->connect(PublishingService::class, 'nodePublished', SearchIndexFactory::class, 'checkIndexRealtimeForRemovingNode');
 
     }
 
