@@ -29,7 +29,7 @@ use Neos\ContentRepository\Domain\Model\NodeInterface;
 use Neos\Flow\Mvc\Controller\Arguments;
 use Neos\Neos\Domain\Repository\SiteRepository;
 use Neos\Neos\Domain\Service\ContentContextFactory;
-use Neos\Neos\Domain\Service\TypoScriptService;
+use Neos\Neos\Domain\Service\FusionService;
 use Neos\ContentRepository\Domain\Model\Node;
 use Neos\Neos\Domain\Model\Site;
 use Neos\ContentRepository\Domain\Model\Workspace;
@@ -124,9 +124,9 @@ class SearchIndexFactory
 
     /**
      * @Flow\Inject
-     * @var TypoScriptService
+     * @var FusionService
      */
-    protected $typoScriptService;
+    protected $fusionService;
 
     /**
      * @var \Neos\Neos\View\TypoScriptView
