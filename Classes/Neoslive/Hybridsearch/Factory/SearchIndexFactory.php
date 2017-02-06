@@ -36,7 +36,7 @@ use TYPO3\TYPO3CR\Domain\Model\Workspace;
 use TYPO3\TYPO3CR\Domain\Repository\NodeDataRepository;
 use TYPO3\TYPO3CR\Domain\Repository\WorkspaceRepository;
 use TYPO3\TYPO3CR\Domain\Service\ContentDimensionCombinator;
-use TYPO3\Eel\FlowQuery\FlowQuery;
+use Neos\Eel\FlowQuery\FlowQuery;
 use \ForceUTF8\Encoding;
 use Firebase\FirebaseLib;
 use Neos\Flow\Utility\Algorithms;
