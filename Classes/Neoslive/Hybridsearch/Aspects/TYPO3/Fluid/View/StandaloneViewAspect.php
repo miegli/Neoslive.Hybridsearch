@@ -1,5 +1,5 @@
 <?php
-namespace Neoslive\Hybridsearch\Aspects\TYPO3\Fluid\View;
+namespace Neoslive\Hybridsearch\Aspects\Neos\FluidAdaptor\View;
 
 /*
  * This file is part of the Neos.Neos package.
@@ -23,7 +23,7 @@ class StandaloneViewAspect
 
 
     /**
-     * @Flow\Around("method(TYPO3\Fluid\View\StandaloneView->getTemplatePathAndFilename())")
+     * @Flow\Around("method(Neos\FluidAdaptor\View\StandaloneView->getTemplatePathAndFilename())")
      * @return void
      */
     public function getTemplatePathAndFilename(JoinPointInterface $joinPoint)
