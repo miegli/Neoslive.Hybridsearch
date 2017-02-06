@@ -21,7 +21,7 @@ use TYPO3\Flow\Mvc\Controller\ControllerContext;
 use TYPO3\Flow\Mvc\Routing\UriBuilder;
 use TYPO3\Flow\Persistence\Doctrine\PersistenceManager;
 use TYPO3\Flow\Reflection\ObjectAccess;
-use TYPO3\Flow\Resource\ResourceManager;
+use TYPO3\Flow\ResourceManagement\ResourceManager;
 use TYPO3\Media\Domain\Model\Asset;
 use TYPO3\Media\Domain\Model\ImageVariant;
 use TYPO3\TYPO3CR\Domain\Model\NodeData;
