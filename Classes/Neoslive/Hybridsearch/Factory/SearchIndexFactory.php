@@ -14,19 +14,19 @@ namespace Neoslive\Hybridsearch\Factory;
 
 use Neoslive\Hybridsearch\Domain\Repository\NeosliveHybridsearchNodeDataRepository;
 use Neoslive\Hybridsearch\View\HybridSearchTypoScriptView;
-use TYPO3\Flow\Annotations as Flow;
-use TYPO3\Flow\Configuration\ConfigurationManager;
-use TYPO3\Flow\Error\Exception;
-use TYPO3\Flow\Mvc\Controller\ControllerContext;
-use TYPO3\Flow\Mvc\Routing\UriBuilder;
-use TYPO3\Flow\Persistence\Doctrine\PersistenceManager;
-use TYPO3\Flow\Reflection\ObjectAccess;
-use TYPO3\Flow\ResourceManagement\ResourceManager;
+use Neos\Flow\Annotations as Flow;
+use Neos\Flow\Configuration\ConfigurationManager;
+use Neos\Flow\Error\Exception;
+use Neos\Flow\Mvc\Controller\ControllerContext;
+use Neos\Flow\Mvc\Routing\UriBuilder;
+use Neos\Flow\Persistence\Doctrine\PersistenceManager;
+use Neos\Flow\Reflection\ObjectAccess;
+use Neos\Flow\ResourceManagement\ResourceManager;
 use TYPO3\Media\Domain\Model\Asset;
 use TYPO3\Media\Domain\Model\ImageVariant;
 use TYPO3\TYPO3CR\Domain\Model\NodeData;
 use TYPO3\TYPO3CR\Domain\Model\NodeInterface;
-use TYPO3\Flow\Mvc\Controller\Arguments;
+use Neos\Flow\Mvc\Controller\Arguments;
 use TYPO3\Neos\Domain\Repository\SiteRepository;
 use TYPO3\Neos\Domain\Service\ContentContextFactory;
 use TYPO3\Neos\Domain\Service\TypoScriptService;
@@ -39,13 +39,13 @@ use TYPO3\TYPO3CR\Domain\Service\ContentDimensionCombinator;
 use TYPO3\Eel\FlowQuery\FlowQuery;
 use \ForceUTF8\Encoding;
 use Firebase\FirebaseLib;
-use TYPO3\Flow\Utility\Algorithms;
-use TYPO3\Flow\Core\Booting\Scripts;
+use Neos\Flow\Utility\Algorithms;
+use Neos\Flow\Core\Booting\Scripts;
 use TYPO3\Neos\Service\LinkingService;
-use TYPO3\Flow\Cli\ConsoleOutput;
-use TYPO3\Flow\Mvc\ActionRequest;
+use Neos\Flow\Cli\ConsoleOutput;
+use Neos\Flow\Mvc\ActionRequest;
 use TYPO3\TypoScript\View\TypoScriptView;
-use TYPO3\Flow\Core\Bootstrap;
+use Neos\Flow\Core\Bootstrap;
 use Neoslive\Hybridsearch\Request\HttpRequestHandler;
 
 
@@ -53,14 +53,14 @@ class SearchIndexFactory
 {
 
     /**
-     * @Flow\InjectConfiguration(package="TYPO3.Flow")
+     * @Flow\InjectConfiguration(package="Neos.Flow")
      * @var array
      */
     protected $flowSettings;
 
 
     /**
-     * @Flow\InjectConfiguration(package="TYPO3.Flow", path="http.baseUri")
+     * @Flow\InjectConfiguration(package="Neos.Flow", path="http.baseUri")
      * @var string
      */
     protected $baseUri;
@@ -146,7 +146,7 @@ class SearchIndexFactory
     protected $siteRepository;
 
     /**
-     * @var \TYPO3\Flow\Utility\Environment
+     * @var \Neos\Flow\Utility\Environment
      */
     protected $environment;
 
@@ -316,10 +316,10 @@ class SearchIndexFactory
     /**
      * Injects the Environment object
      *
-     * @param \TYPO3\Flow\Utility\Environment $environment
+     * @param \Neos\Flow\Utility\Environment $environment
      * @return void
      */
-    public function injectEnvironment(\TYPO3\Flow\Utility\Environment $environment)
+    public function injectEnvironment(\Neos\Flow\Utility\Environment $environment)
     {
 
         $this->firebase = new FirebaseLib($this->settings['Firebase']['endpoint'], $this->settings['Firebase']['token']);
@@ -331,8 +331,8 @@ class SearchIndexFactory
 
         if (!is_writable($temporaryDirectory)) {
             try {
-                \TYPO3\Flow\Utility\Files::createDirectoryRecursively($temporaryDirectory);
-            } catch (\TYPO3\Flow\Utility\Exception $exception) {
+                \Neos\Flow\Utility\Files::createDirectoryRecursively($temporaryDirectory);
+            } catch (\Neos\Flow\Utility\Exception $exception) {
                 throw new Exception('The temporary directory "' . $temporaryDirectory . '" could not be created.', 1264426237);
             }
         }
@@ -1955,21 +1955,21 @@ class SearchIndexFactory
                     throw new Exception(sprintf('The site "%s" has no active domains. please add one before indexing', $this->site->getName()));
                     exit;
                 } else {
-                    $httpRequest = \TYPO3\Flow\Http\Request::create(new \TYPO3\Flow\Http\Uri($this->site->getFirstActiveDomain()->getHostPattern()));
+                    $httpRequest = \Neos\Flow\Http\Request::create(new \Neos\Flow\Http\Uri($this->site->getFirstActiveDomain()->getHostPattern()));
                     $this->baseUri = ($this->site->getFirstActiveDomain()->getScheme() == '' ? 'http://' : $this->site->getFirstActiveDomain()->getScheme()) . $this->site->getFirstActiveDomain()->getHostPattern() . ($this->site->getFirstActiveDomain()->getPort() == '' ? '' : ':' . $this->site->getFirstActiveDomain()->getPort());
-                    $request = new \TYPO3\Flow\Mvc\ActionRequest($httpRequest);
+                    $request = new \Neos\Flow\Mvc\ActionRequest($httpRequest);
 
 
                     $requestHandler = $this->bootstrap->getActiveRequestHandler();
 
 
-                    if ($requestHandler instanceof \TYPO3\Flow\Http\RequestHandler === false) {
+                    if ($requestHandler instanceof \Neos\Flow\Http\RequestHandler === false) {
 
                         // simulate security context
-                        $context = new \TYPO3\Flow\Security\Context;
-                        \TYPO3\Flow\Reflection\ObjectAccess::setProperty($context, 'request', $request);
+                        $context = new \Neos\Flow\Security\Context;
+                        \Neos\Flow\Reflection\ObjectAccess::setProperty($context, 'request', $request);
                         $requestHandlerInterface = new HttpRequestHandler($httpRequest);
-                        \TYPO3\Flow\Reflection\ObjectAccess::setProperty($this->bootstrap, 'activeRequestHandler', $requestHandlerInterface);
+                        \Neos\Flow\Reflection\ObjectAccess::setProperty($this->bootstrap, 'activeRequestHandler', $requestHandlerInterface);
 
                     }
 
@@ -1978,9 +1978,9 @@ class SearchIndexFactory
                     $request->setControllerName('Frontend\Node');
                     $request->setControllerPackageKey('TYPO3.Neos');
                     $request->setFormat('html');
-                    $response = new \TYPO3\Flow\Http\Response();
+                    $response = new \Neos\Flow\Http\Response();
                     $arguments = new Arguments();
-                    $controllerContext = new \TYPO3\Flow\Mvc\Controller\ControllerContext($request, $response, $arguments);
+                    $controllerContext = new \Neos\Flow\Mvc\Controller\ControllerContext($request, $response, $arguments);
                     $this->controllerContext = $controllerContext;
                     $this->view = new HybridSearchTypoScriptView();
                     $this->view->setOption('enableContentCache', true);

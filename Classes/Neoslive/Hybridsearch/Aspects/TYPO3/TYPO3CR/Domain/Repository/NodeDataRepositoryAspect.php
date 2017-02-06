@@ -12,8 +12,8 @@ namespace Neoslive\Hybridsearch\Aspects\TYPO3\TYPO3CR\Domain\Repository;
  */
 
 use Doctrine\ORM\Mapping as ORM;
-use TYPO3\Flow\Annotations as Flow;
-use TYPO3\Flow\Aop\JoinPointInterface;
+use Neos\Flow\Annotations as Flow;
+use Neos\Flow\Aop\JoinPointInterface;
 use Neoslive\Hybridsearch\Factory\SearchIndexFactory;
 use TYPO3\TYPO3CR\Domain\Model\NodeData;
 

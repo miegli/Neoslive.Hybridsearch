@@ -11,8 +11,8 @@ namespace Neoslive\Hybridsearch\Factory;
  * source code.
  */
 
-use TYPO3\Flow\Cli\ConsoleOutput;
-use TYPO3\Flow\Annotations as Flow;
+use Neos\Flow\Cli\ConsoleOutput;
+use Neos\Flow\Annotations as Flow;
 
 class GoogleAnalyticsFactory
 {

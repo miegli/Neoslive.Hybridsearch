@@ -11,8 +11,8 @@ namespace Neoslive\Hybridsearch;
  * source code.
  */
 
-use TYPO3\Flow\Core\Bootstrap;
-use TYPO3\Flow\Package\Package as BasePackage;
+use Neos\Flow\Core\Bootstrap;
+use Neos\Flow\Package\Package as BasePackage;
 use Neoslive\Hybridsearch\Factory\SearchIndexFactory;
 use TYPO3\Neos\Service\PublishingService;
 use TYPO3\TYPO3CR\Domain\Model\Node;

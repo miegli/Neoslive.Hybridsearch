@@ -13,8 +13,8 @@ namespace Neoslive\Hybridsearch\Command;
 
 use Neoslive\Hybridsearch\Factory\GoogleAnalyticsFactory;
 use Neoslive\Hybridsearch\Factory\SearchIndexFactory;
-use TYPO3\Flow\Annotations as Flow;
-use TYPO3\Flow\Cli\CommandController;
+use Neos\Flow\Annotations as Flow;
+use Neos\Flow\Cli\CommandController;
 use TYPO3\Neos\Domain\Repository\SiteRepository;
 
 /**

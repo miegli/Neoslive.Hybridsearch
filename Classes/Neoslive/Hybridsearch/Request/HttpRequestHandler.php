@@ -12,8 +12,8 @@ namespace Neoslive\Hybridsearch\Request;
  */
 
 
-use TYPO3\Flow\Annotations as Flow;
-use TYPO3\Flow\Http\HttpRequestHandlerInterface;
+use Neos\Flow\Annotations as Flow;
+use Neos\Flow\Http\HttpRequestHandlerInterface;
 
 
 class HttpRequestHandler implements HttpRequestHandlerInterface
@@ -21,14 +21,14 @@ class HttpRequestHandler implements HttpRequestHandlerInterface
 
 
     /**
-     * @var \TYPO3\Flow\Http\Request
+     * @var \Neos\Flow\Http\Request
      */
     protected $request;
 
     /**
-     * @param \TYPO3\Flow\Http\Request $request
+     * @param \Neos\Flow\Http\Request $request
      */
-    public function __construct(\TYPO3\Flow\Http\Request $request)
+    public function __construct(\Neos\Flow\Http\Request $request)
     {
         $this->request = $request;
 

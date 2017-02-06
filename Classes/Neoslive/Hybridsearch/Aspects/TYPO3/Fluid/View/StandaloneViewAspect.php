@@ -12,8 +12,8 @@ namespace Neoslive\Hybridsearch\Aspects\TYPO3\Fluid\View;
  */
 
 use Doctrine\ORM\Mapping as ORM;
-use TYPO3\Flow\Annotations as Flow;
-use TYPO3\Flow\Aop\JoinPointInterface;
+use Neos\Flow\Annotations as Flow;
+use Neos\Flow\Aop\JoinPointInterface;
 
 /**
  * @Flow\Aspect
@@ -35,7 +35,7 @@ class StandaloneViewAspect
         if (isset($GLOBALS["neoslive.hybridsearch.insyncmode"]) && $GLOBALS["neoslive.hybridsearch.insyncmode"] && is_file($templatePathAndFilename) === false) {
             $templatePathAndFilename = 'resource://Neoslive.Hybridsearch/Private/Templates/Fallback.html';
             $standaloneView = $joinPoint->getProxy();
-            \TYPO3\Flow\Reflection\ObjectAccess::setProperty($standaloneView, 'templatePathAndFilename', $templatePathAndFilename);
+            \Neos\Flow\Reflection\ObjectAccess::setProperty($standaloneView, 'templatePathAndFilename', $templatePathAndFilename);
         }
 
         return $templatePathAndFilename;

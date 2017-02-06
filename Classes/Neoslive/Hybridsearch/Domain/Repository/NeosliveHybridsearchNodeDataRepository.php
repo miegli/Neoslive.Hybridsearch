@@ -12,7 +12,7 @@ namespace Neoslive\Hybridsearch\Domain\Repository;
  */
 
 use Doctrine\ORM\QueryBuilder;
-use TYPO3\Flow\Annotations as Flow;
+use Neos\Flow\Annotations as Flow;
 use TYPO3\TYPO3CR\Domain\Model\NodeData;
 use TYPO3\TYPO3CR\Domain\Model\Workspace;
 use TYPO3\TYPO3CR\Domain\Repository\NodeDataRepository;
