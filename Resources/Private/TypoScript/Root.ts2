@@ -1,4 +1,4 @@
-neosliveHybridsearchRawContent = TYPO3.Neos:ContentCase
+neosliveHybridsearchRawContent = Neos.Neos:ContentCase
 
 neosliveHybridsearchBreadcrumb = Neos.Fusion:Collection {
     collection = ${q(node)}
