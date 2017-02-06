@@ -1,6 +1,6 @@
 neosliveHybridsearchRawContent = TYPO3.Neos:ContentCase
 
-neosliveHybridsearchBreadcrumb = TYPO3.TypoScript:Collection {
+neosliveHybridsearchBreadcrumb = Neos.Fusion:Collection {
     collection = ${q(node)}
     itemName = 'node'
     itemRenderer = Breadcrumb
