@@ -1,8 +1,6 @@
-TYPO3:
+
+Neos:
   Neos:
     typoScript:
       autoInclude:
-        'Neoslive.Hybridsearch': TRUE
-
-
-
+        Neoslive.Hybridsearch: true

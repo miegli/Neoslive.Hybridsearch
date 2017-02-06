@@ -27,11 +27,11 @@ use Neos\Media\Domain\Model\ImageVariant;
 use TYPO3\TYPO3CR\Domain\Model\NodeData;
 use TYPO3\TYPO3CR\Domain\Model\NodeInterface;
 use Neos\Flow\Mvc\Controller\Arguments;
-use TYPO3\Neos\Domain\Repository\SiteRepository;
-use TYPO3\Neos\Domain\Service\ContentContextFactory;
-use TYPO3\Neos\Domain\Service\TypoScriptService;
+use Neos\Neos\Domain\Repository\SiteRepository;
+use Neos\Neos\Domain\Service\ContentContextFactory;
+use Neos\Neos\Domain\Service\TypoScriptService;
 use TYPO3\TYPO3CR\Domain\Model\Node;
-use TYPO3\Neos\Domain\Model\Site;
+use Neos\Neos\Domain\Model\Site;
 use TYPO3\TYPO3CR\Domain\Model\Workspace;
 use TYPO3\TYPO3CR\Domain\Repository\NodeDataRepository;
 use TYPO3\TYPO3CR\Domain\Repository\WorkspaceRepository;
@@ -41,7 +41,7 @@ use \ForceUTF8\Encoding;
 use Firebase\FirebaseLib;
 use Neos\Flow\Utility\Algorithms;
 use Neos\Flow\Core\Booting\Scripts;
-use TYPO3\Neos\Service\LinkingService;
+use Neos\Neos\Service\LinkingService;
 use Neos\Flow\Cli\ConsoleOutput;
 use Neos\Flow\Mvc\ActionRequest;
 use TYPO3\TypoScript\View\TypoScriptView;
@@ -129,7 +129,7 @@ class SearchIndexFactory
     protected $typoScriptService;
 
     /**
-     * @var \TYPO3\Neos\View\TypoScriptView
+     * @var \Neos\Neos\View\TypoScriptView
      */
     protected $view;
 
@@ -813,7 +813,7 @@ class SearchIndexFactory
             if (isset($this->settings['Filter']['NodeTypeFilter'])) {
                 $nodeTypeFilter = $this->settings['Filter']['NodeTypeFilter'];
             } else {
-                $nodeTypeFilter = '[instanceof TYPO3.Neos:Content]';
+                $nodeTypeFilter = '[instanceof Neos.Neos:Content]';
             }
         }
 
@@ -1065,7 +1065,7 @@ class SearchIndexFactory
             if (isset($this->settings['Filter']['GrantParentNodeTypeFilter'])) {
                 $grandParentNodeFilter = $this->settings['Filter']['GrantParentNodeTypeFilter'];
             } else {
-                $grandParentNodeFilter = '[instanceof TYPO3.Neos:Document]';
+                $grandParentNodeFilter = '[instanceof Neos.Neos:Document]';
             }
         }
 
@@ -1073,7 +1073,7 @@ class SearchIndexFactory
             if (isset($this->settings['Filter']['ParentNodeTypeFilter'])) {
                 $parentNodeFilter = $this->settings['Filter']['ParentNodeTypeFilter'];
             } else {
-                $parentNodeFilter = '[instanceof TYPO3.Neos:Content]';
+                $parentNodeFilter = '[instanceof Neos.Neos:Content]';
             }
         }
 
@@ -1169,7 +1169,7 @@ class SearchIndexFactory
         $flowQuery = new FlowQuery(array($node));
         $parentNode = $flowQuery->parent()->closest($parentNodeFilter)->get(0);
         $grandParentNode = $flowQuery->closest($grandParentNodeFilter)->get(0);
-        $documentNode = $flowQuery->closest("[instanceof TYPO3.Neos:Document]")->get(0);
+        $documentNode = $flowQuery->closest("[instanceof Neos.Neos:Document]")->get(0);
 
 
         if ($grandParentNode === NULL) {
@@ -1805,7 +1805,7 @@ class SearchIndexFactory
     protected
     function getClosestDocumentNode(NodeInterface $node)
     {
-        while ($node !== null && !$node->getNodeType()->isOfType('TYPO3.Neos:Document')) {
+        while ($node !== null && !$node->getNodeType()->isOfType('Neos.Neos:Document')) {
             $node = $node->getParent();
         }
         return $node;
@@ -1818,7 +1818,7 @@ class SearchIndexFactory
     protected
     function getClosestContentCollectionNode(NodeInterface $node)
     {
-        while ($node !== null && !$node->getNodeType()->isOfType('TYPO3.Neos:ContentCollection')) {
+        while ($node !== null && !$node->getNodeType()->isOfType('Neos.Neos:ContentCollection')) {
             $node = $node->getParent();
         }
         return $node;
@@ -1832,7 +1832,7 @@ class SearchIndexFactory
     function getNodeLink(NodeInterface $node)
     {
 
-        if ($node->getNodeType()->isOfType('TYPO3.Neos:Document') === false) {
+        if ($node->getNodeType()->isOfType('Neos.Neos:Document') === false) {
             $node = $this->getClosestDocumentNode($node);
         }
 
@@ -1976,7 +1976,7 @@ class SearchIndexFactory
 
                     $request->setControllerActionName('show');
                     $request->setControllerName('Frontend\Node');
-                    $request->setControllerPackageKey('TYPO3.Neos');
+                    $request->setControllerPackageKey('Neos.Neos');
                     $request->setFormat('html');
                     $response = new \Neos\Flow\Http\Response();
                     $arguments = new Arguments();

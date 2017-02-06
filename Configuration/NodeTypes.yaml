@@ -8,7 +8,7 @@
         hybridsearch:
           label: 'Hybrid Search'
   superTypes:
-    'TYPO3.Neos:Node': true
+    'Neos.Neos:Node': true
   properties:
     neoslivehybridsearchkeywords:
       type: string
@@ -17,7 +17,7 @@
         label: Keywords
         inspector:
           group: hybridsearch
-          editor: TYPO3.Neos/Inspector/Editors/TextAreaEditor
+          editor: Neos.Neos/Inspector/Editors/TextAreaEditor
           editorOptions:
             rows: 7
     neoslivehybridsearchturbonode:

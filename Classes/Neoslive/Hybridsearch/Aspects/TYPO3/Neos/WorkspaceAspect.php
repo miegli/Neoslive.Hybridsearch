@@ -1,8 +1,8 @@
 <?php
-namespace Neoslive\Hybridsearch\Aspects\TYPO3\Neos;
+namespace Neoslive\Hybridsearch\Aspects\Neos\Neos;
 
 /*
- * This file is part of the TYPO3.Neos package.
+ * This file is part of the Neos.Neos package.
  *
  * (c) Contributors of the Neos Project - www.neos.io
  *
@@ -31,7 +31,7 @@ class WorkspaceAspect
 
 
     /**
-     * @Flow\After("method(TYPO3\Neos\Service\Controller\WorkspaceController->publishAllAction())")
+     * @Flow\After("method(Neos\Neos\Service\Controller\WorkspaceController->publishAllAction())")
      * @return void
      */
     public function publishAllAction(JoinPointInterface $joinPoint)
@@ -42,7 +42,7 @@ class WorkspaceAspect
     }
 
     /**
-     * @Flow\After("method(TYPO3\Neos\Service\Controller\WorkspaceController->publishNodesAction())")
+     * @Flow\After("method(Neos\Neos\Service\Controller\WorkspaceController->publishNodesAction())")
      * @return void
      */
     public function publishNodesAction(JoinPointInterface $joinPoint)

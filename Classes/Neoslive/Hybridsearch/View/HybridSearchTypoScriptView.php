@@ -13,7 +13,7 @@ namespace Neoslive\Hybridsearch\View;
 
 
 use Neos\Flow\Annotations as Flow;
-use TYPO3\Neos\View\TypoScriptView;
+use Neos\Neos\View\TypoScriptView;
 
 
 class HybridSearchTypoScriptView extends TypoScriptView

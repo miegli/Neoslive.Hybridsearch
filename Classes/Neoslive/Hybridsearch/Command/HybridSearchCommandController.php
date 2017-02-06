@@ -15,7 +15,7 @@ use Neoslive\Hybridsearch\Factory\GoogleAnalyticsFactory;
 use Neoslive\Hybridsearch\Factory\SearchIndexFactory;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Cli\CommandController;
-use TYPO3\Neos\Domain\Repository\SiteRepository;
+use Neos\Neos\Domain\Repository\SiteRepository;
 
 /**
  * Hybrid search command controller
