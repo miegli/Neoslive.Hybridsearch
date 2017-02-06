@@ -44,7 +44,7 @@ use Neos\Flow\Core\Booting\Scripts;
 use Neos\Neos\Service\LinkingService;
 use Neos\Flow\Cli\ConsoleOutput;
 use Neos\Flow\Mvc\ActionRequest;
-use TYPO3\TypoScript\View\TypoScriptView;
+use Neos\Fusion\View\TypoScriptView;
 use Neos\Flow\Core\Bootstrap;
 use Neoslive\Hybridsearch\Request\HttpRequestHandler;
 
