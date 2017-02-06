@@ -13,7 +13,7 @@ namespace Neoslive\Hybridsearch\Factory;
 
 
 use Neoslive\Hybridsearch\Domain\Repository\NeosliveHybridsearchNodeDataRepository;
-use Neoslive\Hybridsearch\View\HybridSearchTypoScriptView;
+use Neoslive\Hybridsearch\View\HybridSearchFusionView;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Configuration\ConfigurationManager;
 use Neos\Flow\Error\Exception;
@@ -44,7 +44,7 @@ use Neos\Flow\Core\Booting\Scripts;
 use Neos\Neos\Service\LinkingService;
 use Neos\Flow\Cli\ConsoleOutput;
 use Neos\Flow\Mvc\ActionRequest;
-use Neos\Fusion\View\TypoScriptView;
+use Neos\Fusion\View\FusionView;
 use Neos\Flow\Core\Bootstrap;
 use Neoslive\Hybridsearch\Request\HttpRequestHandler;
 
@@ -129,7 +129,7 @@ class SearchIndexFactory
     protected $fusionService;
 
     /**
-     * @var \Neos\Neos\View\TypoScriptView
+     * @var \Neos\Neos\View\FusionView
      */
     protected $view;
 
@@ -1919,7 +1919,7 @@ class SearchIndexFactory
 
             if ($this->getView() && $node->getContext()->getCurrentSiteNode()) {
                 $this->getView()->assign('value', $node);
-                $this->getView()->setTypoScriptPath($typoscriptPath);
+                $this->getView()->setFusionPath($typoscriptPath);
                 $content = $this->view->render();
 
                 if ($ispage === false) {
@@ -1939,7 +1939,7 @@ class SearchIndexFactory
     }
 
     /**
-     * @return TypoScriptView
+     * @return FusionView
      * @throws Exception
      */
     private
@@ -1982,7 +1982,7 @@ class SearchIndexFactory
                     $arguments = new Arguments();
                     $controllerContext = new \Neos\Flow\Mvc\Controller\ControllerContext($request, $response, $arguments);
                     $this->controllerContext = $controllerContext;
-                    $this->view = new HybridSearchTypoScriptView();
+                    $this->view = new HybridSearchFusionView();
                     $this->view->setOption('enableContentCache', true);
                     $this->view->setControllerContext($controllerContext);
                 }

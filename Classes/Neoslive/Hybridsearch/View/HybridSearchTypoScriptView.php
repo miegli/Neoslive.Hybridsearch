@@ -13,10 +13,10 @@ namespace Neoslive\Hybridsearch\View;
 
 
 use Neos\Flow\Annotations as Flow;
-use Neos\Neos\View\TypoScriptView;
+use Neos\Neos\View\FusionView;
 
 
-class HybridSearchTypoScriptView extends TypoScriptView
+class HybridSearchFusionView extends FusionView
 {
 
     /**
