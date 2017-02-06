@@ -8,7 +8,7 @@
         hybridsearch:
           label: 'Hybrid Search'
   superTypes:
-    'TYPO3.Neos:Node': '1'
+    'TYPO3.Neos:Node': true
   properties:
     neoslivehybridsearchkeywords:
       type: string
