@@ -35,7 +35,7 @@ class StandaloneViewAspect
         if (isset($GLOBALS["neoslive.hybridsearch.insyncmode"]) && $GLOBALS["neoslive.hybridsearch.insyncmode"] && is_file($templatePathAndFilename) === false) {
             $templatePathAndFilename = 'resource://Neoslive.Hybridsearch/Private/Templates/Fallback.html';
             $standaloneView = $joinPoint->getProxy();
-            \Neos\Flow\Reflection\ObjectAccess::setProperty($standaloneView, 'templatePathAndFilename', $templatePathAndFilename);
+            \Neos\Utility\ObjectAccess::setProperty($standaloneView, 'templatePathAndFilename', $templatePathAndFilename);
         }
 
         return $templatePathAndFilename;

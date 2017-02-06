@@ -20,7 +20,7 @@ use Neos\Flow\Error\Exception;
 use Neos\Flow\Mvc\Controller\ControllerContext;
 use Neos\Flow\Mvc\Routing\UriBuilder;
 use Neos\Flow\Persistence\Doctrine\PersistenceManager;
-use Neos\Flow\Reflection\ObjectAccess;
+use Neos\Utility\ObjectAccess;
 use Neos\Flow\ResourceManagement\ResourceManager;
 use TYPO3\Media\Domain\Model\Asset;
 use TYPO3\Media\Domain\Model\ImageVariant;
@@ -331,7 +331,7 @@ class SearchIndexFactory
 
         if (!is_writable($temporaryDirectory)) {
             try {
-                \Neos\Flow\Utility\Files::createDirectoryRecursively($temporaryDirectory);
+                \Neos\Utility\Files::createDirectoryRecursively($temporaryDirectory);
             } catch (\Neos\Flow\Utility\Exception $exception) {
                 throw new Exception('The temporary directory "' . $temporaryDirectory . '" could not be created.', 1264426237);
             }
@@ -1967,9 +1967,9 @@ class SearchIndexFactory
 
                         // simulate security context
                         $context = new \Neos\Flow\Security\Context;
-                        \Neos\Flow\Reflection\ObjectAccess::setProperty($context, 'request', $request);
+                        \Neos\Utility\ObjectAccess::setProperty($context, 'request', $request);
                         $requestHandlerInterface = new HttpRequestHandler($httpRequest);
-                        \Neos\Flow\Reflection\ObjectAccess::setProperty($this->bootstrap, 'activeRequestHandler', $requestHandlerInterface);
+                        \Neos\Utility\ObjectAccess::setProperty($this->bootstrap, 'activeRequestHandler', $requestHandlerInterface);
 
                     }
 
