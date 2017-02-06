@@ -15,7 +15,7 @@ use Neos\Flow\Core\Bootstrap;
 use Neos\Flow\Package\Package as BasePackage;
 use Neoslive\Hybridsearch\Factory\SearchIndexFactory;
 use Neos\Neos\Service\PublishingService;
-use TYPO3\TYPO3CR\Domain\Model\Node;
+use Neos\ContentRepository\Domain\Model\Node;
 
 /**
  * The Neoslive hybridsearch package

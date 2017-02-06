@@ -24,18 +24,18 @@ use Neos\Utility\ObjectAccess;
 use Neos\Flow\ResourceManagement\ResourceManager;
 use Neos\Media\Domain\Model\Asset;
 use Neos\Media\Domain\Model\ImageVariant;
-use TYPO3\TYPO3CR\Domain\Model\NodeData;
-use TYPO3\TYPO3CR\Domain\Model\NodeInterface;
+use Neos\ContentRepository\Domain\Model\NodeData;
+use Neos\ContentRepository\Domain\Model\NodeInterface;
 use Neos\Flow\Mvc\Controller\Arguments;
 use Neos\Neos\Domain\Repository\SiteRepository;
 use Neos\Neos\Domain\Service\ContentContextFactory;
 use Neos\Neos\Domain\Service\TypoScriptService;
-use TYPO3\TYPO3CR\Domain\Model\Node;
+use Neos\ContentRepository\Domain\Model\Node;
 use Neos\Neos\Domain\Model\Site;
-use TYPO3\TYPO3CR\Domain\Model\Workspace;
-use TYPO3\TYPO3CR\Domain\Repository\NodeDataRepository;
-use TYPO3\TYPO3CR\Domain\Repository\WorkspaceRepository;
-use TYPO3\TYPO3CR\Domain\Service\ContentDimensionCombinator;
+use Neos\ContentRepository\Domain\Model\Workspace;
+use Neos\ContentRepository\Domain\Repository\NodeDataRepository;
+use Neos\ContentRepository\Domain\Repository\WorkspaceRepository;
+use Neos\ContentRepository\Domain\Service\ContentDimensionCombinator;
 use Neos\Eel\FlowQuery\FlowQuery;
 use \ForceUTF8\Encoding;
 use Firebase\FirebaseLib;
@@ -1354,7 +1354,7 @@ class SearchIndexFactory
     function getDimensionConfiugurationHash($dimensionConfiguration)
     {
 
-        return \TYPO3\TYPO3CR\Utility::sortDimensionValueArrayAndReturnDimensionsHash($dimensionConfiguration);
+        return \Neos\ContentRepository\Utility::sortDimensionValueArrayAndReturnDimensionsHash($dimensionConfiguration);
 
     }
 
@@ -1767,7 +1767,7 @@ class SearchIndexFactory
      * @param array $dimensions
      * @param array $targetDimensions
      * @param Site $currentSite
-     * @return \TYPO3\TYPO3CR\Domain\Service\Context
+     * @return \Neos\ContentRepository\Domain\Service\Context
      */
     protected
     function createContext($workspaceName, $dimensions, $targetDimensions, $currentSite)

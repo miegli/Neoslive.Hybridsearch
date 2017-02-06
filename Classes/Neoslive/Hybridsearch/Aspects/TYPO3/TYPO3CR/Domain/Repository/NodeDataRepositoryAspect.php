@@ -1,5 +1,5 @@
 <?php
-namespace Neoslive\Hybridsearch\Aspects\TYPO3\TYPO3CR\Domain\Repository;
+namespace Neoslive\Hybridsearch\Aspects\Neos\ContentRepository\Domain\Repository;
 
 /*
  * This file is part of the Neos.Neos package.
@@ -15,7 +15,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Aop\JoinPointInterface;
 use Neoslive\Hybridsearch\Factory\SearchIndexFactory;
-use TYPO3\TYPO3CR\Domain\Model\NodeData;
+use Neos\ContentRepository\Domain\Model\NodeData;
 
 /**
  * @Flow\Aspect
@@ -32,7 +32,7 @@ class NodeDataRepositoryAspect
 
 
     /**
-     * @Flow\Before("within(TYPO3\TYPO3CR\Domain\Repository\NodeDataRepository) && method(public .+->(remove)())")
+     * @Flow\Before("within(Neos\ContentRepository\Domain\Repository\NodeDataRepository) && method(public .+->(remove)())")
      * @return void
      */
     public function publishNodesAction(JoinPointInterface $joinPoint)

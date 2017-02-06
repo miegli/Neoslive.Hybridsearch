@@ -2,7 +2,7 @@
 namespace Neoslive\Hybridsearch\Domain\Repository;
 
 /*
- * This file is part of the TYPO3.TYPO3CR package.
+ * This file is part of the Neos.ContentRepository package.
  *
  * (c) Contributors of the Neos Project - www.neos.io
  *
@@ -13,9 +13,9 @@ namespace Neoslive\Hybridsearch\Domain\Repository;
 
 use Doctrine\ORM\QueryBuilder;
 use Neos\Flow\Annotations as Flow;
-use TYPO3\TYPO3CR\Domain\Model\NodeData;
-use TYPO3\TYPO3CR\Domain\Model\Workspace;
-use TYPO3\TYPO3CR\Domain\Repository\NodeDataRepository;
+use Neos\ContentRepository\Domain\Model\NodeData;
+use Neos\ContentRepository\Domain\Model\Workspace;
+use Neos\ContentRepository\Domain\Repository\NodeDataRepository;
 
 /**
  * A purely internal repository for NodeData storage
@@ -36,7 +36,7 @@ class NeosliveHybridsearchNodeDataRepository extends NodeDataRepository
      */
     public function __construct()
     {
-        $this->entityClassName = 'TYPO3\TYPO3CR\Domain\NodeData';
+        $this->entityClassName = 'Neos\ContentRepository\Domain\NodeData';
     }
 
 
