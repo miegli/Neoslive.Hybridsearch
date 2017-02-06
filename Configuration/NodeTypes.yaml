@@ -1,23 +1,23 @@
+
 'Neoslive.Hybridsearch:Content':
   hybridsearch:
-    render: FALSE
+    render: false
   ui:
     inspector:
       groups:
         hybridsearch:
           label: 'Hybrid Search'
-
   superTypes:
-    'TYPO3.Neos:Node': TRUE
+    'TYPO3.Neos:Node': '1'
   properties:
     neoslivehybridsearchkeywords:
       type: string
       ui:
-        reloadIfChanged: FALSE
-        label: 'Keywords'
+        reloadIfChanged: false
+        label: Keywords
         inspector:
-          group: 'hybridsearch'
-          editor: 'TYPO3.Neos/Inspector/Editors/TextAreaEditor'
+          group: hybridsearch
+          editor: TYPO3.Neos/Inspector/Editors/TextAreaEditor
           editorOptions:
             rows: 7
     neoslivehybridsearchturbonode:
@@ -25,4 +25,4 @@
       ui:
         label: 'Turbo Node'
         inspector:
-          group: 'hybridsearch'
+          group: hybridsearch
