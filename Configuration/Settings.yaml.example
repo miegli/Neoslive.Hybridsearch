@@ -24,6 +24,6 @@ Neoslive:
       NodeTypeFilter: '[instanceof Neoslive.Hybridsearch:Content]'
     TypoScriptPaths:
       'page':
-        PHLU.Corporate: 'neosliveHybridsearch'
+        Phlu.Corporate: 'neosliveHybridsearch'
       'breadcrumb':
-        PHLU.Corporate: 'neosliveHybridsearchBreadcrumb'
+        Phlu.Corporate: 'neosliveHybridsearchBreadcrumb'

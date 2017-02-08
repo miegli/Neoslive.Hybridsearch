@@ -1,5 +1,5 @@
 <?php
-namespace Neoslive\Hybridsearch\Aspects\Neos\ContentRepository\Domain\Repository;
+namespace Neoslive\Hybridsearch\Aspects\Neos\Domain\Repository;
 
 /*
  * This file is part of the Neos.Neos package.

@@ -1955,8 +1955,11 @@ class SearchIndexFactory
                     throw new Exception(sprintf('The site "%s" has no active domains. please add one before indexing', $this->site->getName()));
                     exit;
                 } else {
-                    $httpRequest = \Neos\Flow\Http\Request::create(new \Neos\Flow\Http\Uri($this->site->getFirstActiveDomain()->getHostPattern()));
-                    $this->baseUri = ($this->site->getFirstActiveDomain()->getScheme() == '' ? 'http://' : $this->site->getFirstActiveDomain()->getScheme()) . $this->site->getFirstActiveDomain()->getHostPattern() . ($this->site->getFirstActiveDomain()->getPort() == '' ? '' : ':' . $this->site->getFirstActiveDomain()->getPort());
+
+
+
+                    $httpRequest = \Neos\Flow\Http\Request::create(new \Neos\Flow\Http\Uri($this->site->getFirstActiveDomain()->getScheme().$this->site->getFirstActiveDomain()->getHostname()));
+                    $this->baseUri = ($this->site->getFirstActiveDomain()->getScheme() == '' ? 'http://' : $this->site->getFirstActiveDomain()->getScheme()) . $this->site->getFirstActiveDomain()->getHostname() . ($this->site->getFirstActiveDomain()->getPort() == '' ? '' : ':' . $this->site->getFirstActiveDomain()->getPort());
                     $request = new \Neos\Flow\Mvc\ActionRequest($httpRequest);
 
 

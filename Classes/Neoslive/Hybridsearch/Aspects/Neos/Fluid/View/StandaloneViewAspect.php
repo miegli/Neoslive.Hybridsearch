@@ -1,5 +1,5 @@
 <?php
-namespace Neoslive\Hybridsearch\Aspects\Neos\FluidAdaptor\View;
+namespace Neoslive\Hybridsearch\Aspects\Neos\Fluid\View;
 
 /*
  * This file is part of the Neos.Neos package.
