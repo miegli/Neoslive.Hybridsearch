@@ -3874,6 +3874,7 @@
 
 
                                     variants[k] = {
+                                        id: k,
                                         value: v,
                                         count: variants[k] === undefined ? 1 : (!counterGroupedByNode || variantsByNodes[node.identifier][k] === undefined ? variants[k].count + 1 : variants[k].count)
                                     };
@@ -3904,6 +3905,7 @@
                                         var k = Sha1.hash(JSON.stringify(valueJson));
 
                                         variants[k] = {
+                                            id: k,
                                             value: valueJson,
                                             count: variants[k] === undefined ? 1 : (!counterGroupedByNode || variantsByNodes[node.identifier][k] === undefined ? variants[k].count + 1 : variants[k].count)
                                         };
@@ -3916,6 +3918,7 @@
                                             var k = Sha1.hash(JSON.stringify(variant));
 
                                             variants[k] = {
+                                                id: k,
                                                 value: variant,
                                                 count: variants[k] === undefined ? 1 : (!counterGroupedByNode || variantsByNodes[node.identifier][k] === undefined ? variants[k].count + 1 : variants[k].count)
                                             };
@@ -3929,6 +3932,7 @@
                                     var k = Sha1.hash(JSON.stringify(propvalue));
 
                                     variants[k] = {
+                                        id: k,
                                         value: propvalue,
                                         count: variants[k] === undefined ? 1 : (!counterGroupedByNode || variantsByNodes[node.identifier][k] === undefined ? variants[k].count + 1 : variants[k].count)
                                     };
