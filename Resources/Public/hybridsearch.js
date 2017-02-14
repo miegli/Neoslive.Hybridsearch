@@ -760,7 +760,6 @@
                         addPendingRequest: function (request) {
 
 
-
                         },
                         /**
                          * @private
@@ -834,16 +833,19 @@
                                     hybridsearch.setBranch(data);
                                     isRunning = true;
 
-                                    /**
-                                     * watch branch
-                                     */
-                                    var query = hybridsearch.$firebase().database().ref("branches/" + hybridsearch.$$conf.workspace);
-                                    query.on("value", function (snapshot) {
-                                        if (snapshot.val() !== hybridsearch.getBranch()) {
-                                            hybridsearch.setBranch(snapshot.val());
-                                        }
+                                    window.setTimeout(function () {
 
-                                    });
+                                        /**
+                                         * watch branch
+                                         */
+                                        var query = hybridsearch.$firebase().database().ref("branches/" + hybridsearch.$$conf.workspace);
+                                        query.on("value", function (snapshot) {
+                                            if (snapshot.val() !== hybridsearch.getBranch()) {
+                                                hybridsearch.setBranch(snapshot.val());
+                                            }
+
+                                        });
+                                    }, 1000);
 
                                 });
 
@@ -1350,7 +1352,6 @@
                                             fields[v] = {boost: self.getBoost(v)}
                                         }
                                     });
-
 
 
                                     if (query.length == 0) {
@@ -1871,8 +1872,6 @@
                             }
 
 
-
-
                             if (self.isNodesByIdentifier() === false && self.isRunning() && filter.hasFilters()) {
 
 
@@ -2115,7 +2114,6 @@
                                                         //ref.cancelobj = $q.defer();
                                                         var canceller = $q.defer();
 
-
                                                         self.addPendingRequest($http({
                                                             method: 'get',
                                                             url: ref.http,
@@ -2124,6 +2122,7 @@
                                                                 canceller.resolve(reason);
                                                             },
                                                             timeoutRef: setTimeout(function () {
+
                                                                 ref.socket.on("value", function (data) {
                                                                     if (ref.updated !== undefined) {
                                                                         execute(keyword, data.val());
@@ -2134,7 +2133,6 @@
                                                             }, 2500)
                                                         }).success(function (data) {
                                                             execute(keyword, data);
-
                                                         }));
 
 
@@ -2499,42 +2497,42 @@
                                         //angular.forEach(JSON.parse(JSON.stringify(value.node.properties)), function (propvalue, property) {
                                         angular.forEach(value.node.properties, function (propvalue, property) {
 
-                                           if (self.getBoost(property) > 0) {
+                                            if (self.getBoost(property) > 0) {
 
-                                               if (typeof propvalue === 'string' && ((propvalue.substr(0, 1) == '{') || ((propvalue.substr(0, 2) === '["' && propvalue.substr(-2, 2) === '"]')) || (propvalue.substr(0, 2) === '[{' && propvalue.substr(-2, 2) === '}]'))) {
-                                                   try {
-                                                       var valueJson = JSON.parse(propvalue);
-                                                   } catch (e) {
-                                                       valueJson = false;
-                                                   }
+                                                if (typeof propvalue === 'string' && ((propvalue.substr(0, 1) == '{') || ((propvalue.substr(0, 2) === '["' && propvalue.substr(-2, 2) === '"]')) || (propvalue.substr(0, 2) === '[{' && propvalue.substr(-2, 2) === '}]'))) {
+                                                    try {
+                                                        var valueJson = JSON.parse(propvalue);
+                                                    } catch (e) {
+                                                        valueJson = false;
+                                                    }
 
-                                                   if (valueJson) {
-                                                       angular.forEach(valueJson.getRecursiveStrings(), function (o) {
+                                                    if (valueJson) {
+                                                        angular.forEach(valueJson.getRecursiveStrings(), function (o) {
 
-                                                           if (o.val.length < 60) {
-                                                               doc[property + '.' + o.key] = o.val;
-                                                           } else {
-                                                               var i = propvalue.toLowerCase().indexOf(keyword);
-                                                               doc[property + '.' + o.key] = o.val.substr(i - 30 > 0 ? i - 30 : 0, 60);
-                                                           }
-                                                       });
-                                                   }
+                                                            if (o.val.length < 60) {
+                                                                doc[property + '.' + o.key] = o.val;
+                                                            } else {
+                                                                var i = propvalue.toLowerCase().indexOf(keyword);
+                                                                doc[property + '.' + o.key] = o.val.substr(i - 30 > 0 ? i - 30 : 0, 60);
+                                                            }
+                                                        });
+                                                    }
 
-                                               } else {
-                                                   if (typeof propvalue === 'string') {
+                                                } else {
+                                                    if (typeof propvalue === 'string') {
 
-                                                       if (propvalue.length < 60) {
-                                                           doc[property] = propvalue;
-                                                       } else {
-                                                           var i = propvalue.toLowerCase().indexOf(keyword);
-                                                           doc[property] = propvalue.substr(i - 30 > 0 ? i - 30 : 0, 60);
-                                                       }
+                                                        if (propvalue.length < 60) {
+                                                            doc[property] = propvalue;
+                                                        } else {
+                                                            var i = propvalue.toLowerCase().indexOf(keyword);
+                                                            doc[property] = propvalue.substr(i - 30 > 0 ? i - 30 : 0, 60);
+                                                        }
 
 
-                                                   }
-                                               }
+                                                    }
+                                                }
 
-                                           }
+                                            }
 
 
                                         });
