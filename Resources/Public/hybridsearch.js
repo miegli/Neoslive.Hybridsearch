@@ -3875,6 +3875,7 @@
 
                                     variants[k] = {
                                         id: k,
+                                        property: property,
                                         value: v,
                                         count: variants[k] === undefined ? 1 : (!counterGroupedByNode || variantsByNodes[node.identifier][k] === undefined ? variants[k].count + 1 : variants[k].count)
                                     };
@@ -3906,6 +3907,7 @@
 
                                         variants[k] = {
                                             id: k,
+                                            property: property,
                                             value: valueJson,
                                             count: variants[k] === undefined ? 1 : (!counterGroupedByNode || variantsByNodes[node.identifier][k] === undefined ? variants[k].count + 1 : variants[k].count)
                                         };
@@ -3919,6 +3921,7 @@
 
                                             variants[k] = {
                                                 id: k,
+                                                property: property,
                                                 value: variant,
                                                 count: variants[k] === undefined ? 1 : (!counterGroupedByNode || variantsByNodes[node.identifier][k] === undefined ? variants[k].count + 1 : variants[k].count)
                                             };
@@ -3933,6 +3936,7 @@
 
                                     variants[k] = {
                                         id: k,
+                                        property: property,
                                         value: propvalue,
                                         count: variants[k] === undefined ? 1 : (!counterGroupedByNode || variantsByNodes[node.identifier][k] === undefined ? variants[k].count + 1 : variants[k].count)
                                     };
