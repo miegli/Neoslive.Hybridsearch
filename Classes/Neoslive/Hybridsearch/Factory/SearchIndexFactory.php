@@ -1124,10 +1124,12 @@ class SearchIndexFactory
                     $properties->$k['TIMESTAMP'] = $val->getTimestamp();
 
 
-                    $language = isset($node->getDimensions()['language']) ? current($node->getDimensions()['language']) : 'de';
+                    //$language = isset($node->getDimensions()['language']) ? current($node->getDimensions()['language']) : 'de';
+                    $language = 'de';
+
                     setlocale(LC_ALL, $language . "_" . $language);
                     $properties->$k['RFC822'] = $val->format(DATE_RFC822);
-                    $properties->$k['FORMAT'] = array(
+                    $properties->$k['format'] = array(
                         'A' => strftime('%A', $val->getTimestamp()),
                         'a' => strftime('%a', $val->getTimestamp()),
                         'B' => strftime('%B', $val->getTimestamp()),
