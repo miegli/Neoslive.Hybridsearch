@@ -1396,7 +1396,6 @@
 
                                         }
 
-                                        
 
                                         if (resultAnd.length > 0) {
 
@@ -1743,7 +1742,8 @@
 
                                 angular.forEach(this.getFilter().getPropertyFilters(), function (filter, property) {
 
-                                    if (filter.nodeType !== undefined && filter.nodeType != node.nodeType) {
+
+                                    if ((filter.nodeType !== undefined) && filter.nodeType != node.nodeType) {
                                         propertyMatching++;
                                     } else {
 
@@ -1753,14 +1753,33 @@
                                         var propertyValue = self.getPropertyFromNode(node, property);
 
 
+                                        // filter is fulltext mode
+                                        if (filterApplied === false && filter.fulltextmode === true) {
+                                            var vv = JSON.stringify(filter.value).replace(/['",\[\]\}\{]/gi, '').toLowerCase().split(" ");
+                                            var vvc = 0;
+                                            angular.forEach(vv,function(v) {
+                                                if (JSON.stringify(propertyValue).toLowerCase().indexOf(v) >= 0) {
+                                                    vvc++;
+                                                }
+                                            });
+
+                                            if (vvc == vv.length) {
+                                                propertyMatching++;
+                                                filterApplied = true;
+                                            }
+                                        }
+
+
                                         // filter is null
                                         if (filterApplied === false && filter.value === null) {
                                             propertyMatching++;
                                             filterApplied = true;
                                         }
 
+
                                         // filter is string
                                         if (filterApplied === false && typeof filter.value === 'string') {
+
 
                                             if (((filter.reverse === false && propertyValue == filter.value) || (filter.reverse === true && propertyValue != filter.value))) {
                                                 propertyMatching++;
@@ -2572,7 +2591,6 @@
                                         });
 
 
-
                                         //
                                         // if (keyword !== undefined && keyword !== '__') {
                                         //
@@ -2757,25 +2775,45 @@
                  * @param {scope} scope false if is simple string otherwise angular scope required for binding data
                  * @param boolean reverse (true if condition logic is reversed)
                  * @param boolean booleanmode (true if array values treated with OR conditions)
+                 * @param boolean fulltextmode (true find in fulltext mode)
                  * @param nodeType nodeType (apply filter only to given nodeType)
                  * @returns {HybridsearchObject}
                  */
-                addPropertyFilter: function (property, value, scope, reverse, booleanmode, nodeType) {
+                addPropertyFilter: function (property, value, scope, reverse, booleanmode, nodeType, fulltextmode) {
 
                     var self = this;
                     if (booleanmode === undefined) {
                         booleanmode = true;
                     }
 
+                    if (fulltextmode === undefined) {
+                        fulltextmode = false;
+                    }
+
+                    if (reverse === false || reverse === null) {
+                        reverse = undefined;
+                    }
+
+
+                    if (booleanmode === false || booleanmode === null) {
+                        booleanmode = undefined;
+                    }
+
+
+                    if (nodeType === false || nodeType === null) {
+                        nodeType = undefined;
+                    }
+
+
                     if (scope != undefined) {
                         self.$$app.getFilter().setScopeProperty(scope, value, 'propertyFilters');
                         scope.$watch(value, function (v) {
-                            self.$$app.getFilter().addPropertyFilter(property, v, booleanmode, reverse, nodeType);
+                            self.$$app.getFilter().addPropertyFilter(property, v, booleanmode, reverse, nodeType, fulltextmode);
                             self.$$app.setSearchIndex();
                         }, true);
 
                     } else {
-                        self.$$app.getFilter().addPropertyFilter(property, value, booleanmode, reverse, nodeType);
+                        self.$$app.getFilter().addPropertyFilter(property, value, booleanmode, reverse, nodeType, fulltextmode);
 
                         self.$$app.setSearchIndex();
 
@@ -4295,9 +4333,10 @@
                  * @param boolean booleanmode (true if array values treated with OR conditions)
                  * @param boolean reverse (true if condition logic is reversed)
                  * @param nodeType nodeType (apply filter only to given nodeType)
+                 * @param boolean fulltextmode (true if search in fulltext mode)
                  * @returns HybridsearchObject
                  */
-                addPropertyFilter: function (property, value, booleanmode, reverse, nodeType) {
+                addPropertyFilter: function (property, value, booleanmode, reverse, nodeType, fulltextmode) {
 
 
                     if (booleanmode === undefined) {
@@ -4324,8 +4363,11 @@
                         value: value,
                         booleanmode: booleanmode,
                         reverse: reverse == undefined ? false : reverse,
-                        nodeType: nodeType
+                        nodeType: nodeType,
+                        fulltextmode: fulltextmode
                     };
+
+
                     return this;
                 },
 
