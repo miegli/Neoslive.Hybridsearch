@@ -249,52 +249,56 @@
                         angular.forEach(object, function (val, key) {
 
 
-                            if (typeof key != 'string' || values.length === 0 && key.substr(key.length - property.length, property.length) === property) {
+                            if (val !== null) {
+
+                                if (typeof key != 'string' || values.length === 0 && key.substr(key.length - property.length, property.length) === property) {
 
 
-                                if (typeof val === 'string') {
-                                    try {
-                                        var valuesObject = JSON.parse(val);
+                                    if (typeof val === 'string') {
+                                        try {
+                                            var valuesObject = JSON.parse(val);
 
-                                        if (valuesObject) {
-                                            values = valuesObject;
+                                            if (valuesObject) {
+                                                values = valuesObject;
+                                                return values;
+                                            }
+                                        } catch (e) {
+                                            values = [val];
+                                        }
+
+                                        if (property == key) {
+                                            values = object[property];
+                                            return values;
+                                        } else {
+                                            values = object[key];
                                             return values;
                                         }
-                                    } catch (e) {
-                                        values = [val];
+
                                     }
 
-                                    if (property == key) {
-                                        values = object[property];
-                                        return values;
+                                }
+
+
+                                if (typeof val === 'object') {
+
+
+                                    if (val[property] !== undefined) {
+                                        values.push(val[property]);
                                     } else {
-                                        values = object[key];
-                                        return values;
+                                        values = [];
+                                        angular.forEach(val, function (v, k) {
+                                            if (values.length == 0 && typeof k == 'string' && (k.substr(k.length - property.length, property.length) === property || k == property)) {
+                                                values.push(val[k]);
+                                                return values;
+                                            }
+
+                                        });
+
                                     }
-
                                 }
 
-                            }
-
-
-                            if (typeof val === 'object') {
-
-
-                                if (val[property] !== undefined) {
-                                    values.push(val[property]);
-                                } else {
-                                    values = [];
-                                    angular.forEach(val, function (v, k) {
-                                        if (values.length == 0 && typeof k == 'string' && (k.substr(k.length - property.length, property.length) === property || k == property)) {
-                                            values.push(val[k]);
-                                            return values;
-                                        }
-
-                                    });
-
-                                }
-
-
+                            } else {
+                                return null;
                             }
 
 
