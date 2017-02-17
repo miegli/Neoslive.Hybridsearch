@@ -1353,7 +1353,7 @@
                                     // execute query search
                                     angular.forEach(lunrSearch.getFields(), function (v, k) {
                                         if (self.getBoost(v) >= 0) {
-                                            fields[v] = {boost: self.getBoost(v)}
+                                            fields[v] = {boost: self.getBoost(v), expand: false, bool: "AND"}
                                         }
                                     });
 
@@ -1373,11 +1373,30 @@
 
                                     } else {
 
-                                        var resultAnd = lunrSearch.search(query, {
+                                        var resultAnd = lunrSearch.search(self.getFilter().getQuery(), {
                                             fields: fields,
-                                            bool: "AND"
+                                            bool: "AND",
+                                            expand: false
                                         });
 
+                                        if (resultAnd.length == 0) {
+                                            resultAnd = lunrSearch.search(query, {
+                                                fields: fields,
+                                                bool: "AND",
+                                                expand: false
+                                            });
+
+                                        }
+
+                                        if (resultAnd.length == 0) {
+                                            resultAnd = lunrSearch.search(self.getFilter().getQuery(), {
+                                                bool: "AND",
+                                                expand: true
+                                            });
+
+                                        }
+
+                                        
 
                                         if (resultAnd.length > 0) {
 
@@ -2250,9 +2269,20 @@
 
                                         } else {
 
-                                            if (k.indexOf(querysegment.substr(0, querysegment.length / 6 * 4)) >= 0) {
-                                                instance.$$data.keywords.push(k);
+                                            if (k.length > 5) {
+
+                                                if (k.indexOf(querysegment.substr(0, querysegment.length / 6 * 4)) >= 0) {
+                                                    instance.$$data.keywords.push(k);
+                                                }
+                                            } else {
+
+                                                if (k == querysegment) {
+                                                    instance.$$data.keywords.push(k);
+                                                }
+
                                             }
+
+
                                         }
 
 
@@ -2540,6 +2570,7 @@
 
 
                                         });
+
 
 
                                         //
@@ -4596,7 +4627,7 @@
 
                     var s = this.$$data.query.replace(filterReg, " ");
 
-                    var t = s.replace(/([0-9-])( )/i, '$1').replace(/([0-9]{2})/gi, '$1 ');
+                    var t = s.replace(/([0-9-])( )/i, '$1').replace(/([0-9]{2})/gi, ' $1 ');
 
                     s = s + " " + t;
                     s = s.toLowerCase();
@@ -4659,7 +4690,7 @@
                     return magicreplacements;
 
 
-                    if (string.length > 12) {
+                    if (string.length > 8) {
                         // double consonants
                         var d = string.replace(/([bcdfghjklmnpqrstvwxyz])\1+/, "$1");
 
