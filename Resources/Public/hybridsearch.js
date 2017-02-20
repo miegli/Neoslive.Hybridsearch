@@ -1353,7 +1353,7 @@
                                     // execute query search
                                     angular.forEach(lunrSearch.getFields(), function (v, k) {
                                         if (self.getBoost(v) >= 0) {
-                                            fields[v] = {boost: self.getBoost(v), expand: false, bool: "AND"}
+                                            fields[v] = {boost: self.getBoost(v), expand: false}
                                         }
                                     });
 
@@ -1372,28 +1372,42 @@
                                         });
 
                                     } else {
-
+                                      
                                         var resultAnd = lunrSearch.search(self.getFilter().getQuery(), {
                                             fields: fields,
-                                            bool: "AND",
-                                            expand: false
+                                            bool: "AND"
                                         });
 
                                         if (resultAnd.length == 0) {
                                             resultAnd = lunrSearch.search(query, {
                                                 fields: fields,
-                                                bool: "AND",
-                                                expand: false
+                                                bool: "AND"
                                             });
 
                                         }
 
                                         if (resultAnd.length == 0) {
+                                            resultAnd = lunrSearch.search(query, {
+                                                fields: fields,
+                                                bool: "OR"
+                                            });
+                                        }
+
+                                        if (resultAnd.length == 0) {
+
                                             resultAnd = lunrSearch.search(self.getFilter().getQuery(), {
+                                                fields: fields,
                                                 bool: "AND",
                                                 expand: true
                                             });
+                                        }
 
+                                        if (resultAnd.length == 0) {
+                                            resultAnd = lunrSearch.search(self.getFilter().getQuery(), {
+                                                fields: fields,
+                                                bool: "OR",
+                                                expand: true
+                                            });
                                         }
 
 
@@ -1757,7 +1771,7 @@
                                         if (filterApplied === false && filter.fulltextmode === true) {
                                             var vv = JSON.stringify(filter.value).replace(/['",\[\]\}\{]/gi, '').toLowerCase().split(" ");
                                             var vvc = 0;
-                                            angular.forEach(vv,function(v) {
+                                            angular.forEach(vv, function (v) {
                                                 if (JSON.stringify(propertyValue).toLowerCase().indexOf(v) >= 0) {
                                                     vvc++;
                                                 }
@@ -2029,12 +2043,9 @@
                                         angular.forEach(lastSearchInstance.$$data.keywords, function (v, k) {
 
 
-                                            if (v == query || query.indexOf(" " + v + " ") >= 0
+                                            if (v == query || query.indexOf(" " + v.substr(0, Math.floor(v.length / 4 * 3)) + " ") >= 0 || query.indexOf(" " + v + " ") >= 0
                                             ) {
-                                                if (query.search(v) > 0) {
-                                                    matchexact.push(v);
-                                                }
-
+                                                matchexact.push(v);
                                             }
 
                                         });
@@ -2272,7 +2283,7 @@
 
                             instance.$$data.running++;
 
-                            var ref = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().startAt(substrStart).limitToFirst(25);
+                            var ref = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().startAt(substrStart).limitToFirst(isNaN(substrStart) ? 15 : 1);
 
                             ref.once("value", function (data) {
 
@@ -2288,16 +2299,21 @@
 
                                         } else {
 
-                                            if (k.length > 5) {
+                                            if (k.length > 4) {
 
                                                 if (k.indexOf(querysegment.substr(0, querysegment.length / 6 * 4)) >= 0) {
                                                     instance.$$data.keywords.push(k);
                                                 }
                                             } else {
 
-                                                if (k == querysegment) {
+                                                if (isNaN(substrStart)) {
                                                     instance.$$data.keywords.push(k);
+                                                } else {
+                                                    if (self.getFilter().getQuery().indexOf(k) >= 0) {
+                                                        instance.$$data.keywords.push(k);
+                                                    }
                                                 }
+
 
                                             }
 
@@ -2316,6 +2332,7 @@
                                         }
 
                                     });
+
                                     if (ismatchexact) {
                                         instance.$$data.keywords.push(querysegment);
                                     }
@@ -2581,7 +2598,6 @@
                                                             doc[property] = propvalue.substr(i - 30 > 0 ? i - 30 : 0, 60);
                                                         }
 
-
                                                     }
                                                 }
 
@@ -2624,8 +2640,8 @@
 
                                         doc.id = value.node.identifier;
                                         lunrSearch.addDoc(doc);
-
                                     }
+
 
                                 }
 
@@ -4585,6 +4601,7 @@
                     var uniqueobject = {};
                     var uniquarray = [];
 
+
                     if (lastSearchInstance.$$data !== undefined) {
                         var term = lastSearchInstance.$$data.keywords.join(" ");
                         var terms = term.split(" ");
@@ -4668,6 +4685,7 @@
 
 
                     var s = this.$$data.query.replace(filterReg, " ");
+
 
                     var t = s.replace(/([0-9-])( )/i, '$1').replace(/([0-9]{2})/gi, ' $1 ');
 
