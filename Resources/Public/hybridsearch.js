@@ -1372,7 +1372,7 @@
                                         });
 
                                     } else {
-                                      
+
                                         var resultAnd = lunrSearch.search(self.getFilter().getQuery(), {
                                             fields: fields,
                                             bool: "AND"
