@@ -322,8 +322,12 @@ class SearchIndexFactory
     public function injectEnvironment(\Neos\Flow\Utility\Environment $environment)
     {
 
-        $this->firebase = new FirebaseLib($this->settings['Firebase']['endpoint'], $this->settings['Firebase']['token']);
-        $this->firebase->setTimeOut(0);
+        if (isset($this->settings['Firebase']) && isset($this->settings['Firebase']['endpoint']) && isset($this->settings['Firebase']['token'])) {
+
+            $this->firebase = new FirebaseLib($this->settings['Firebase']['endpoint'], $this->settings['Firebase']['token']);
+            $this->firebase->setTimeOut(0);
+
+        }
 
         $this->environment = $environment;
 
