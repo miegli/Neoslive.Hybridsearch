@@ -353,6 +353,11 @@ class SearchIndexFactory
         $this->firstMemoryPeak = 0;
         $this->renderedcache = [];
         $GLOBALS["neoslive.hybridsearch.insyncmode"] = true;
+
+        if (isset($this->settings['Realtime']) == false) {
+            $this->settings['Realtime'] = false;
+        }
+
         gc_enable();
 
 
@@ -568,42 +573,41 @@ class SearchIndexFactory
     public function sync($workspaceName = 'live', $lastSyncPid = 0, $lastSyncCounter = 0)
     {
 
+            $this->branch = $this->getBranch($workspaceName);
 
-        $this->branch = $this->getBranch($workspaceName);
+            $lastsync = $this->firebase->get("/lastsync/$workspaceName/" . $this->branch);
 
-        $lastsync = $this->firebase->get("/lastsync/$workspaceName/" . $this->branch);
+            $date = new \DateTime();
 
-        $date = new \DateTime();
+            if ($lastsync) {
+                $date->setTimestamp(intval($lastsync));
+                $date->setTime($date->format("H"), $date->format("i"), 0);
+            }
 
-        if ($lastsync) {
-            $date->setTimestamp(intval($lastsync));
-            $date->setTime($date->format("H"),$date->format("i"),0);
-        }
+            $lastSyncDateTime = new \DateTime();
+            $lastSyncDateTime->setTime($lastSyncDateTime->format("H"), $lastSyncDateTime->format("i"), 0);
+            $lastSyncTimestamp = $lastSyncDateTime->getTimeStamp();
 
-        $lastSyncDateTime = new \DateTime();
-        $lastSyncDateTime->setTime($lastSyncDateTime->format("H"),$lastSyncDateTime->format("i"),0);
-        $lastSyncTimestamp = $lastSyncDateTime->getTimeStamp();
+            $this->firebase->set("/lastsync/$workspaceName/" . $this->branch, $lastSyncTimestamp);
+            $this->output->outputLine("sync from " . $date->format("d.m.Y H:i:s"));
 
-        $this->firebase->set("/lastsync/$workspaceName/" . $this->branch, $lastSyncTimestamp);
-        $this->output->outputLine("sync from " . $date->format("d.m.Y H:i:s"));
+            $moditifedNodeData = $this->neosliveHybridsearchNodeDataRepository->findByWorkspaceAndLastModificationDateTimeDate($this->workspaceRepository->findByIdentifier($workspaceName), $date);
+            $this->output->outputLine('sync ' . count($moditifedNodeData) . ' nodes');
 
-        $moditifedNodeData = $this->neosliveHybridsearchNodeDataRepository->findByWorkspaceAndLastModificationDateTimeDate($this->workspaceRepository->findByIdentifier($workspaceName), $date);
-        $this->output->outputLine('sync ' . count($moditifedNodeData) . ' nodes');
+            if (count($moditifedNodeData)) {
+                $this->removeTrashedNodes();
+            }
 
-        if (count($moditifedNodeData)) {
-            $this->removeTrashedNodes();
-        }
+            foreach ($moditifedNodeData as $nodedata) {
+                $this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace());
+            }
 
-        foreach ($moditifedNodeData as $nodedata) {
-            $this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace());
-        }
+            if (count($moditifedNodeData)) {
+                $this->save();
+                $this->proceedQueue();
+            }
 
-        if (count($moditifedNodeData)) {
-            $this->save();
-            $this->proceedQueue();
-        }
-
-        $this->firebase->set("/lastsync/$workspaceName/" . $this->branch, $lastSyncTimestamp);
+            $this->firebase->set("/lastsync/$workspaceName/" . $this->branch, $lastSyncTimestamp);
 
 
     }
