@@ -573,19 +573,19 @@ class SearchIndexFactory
 
         $lastsync = $this->firebase->get("/lastsync/$workspaceName/" . $this->branch);
 
-
         $date = new \DateTime();
 
         if ($lastsync) {
             $date->setTimestamp(intval($lastsync));
+            $date->setTime($date->format("H"),$date->format("i"),0);
         }
 
         $lastSyncDateTime = new \DateTime();
+        $lastSyncDateTime->setTime($lastSyncDateTime->format("H"),$lastSyncDateTime->format("i"),0);
         $lastSyncTimestamp = $lastSyncDateTime->getTimeStamp();
+
         $this->firebase->set("/lastsync/$workspaceName/" . $this->branch, $lastSyncTimestamp);
-
         $this->output->outputLine("sync from " . $date->format("d.m.Y H:i:s"));
-
 
         $moditifedNodeData = $this->neosliveHybridsearchNodeDataRepository->findByWorkspaceAndLastModificationDateTimeDate($this->workspaceRepository->findByIdentifier($workspaceName), $date);
         $this->output->outputLine('sync ' . count($moditifedNodeData) . ' nodes');
@@ -602,6 +602,8 @@ class SearchIndexFactory
             $this->save();
             $this->proceedQueue();
         }
+
+        $this->firebase->set("/lastsync/$workspaceName/" . $this->branch, $lastSyncTimestamp);
 
 
     }
@@ -1653,7 +1655,7 @@ class SearchIndexFactory
                     }
 
                 } else {
-                    $this->firebase->update("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $this->branch, $patch);
+                    $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $this->branch, $patch);
                 }
             }
         }
@@ -1670,7 +1672,7 @@ class SearchIndexFactory
             if ($this->creatingFullIndex) {
                 $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/keywords/", $patch);
             } else {
-                $this->firebase->update("sites/" . $this->getSiteIdentifier() . "/keywords/", $patch);
+                $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/keywords/", $patch);
             }
 
         }
