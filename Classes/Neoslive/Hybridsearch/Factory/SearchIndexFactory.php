@@ -265,12 +265,6 @@ class SearchIndexFactory
 
 
     /**
-     * @var integer
-     */
-    protected $firstMemoryPeak;
-
-
-    /**
      * @var FirebaseLib
      */
     protected $firebase;
@@ -360,7 +354,6 @@ class SearchIndexFactory
         $this->keywords = new \stdClass();
         $this->branch = "master";
         $this->branchSwitch = "slave";
-        $this->firstMemoryPeak = 0;
         $this->renderedcache = [];
         $GLOBALS["neoslive.hybridsearch.insyncmode"] = true;
         $this->time = time();
@@ -368,8 +361,6 @@ class SearchIndexFactory
         if (isset($this->settings['Realtime']) == false) {
             $this->settings['Realtime'] = false;
         }
-
-        gc_enable();
 
 
     }
@@ -1489,27 +1480,31 @@ class SearchIndexFactory
             return true;
         } else {
 
-        $filename = $this->temporaryDirectory . "/queued_" . time() . $this->queuecounter . "_" . Algorithms::generateUUID() . ".json";
+            if (strlen($data) > 0) {
 
-        $fp = fopen($filename, 'w+');
-        $content = json_encode(
-            array(
-                'path' => $path,
-                'data' => $data,
-                'method' => $method,
-            )
-        );
+                $filename = $this->temporaryDirectory . "/queued_" . time() . $this->queuecounter . "_" . Algorithms::generateUUID() . ".json";
 
-        \Neos\Flow\var_dump(strlen($content), $method . " " . $path);
-        $this->fwrite_stream($fp, $content);
+                $fp = fopen($filename, 'w+');
+                $content = json_encode(
+                    array(
+                        'path' => $path,
+                        'data' => $data,
+                        'method' => $method,
+                    )
+                );
 
-        $content = null;
-        $fp = null;
-        unset($content);
-        unset($fp);
+                \Neos\Flow\var_dump(strlen($content), $method . " " . $path);
+                $this->fwrite_stream($fp, $content);
+            }
 
-        $this->queuecounter++;
-         }
+            $content = null;
+            fclose($fp);
+            $fp = null;
+            unset($content);
+            unset($fp);
+
+            $this->queuecounter++;
+        }
 
         return true;
 
