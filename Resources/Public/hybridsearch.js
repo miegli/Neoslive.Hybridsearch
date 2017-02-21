@@ -1257,11 +1257,14 @@
                             if (searchCounterTimeout) {
                                 clearTimeout(searchCounterTimeout);
                             }
+
+
                             searchCounterTimeout = setTimeout(function () {
                                 if (self.getResults().countAll() === 0) {
                                     self.getResults().getApp().setNotFound(true);
                                 }
-                            }, 3000);
+                            }, this.isLoadedAll() ? 1: 3000);
+
 
 
                             if (lunrSearch.getFields().length == 0 && self.getFilter().getFullSearchQuery() !== false) {
@@ -1947,7 +1950,13 @@
                             if (self.isRunning() === false) {
                                 return false;
                             } else {
-                                self.cancelAllPendingRequest();
+
+                                if (self.getFilter().getNodeType() && self.getFilter().getQuery() == '') {
+                                    // don't cancel pending requests
+                                } else {
+                                    self.cancelAllPendingRequest();
+                                }
+
                             }
 
                             if (self.isLoadedAll() === false) {
