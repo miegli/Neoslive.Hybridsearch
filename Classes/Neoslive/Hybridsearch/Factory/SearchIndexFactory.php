@@ -1498,6 +1498,8 @@ class SearchIndexFactory
                     $fp = fopen($filename, 'w+');
                     $this->fwrite_stream($fp, $content);
                     fclose($fp);
+                } else {
+                    \Neos\Flow\var_dump($data);exit;
                 }
 
             }
