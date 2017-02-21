@@ -1499,6 +1499,7 @@ class SearchIndexFactory
 
                         $data = serialize($data);
                         mb_convert_encoding($data, "UTF-8", "auto");
+                        $data = unserialize($data);
 
                         \Neos\Flow\var_dump('utf8 error auto fixing');
 
