@@ -1172,19 +1172,19 @@ class SearchIndexFactory
                     setlocale(LC_ALL, strtolower($language) . "_" . strtoupper($language));
                     $properties->$k['RFC822'] = $val->format(DATE_RFC822);
                     $properties->$k['format'] = array(
-                        'A' => strftime('%A', $val->getTimestamp()),
-                        'a' => strftime('%a', $val->getTimestamp()),
-                        'B' => strftime('%B', $val->getTimestamp()),
-                        'b' => strftime('%b', $val->getTimestamp()),
-                        'd' => strftime('%d', $val->getTimestamp()),
-                        'e' => strftime('%e', $val->getTimestamp()),
-                        'H' => strftime('%H', $val->getTimestamp()),
-                        'I' => strftime('%I', $val->getTimestamp()),
-                        'm' => strftime('%m', $val->getTimestamp()),
-                        'M' => strftime('%M', $val->getTimestamp()),
-                        'p' => strftime('%p', $val->getTimestamp()),
-                        'Y' => strftime('%Y', $val->getTimestamp()),
-                        'y' => strftime('%y', $val->getTimestamp())
+                        'A' => utf8_encode(strftime('%A', $val->getTimestamp())),
+                        'a' => utf8_encode(strftime('%a', $val->getTimestamp())),
+                        'B' => utf8_encode(strftime('%B', $val->getTimestamp())),
+                        'b' => utf8_encode(strftime('%b', $val->getTimestamp())),
+                        'd' => utf8_encode(strftime('%d', $val->getTimestamp())),
+                        'e' => utf8_encode(strftime('%e', $val->getTimestamp())),
+                        'H' => utf8_encode(strftime('%H', $val->getTimestamp())),
+                        'I' => utf8_encode(strftime('%I', $val->getTimestamp())),
+                        'm' => utf8_encode(strftime('%m', $val->getTimestamp())),
+                        'M' => utf8_encode(strftime('%M', $val->getTimestamp())),
+                        'p' => utf8_encode(strftime('%p', $val->getTimestamp())),
+                        'Y' => utf8_encode(strftime('%Y', $val->getTimestamp())),
+                        'y' => utf8_encode(strftime('%y', $val->getTimestamp()))
                     );
 
                 }
@@ -1481,44 +1481,28 @@ class SearchIndexFactory
         } else {
 
 
+            $filename = $this->temporaryDirectory . "/queued_" . time() . $this->queuecounter . "_" . Algorithms::generateUUID() . ".json";
 
-                $filename = $this->temporaryDirectory . "/queued_" . time() . $this->queuecounter . "_" . Algorithms::generateUUID() . ".json";
 
+            $content = json_encode(
+                array(
+                    'path' => $path,
+                    'data' => $data,
+                    'method' => $method,
+                )
+            );
 
-                $content = json_encode(
-                    array(
-                        'path' => $path,
-                        'data' => $data,
-                        'method' => $method,
-                    )
-                );
-
-                if (is_string($content) === false) {
-                    if (json_last_error() === JSON_ERROR_UTF8) {
-                        // fix utf8
-
-                        $data = serialize($data);
-                        mb_convert_encoding($data, "UTF-8", "auto");
-                        $data = unserialize($data);
-
-                        \Neos\Flow\var_dump('utf8 error auto fixing');
-
-                        $content = json_encode(
-                            array(
-                                'path' => $path,
-                                'data' => $data,
-                                'method' => $method,
-                            )
-                        );
-
-                        \Neos\Flow\var_dump(strlen($content));
-                    }
+            if (is_string($content) === false) {
+                if (json_last_error() === JSON_ERROR_UTF8) {
+                    echo "warning utf-8 malformed string. skipped $path ";
                 }
+            } else {
 
                 $fp = fopen($filename, 'w+');
                 $this->fwrite_stream($fp, $content);
                 fclose($fp);
 
+            }
 
 
             $content = null;
