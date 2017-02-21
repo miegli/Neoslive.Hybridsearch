@@ -1502,14 +1502,10 @@ class SearchIndexFactory
                     'method' => $method,
                 )
             );
+            \Neos\Flow\var_dump($path);
+            \Neos\Flow\var_dump(strlen($content),$method);
+            $this->fwrite_stream($fp,$content);
 
-            $pieces = str_split($content, 1024 * 4);
-            foreach ($pieces as $piece) {
-                fwrite($fp, $piece, strlen($piece));
-            }
-
-            //fwrite($fp, $content);
-            fclose($fp);
             $content = null;
             $fp = null;
             unset($content);
@@ -1520,6 +1516,22 @@ class SearchIndexFactory
 
         return true;
 
+    }
+
+
+    /**
+     * @param $fp
+     * @param $string
+     * @return int
+     */
+    private function fwrite_stream($fp, $string) {
+        for ($written = 0; $written < strlen($string); $written += $fwrite) {
+            $fwrite = fwrite($fp, substr($string, $written));
+            if ($fwrite === false) {
+                return $written;
+            }
+        }
+        return $written;
     }
 
 
