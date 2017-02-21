@@ -2598,6 +2598,7 @@
                                     if (value.node != undefined && value.node.properties != undefined) {
 
 
+
                                         // var doc = JSON.parse(JSON.stringify(value.node.properties));
 
                                         //angular.forEach(JSON.parse(JSON.stringify(value.node.properties)), function (propvalue, property) {
@@ -2615,7 +2616,7 @@
                                                     if (valueJson) {
                                                         angular.forEach(valueJson.getRecursiveStrings(), function (o) {
 
-                                                            if (o.val.length < 60) {
+                                                            if (self.isLoadedAll() || self.getFilter().getQuery() == '' || o.val.length < 60) {
                                                                 doc[property + '.' + o.key] = o.val;
                                                             } else {
                                                                 var i = propvalue.toLowerCase().indexOf(keyword);
@@ -2627,7 +2628,7 @@
                                                 } else {
                                                     if (typeof propvalue === 'string') {
 
-                                                        if (propvalue.length < 60) {
+                                                        if (self.isLoadedAll() || self.getFilter().getQuery() == '' || propvalue.length < 60) {
                                                             doc[property] = propvalue;
                                                         } else {
                                                             var i = propvalue.toLowerCase().indexOf(keyword);
