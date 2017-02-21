@@ -1480,11 +1480,11 @@ class SearchIndexFactory
             return true;
         } else {
 
-            if (strlen($data) > 0) {
+            if (count($data) > 0) {
 
                 $filename = $this->temporaryDirectory . "/queued_" . time() . $this->queuecounter . "_" . Algorithms::generateUUID() . ".json";
 
-                $fp = fopen($filename, 'w+');
+
                 $content = json_encode(
                     array(
                         'path' => $path,
@@ -1493,12 +1493,17 @@ class SearchIndexFactory
                     )
                 );
 
-                \Neos\Flow\var_dump(strlen($content), $method . " " . $path);
-                $this->fwrite_stream($fp, $content);
+                if (strlen($content) > 0) {
+                    \Neos\Flow\var_dump(strlen($content), $method . " " . $path);
+                    $fp = fopen($filename, 'w+');
+                    $this->fwrite_stream($fp, $content);
+                    fclose($fp);
+                }
+
             }
 
             $content = null;
-            fclose($fp);
+
             $fp = null;
             unset($content);
             unset($fp);
