@@ -1480,7 +1480,7 @@ class SearchIndexFactory
             return true;
         } else {
 
-            if (count($data) > 0) {
+
 
                 $filename = $this->temporaryDirectory . "/queued_" . time() . $this->queuecounter . "_" . Algorithms::generateUUID() . ".json";
 
@@ -1493,16 +1493,32 @@ class SearchIndexFactory
                     )
                 );
 
-                if (strlen($content) > 0) {
-                    \Neos\Flow\var_dump(strlen($content), $method . " " . $path);
-                    $fp = fopen($filename, 'w+');
-                    $this->fwrite_stream($fp, $content);
-                    fclose($fp);
-                } else {
-                    \Neos\Flow\var_dump($data);exit;
+                if (is_string($content) === false) {
+                    if (json_last_error() === JSON_ERROR_UTF8) {
+                        // fix utf8
+
+                        $data = serialize($data);
+                        mb_convert_encoding($data, "UTF-8", "auto");
+
+                        \Neos\Flow\var_dump('utf8 error auto fixing');
+
+                        $content = json_encode(
+                            array(
+                                'path' => $path,
+                                'data' => $data,
+                                'method' => $method,
+                            )
+                        );
+
+                        \Neos\Flow\var_dump(strlen($content));
+                    }
                 }
 
-            }
+                $fp = fopen($filename, 'w+');
+                $this->fwrite_stream($fp, $content);
+                fclose($fp);
+
+
 
             $content = null;
 
