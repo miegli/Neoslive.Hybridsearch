@@ -1035,6 +1035,7 @@ class SearchIndexFactory
             unset($keywords);
 
             if (time() - $this->time > 300) {
+                $this->time = time();
                 $this->save();
             };
 
