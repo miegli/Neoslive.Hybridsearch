@@ -223,14 +223,21 @@
                      * @private
                      * global function get property from object
                      */
-                    window.HybridsearchGetPropertyFromObject = function (object, property) {
+                    window.HybridsearchGetPropertyFromObject = function (inputObject, property) {
+
+
+                        if (property.indexOf("(") > 0) {
+                            if (typeof inputObject['__proto__'][property.substr(0,property.indexOf("("))] == 'function') {
+                              return eval("inputObject."+property);
+                            }
+                        }
 
 
                         if (property === '*') {
 
                             var values = [];
 
-                            angular.forEach(object, function (val, key) {
+                            angular.forEach(inputObject, function (val, key) {
                                 angular.forEach(val, function (v) {
                                     values.push(v);
                                 });
@@ -241,12 +248,13 @@
 
                         var values = [];
 
-                        if (object[property] !== undefined) {
-                            return object[property];
+                        if (inputObject[property] !== undefined) {
+                            return inputObject[property];
                         }
 
 
-                        angular.forEach(object, function (val, key) {
+                        angular.forEach(inputObject, function (val, key) {
+
 
 
                             if (val !== null) {
@@ -267,10 +275,10 @@
                                         }
 
                                         if (property == key) {
-                                            values = object[property];
+                                            values = inputObject[property];
                                             return values;
                                         } else {
-                                            values = object[key];
+                                            values = inputObject[key];
                                             return values;
                                         }
 
@@ -1769,6 +1777,7 @@
                                         var propertyValue = self.getPropertyFromNode(node, property);
 
 
+
                                         // filter is fulltext mode
                                         if (filterApplied === false && filter.fulltextmode === true) {
                                             var vv = JSON.stringify(filter.value).replace(/['",\[\]\}\{]/gi, '').toLowerCase().split(" ");
@@ -1801,6 +1810,22 @@
                                                 propertyMatching++;
                                             }
 
+                                            filterApplied = true;
+                                        }
+
+                                        // filter is boolean
+                                        if (filterApplied === false && typeof filter.value === 'boolean') {
+                                            if (((filter.reverse === false && propertyValue == filter.value) || (filter.reverse === true && propertyValue != filter.value))) {
+                                                propertyMatching++;
+                                            }
+                                            filterApplied = true;
+                                        }
+
+                                        // filter is a number
+                                        if (filterApplied === false && typeof filter.value === 'number') {
+                                            if (((filter.reverse === false && propertyValue == filter.value) || (filter.reverse === true && propertyValue != filter.value))) {
+                                                propertyMatching++;
+                                            }
                                             filterApplied = true;
                                         }
 
@@ -2820,6 +2845,10 @@
 
                     if (nodeType === false || nodeType === null) {
                         nodeType = undefined;
+                    }
+
+                    if (scope === false || scope === null) {
+                        scope = undefined;
                     }
 
 
