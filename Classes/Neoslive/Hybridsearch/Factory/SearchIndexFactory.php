@@ -1494,7 +1494,7 @@ class SearchIndexFactory
 
             $filename = $this->temporaryDirectory . "/queued_" . time() . $this->queuecounter . "_" . Algorithms::generateUUID() . ".json";
 
-            $fp = fopen($filename, 'w');
+            $fp = fopen($filename, 'w+');
             $content = json_encode(
                 array(
                     'path' => $path,
@@ -1502,7 +1502,13 @@ class SearchIndexFactory
                     'method' => $method,
                 )
             );
-            fwrite($fp, $content);
+
+            $pieces = str_split($content, 1024 * 4);
+            foreach ($pieces as $piece) {
+                fwrite($fp, $piece, strlen($piece));
+            }
+
+            //fwrite($fp, $content);
             fclose($fp);
             $content = null;
             $fp = null;
