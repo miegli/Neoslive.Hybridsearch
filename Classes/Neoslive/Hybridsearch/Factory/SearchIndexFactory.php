@@ -589,44 +589,44 @@ class SearchIndexFactory
     {
 
 
-            if ($nodeTypeName) {
-                $this->syncByNodeType($workspaceName,$nodeTypeName);
-                return true;
-            }
+        if ($nodeTypeName) {
+            $this->syncByNodeType($workspaceName, $nodeTypeName);
+            return true;
+        }
 
-            $this->branch = $this->getBranch($workspaceName);
+        $this->branch = $this->getBranch($workspaceName);
 
-            $lastsync = $this->firebase->get("/lastsync/$workspaceName/" . $this->branch);
+        $lastsync = $this->firebase->get("/lastsync/$workspaceName/" . $this->branch);
 
-            $date = new \DateTime();
+        $date = new \DateTime();
 
-            if ($lastsync) {
-                $date->setTimestamp(intval($lastsync));
-                $date->setTime($date->format("H"), $date->format("i"), 0);
-            }
+        if ($lastsync) {
+            $date->setTimestamp(intval($lastsync));
+            $date->setTime($date->format("H"), $date->format("i"), 0);
+        }
 
-            $lastSyncDateTime = new \DateTime();
-            $lastSyncDateTime->setTime($lastSyncDateTime->format("H"), $lastSyncDateTime->format("i"), 0);
-            $lastSyncTimestamp = $lastSyncDateTime->getTimeStamp();
+        $lastSyncDateTime = new \DateTime();
+        $lastSyncDateTime->setTime($lastSyncDateTime->format("H"), $lastSyncDateTime->format("i"), 0);
+        $lastSyncTimestamp = $lastSyncDateTime->getTimeStamp();
 
-            $this->firebase->set("/lastsync/$workspaceName/" . $this->branch, $lastSyncTimestamp);
-            $this->output->outputLine("sync from " . $date->format("d.m.Y H:i:s"));
+        $this->firebase->set("/lastsync/$workspaceName/" . $this->branch, $lastSyncTimestamp);
+        $this->output->outputLine("sync from " . $date->format("d.m.Y H:i:s"));
 
-            $moditifedNodeData = $this->neosliveHybridsearchNodeDataRepository->findByWorkspaceAndLastModificationDateTimeDate($this->workspaceRepository->findByIdentifier($workspaceName), $date);
-            $this->output->outputLine('sync ' . count($moditifedNodeData) . ' nodes');
+        $moditifedNodeData = $this->neosliveHybridsearchNodeDataRepository->findByWorkspaceAndLastModificationDateTimeDate($this->workspaceRepository->findByIdentifier($workspaceName), $date);
+        $this->output->outputLine('sync ' . count($moditifedNodeData) . ' nodes');
 
-            if (count($moditifedNodeData)) {
-                $this->removeTrashedNodes();
-            }
+        if (count($moditifedNodeData)) {
+            $this->removeTrashedNodes();
+        }
 
-            foreach ($moditifedNodeData as $nodedata) {
-                $this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace());
-            }
+        foreach ($moditifedNodeData as $nodedata) {
+            $this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace());
+        }
 
-            if (count($moditifedNodeData)) {
-                $this->save();
-                $this->proceedQueue();
-            }
+        if (count($moditifedNodeData)) {
+            $this->save();
+            $this->proceedQueue();
+        }
 
 
         return true;
@@ -642,30 +642,28 @@ class SearchIndexFactory
     {
 
 
-            $this->output->outputLine("sync all nodes from type " . $nodeTypeName);
+        $this->output->outputLine("sync all nodes from type " . $nodeTypeName);
 
-            $moditifedNodeData = $this->neosliveHybridsearchNodeDataRepository->findByWorkspaceAndNodeTypeName($this->workspaceRepository->findByIdentifier($workspaceName), $nodeTypeName);
-            $this->output->outputLine('sync ' . count($moditifedNodeData) . ' nodes');
+        $moditifedNodeData = $this->neosliveHybridsearchNodeDataRepository->findByWorkspaceAndNodeTypeName($this->workspaceRepository->findByIdentifier($workspaceName), $nodeTypeName);
+        $this->output->outputLine('sync ' . count($moditifedNodeData) . ' nodes');
 
-            $this->output->progressStart(count($moditifedNodeData));
+        $this->output->progressStart(count($moditifedNodeData));
 
-            foreach ($moditifedNodeData as $nodedata) {
-                $this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace());
-                $this->output->progressAdvance(1);
-            }
+        foreach ($moditifedNodeData as $nodedata) {
+            $this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace());
+            $this->output->progressAdvance(1);
+        }
 
-            $this->output->progressFinish();
+        $this->output->progressFinish();
 
-            if (count($moditifedNodeData)) {
-                $this->save();
-                $this->proceedQueue();
-            }
+        if (count($moditifedNodeData)) {
+            $this->save();
+            $this->proceedQueue();
+        }
 
-            $this->output->outputLine("done");
+        $this->output->outputLine("done");
 
     }
-
-
 
 
     /**
@@ -749,7 +747,6 @@ class SearchIndexFactory
 
 
                             }
-
 
 
                         }
@@ -1484,35 +1481,35 @@ class SearchIndexFactory
     {
 
 
-//        if ($chunkcounter < 100 && count($data) > 2 && strlen(json_encode($data)) > 100000000) {
-//            $chunkcounter++;
-//            $this->addToQueue($path, array_slice($data, 0, floor(count($data) / 2)), $method, $chunkcounter);
-//            $this->addToQueue($path, array_slice($data, ceil(count($data) / 2)), $method, $chunkcounter);
-//            unset($data);
-//            return true;
-//        } else {
+        if ($chunkcounter < 100 && count($data) > 2 && strlen(json_encode($data)) > 100000000) {
+            $chunkcounter++;
+            $this->addToQueue($path, array_slice($data, 0, floor(count($data) / 2)), $method, $chunkcounter);
+            $this->addToQueue($path, array_slice($data, ceil(count($data) / 2)), $method, $chunkcounter);
+            unset($data);
+            return true;
+        } else {
 
-            $filename = $this->temporaryDirectory . "/queued_" . time() . $this->queuecounter . "_" . Algorithms::generateUUID() . ".json";
+        $filename = $this->temporaryDirectory . "/queued_" . time() . $this->queuecounter . "_" . Algorithms::generateUUID() . ".json";
 
-            $fp = fopen($filename, 'w+');
-            $content = json_encode(
-                array(
-                    'path' => $path,
-                    'data' => $data,
-                    'method' => $method,
-                )
-            );
-            \Neos\Flow\var_dump($path);
-            \Neos\Flow\var_dump(strlen($content),$method);
-            $this->fwrite_stream($fp,$content);
+        $fp = fopen($filename, 'w+');
+        $content = json_encode(
+            array(
+                'path' => $path,
+                'data' => $data,
+                'method' => $method,
+            )
+        );
 
-            $content = null;
-            $fp = null;
-            unset($content);
-            unset($fp);
+        \Neos\Flow\var_dump(strlen($content), $method . " " . $path);
+        $this->fwrite_stream($fp, $content);
 
-            $this->queuecounter++;
-       // }
+        $content = null;
+        $fp = null;
+        unset($content);
+        unset($fp);
+
+        $this->queuecounter++;
+         }
 
         return true;
 
@@ -1524,7 +1521,8 @@ class SearchIndexFactory
      * @param $string
      * @return int
      */
-    private function fwrite_stream($fp, $string) {
+    private function fwrite_stream($fp, $string)
+    {
         for ($written = 0; $written < strlen($string); $written += $fwrite) {
             $fwrite = fwrite($fp, substr($string, $written));
             if ($fwrite === false) {
@@ -1759,7 +1757,6 @@ class SearchIndexFactory
 
         $this->index = new \stdClass();
         $this->keywords = new \stdClass();
-
 
 
     }
@@ -2031,8 +2028,7 @@ class SearchIndexFactory
                 } else {
 
 
-
-                    $httpRequest = \Neos\Flow\Http\Request::create(new \Neos\Flow\Http\Uri($this->site->getFirstActiveDomain()->getScheme().$this->site->getFirstActiveDomain()->getHostname()));
+                    $httpRequest = \Neos\Flow\Http\Request::create(new \Neos\Flow\Http\Uri($this->site->getFirstActiveDomain()->getScheme() . $this->site->getFirstActiveDomain()->getHostname()));
                     $this->baseUri = ($this->site->getFirstActiveDomain()->getScheme() == '' ? 'http://' : $this->site->getFirstActiveDomain()->getScheme()) . $this->site->getFirstActiveDomain()->getHostname() . ($this->site->getFirstActiveDomain()->getPort() == '' ? '' : ':' . $this->site->getFirstActiveDomain()->getPort());
                     $request = new \Neos\Flow\Mvc\ActionRequest($httpRequest);
 
