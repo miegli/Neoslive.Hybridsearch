@@ -299,6 +299,12 @@ class SearchIndexFactory
 
 
     /**
+     * @var integer
+     */
+    protected $time = 0;
+
+
+    /**
      * Inject the settings
      *
      * @param array $settings
@@ -357,6 +363,7 @@ class SearchIndexFactory
         $this->firstMemoryPeak = 0;
         $this->renderedcache = [];
         $GLOBALS["neoslive.hybridsearch.insyncmode"] = true;
+        $this->time = time();
 
         if (isset($this->settings['Realtime']) == false) {
             $this->settings['Realtime'] = false;
@@ -424,9 +431,10 @@ class SearchIndexFactory
     /**
      * Create full search index for given workspace
      * @param string $workspacename
+     * @param string $nodetype
      * @return void
      */
-    public function createFullIndex($workspacename = 'live')
+    public function createFullIndex($workspacename = 'live', $nodetype = null)
     {
 
         $sites = array();
@@ -460,8 +468,11 @@ class SearchIndexFactory
 
         $flowQuery = new FlowQuery(array($basenode));
 
-
-        $moditifedNodeData = $flowQuery->find($this->settings['Filter']['NodeTypeFilter']);
+        if ($nodetype) {
+            $moditifedNodeData = $flowQuery->find("[instanceof $nodetype]");
+        } else {
+            $moditifedNodeData = $flowQuery->find($this->settings['Filter']['NodeTypeFilter']);
+        }
 
         $this->output->progressStart($moditifedNodeData->count());
 
@@ -571,11 +582,17 @@ class SearchIndexFactory
     /**
      * Update index
      * @param string $workspaceName
-     * @param integer $lastSyncPid
-     * @param integer $lastSyncCounter
+     * @param string nodeTypeName
+     * @return boolean
      */
-    public function sync($workspaceName = 'live', $lastSyncPid = 0, $lastSyncCounter = 0)
+    public function sync($workspaceName = 'live', $nodeTypeName = null)
     {
+
+
+            if ($nodeTypeName) {
+                $this->syncByNodeType($workspaceName,$nodeTypeName);
+                return true;
+            }
 
             $this->branch = $this->getBranch($workspaceName);
 
@@ -611,10 +628,44 @@ class SearchIndexFactory
                 $this->proceedQueue();
             }
 
-            $this->firebase->set("/lastsync/$workspaceName/" . $this->branch, $lastSyncTimestamp);
 
+        return true;
 
     }
+
+    /**
+     * Update index
+     * @param string $workspaceName
+     * @param string nodeTypeName
+     */
+    private function syncByNodeType($workspaceName = 'live', $nodeTypeName = null)
+    {
+
+
+            $this->output->outputLine("sync all nodes from type " . $nodeTypeName);
+
+            $moditifedNodeData = $this->neosliveHybridsearchNodeDataRepository->findByWorkspaceAndNodeTypeName($this->workspaceRepository->findByIdentifier($workspaceName), $nodeTypeName);
+            $this->output->outputLine('sync ' . count($moditifedNodeData) . ' nodes');
+
+            $this->output->progressStart(count($moditifedNodeData));
+
+            foreach ($moditifedNodeData as $nodedata) {
+                $this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace());
+                $this->output->progressAdvance(1);
+            }
+
+            $this->output->progressFinish();
+
+            if (count($moditifedNodeData)) {
+                $this->save();
+                $this->proceedQueue();
+            }
+
+            $this->output->outputLine("done");
+
+    }
+
+
 
 
     /**
@@ -982,16 +1033,9 @@ class SearchIndexFactory
             unset($node);
             unset($indexData);
             unset($keywords);
-            gc_collect_cycles();
 
-
-            if ($this->firstMemoryPeak === 0) {
-                $this->firstMemoryPeak = memory_get_peak_usage();
-            }
-
-            if (memory_get_peak_usage() - $this->firstMemoryPeak > 100000000) {
+            if (time() - $this->time > 300) {
                 $this->save();
-                $this->firstMemoryPeak = memory_get_peak_usage();
             };
 
         }
@@ -1230,7 +1274,7 @@ class SearchIndexFactory
             unset($key);
             unset($val);
             unset($prop);
-            gc_collect_cycles();
+
 
             $properties->parent = (Encoding::UTF8FixWin1252Chars($parentPropertiesText));
             $p = $data->nodeType . "-parent";
@@ -1348,7 +1392,7 @@ class SearchIndexFactory
         unset($flowQuery);
         unset($properties);
         unset($node);
-        gc_collect_cycles();
+
 
         return $data;
 
@@ -1697,7 +1741,7 @@ class SearchIndexFactory
         $this->index = new \stdClass();
         $this->keywords = new \stdClass();
 
-        gc_collect_cycles();
+
 
     }
 

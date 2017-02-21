@@ -50,11 +50,12 @@ class HybridSearchCommandController extends CommandController
      * This command is used to create full search index.
      *
      * @param string $workspace Name of the workspace
+     * @param string $nodetype name of node type to index only
      * @return void
      */
-    public function createFullIndexCommand($workspace = 'live')
+    public function createFullIndexCommand($workspace = 'live', $nodetype = null)
     {
-        $this->searchIndexFactory->createFullIndex($workspace);
+        $this->searchIndexFactory->createFullIndex($workspace, $nodetype);
     }
 
     /**
@@ -62,13 +63,12 @@ class HybridSearchCommandController extends CommandController
      *
      * This command updates index from all local changes
      * @param string $workspace
-     * @param integer $lastSyncPid
-     * @param integer $lastSyncCounter
+     * @param string $nodetype name of node type to sync
      * @return void
      */
-    public function syncCommand($workspace = 'live', $lastSyncPid = 0, $lastSyncCounter = 0)
+    public function syncCommand($workspace = 'live', $nodetype = null)
     {
-        $this->searchIndexFactory->sync($workspace, $lastSyncPid, $lastSyncCounter);
+        $this->searchIndexFactory->sync($workspace, $nodetype);
     }
 
     /**
