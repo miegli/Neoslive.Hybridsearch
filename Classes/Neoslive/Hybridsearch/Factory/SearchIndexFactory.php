@@ -1484,13 +1484,13 @@ class SearchIndexFactory
     {
 
 
-        if ($chunkcounter < 100 && count($data) > 2 && strlen(json_encode($data)) > 100000000) {
-            $chunkcounter++;
-            $this->addToQueue($path, array_slice($data, 0, floor(count($data) / 2)), $method, $chunkcounter);
-            $this->addToQueue($path, array_slice($data, ceil(count($data) / 2)), $method, $chunkcounter);
-            unset($data);
-            return true;
-        } else {
+//        if ($chunkcounter < 100 && count($data) > 2 && strlen(json_encode($data)) > 100000000) {
+//            $chunkcounter++;
+//            $this->addToQueue($path, array_slice($data, 0, floor(count($data) / 2)), $method, $chunkcounter);
+//            $this->addToQueue($path, array_slice($data, ceil(count($data) / 2)), $method, $chunkcounter);
+//            unset($data);
+//            return true;
+//        } else {
 
             $filename = $this->temporaryDirectory . "/queued_" . time() . $this->queuecounter . "_" . Algorithms::generateUUID() . ".json";
 
@@ -1510,7 +1510,7 @@ class SearchIndexFactory
             unset($fp);
 
             $this->queuecounter++;
-        }
+       // }
 
         return true;
 
