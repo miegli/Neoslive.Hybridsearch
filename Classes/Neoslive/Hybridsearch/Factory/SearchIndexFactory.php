@@ -1540,8 +1540,6 @@ class SearchIndexFactory
             if (is_string($content) === false) {
                 if (json_last_error() === JSON_ERROR_UTF8) {
                     echo "warning utf-8 malformed string. skipped $path ";
-                    echo $data;
-                    exit;
                 }
             } else {
 
