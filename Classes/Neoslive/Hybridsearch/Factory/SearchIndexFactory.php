@@ -1645,6 +1645,9 @@ class SearchIndexFactory
                                 $out = $this->firebase->update($content->path, $content->data);
                                 if (strlen($out) < 255) {
                                     $this->output->outputLine($out);
+                                    rename($file,'error_'.$file);
+                                } else {
+                                    unlink($file);
                                 }
                                 break;
 
@@ -1652,6 +1655,9 @@ class SearchIndexFactory
                                 $out = $this->firebase->delete($content->path);
                                 if (strlen($out) < 255) {
                                     $this->output->outputLine($out);
+                                    rename($file,'error_'.$file);
+                                } else {
+                                    unlink($file);
                                 }
                                 break;
 
@@ -1659,12 +1665,17 @@ class SearchIndexFactory
                                 $out = $this->firebase->set($content->path, $content->data);
                                 if (strlen($out) < 255) {
                                     $this->output->outputLine($out);
+                                    rename($file,'error_'.$file);
+                                } else {
+                                    unlink($file);
                                 }
                                 break;
                         }
+                    } else {
+                        unlink($file);
                     }
 
-                    unlink($file);
+
 
 
                 }
