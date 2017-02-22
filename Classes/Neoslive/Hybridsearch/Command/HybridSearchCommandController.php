@@ -66,11 +66,12 @@ class HybridSearchCommandController extends CommandController
      * @param string $nodetype name of node type to sync
      * @param string $node identifier of node type to sync
      * @param integer $timestamp timestamp of last modification to sync
+     * @param string $nodesSerialized
      * @return void
      */
-    public function syncCommand($workspace = 'live', $nodetype = null, $node = null, $timestamp = null)
+    public function syncCommand($workspace = 'live', $nodetype = null, $node = null, $timestamp = null, $nodesSerialized = null)
     {
-        $this->searchIndexFactory->sync($workspace, $nodetype, $timestamp,$node);
+        $this->searchIndexFactory->sync($workspace, $nodetype, $timestamp,$node, $nodesSerialized);
     }
 
     /**

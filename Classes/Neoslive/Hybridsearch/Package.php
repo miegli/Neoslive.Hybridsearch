@@ -14,8 +14,7 @@ namespace Neoslive\Hybridsearch;
 use Neos\Flow\Core\Bootstrap;
 use Neos\Flow\Package\Package as BasePackage;
 use Neoslive\Hybridsearch\Factory\SearchIndexFactory;
-use Neos\Neos\Service\PublishingService;
-use Neos\ContentRepository\Domain\Model\Node;
+
 
 /**
  * The Neoslive hybridsearch package
@@ -32,9 +31,8 @@ class Package extends BasePackage
     public function boot(Bootstrap $bootstrap)
     {
 
-
-        $dispatcher = $bootstrap->getSignalSlotDispatcher();
-       // $dispatcher->connect(PublishingService::class, 'nodePublished', SearchIndexFactory::class, 'checkIndexRealtimeForRemovingNode');
+        //$dispatcher = $bootstrap->getSignalSlotDispatcher();
+        // $dispatcher->connect(PublishingService::class, 'nodePublished', SearchIndexFactory::class, 'checkIndexRealtimeForRemovingNode');
 
     }
 

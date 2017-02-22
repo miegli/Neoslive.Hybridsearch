@@ -583,15 +583,37 @@ class SearchIndexFactory
     }
 
     /**
+     * Execute realtime sync
+     * @return boolean
+     */
+    public function executeRealtimeSync()
+    {
+
+        if (isset($GLOBALS['neoslivehybridsearchrealtimequeue'])) {
+
+            foreach ($GLOBALS['neoslivehybridsearchrealtimequeue'] as $workspaceName => $nodes) {
+                   // Scripts::executeCommand('hybridsearch:sync', $this->flowSettings, true,array('workspaceName' => $workspaceName, 'nodesSerialized' => serialize($nodes)));
+                    Scripts::executeCommandAsync('hybridsearch:sync', $this->flowSettings, array('workspaceName' => $workspaceName, 'nodesSerialized' => serialize($nodes)));
+                    $GLOBALS['neoslivehybridsearchrealtimequeue'][$workspaceName] = array();
+            }
+
+        }
+
+
+    }
+
+    /**
      * Update index
      * @param string $workspaceName
      * @param string nodeTypeName
      * @param integer timestamp
      * @param string node identifier
+     * @param string $nodesSerialized
      * @return boolean
      */
-    public function sync($workspaceName = 'live', $nodeTypeName = null, $timestamp = null, $nodeIdentifier = null)
+    public function sync($workspaceName = 'live', $nodeTypeName = null, $timestamp = null, $nodeIdentifier = null, $nodesSerialized = null)
     {
+
 
         $this->branch = $this->getBranch($workspaceName);
 
@@ -600,13 +622,33 @@ class SearchIndexFactory
             $this->syncByNodeType($workspaceName, $nodeTypeName);
             return true;
         }
-
         if ($nodeIdentifier) {
             $this->syncByNodeIdentifier($workspaceName, $nodeIdentifier);
+            $this->save(true);
+            $this->proceedQueue();
+
+            $this->output->outputLine("done");
             return true;
         }
 
+        if ($nodesSerialized) {
 
+            $j = unserialize($nodesSerialized);
+
+
+            if (is_array($j)) {
+                foreach ($j as $id => $n) {
+                    $this->syncByNodeIdentifier($workspaceName, $id);
+                }
+            }
+
+            $this->save();
+            $this->proceedQueue();
+
+            $this->output->outputLine("done");
+            return true;
+
+        }
 
         if ($timestamp == null) {
             $lastsync = $this->firebase->get("/lastsync/$workspaceName/" . $this->branch);
@@ -618,7 +660,9 @@ class SearchIndexFactory
 
         if ($lastsync) {
             $date->setTimestamp(intval($lastsync));
-            $date->setTime($date->format("H"), $date->format("i"), 0);
+            if ($timestamp) {
+                $date->setTime($date->format("H"), $date->format("i"), 0);
+            }
         }
 
         $lastSyncDateTime = new \DateTime();
@@ -699,10 +743,7 @@ class SearchIndexFactory
             $this->updateIndexForNodeData($node, $node->getWorkspace(), true);
         }
 
-        $this->save(true);
-        $this->proceedQueue();
 
-        $this->output->outputLine("done");
 
     }
 

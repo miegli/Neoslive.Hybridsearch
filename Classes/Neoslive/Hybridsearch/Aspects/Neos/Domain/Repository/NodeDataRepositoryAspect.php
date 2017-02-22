@@ -48,14 +48,19 @@ class NodeDataRepositoryAspect
         $object = reset($arguments);
 
         if ($object instanceof NodeData && $object->getWorkspace()->getName() == 'live' && $object->getNodeType()->hasConfiguration('properties.neoslivehybridsearchrealtime')) {
-            if (isset($this->nodesupdated[$object->getIdentifier()]) == false) {
-                $this->searchIndexFactory->syncIndexRealtime($object->getWorkspace()->getName(), $object);
-            }
-
-            $this->nodesupdated[$object->getIdentifier()] = true;
-
+           $GLOBALS['neoslivehybridsearchrealtimequeue'][$object->getWorkspace()->getName()][$object->getIdentifier()] = 1;
         }
 
+    }
+
+    /**
+     * @Flow\AfterReturning("within(Neos\Flow\Persistence\PersistenceManagerInterface) && method(public .+->(persistAll)())")
+     * @param JoinPointInterface $joinPoint
+     * @return string
+     */
+    public function persistAllObjectToIndex(JoinPointInterface $joinPoint)
+    {
+        $this->searchIndexFactory->executeRealtimeSync();
     }
 
 
@@ -70,11 +75,9 @@ class NodeDataRepositoryAspect
         $object = reset($arguments);
 
         if ($object instanceof NodeData && $object->getWorkspace()->getName() == 'live' && $object->getNodeType()->hasConfiguration('properties.neoslivehybridsearchrealtime')) {
-            if (isset($this->nodesupdated[$object->getIdentifier()]) == false) {
+            if (isset($GLOBALS['neoslivehybridsearch'.$object->getIdentifier()]) == false) {
                 $this->searchIndexFactory->checkIndexRealtimeForRemovingNodeData($object);
             }
-
-            $this->nodesupdated[$object->getIdentifier()] = true;
         }
 
     }
