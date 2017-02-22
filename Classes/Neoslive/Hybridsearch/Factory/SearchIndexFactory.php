@@ -1643,34 +1643,32 @@ class SearchIndexFactory
                         switch ($content->method) {
                             case 'update':
                                 $out = $this->firebase->update($content->path, $content->data);
-                                if (strlen($out) < 255) {
-                                    $this->output->outputLine($out);
-                                    rename($file,$file.".error.log");
-                                } else {
-                                    unlink($file);
-                                }
                                 break;
 
                             case 'delete':
                                 $out = $this->firebase->delete($content->path);
-                                if (strlen($out) < 255) {
-                                    $this->output->outputLine($out);
-                                    rename($file,$file.".error.log");
-                                } else {
-                                    unlink($file);
-                                }
                                 break;
 
                             case 'set':
                                 $out = $this->firebase->set($content->path, $content->data);
-                                if (strlen($out) < 255) {
-                                    $this->output->outputLine($out);
-                                    rename($file,$file.".error.log");
-                                } else {
-                                    unlink($file);
-                                }
                                 break;
                         }
+
+
+                        if (strlen($out) < 255) {
+
+                            if (json_decode($out)) {
+                                $this->output->outputLine($out);
+                                rename($file,$file.".error.log");
+                            } else {
+                                unlink($file);
+                            }
+
+                        } else {
+                            unlink($file);
+                        }
+
+
                     } else {
                         unlink($file);
                     }
