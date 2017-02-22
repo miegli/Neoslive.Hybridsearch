@@ -38,7 +38,7 @@ class NodeDataRepositoryAspect
 
 
     /**
-     * @Flow\AfterReturning("setting(Neoslive.Hybridsearch.Realtime) && within(Neos\Flow\Persistence\PersistenceManagerInterface) && method(public .+->(add|update)())")
+     * @Flow\AfterReturning("within(Neos\Flow\Persistence\PersistenceManagerInterface) && method(public .+->(add|update)())")
      * @param JoinPointInterface $joinPoint
      * @return string
      */
@@ -60,7 +60,7 @@ class NodeDataRepositoryAspect
 
 
     /**
-     * @Flow\AfterReturning("setting(Neoslive.Hybridsearch.Realtime) && within(Neos\Flow\Persistence\PersistenceManagerInterface) && method(public .+->(remove)())")
+     * @Flow\AfterReturning("within(Neos\Flow\Persistence\PersistenceManagerInterface) && method(public .+->(remove)())")
      * @param JoinPointInterface $joinPoint
      * @return string
      */

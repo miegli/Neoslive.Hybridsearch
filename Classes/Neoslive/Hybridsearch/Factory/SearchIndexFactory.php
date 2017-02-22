@@ -356,6 +356,7 @@ class SearchIndexFactory
         $this->branchSwitch = "slave";
         $this->renderedcache = [];
         $GLOBALS["neoslive.hybridsearch.insyncmode"] = true;
+
         $this->time = time();
 
         if (isset($this->settings['Realtime']) == false) {
