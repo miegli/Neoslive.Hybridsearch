@@ -391,6 +391,9 @@ class SearchIndexFactory
 
 
         $branch = $this->firebase->get("/branches/" . $workspacename);
+        if ($branch === null) {
+            return 'master';
+        }
         if ($branch) {
             return trim($branch, '"');
         } else {
