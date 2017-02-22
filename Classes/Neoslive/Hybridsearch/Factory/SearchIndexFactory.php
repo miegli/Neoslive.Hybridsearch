@@ -670,10 +670,10 @@ class SearchIndexFactory
 
         $this->output->progressFinish();
 
-        if (count($moditifedNodeData)) {
-            $this->save();
-            $this->proceedQueue();
-        }
+
+        $this->save();
+        $this->proceedQueue();
+
 
         $this->output->outputLine("done");
 
