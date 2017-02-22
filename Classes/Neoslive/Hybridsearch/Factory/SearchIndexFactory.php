@@ -1617,7 +1617,7 @@ class SearchIndexFactory
             $fp = opendir($this->temporaryDirectory);
             while (false !== ($entry = readdir($fp))) {
 
-                if (substr($entry, 0, 6) === 'queued') {
+                if (substr($entry, 0, 6) === 'queued' && substr($entry, -4) === 'json') {
                     list($name, $number, $uuid) = explode("_", $entry);
                     $files[$number][] = $this->temporaryDirectory . $entry;
                 }
@@ -1645,7 +1645,7 @@ class SearchIndexFactory
                                 $out = $this->firebase->update($content->path, $content->data);
                                 if (strlen($out) < 255) {
                                     $this->output->outputLine($out);
-                                    rename($file,'error_'.$file);
+                                    rename($file,$file.".error.log");
                                 } else {
                                     unlink($file);
                                 }
@@ -1655,7 +1655,7 @@ class SearchIndexFactory
                                 $out = $this->firebase->delete($content->path);
                                 if (strlen($out) < 255) {
                                     $this->output->outputLine($out);
-                                    rename($file,'error_'.$file);
+                                    rename($file,$file.".error.log");
                                 } else {
                                     unlink($file);
                                 }
@@ -1665,7 +1665,7 @@ class SearchIndexFactory
                                 $out = $this->firebase->set($content->path, $content->data);
                                 if (strlen($out) < 255) {
                                     $this->output->outputLine($out);
-                                    rename($file,'error_'.$file);
+                                    rename($file,$file.".error.log");
                                 } else {
                                     unlink($file);
                                 }
