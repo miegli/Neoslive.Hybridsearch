@@ -31,8 +31,10 @@ class NodeDataRepositoryAspect
      */
     protected $searchIndexFactory;
 
-
-
+    /**
+     * @var array
+     */
+    protected $nodesupdated;
 
 
     /**
@@ -45,9 +47,12 @@ class NodeDataRepositoryAspect
         $arguments = $joinPoint->getMethodArguments();
         $object = reset($arguments);
 
-        if ($object instanceof NodeData && $object->getWorkspace()->getName() == 'live' && $object->hasProperty('neoslivehybridsearchrealtime')) {
+        if ($object instanceof NodeData && $object->getWorkspace()->getName() == 'live' && $object->getNodeType()->hasConfiguration('properties.neoslivehybridsearchrealtime')) {
+            if (isset($this->nodesupdated[$object->getIdentifier()]) == false) {
+                $this->searchIndexFactory->syncIndexRealtime($object->getWorkspace()->getName(), $object);
+            }
 
-           $this->searchIndexFactory->syncIndexRealtime($object->getWorkspace()->getName(),$object);
+            $this->nodesupdated[$object->getIdentifier()] = true;
 
         }
 
@@ -64,14 +69,15 @@ class NodeDataRepositoryAspect
         $arguments = $joinPoint->getMethodArguments();
         $object = reset($arguments);
 
-        if ($object instanceof NodeData && $object->getWorkspace()->getName() == 'live' && $object->hasProperty('neoslivehybridsearchrealtime')) {
+        if ($object instanceof NodeData && $object->getWorkspace()->getName() == 'live' && $object->getNodeType()->hasConfiguration('properties.neoslivehybridsearchrealtime')) {
+            if (isset($this->nodesupdated[$object->getIdentifier()]) == false) {
+                $this->searchIndexFactory->checkIndexRealtimeForRemovingNodeData($object);
+            }
 
-           $this->searchIndexFactory->checkIndexRealtimeForRemovingNodeData($object);
-
+            $this->nodesupdated[$object->getIdentifier()] = true;
         }
 
     }
-
 
 
 }

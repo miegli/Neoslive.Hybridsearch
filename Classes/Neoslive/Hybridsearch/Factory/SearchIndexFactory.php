@@ -393,7 +393,7 @@ class SearchIndexFactory
         if ($branch) {
             return trim($branch, '"');
         } else {
-            return $this->branch;
+            return $this->branch ? $this->branch : 'master';
         }
 
 
