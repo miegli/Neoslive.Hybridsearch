@@ -502,12 +502,20 @@ class SearchIndexFactory
     /**
      * Sync index
      * @param string $workspaceName
+     * @param NodeData $nodedata
      */
-    public function syncIndexRealtime($workspaceName = 'live')
+    public function syncIndexRealtime($workspaceName = 'live', $nodedata = null)
     {
 
-        if ($this->settings['Realtime']) {
-            Scripts::executeCommandAsync('hybridsearch:sync', $this->flowSettings, array('workspaceName' => $workspaceName));
+        if ($this->settings['Realtime'] == true) {
+
+            if ($nodedata) {
+                Scripts::executeCommandAsync('hybridsearch:sync', $this->flowSettings, array('workspaceName' => $workspaceName, 'node' => $nodedata->getIdentifier()));
+            } else {
+                Scripts::executeCommandAsync('hybridsearch:sync', $this->flowSettings, array('workspaceName' => $workspaceName, 'timestamp' => time()));
+            }
+
+
         }
 
     }
@@ -574,10 +582,14 @@ class SearchIndexFactory
      * Update index
      * @param string $workspaceName
      * @param string nodeTypeName
+     * @param integer timestamp
+     * @param string node identifier
      * @return boolean
      */
-    public function sync($workspaceName = 'live', $nodeTypeName = null)
+    public function sync($workspaceName = 'live', $nodeTypeName = null, $timestamp = null, $nodeIdentifier = null)
     {
+
+        $this->branch = $this->getBranch($workspaceName);
 
 
         if ($nodeTypeName) {
@@ -585,9 +597,18 @@ class SearchIndexFactory
             return true;
         }
 
-        $this->branch = $this->getBranch($workspaceName);
+        if ($nodeIdentifier) {
+            $this->syncByNodeIdentifier($workspaceName, $nodeIdentifier);
+            return true;
+        }
 
-        $lastsync = $this->firebase->get("/lastsync/$workspaceName/" . $this->branch);
+
+
+        if ($timestamp == null) {
+            $lastsync = $this->firebase->get("/lastsync/$workspaceName/" . $this->branch);
+        } else {
+            $lastsync = $timestamp;
+        }
 
         $date = new \DateTime();
 
@@ -600,7 +621,9 @@ class SearchIndexFactory
         $lastSyncDateTime->setTime($lastSyncDateTime->format("H"), $lastSyncDateTime->format("i"), 0);
         $lastSyncTimestamp = $lastSyncDateTime->getTimeStamp();
 
-        $this->firebase->set("/lastsync/$workspaceName/" . $this->branch, $lastSyncTimestamp);
+        if ($timestamp == null) {
+            $this->firebase->set("/lastsync/$workspaceName/" . $this->branch, $lastSyncTimestamp);
+        }
         $this->output->outputLine("sync from " . $date->format("d.m.Y H:i:s"));
 
         $moditifedNodeData = $this->neosliveHybridsearchNodeDataRepository->findByWorkspaceAndLastModificationDateTimeDate($this->workspaceRepository->findByIdentifier($workspaceName), $date);
@@ -651,6 +674,29 @@ class SearchIndexFactory
             $this->save();
             $this->proceedQueue();
         }
+
+        $this->output->outputLine("done");
+
+    }
+
+    /**
+     * Update index
+     * @param string $workspaceName
+     * @param string $nodeIdentifier
+     */
+    private function syncByNodeIdentifier($workspaceName = 'live', $nodeIdentifier)
+    {
+
+
+        $this->output->outputLine("sync node id " . $nodeIdentifier);
+
+        $nodedata = $this->neosliveHybridsearchNodeDataRepository->findByIdentifierWithoutReduce($nodeIdentifier, $this->workspaceRepository->findByIdentifier($workspaceName));
+        foreach ($nodedata as $node) {
+            $this->updateIndexForNodeData($node, $node->getWorkspace(), true);
+        }
+
+        $this->save(true);
+        $this->proceedQueue();
 
         $this->output->outputLine("done");
 
@@ -707,7 +753,6 @@ class SearchIndexFactory
                                     if ($parentNode) {
                                         $this->generateSingleIndex($parentNode, $workspace, $this->getDimensionConfiugurationHash($parentNode->getContext()->getDimensions()));
                                     }
-
 
                                 }
 
@@ -776,7 +821,7 @@ class SearchIndexFactory
     {
 
 
-        if ($this->settings['Realtime']) {
+        if ($this->settings['Realtime'] == true) {
 
             $this->lockReltimeIndexer();
 
@@ -833,7 +878,7 @@ class SearchIndexFactory
     {
 
 
-        if ($this->settings['Realtime'] && $node->isRemoved()) {
+        if ($this->settings['Realtime'] == true && $node->isRemoved()) {
 
             $flowQuery = new FlowQuery(array($node));
             if ($flowQuery->is($this->settings['Filter']['NodeTypeFilter']) === true) {
@@ -1285,7 +1330,7 @@ class SearchIndexFactory
             }
 
 
-            $grandParentPropertiesText .= mb_strtolower(preg_replace("/[^A-z0-9]/", " ", $uri + " " + $this->rawcontent($breadcrumb)));
+            $grandParentPropertiesText .= mb_strtolower(preg_replace("/[^A-z0-9]/", " ", $uri . " " . $this->rawcontent($breadcrumb)));
             $properties->grandparent = (Encoding::UTF8FixWin1252Chars($grandParentPropertiesText));
             $p = $data->nodeType . "-grandparent";
             $properties->$p = $properties->grandparent;
@@ -1495,6 +1540,8 @@ class SearchIndexFactory
             if (is_string($content) === false) {
                 if (json_last_error() === JSON_ERROR_UTF8) {
                     echo "warning utf-8 malformed string. skipped $path ";
+                    echo $data;
+                    exit;
                 }
             } else {
 
@@ -1703,10 +1750,11 @@ class SearchIndexFactory
 
     /**
      * Save generated search index as tempory json file for persisting later
+     * @param $directpush true when dont write temporary files
      * @return void
      */
     protected
-    function save()
+    function save($directpush = false)
     {
 
 
@@ -1727,7 +1775,12 @@ class SearchIndexFactory
                     }
 
                 } else {
-                    $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $this->branch, $patch);
+                    if ($directpush) {
+                        $this->firebase->update("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $this->branch, $patch);
+                    } else {
+                        $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $this->branch, $patch);
+                    }
+
                 }
             }
         }
@@ -1744,7 +1797,11 @@ class SearchIndexFactory
             if ($this->creatingFullIndex) {
                 $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/keywords/", $patch);
             } else {
-                $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/keywords/", $patch);
+                if ($directpush) {
+                    $this->firebase->update("sites/" . $this->getSiteIdentifier() . "/keywords/", $patch);
+                } else {
+                    $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/keywords/", $patch);
+                }
             }
 
         }

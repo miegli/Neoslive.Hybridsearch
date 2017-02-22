@@ -64,11 +64,13 @@ class HybridSearchCommandController extends CommandController
      * This command updates index from all local changes
      * @param string $workspace
      * @param string $nodetype name of node type to sync
+     * @param string $node identifier of node type to sync
+     * @param integer $timestamp timestamp of last modification to sync
      * @return void
      */
-    public function syncCommand($workspace = 'live', $nodetype = null)
+    public function syncCommand($workspace = 'live', $nodetype = null, $node = null, $timestamp = null)
     {
-        $this->searchIndexFactory->sync($workspace, $nodetype);
+        $this->searchIndexFactory->sync($workspace, $nodetype, $timestamp,$node);
     }
 
     /**

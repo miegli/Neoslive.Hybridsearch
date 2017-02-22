@@ -17,6 +17,7 @@ use Neos\Flow\Aop\JoinPointInterface;
 use Neoslive\Hybridsearch\Factory\SearchIndexFactory;
 use Neos\ContentRepository\Domain\Model\NodeData;
 
+
 /**
  * @Flow\Aspect
  */
@@ -31,19 +32,46 @@ class NodeDataRepositoryAspect
     protected $searchIndexFactory;
 
 
+
+
+
     /**
-     * @Flow\Before("within(Neos\ContentRepository\Domain\Repository\NodeDataRepository) && method(public .+->(remove)())")
-     * @return void
+     * @Flow\AfterReturning("setting(Neoslive.Hybridsearch.Realtime) && within(Neos\Flow\Persistence\PersistenceManagerInterface) && method(public .+->(add|update)())")
+     * @param JoinPointInterface $joinPoint
+     * @return string
      */
-    public function publishNodesAction(JoinPointInterface $joinPoint)
+    public function updateObjectToIndex(JoinPointInterface $joinPoint)
     {
-        /** @var NodeData $nodeData */
-        $nodeData = $joinPoint->getMethodArgument('object');
-        if ($nodeData->getWorkspace()->getName() == 'live') {
-            //$this->searchIndexFactory->checkIndexRealtimeForRemovingNodeData($nodeData);
+        $arguments = $joinPoint->getMethodArguments();
+        $object = reset($arguments);
+
+        if ($object instanceof NodeData && $object->getWorkspace()->getName() == 'live' && $object->hasProperty('neoslivehybridsearchrealtime')) {
+
+           $this->searchIndexFactory->syncIndexRealtime($object->getWorkspace()->getName(),$object);
+
         }
 
     }
+
+
+    /**
+     * @Flow\AfterReturning("setting(Neoslive.Hybridsearch.Realtime) && within(Neos\Flow\Persistence\PersistenceManagerInterface) && method(public .+->(remove)())")
+     * @param JoinPointInterface $joinPoint
+     * @return string
+     */
+    public function removeObjectToIndex(JoinPointInterface $joinPoint)
+    {
+        $arguments = $joinPoint->getMethodArguments();
+        $object = reset($arguments);
+
+        if ($object instanceof NodeData && $object->getWorkspace()->getName() == 'live' && $object->hasProperty('neoslivehybridsearchrealtime')) {
+
+           $this->searchIndexFactory->checkIndexRealtimeForRemovingNodeData($object);
+
+        }
+
+    }
+
 
 
 }

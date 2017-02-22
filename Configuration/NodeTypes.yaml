@@ -10,6 +10,8 @@
   superTypes:
     'Neos.Neos:Node': true
   properties:
+    neoslivehybridsearchrealtime:
+      type: boolean
     neoslivehybridsearchkeywords:
       type: string
       ui:
