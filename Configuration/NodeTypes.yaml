@@ -1,4 +1,3 @@
-
 'Neoslive.Hybridsearch:Content':
   hybridsearch:
     render: false
@@ -7,8 +6,6 @@
       groups:
         hybridsearch:
           label: 'Hybrid Search'
-  superTypes:
-    'Neos.Neos:Node': true
   properties:
     neoslivehybridsearchrealtime:
       type: boolean
