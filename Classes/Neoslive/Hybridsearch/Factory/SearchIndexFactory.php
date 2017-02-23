@@ -614,6 +614,9 @@ class SearchIndexFactory
     public function sync($workspaceName = 'live', $nodeTypeName = null, $timestamp = null, $nodeIdentifier = null, $nodesSerialized = null)
     {
 
+        if ($this->isLockReltimeIndexer()) {
+            return false;
+        }
 
         $this->branch = $this->getBranch($workspaceName);
 
