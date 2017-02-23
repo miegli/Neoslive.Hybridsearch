@@ -50,14 +50,23 @@ class NodeDataRepositoryAspect
     public function updateObjectToIndex(JoinPointInterface $joinPoint)
     {
 
-        if (isset($this->settings['Realtime']) && $this->settings['Realtime']) {
-            $arguments = $joinPoint->getMethodArguments();
-            $object = reset($arguments);
 
-            if ($object instanceof NodeData && $object->getWorkspace()->getName() == 'live' && $object->getNodeType()->hasConfiguration('properties.neoslivehybridsearchrealtime')) {
+        $arguments = $joinPoint->getMethodArguments();
+        $object = reset($arguments);
+
+
+        if ($object instanceof NodeData && $object->getWorkspace()->getName() == 'live') {
+
+            if (
+                (isset($this->settings['RealtimeNodeTypes']) && isset($this->settings['RealtimeNodeTypes']['*']) && $object->getNodeType()->hasConfiguration('properties.neoslivehybridsearchrealtime'))
+                ||
+                (isset($this->settings['RealtimeNodeTypes']) && isset($this->settings['RealtimeNodeTypes'][$object->getNodeType()->getName()]) && $this->settings['RealtimeNodeTypes'][$object->getNodeType()->getName()])
+            ) {
                 $GLOBALS['neoslivehybridsearchrealtimequeue'][$object->getWorkspace()->getName()][$object->getIdentifier()] = 1;
             }
+
         }
+
 
     }
 
@@ -68,9 +77,8 @@ class NodeDataRepositoryAspect
      */
     public function persistAllObjectToIndex(JoinPointInterface $joinPoint)
     {
-        if (isset($this->settings['Realtime']) && $this->settings['Realtime']) {
-            $this->searchIndexFactory->executeRealtimeSync();
-        }
+
+        $this->searchIndexFactory->executeRealtimeSync();
     }
 
 
@@ -81,18 +89,26 @@ class NodeDataRepositoryAspect
      */
     public function removeObjectToIndex(JoinPointInterface $joinPoint)
     {
-        if (isset($this->settings['Realtime']) && $this->settings['Realtime']) {
-            $arguments = $joinPoint->getMethodArguments();
-            $object = reset($arguments);
+        $arguments = $joinPoint->getMethodArguments();
+        $object = reset($arguments);
 
-            if ($object instanceof NodeData && $object->getWorkspace()->getName() == 'live' && $object->getNodeType()->hasConfiguration('properties.neoslivehybridsearchrealtime')) {
+
+        if ($object instanceof NodeData && $object->getWorkspace()->getName() == 'live') {
+
+            if (
+                (isset($this->settings['RealtimeNodeTypes']) && isset($this->settings['RealtimeNodeTypes']['*']) && $object->getNodeType()->hasConfiguration('properties.neoslivehybridsearchrealtime'))
+                ||
+                (isset($this->settings['RealtimeNodeTypes']) && isset($this->settings['RealtimeNodeTypes'][$object->getNodeType()->getName()]) && $this->settings['RealtimeNodeTypes'][$object->getNodeType()->getName()])
+            ) {
+
+
                 if (isset($GLOBALS['neoslivehybridsearch' . $object->getIdentifier()]) == false) {
                     $this->searchIndexFactory->checkIndexRealtimeForRemovingNodeData($object);
                 }
+
             }
+
         }
-
     }
-
 
 }
