@@ -1242,8 +1242,8 @@ class SearchIndexFactory
                         'thumbnailUri' => ($val->getThumbnail() && $val->getThumbnail()->getResource() ? $this->resourceManager->getPublicPersistentResourceUri($val->getThumbnail()->getResource()) : '')
                     );
                     if ($v['url'] !== '') {
-                        $v['uri'] = mb_parse_url($v['url']);
-                        $data->uriResource = mb_parse_url($v['url']);
+                        $v['uri'] = $this->mb_parse_url($v['url']);
+                        $data->uriResource = $this->mb_parse_url($v['url']);
                         $data->urlResource = $v['url'];
 
                     }
@@ -1318,7 +1318,7 @@ class SearchIndexFactory
         if (isset($properties->$urlproperty)) {
             $uri = trim($properties->$urlproperty);
         }
-        if ($node->hasProperty('url') && mb_parse_url($node->getProperty('url')) !== false) {
+        if ($node->hasProperty('url') && $this->mb_parse_url($node->getProperty('url')) !== false) {
             $uri = $node->getProperty('url');
         }
 
@@ -1401,7 +1401,7 @@ class SearchIndexFactory
 
         $data->hash = sha1(json_encode($properties));
         $data->url = $uri;
-        $data->uri = mb_parse_url($uri);
+        $data->uri = $this->mb_parse_url($uri);
 
 
         if ($this->creatingFullIndex && $data->url !== '' && isset($data->uri['path'])) {
@@ -1633,7 +1633,7 @@ class SearchIndexFactory
      * @param string $url
      * @return array
      */
-    private function mb_parse_url($url)
+    private function $this->mb_parse_url($url)
     {
         $encodedUrl = preg_replace('%[^:/?#&=\.]+%usDe', 'urlencode(\'$0\')', $url);
         $components = parse_url($encodedUrl);
