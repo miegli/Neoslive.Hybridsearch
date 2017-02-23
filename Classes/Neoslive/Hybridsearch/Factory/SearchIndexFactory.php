@@ -1765,6 +1765,8 @@ class SearchIndexFactory
             $this->output->outputLine("done.");
 
             $this->unlockReltimeIndexer();
+        } else {
+            $this->output->outputLine("queue is locked .. skipping .. remove ". $this->temporaryDirectory . "/locked.txt" . " to unlock queue.");
         }
 
     }
