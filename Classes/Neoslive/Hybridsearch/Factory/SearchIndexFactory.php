@@ -1760,9 +1760,10 @@ class SearchIndexFactory
             }
             if (count($files)) {
                 $this->output->progressFinish();
-            } else {
-                $this->output->outputLine("done.");
             }
+
+            $this->output->outputLine("done.");
+
             $this->unlockReltimeIndexer();
         }
 
