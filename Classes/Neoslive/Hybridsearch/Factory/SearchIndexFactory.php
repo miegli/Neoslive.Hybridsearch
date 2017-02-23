@@ -592,9 +592,9 @@ class SearchIndexFactory
         if (isset($GLOBALS['neoslivehybridsearchrealtimequeue'])) {
 
             foreach ($GLOBALS['neoslivehybridsearchrealtimequeue'] as $workspaceName => $nodes) {
-                   // Scripts::executeCommand('hybridsearch:sync', $this->flowSettings, true,array('workspaceName' => $workspaceName, 'nodesSerialized' => serialize($nodes)));
-                    Scripts::executeCommandAsync('hybridsearch:sync', $this->flowSettings, array('workspaceName' => $workspaceName, 'nodesSerialized' => serialize($nodes)));
-                    $GLOBALS['neoslivehybridsearchrealtimequeue'][$workspaceName] = array();
+                // Scripts::executeCommand('hybridsearch:sync', $this->flowSettings, true,array('workspaceName' => $workspaceName, 'nodesSerialized' => serialize($nodes)));
+                Scripts::executeCommandAsync('hybridsearch:sync', $this->flowSettings, array('workspaceName' => $workspaceName, 'nodesSerialized' => serialize($nodes)));
+                $GLOBALS['neoslivehybridsearchrealtimequeue'][$workspaceName] = array();
             }
 
         }
@@ -742,7 +742,6 @@ class SearchIndexFactory
         foreach ($nodedata as $node) {
             $this->updateIndexForNodeData($node, $node->getWorkspace(), true);
         }
-
 
 
     }
@@ -1233,19 +1232,20 @@ class SearchIndexFactory
                     }
                     $k = mb_strtolower(preg_replace("/[^A-z0-9]/", "-", $node->getNodeType()->getName() . ":" . $key));
                     $v = array(
-                        'url' => Encoding::UTF8FixWin1252Chars($val->getResource() ? $this->resourceManager->getPublicPersistentResourceUri($val->getResource()) : ''),
-                        'name' => Encoding::UTF8FixWin1252Chars($val->getResource() ? $val->getResource()->getFilename() : ''),
+                        'url' => ($val->getResource() ? $this->resourceManager->getPublicPersistentResourceUri($val->getResource()) : ''),
+                        'name' => ($val->getResource() ? $val->getResource()->getFilename() : ''),
                         'extension' => $val->getResource() ? $val->getResource()->getFileExtension() : '',
                         'size' => $val->getResource() ? $val->getResource()->getFileSize() : 0,
                         'sizeH' => $val->getResource() ? $this->human_filesize($val->getResource()->getFileSize()) : 0,
-                        'title' => Encoding::UTF8FixWin1252Chars($val->getTitle()),
-                        'caption' => Encoding::UTF8FixWin1252Chars($val->getCaption()),
-                        'thumbnailUri' => Encoding::UTF8FixWin1252Chars($val->getThumbnail() && $val->getThumbnail()->getResource() ? $this->resourceManager->getPublicPersistentResourceUri($val->getThumbnail()->getResource()) : '')
+                        'title' => ($val->getTitle()),
+                        'caption' => ($val->getCaption()),
+                        'thumbnailUri' => ($val->getThumbnail() && $val->getThumbnail()->getResource() ? $this->resourceManager->getPublicPersistentResourceUri($val->getThumbnail()->getResource()) : '')
                     );
                     if ($v['url'] !== '') {
-                        $v['uri'] = parse_url($v['url']);
-                        $data->uriResource = parse_url($v['url']);
+                        $v['uri'] = mb_parse_url($v['url']);
+                        $data->uriResource = mb_parse_url($v['url']);
                         $data->urlResource = $v['url'];
+
                     }
                     $properties->$k = $v;
                 }
@@ -1262,19 +1262,19 @@ class SearchIndexFactory
                     setlocale(LC_ALL, strtolower($language) . "_" . strtoupper($language));
                     $properties->$k['RFC822'] = $val->format(DATE_RFC822);
                     $properties->$k['format'] = array(
-                        'A' => Encoding::UTF8FixWin1252Chars(strftime('%A', $val->getTimestamp())),
-                        'a' => Encoding::UTF8FixWin1252Chars(strftime('%a', $val->getTimestamp())),
-                        'B' => Encoding::UTF8FixWin1252Chars(strftime('%B', $val->getTimestamp())),
-                        'b' => Encoding::UTF8FixWin1252Chars(strftime('%b', $val->getTimestamp())),
-                        'd' => Encoding::UTF8FixWin1252Chars(strftime('%d', $val->getTimestamp())),
-                        'e' => Encoding::UTF8FixWin1252Chars(strftime('%e', $val->getTimestamp())),
-                        'H' => Encoding::UTF8FixWin1252Chars(strftime('%H', $val->getTimestamp())),
-                        'I' => Encoding::UTF8FixWin1252Chars(strftime('%I', $val->getTimestamp())),
-                        'm' => Encoding::UTF8FixWin1252Chars(strftime('%m', $val->getTimestamp())),
-                        'M' => Encoding::UTF8FixWin1252Chars(strftime('%M', $val->getTimestamp())),
-                        'p' => Encoding::UTF8FixWin1252Chars(strftime('%p', $val->getTimestamp())),
-                        'Y' => Encoding::UTF8FixWin1252Chars(strftime('%Y', $val->getTimestamp())),
-                        'y' => Encoding::UTF8FixWin1252Chars(strftime('%y', $val->getTimestamp()))
+                        'A' => utf8_encode(strftime('%A', $val->getTimestamp())),
+                        'a' => utf8_encode(strftime('%a', $val->getTimestamp())),
+                        'B' => utf8_encode(strftime('%B', $val->getTimestamp())),
+                        'b' => utf8_encode(strftime('%b', $val->getTimestamp())),
+                        'd' => utf8_encode(strftime('%d', $val->getTimestamp())),
+                        'e' => utf8_encode(strftime('%e', $val->getTimestamp())),
+                        'H' => utf8_encode(strftime('%H', $val->getTimestamp())),
+                        'I' => utf8_encode(strftime('%I', $val->getTimestamp())),
+                        'm' => utf8_encode(strftime('%m', $val->getTimestamp())),
+                        'M' => utf8_encode(strftime('%M', $val->getTimestamp())),
+                        'p' => utf8_encode(strftime('%p', $val->getTimestamp())),
+                        'Y' => utf8_encode(strftime('%Y', $val->getTimestamp())),
+                        'y' => utf8_encode(strftime('%y', $val->getTimestamp()))
                     );
 
                 }
@@ -1318,7 +1318,7 @@ class SearchIndexFactory
         if (isset($properties->$urlproperty)) {
             $uri = trim($properties->$urlproperty);
         }
-        if ($node->hasProperty('url') && parse_url($node->getProperty('url')) !== false) {
+        if ($node->hasProperty('url') && mb_parse_url($node->getProperty('url')) !== false) {
             $uri = $node->getProperty('url');
         }
 
@@ -1401,7 +1401,7 @@ class SearchIndexFactory
 
         $data->hash = sha1(json_encode($properties));
         $data->url = $uri;
-        $data->uri = parse_url($uri);
+        $data->uri = mb_parse_url($uri);
 
 
         if ($this->creatingFullIndex && $data->url !== '' && isset($data->uri['path'])) {
@@ -1585,7 +1585,7 @@ class SearchIndexFactory
             if (is_string($content) === false) {
                 if (json_last_error() === JSON_ERROR_UTF8) {
                     echo "\nwarning utf-8 malformed string. skipped $path ";
-                    $fp = fopen($filename."error.malformedUtf8.log", 'w+');
+                    $fp = fopen($filename . "error.malformedUtf8.log", 'w+');
                     $this->fwrite_stream($fp, serialize($content));
                     fclose($fp);
                     echo "\nplease see log $filename.error.malformedUtf8.log";
@@ -1627,6 +1627,19 @@ class SearchIndexFactory
             }
         }
         return $written;
+    }
+
+    /**
+     * @param string $url
+     * @return array
+     */
+    private function mb_parse_url($url)
+    {
+        $encodedUrl = preg_replace('%[^:/?#&=\.]+%usDe', 'urlencode(\'$0\')', $url);
+        $components = parse_url($encodedUrl);
+        foreach ($components as &$component)
+            $component = urldecode($component);
+        return $components;
     }
 
 
@@ -1709,7 +1722,7 @@ class SearchIndexFactory
 
                             if (json_decode($out)) {
                                 $this->output->outputLine($out);
-                                rename($file,$file.".error.log");
+                                rename($file, $file . ".error.log");
                             } else {
                                 unlink($file);
                             }
@@ -1722,8 +1735,6 @@ class SearchIndexFactory
                     } else {
                         unlink($file);
                     }
-
-
 
 
                 }
