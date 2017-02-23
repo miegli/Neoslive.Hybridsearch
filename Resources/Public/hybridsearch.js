@@ -2303,17 +2303,22 @@
 
 
                             var self = this;
-                            var q = querysegment.toLowerCase();
-                            var substrEnd = substrStart;
+                            var q = querysegment.toLowerCase().replace(/[^\w()/.%\-&üöäÜÖÄ]/gi, '');
+                            var substrStart = q.substr(0,3)+q.substr(6,2)+q.substr(-3);
 
-                            //substrStart = substrStart.substr(0, substrStart.length - 3);
-                            var substrStart = q.substr(0, q.length / 10 * 6);
-                            var substrEnd = q;
 
-                            if (substrStart.length < 4) {
-                                substrStart = q;
-                                substrEnd = q;
-                            }
+                            //  $w = mb_substr($w,0,3).mb_substr($w,6,2).mb_substr($w,-3);
+                            console.log(q.substr(0,3),q.substr(6,2),q.substr(-3));
+                            console.log("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/"+substrStart);
+
+                            // //substrStart = substrStart.substr(0, substrStart.length - 3);
+                            // var substrStart = q.substr(0, q.length / 10 * 6);
+                            // var substrEnd = q;
+                            //
+                            // if (substrStart.length < 4) {
+                            //     substrStart = q;
+                            //     substrEnd = q;
+                            // }
 
 
                             if (this.getFilter().getNodeType() && typeof this.getFilter().getNodeType() == 'string') {
@@ -2322,59 +2327,42 @@
 
                             instance.$$data.running++;
 
-                            var ref = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/").orderByKey().startAt(substrStart).limitToFirst(isNaN(substrStart) ? 15 : 1);
+                            var ref = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/"+substrStart);
 
                             ref.once("value", function (data) {
 
                                 if (data !== undefined) {
 
-                                    angular.forEach(data.val(), function (v, k) {
+                                    // angular.forEach(data.val(), function (v, k) {
+                                    //
+                                    //     if (self.getFilter().getNodeType() && typeof self.getFilter().getNodeType() == 'string') {
+                                    //         var kk = k.substr(self.getFilter().getNodeType().length + 1);
+                                    //         if (kk.substr(0, querysegment.length) == querysegment) {
+                                    //             instance.$$data.keywords.push(substrStart);
+                                    //         }
+                                    //
+                                    //     } else {
+                                    //         instance.$$data.keywords.push(substrStart);
+                                    //     }
+                                    //
+                                    //
+                                    // });
+                                    //
+                                    //
+                                    // var ismatchexact = false;
+                                    // angular.forEach(instance.$$data.keywords, function (k) {
+                                    //
+                                    //     if (ismatchexact === false && k == querysegment) {
+                                    //         ismatchexact = true;
+                                    //     }
+                                    //
+                                    // });
+                                    //
+                                    // if (ismatchexact) {
+                                    //     instance.$$data.keywords.push(querysegment);
+                                    // }
 
-                                        if (self.getFilter().getNodeType() && typeof self.getFilter().getNodeType() == 'string') {
-                                            var kk = k.substr(self.getFilter().getNodeType().length + 1);
-                                            if (kk.substr(0, querysegment.length) == querysegment) {
-                                                instance.$$data.keywords.push(kk);
-                                            }
-
-                                        } else {
-
-                                            if (k.length > 4) {
-
-                                                if (k.indexOf(querysegment.substr(0, querysegment.length / 6 * 4)) >= 0) {
-                                                    instance.$$data.keywords.push(k);
-                                                }
-                                            } else {
-
-                                                if (isNaN(substrStart)) {
-                                                    instance.$$data.keywords.push(k);
-                                                } else {
-                                                    if (self.getFilter().getQuery().indexOf(k) >= 0) {
-                                                        instance.$$data.keywords.push(k);
-                                                    }
-                                                }
-
-
-                                            }
-
-
-                                        }
-
-
-                                    });
-
-
-                                    var ismatchexact = false;
-                                    angular.forEach(instance.$$data.keywords, function (k) {
-
-                                        if (ismatchexact === false && k == querysegment) {
-                                            ismatchexact = true;
-                                        }
-
-                                    });
-
-                                    if (ismatchexact) {
-                                        instance.$$data.keywords.push(querysegment);
-                                    }
+                                    instance.$$data.keywords.push(substrStart);
 
 
                                 }

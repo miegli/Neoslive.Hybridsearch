@@ -478,7 +478,7 @@ class SearchIndexFactory
 
 
         }
-
+        $this->output->progressFinish();
 
         $this->save();
         $this->unlockReltimeIndexer();
@@ -494,7 +494,7 @@ class SearchIndexFactory
 
         // remove trash
         $this->firebase->delete("/trash");
-        $this->output->progressFinish();
+
 
 
         return true;
@@ -1088,11 +1088,20 @@ class SearchIndexFactory
             foreach ($keywords as $keyword => $val) {
                 $k = strval($keyword);
                 if (substr($k, 0, 9) === "_nodetype") {
-                    $k = "_" . $this->getNodeTypeName($node) . substr($k, 9);
+                    $k = "_" . $this->getNodeTypeName($node) . mb_substr($k, 9);
                 }
 
                 if ($k) {
-                    $this->keywords->$workspaceHash->$dimensionConfigurationHash[$k] = 1;
+                    if (isset($this->keywords->$workspaceHash->$dimensionConfigurationHash[$k]) == false) {
+                        $this->keywords->$workspaceHash->$dimensionConfigurationHash[$k] = array();
+                    }
+                    if (is_array($val) == false) {
+                        $val = array($k);
+                    }
+                    foreach ($val as $kek => $vev) {
+                        $this->keywords->$workspaceHash->$dimensionConfigurationHash[$k][$kek] = $vev;
+                    }
+
                 }
                 if (isset($this->index->$workspaceHash->$dimensionConfigurationHash->$k) === false) {
                     $this->index->$workspaceHash->$dimensionConfigurationHash->$k = new \stdClass();
@@ -1153,23 +1162,39 @@ class SearchIndexFactory
 
         foreach ($properties as $property => $value) {
             if (gettype($value) !== 'string') {
-                $value = json_encode($value);
+                $value = serialize($value);
             }
             $text .= strip_tags(preg_replace("/[^A-z0-9öäüÖÄÜ ]/", "", mb_strtolower(strip_tags(preg_replace("/[^A-z0-9öäüÖÄÜ]/", " ", $value)))) . " ");
         }
 
+
         $words = explode(" ", $text);
 
+
+        // reduce
+        $wordsReduced = array();
+
         foreach ($words as $w) {
+                $word = $w;
+                $w = preg_replace('#[^\w()/.%\-&üöäÜÖÄ]#', "", $w);
+                $w = mb_substr($w,0,3).mb_substr($w,6,2).mb_substr($w,-3);
+                $wordsReduced[$w][$word] = 1;
+        }
+
+
+        foreach ($wordsReduced as $w => $k) {
+
             if (strlen($w) > 1) {
                 $w = Encoding::UTF8FixWin1252Chars($w);
-                $w = preg_replace('#[^\w()/.%\-&üöäÜÖÄ]#', "", $w);
-                if ($w && strlen($w) > 1) {
-                    $keywords->$w = 1;
-                    $a = "_nodetype" . $w;
-                    $keywords->$a = $nodeTypeName;
+                if ($w) {
+                    $keywords->$w = $k;
+                    //$a = "_nodetype" . $w;
+                    //$keywords->$a = $nodeTypeName;
+
                 }
             }
+
+
         }
 
         $properties = null;
@@ -1597,10 +1622,7 @@ class SearchIndexFactory
             if (is_string($content) === false) {
                 if (json_last_error() === JSON_ERROR_UTF8) {
                     echo "\nwarning utf-8 malformed string. skipped $path ";
-                    $fp = fopen($filename . "error.malformedUtf8.log", 'w+');
-                    $this->fwrite_stream($fp, serialize($content));
-                    fclose($fp);
-                    echo "\nplease see log $filename.error.malformedUtf8.log";
+                    \Neos\Flow\var_dump($data);
                 }
             } else {
 
@@ -1899,7 +1921,13 @@ class SearchIndexFactory
             $patch = array();
             foreach ($workspaceData as $dimensionIndex => $dimensionIndexData) {
                 foreach ($dimensionIndexData as $dimensionIndexKey => $dimensionIndexDataAll) {
-                    $patch[$workspace . "/" . $this->branch . "/" . $dimensionIndex . "/" . $dimensionIndexKey] = $dimensionIndexDataAll;
+                    if (is_array($dimensionIndexDataAll)) {
+                     foreach ($dimensionIndexDataAll as $dimensionIndexDataAllKey => $dimensionIndexDataAllVal) {
+                         $patch[$workspace . "/" . $this->branch . "/" . $dimensionIndex . "/" . $dimensionIndexKey . "/" . $dimensionIndexDataAllKey] = $dimensionIndexDataAllVal;
+                     }
+                    } else {
+                        $patch[$workspace . "/" . $this->branch . "/" . $dimensionIndex . "/" . $dimensionIndexKey] = $dimensionIndexDataAll;
+                    }
                 }
             }
 
