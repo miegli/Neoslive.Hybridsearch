@@ -1633,7 +1633,7 @@ class SearchIndexFactory
      * @param string $url
      * @return array
      */
-    private function $this->mb_parse_url($url)
+    private function mb_parse_url($url)
     {
         $encodedUrl = preg_replace('%[^:/?#&=\.]+%usDe', 'urlencode(\'$0\')', $url);
         $components = parse_url($encodedUrl);
