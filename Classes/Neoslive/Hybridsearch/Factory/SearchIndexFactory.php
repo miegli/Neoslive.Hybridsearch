@@ -592,7 +592,7 @@ class SearchIndexFactory
         if (isset($GLOBALS['neoslivehybridsearchrealtimequeue'])) {
 
             foreach ($GLOBALS['neoslivehybridsearchrealtimequeue'] as $workspaceName => $nodes) {
-                // Scripts::executeCommand('hybridsearch:sync', $this->flowSettings, true,array('workspaceName' => $workspaceName, 'nodesSerialized' => serialize($nodes)));
+                //Scripts::executeCommand('hybridsearch:sync', $this->flowSettings, true,array('workspaceName' => $workspaceName, 'nodesSerialized' => serialize($nodes)));
                 Scripts::executeCommandAsync('hybridsearch:sync', $this->flowSettings, array('workspaceName' => $workspaceName, 'nodesSerialized' => serialize($nodes)));
                 $GLOBALS['neoslivehybridsearchrealtimequeue'][$workspaceName] = array();
             }
@@ -1630,16 +1630,29 @@ class SearchIndexFactory
     }
 
     /**
+     * UTF-8 aware parse_url() replacement.
      * @param string $url
      * @return array
      */
-    private function mb_parse_url($url)
+    function mb_parse_url($url)
     {
-        $encodedUrl = preg_replace('%[^:/?#&=\.]+%usDe', 'urlencode(\'$0\')', $url);
-        $components = parse_url($encodedUrl);
-        foreach ($components as &$component)
-            $component = urldecode($component);
-        return $components;
+        $enc_url = preg_replace_callback(
+            '%[^:/@?&=#]+%usD',
+            function ($matches)
+            {
+                return urlencode($matches[0]);
+            },
+            $url
+        );
+
+        $parts = parse_url($enc_url);
+
+        foreach($parts as $name => $value)
+        {
+            $parts[$name] = utf8_encode(urldecode($value));
+        }
+
+        return $parts;
     }
 
 
@@ -1670,6 +1683,7 @@ class SearchIndexFactory
     {
 
         if ($this->isLockReltimeIndexer() === false) {
+            $this->lockReltimeIndexer();
             $files = array();
 
             $fp = opendir($this->temporaryDirectory);
@@ -1740,6 +1754,7 @@ class SearchIndexFactory
                 }
 
             }
+            $this->unlockReltimeIndexer();
         }
 
     }
