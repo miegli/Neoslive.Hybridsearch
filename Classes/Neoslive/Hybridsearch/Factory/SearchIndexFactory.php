@@ -1734,7 +1734,7 @@ class SearchIndexFactory
 
                         if (strlen($out) < 255) {
 
-                            if (json_decode($out)) {
+                            if (!json_decode($out)) {
                                 $this->output->outputLine($out);
                                 rename($file, $file . ".error.log");
                             } else {
