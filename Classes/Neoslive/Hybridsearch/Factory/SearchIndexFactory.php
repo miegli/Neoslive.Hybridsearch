@@ -1585,6 +1585,9 @@ class SearchIndexFactory
             if (is_string($content) === false) {
                 if (json_last_error() === JSON_ERROR_UTF8) {
                     echo "warning utf-8 malformed string. skipped $path ";
+                    $fp = fopen($filename."error.malformedUtf8.log", 'w+');
+                    $this->fwrite_stream($fp, var_export($content,true));
+                    fclose($fp);
                 }
             } else {
 
