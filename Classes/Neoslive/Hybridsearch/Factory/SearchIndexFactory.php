@@ -1672,17 +1672,22 @@ class SearchIndexFactory
             ksort($files);
             $this->output->outputLine(count($files) . ' files found for proceeding');
 
-
+            $count = 0;
             foreach ($files as $filecollection) {
 
 
                 foreach ($filecollection as $file) {
+                    $count++;
 
                     $this->output->outputLine("uploading " . $file . " (" . filesize($file) . ")");
 
                     $content = json_decode(file_get_contents($file));
 
                     if ($content) {
+
+                        if ($count > 10 && $count % 8 == 0) {
+                            sleep(8);
+                        }
 
                         switch ($content->method) {
                             case 'update':
