@@ -1699,7 +1699,9 @@ class SearchIndexFactory
 
             ksort($files);
 
-            $this->output->progressStart(count($files));
+            if (count($files)) {
+                $this->output->progressStart(count($files));
+            }
 
             $count = 0;
             foreach ($files as $filecollection) {
@@ -1756,7 +1758,11 @@ class SearchIndexFactory
                 }
 
             }
-            $this->output->progressFinish();
+            if (count($files)) {
+                $this->output->progressFinish();
+            } else {
+                $this->output->output("done.");
+            }
             $this->unlockReltimeIndexer();
         }
 
