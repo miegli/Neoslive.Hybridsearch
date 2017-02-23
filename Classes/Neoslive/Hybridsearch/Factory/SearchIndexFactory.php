@@ -675,14 +675,25 @@ class SearchIndexFactory
         $this->output->outputLine("sync from " . $date->format("d.m.Y H:i:s"));
 
         $moditifedNodeData = $this->neosliveHybridsearchNodeDataRepository->findByWorkspaceAndLastModificationDateTimeDate($this->workspaceRepository->findByIdentifier($workspaceName), $date);
-        $this->output->outputLine('sync ' . count($moditifedNodeData) . ' nodes');
+
 
         if (count($moditifedNodeData)) {
             $this->removeTrashedNodes();
+            $this->output->progressStart(count($moditifedNodeData));
         }
 
         foreach ($moditifedNodeData as $nodedata) {
-            $this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace());
+
+            if (isset($this->settings['RealtimeNodeTypes']) && isset($this->settings['RealtimeNodeTypes'][$nodedata->getNodeType()->getName()]) && $this->settings['RealtimeNodeTypes'][$nodedata->getNodeType()->getName()]) {
+                // skipping. nodetype is realtime indexing
+            } else {
+                $this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace());
+            }
+
+            $this->output->progressAdvance(1);
+        }
+        if (count($moditifedNodeData)) {
+            $this->output->progressFinish();
         }
 
         if (count($moditifedNodeData)) {
@@ -690,6 +701,7 @@ class SearchIndexFactory
             $this->proceedQueue();
         }
 
+        $this->output->outputLine('done.');
 
         return true;
 
@@ -1638,8 +1650,7 @@ class SearchIndexFactory
     {
         $enc_url = preg_replace_callback(
             '%[^:/@?&=#]+%usD',
-            function ($matches)
-            {
+            function ($matches) {
                 return urlencode($matches[0]);
             },
             $url
@@ -1647,8 +1658,7 @@ class SearchIndexFactory
 
         $parts = parse_url($enc_url);
 
-        foreach($parts as $name => $value)
-        {
+        foreach ($parts as $name => $value) {
             $parts[$name] = utf8_encode(urldecode($value));
         }
 
@@ -1766,7 +1776,7 @@ class SearchIndexFactory
 
             $this->unlockReltimeIndexer();
         } else {
-            $this->output->outputLine("queue is locked .. skipping .. remove ". $this->temporaryDirectory . "/locked.txt" . " to unlock queue.");
+            $this->output->outputLine("queue is locked .. skipping .. remove " . $this->temporaryDirectory . "/locked.txt" . " to unlock queue.");
         }
 
     }
