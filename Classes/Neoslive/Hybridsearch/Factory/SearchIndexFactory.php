@@ -1698,16 +1698,18 @@ class SearchIndexFactory
 
 
             ksort($files);
-            $this->output->outputLine(count($files) . ' files found for proceeding');
+
+            $this->output->progressStart(count($files));
 
             $count = 0;
             foreach ($files as $filecollection) {
 
 
                 foreach ($filecollection as $file) {
-                    $count++;
 
-                    $this->output->outputLine("uploading " . $file . " (" . filesize($file) . ")");
+                    $count++;
+                    $this->output->progressAdvance(1);
+
 
                     $content = json_decode(file_get_contents($file));
 
@@ -1754,6 +1756,7 @@ class SearchIndexFactory
                 }
 
             }
+            $this->output->progressFinish();
             $this->unlockReltimeIndexer();
         }
 
