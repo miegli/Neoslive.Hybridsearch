@@ -1461,47 +1461,31 @@
                                             if (hasDistinct) {
                                                 angular.forEach(resultAnd, function (item) {
                                                         if (nodes[item.ref] !== undefined) {
-
-
-                                                            unfilteredResult.push(item);
-
-
-                                                            if (self.isNodesByIdentifier()) {
-                                                                // post filter node
-                                                                if (self.isFiltered(nodes[item.ref]) === false) {
-                                                                    preOrdered.push(item);
-                                                                }
-                                                            } else {
-                                                                // dont post filter because filter were applied before while filling search index
-                                                                preOrdered.push(item);
-                                                            }
-
-                                                            tmp[item.ref] = item.score;
+                                                            unfilteredResult.push(nodes[item.ref]);
                                                         }
-
-                                                    }
-                                                );
-                                            } else {
-                                                angular.forEach(resultAnd, function (item) {
-                                                        if (nodes[item.ref] !== undefined) {
-
-                                                            if (self.isNodesByIdentifier()) {
-                                                                // post filter node
-                                                                if (self.isFiltered(nodes[item.ref]) === false) {
-                                                                    preOrdered.push(item);
-                                                                }
-                                                            } else {
-                                                                // dont post filter because filter were applied before while filling search index
-                                                                preOrdered.push(item);
-                                                            }
-
-                                                            tmp[item.ref] = item.score;
-
-                                                        }
-
                                                     }
                                                 );
                                             }
+
+                                            angular.forEach(resultAnd, function (item) {
+                                                    if (nodes[item.ref] !== undefined) {
+
+                                                        if (self.isNodesByIdentifier()) {
+                                                            // post filter node
+                                                            if (self.isFiltered(nodes[item.ref]) === false) {
+                                                                preOrdered.push(item);
+                                                            }
+                                                        } else {
+                                                            // dont post filter because filter were applied before while filling search index
+                                                            preOrdered.push(item);
+                                                        }
+
+                                                        tmp[item.ref] = item.score;
+
+                                                    }
+
+                                                }
+                                            );
 
 
                                         }
@@ -1633,6 +1617,7 @@
                                     unfilteredResultNodes.push(nodeObject);
 
                                 });
+
                                 results.updateDistincts(unfilteredResultNodes);
 
                             }
@@ -3938,7 +3923,7 @@
                     var self = this;
                     angular.forEach(self.$$data.distincts, function (distinct, property) {
                         if (self.$$data.distinctsConfiguration[property].affectedBySearchResult) {
-                           delete self.$$data.distincts[property];
+                            delete self.$$data.distincts[property];
                         }
 
                     });
