@@ -2888,7 +2888,7 @@
 
                     var self = this;
                     var timer = false;
-                    var hasDistinct = self.getResults().hasDistincts();
+
 
                     var execute = function (nodesArray) {
                         angular.forEach(nodesArray, function (node) {
@@ -2897,7 +2897,7 @@
 
                                 if (data.val()) {
 
-                                    if (hasDistinct === true || self.$$app.isFiltered(data.val().node) === false) {
+                                    //if (self.$$app.isFiltered(data.val().node) === false) {
 
                                         self.$$app.addNodeByIdentifier(data.val());
                                         self.$$app.addLocalIndex([data.val()]);
@@ -2917,7 +2917,7 @@
                                                 self.$$app.search();
                                             }
                                         });
-                                    }
+                                    //}
 
                                 }
 
