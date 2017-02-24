@@ -433,6 +433,7 @@ class SearchIndexFactory
     {
 
         $sites = array();
+        $this->getBranch($workspacename);
 
         $this->deleteQueue();
         $this->lockReltimeIndexer();
