@@ -2353,7 +2353,6 @@
                             var q = metaphone(querysegment.toLowerCase().replace(/[^\w()/.%\-&üöäÜÖÄ]/gi, ''), 5);
                             if (q.length == 0) {
                                 q = querysegment;
-                                console.log(q);
                             }
 
                             instance.$$data.running++;
