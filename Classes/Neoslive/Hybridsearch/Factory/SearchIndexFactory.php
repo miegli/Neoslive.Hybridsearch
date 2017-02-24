@@ -1180,8 +1180,11 @@ class SearchIndexFactory
 
         foreach ($words as $w) {
                 $word = $w;
-                $w = metaphone($word,5);
-                $wordsReduced[$w][$word] = 1;
+                $wm = metaphone($word,5);
+                if (strlen($wm) == 0) {
+                    $wm = $w;
+                }
+                $wordsReduced[$wm][$word] = 1;
         }
 
 
