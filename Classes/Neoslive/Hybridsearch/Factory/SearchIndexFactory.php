@@ -1179,8 +1179,7 @@ class SearchIndexFactory
 
         foreach ($words as $w) {
                 $word = $w;
-                $w = preg_replace('#[^\w()/.%\-&üöäÜÖÄ]#', "", $w);
-                $w = mb_substr($w,0,3).mb_substr($w,6,2).mb_substr($w,-3);
+                $w = metaphone($word,5);
                 $wordsReduced[$w][$word] = 1;
         }
 
@@ -1191,14 +1190,15 @@ class SearchIndexFactory
                 $w = Encoding::UTF8FixWin1252Chars($w);
                 if ($w) {
                     $keywords->$w = $k;
-                    //$a = "_nodetype" . $w;
-                    //$keywords->$a = $nodeTypeName;
-
+//                    $a = "_nodetype" . $w;
+//                    $keywords->$a = $nodeTypeName;
                 }
             }
 
 
         }
+
+
 
         $properties = null;
         unset($properties);
