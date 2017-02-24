@@ -67,8 +67,6 @@
                 }
 
 
-
-
                 this.$$conf = {
                     firebase: firebaseconfig,
                     workspace: workspace,
@@ -1372,7 +1370,6 @@
                                     });
 
 
-
                                     if (query.length == 0) {
                                         // apply local query instead of autocompleted query
                                         query = self.getFilter().getQuery();
@@ -1596,16 +1593,7 @@
 
                             }
 
-
-                            if (results.hasDistincts()) {
-                                if (nodesLastHash !== 0 && this.getLocalIndexHash() !== nodesLastHash) {
-                                    results.updateDistincts();
-                                }
-                                if (nodesLastHash === 1) {
-                                    nodesLastHash = this.getLocalIndexHash();
-                                }
-                            }
-
+                            results.updateDistincts();
                             results.getApp().setResults(items, nodes, this);
 
 
@@ -2055,7 +2043,7 @@
 
                                 if (Object.keys(keywords).length > 0) {
                                     angular.forEach(keywords, function (keyword) {
-                                       self.getKeywords(keyword, instance);
+                                        self.getKeywords(keyword, instance);
                                     });
                                 } else {
                                     instance.$$data.running++;
@@ -2077,7 +2065,7 @@
                                     clearInterval(self.getIndexInterval());
 
 
-                                   var uniquarrayfinal = [];
+                                    var uniquarrayfinal = [];
 
                                     if (lastSearchInstance.$$data.keywords.length) {
                                         var unique = {};
@@ -2164,7 +2152,7 @@
 
 
                                     } else {
-                                       // self.search();
+                                        // self.search();
                                     }
 
 
@@ -2205,7 +2193,6 @@
                                             }
 
                                         };
-
 
 
                                         clearTimeout(self.getIndexInterval());
@@ -2317,32 +2304,31 @@
                         getKeywords: function (querysegment, instance) {
 
 
-                            var q = metaphone(querysegment.toLowerCase().replace(/[^\w()/.%\-&üöäÜÖÄ]/gi, ''),5);
+                            var q = metaphone(querysegment.toLowerCase().replace(/[^\w()/.%\-&üöäÜÖÄ]/gi, ''), 5);
 
                             instance.$$data.running++;
 
 
-                                var ref = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + q);
+                            var ref = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + q);
 
-                                ref.once("value", function (data) {
+                            ref.once("value", function (data) {
 
-                                    if (data !== undefined) {
+                                if (data !== undefined) {
 
-                                        angular.forEach(data.val(), function (v, k) {
-                                            instance.$$data.keywords.push({term: k, metaphone: q});
-                                        });
+                                    angular.forEach(data.val(), function (v, k) {
+                                        instance.$$data.keywords.push({term: k, metaphone: q});
+                                    });
 
-                                        var ismatchexact = false;
-                                        angular.forEach(instance.$$data.keywords, function (v) {
-                                            if (ismatchexact === false && v.term == querysegment) {
-                                                ismatchexact = true;
-                                            }
-                                        });
+                                    var ismatchexact = false;
+                                    angular.forEach(instance.$$data.keywords, function (v) {
+                                        if (ismatchexact === false && v.term == querysegment) {
+                                            ismatchexact = true;
+                                        }
+                                    });
 
-                                    }
-                                    instance.$$data.proceeded.push(1);
-                                });
-
+                                }
+                                instance.$$data.proceeded.push(1);
+                            });
 
 
                         }
@@ -3441,7 +3427,8 @@
                     notfound: false,
                     searchCounter: 0,
                     quickinfo: false,
-                    isrunningfirsttimestamp: 0
+                    isrunningfirsttimestamp: 0,
+                    distinctsConfiguration: {}
 
                 };
 
@@ -3881,7 +3868,15 @@
                  * @returns {void}
                  */
                 clearDistincts: function () {
-                    this.$$data.distincts = {};
+
+                    var self = this;
+                    angular.forEach(self.$$data.distincts, function(distinct,property) {
+                        if (self.$$data.distinctsConfiguration[property].affectedBySearchResult) {
+                            delete self.$$data.distincts[property];
+                        }
+
+                    });
+
                 },
                 /**
                  * @private
@@ -3915,17 +3910,20 @@
                  * @param {string} property
                  * @param {boolean} counterGroupedByNode count existences grouped by node
                  * @param {boolean} valuesOnly return only values
+                 * @param {boolean} affectedBySearchResult dont affect current search result to distinct
                  * @returns {array} collection of property values
                  */
-                getDistinct: function (property, counterGroupedByNode, valuesOnly) {
-
-
-                    if (counterGroupedByNode === undefined) {
-                        counterGroupedByNode = true;
-                    }
-
+                getDistinct: function (property, counterGroupedByNode, valuesOnly, affectedBySearchResult) {
 
                     var self = this, variants = {}, variantsByNodes = {}, propvalue = '', variantsfinal = [];
+
+                    if (self.$$data.distinctsConfiguration[property] == undefined) {
+                        self.$$data.distinctsConfiguration[property] = {
+                            counterGroupedByNode: counterGroupedByNode == undefined || counterGroupedByNode == null ? false : counterGroupedByNode,
+                            valuesOnly: valuesOnly == undefined || valuesOnly == null ? false : valuesOnly,
+                            affectedBySearchResult: affectedBySearchResult == undefined || affectedBySearchResult == null ? true : affectedBySearchResult
+                        };
+                    }
 
                     if (self.$$data.distincts == undefined) {
                         self.$$data.distincts = {};
@@ -3936,9 +3934,7 @@
                     }
 
                     if (Object.keys(self.$$data.distincts[property]).length) {
-
-
-                        if (valuesOnly === undefined || valuesOnly === false) {
+                        if (self.$$data.distinctsConfiguration[property].valuesOnly === false) {
                             return self.$$data.distincts[property];
                         } else {
 
@@ -3970,7 +3966,7 @@
                                         id: k,
                                         property: property,
                                         value: v,
-                                        count: variants[k] === undefined ? 1 : (!counterGroupedByNode || variantsByNodes[node.identifier][k] === undefined ? variants[k].count + 1 : variants[k].count)
+                                        count: variants[k] === undefined ? 1 : (!self.$$data.distinctsConfiguration[property].counterGroupedByNode || variantsByNodes[node.identifier][k] === undefined ? variants[k].count + 1 : variants[k].count)
                                     };
 
                                     variantsByNodes[node.identifier][k] = true;
@@ -4002,7 +3998,7 @@
                                             id: k,
                                             property: property,
                                             value: valueJson,
-                                            count: variants[k] === undefined ? 1 : (!counterGroupedByNode || variantsByNodes[node.identifier][k] === undefined ? variants[k].count + 1 : variants[k].count)
+                                            count: variants[k] === undefined ? 1 : (!self.$$data.distinctsConfiguration[property].counterGroupedByNode || variantsByNodes[node.identifier][k] === undefined ? variants[k].count + 1 : variants[k].count)
                                         };
                                         variantsByNodes[node.identifier][k] = true;
 
@@ -4016,7 +4012,7 @@
                                                 id: k,
                                                 property: property,
                                                 value: variant,
-                                                count: variants[k] === undefined ? 1 : (!counterGroupedByNode || variantsByNodes[node.identifier][k] === undefined ? variants[k].count + 1 : variants[k].count)
+                                                count: variants[k] === undefined ? 1 : (!self.$$data.distinctsConfiguration[property].counterGroupedByNode || variantsByNodes[node.identifier][k] === undefined ? variants[k].count + 1 : variants[k].count)
                                             };
                                             variantsByNodes[node.identifier][k] = true;
                                         });
@@ -4031,7 +4027,7 @@
                                         id: k,
                                         property: property,
                                         value: propvalue,
-                                        count: variants[k] === undefined ? 1 : (!counterGroupedByNode || variantsByNodes[node.identifier][k] === undefined ? variants[k].count + 1 : variants[k].count)
+                                        count: variants[k] === undefined ? 1 : (!self.$$data.distinctsConfiguration[property].counterGroupedByNode || variantsByNodes[node.identifier][k] === undefined ? variants[k].count + 1 : variants[k].count)
                                     };
                                     variantsByNodes[node.identifier][k] = true;
 
