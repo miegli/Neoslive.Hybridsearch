@@ -3962,12 +3962,12 @@
                 /**
                  * Get all different values and counter from given property
                  * @param {string} property
+                 * @param {boolean} affectedBySearchResult dont affect current search result to distinct
                  * @param {boolean} counterGroupedByNode count existences grouped by node
                  * @param {boolean} valuesOnly return only values
-                 * @param {boolean} affectedBySearchResult dont affect current search result to distinct
                  * @returns {array} collection of property values
                  */
-                getDistinct: function (property, counterGroupedByNode, valuesOnly, affectedBySearchResult) {
+                getDistinct: function (property, affectedBySearchResult, counterGroupedByNode, valuesOnly) {
 
                     var self = this, variants = {}, variantsByNodes = {}, propvalue = '', variantsfinal = [];
 
