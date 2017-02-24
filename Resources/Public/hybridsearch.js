@@ -3943,10 +3943,11 @@
                 /**
                  * Get distinct count
                  * @param {string} property
+                 * @param {boolean} affectedBySearchResult dont affect current search result to distinct
                  * @returns {integer} count collection of property values
                  */
-                getDistinctCount: function (property) {
-                    return Object.keys(this.getDistinct(property)).length;
+                getDistinctCount: function (property,affectedBySearchResult) {
+                    return Object.keys(this.getDistinct(property,affectedBySearchResult)).length;
                 },
                 /**
                  * Check if given value string is in distinct result
