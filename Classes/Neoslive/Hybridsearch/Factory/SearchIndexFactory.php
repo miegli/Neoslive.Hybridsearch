@@ -1168,16 +1168,15 @@ class SearchIndexFactory
 
         foreach ($properties as $property => $value) {
             if (gettype($value) !== 'string') {
-                $value = serialize($value);
+                $value = (serialize($value));
             }
+            $value = preg_replace("/\r\n|\r|\n/",' ',$value);
+            $text .= " ".str_replace(array(";",":","/",".",'"',",",">",".","<")," ",html_entity_decode($value));
 
-            $value = $value;
-            $text .= strip_tags(mberegi_replace("/[^A-z0-9öäüÖÄÜ ]/", "", mb_strtolower(strip_tags(mberegi_replace("/[^A-z0-9öäüÖÄÜ]/", " ", $value)))) . " ");
 
         }
 
-
-
+        $text = preg_replace("/[^A-z0-9öäü ]/","",mb_strtolower($text));
         $words = explode(" ", $text);
 
 
@@ -1208,8 +1207,6 @@ class SearchIndexFactory
                 }
             }
         }
-
-
 
         $properties = null;
         unset($properties);
