@@ -2653,7 +2653,7 @@
                                                             angular.forEach(keywords, function(k) {
                                                                 var i = c.indexOf(k);
                                                                 if (i>-1) {
-                                                                    doc[property] += ' '+c.substr(i-k.length,k.length+k.length);
+                                                                    doc[property] += ' '+c.substr(i-k.length,59);
                                                                 }
 
                                                             });
