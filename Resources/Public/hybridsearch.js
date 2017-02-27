@@ -3961,7 +3961,18 @@
                  * @returns {boolean} true if value is part of distinct property values
                  */
                 isInDistinct: function (property, value) {
-                    return this.getDistinct(property, false, true).indexOf(value) < 0 ? false : true;
+
+                    var found = false;
+                    angular.forEach(this.getDistinct(property), function(o) {
+                       if (o.value == value) {
+                           found = true;
+                           return found;
+                       }
+                    });
+
+                    return found;
+
+
 
                 }
                 ,
