@@ -391,7 +391,9 @@ class SearchIndexFactory
 
 
         $branch = $this->firebase->get("/branches/" . $workspacename);
-        if ($branch === null) {
+
+        if ($branch === null || $branch == 'null') {
+            $this->setBranch($workspacename,'master');
             return 'master';
         }
         if ($branch) {
@@ -1168,8 +1170,12 @@ class SearchIndexFactory
             if (gettype($value) !== 'string') {
                 $value = serialize($value);
             }
-            $text .= strip_tags(preg_replace("/[^A-z0-9öäüÖÄÜ ]/", "", mb_strtolower(strip_tags(preg_replace("/[^A-z0-9öäüÖÄÜ]/", " ", $value)))) . " ");
+
+            $value = $value;
+            $text .= strip_tags(mberegi_replace("/[^A-z0-9öäüÖÄÜ ]/", "", mb_strtolower(strip_tags(mberegi_replace("/[^A-z0-9öäüÖÄÜ]/", " ", $value)))) . " ");
+
         }
+
 
 
         $words = explode(" ", $text);
@@ -1179,27 +1185,28 @@ class SearchIndexFactory
         $wordsReduced = array();
 
         foreach ($words as $w) {
-                $word = $w;
-                $wm = metaphone($word,5);
-                if (strlen($wm) == 0) {
-                    $wm = $w;
+                $word = str_replace(array("[","]",")","(","{","}"),"",$w);
+                if (strlen($word) > 1) {
+                    $wm = metaphone($word, 5);
+                    if (strlen($wm) == 0) {
+                        $wm = $w;
+                    }
+
+                    $wordsReduced[$wm][$word] = 1;
                 }
-                $wordsReduced[$wm][$word] = 1;
         }
 
 
         foreach ($wordsReduced as $w => $k) {
 
+            $w = str_replace(array("[","]",")","(","{","}"),"",$w);
+
             if (strlen($w) > 1) {
                 $w = Encoding::UTF8FixWin1252Chars($w);
                 if ($w) {
                     $keywords->$w = $k;
-//                    $a = "_nodetype" . $w;
-//                    $keywords->$a = $nodeTypeName;
                 }
             }
-
-
         }
 
 
