@@ -2289,7 +2289,7 @@
 
                                                         self.addPendingRequest($http({
                                                             method: 'get',
-                                                            url: ref.http.replace("$query", uniquarrayfinalTerms[keyword].trim()),
+                                                            url: uniquarrayfinalTerms[keyword] !== undefined ? ref.http.replace("$query", uniquarrayfinalTerms[keyword].trim()) : ref.http,
                                                             cache: true,
                                                             timeout: canceller.promise,
                                                             cancel: function (reason) {
