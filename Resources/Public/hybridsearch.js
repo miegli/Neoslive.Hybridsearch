@@ -2225,7 +2225,7 @@
                                                     indexdata['__'].push(node);
                                                 });
 
-                                                self.updateLocalIndex(indexdata);
+                                                self.updateLocalIndex(indexdata,lastSearchInstance);
                                                 self.search(nodes);
                                                 self.setIsLoadedAll();
                                             } else {
@@ -2234,7 +2234,7 @@
                                                     nodes[id] = node;
                                                     indexdata[keyword].push(node);
                                                 });
-                                                self.updateLocalIndex(indexdata);
+                                                self.updateLocalIndex(indexdata,lastSearchInstance);
                                                 indexcounter++;
                                             }
 
@@ -2265,14 +2265,14 @@
 
                                                                 ref.socket.on("value", function (data) {
                                                                     if (ref.updated !== undefined) {
-                                                                        execute(keyword, data.val());
+                                                                        execute(keyword, data.val(),lastSearchInstance);
                                                                     }
                                                                     ref.updated = true;
                                                                 });
 
                                                             }, 2500)
                                                         }).success(function (data) {
-                                                            execute(keyword, data);
+                                                            execute(keyword, data,lastSearchInstance);
                                                         }));
 
 
@@ -2301,7 +2301,7 @@
                                                             self.cleanLocalIndex();
                                                             cleanedup = true;
                                                         }
-                                                        self.updateLocalIndex(indexdata);
+                                                        self.updateLocalIndex(indexdata,lastSearchInstance);
                                                     } else {
                                                         self.setLastIndexHash(hash);
                                                         self.search();
@@ -2539,13 +2539,19 @@
                          * @param object data
                          * @returns void
                          */
-                        updateLocalIndex: function (data) {
+                        updateLocalIndex: function (data,lastSearchInstance) {
 
 
-                            var self = this;
+                            var self = this, keywords = [];
 
                             angular.forEach(data, function (val, keyword) {
-                                self.addLocalIndex(val, keyword);
+                                angular.forEach(lastSearchInstance.$$data.keywords, function(k) {
+                                   if (keyword == k.metaphone) {
+                                       keywords.push(k.term);
+                                   }
+                                });
+                                self.addLocalIndex(val, keyword, keywords);
+                                keywords = [];
                             });
 
                             self.search();
@@ -2578,10 +2584,12 @@
                          * @param string keyword
                          * @returns mixed
                          */
-                        addLocalIndex: function (data, keyword) {
+                        addLocalIndex: function (data, keyword, keywords) {
 
                             var self = this;
                             var hasDistinct = self.getResults().hasDistincts();
+
+
 
                             angular.forEach(data, function (value, key) {
 
@@ -2604,66 +2612,62 @@
 
                                             if (self.getBoost(property) > 0) {
 
-                                                if (typeof propvalue === 'string' && ((propvalue.substr(0, 1) == '{') || ((propvalue.substr(0, 2) === '["' && propvalue.substr(-2, 2) === '"]')) || (propvalue.substr(0, 2) === '[{' && propvalue.substr(-2, 2) === '}]'))) {
-                                                    try {
-                                                        var valueJson = JSON.parse(propvalue);
-                                                    } catch (e) {
-                                                        valueJson = false;
-                                                    }
+                                                valueJson = false;
 
-                                                    if (valueJson) {
-                                                        angular.forEach(valueJson.getRecursiveStrings(), function (o) {
-
-                                                            if (self.isLoadedAll() || self.getFilter().getQuery() == '' || o.val.length < 60) {
-                                                                doc[property + '.' + o.key] = o.val;
-                                                            } else {
-                                                                var i = propvalue.toLowerCase().indexOf(keyword);
-                                                                doc[property + '.' + o.key] = o.val.substr(i - 30 > 0 ? i - 30 : 0, 60);
-                                                            }
-                                                        });
-                                                    }
-
+                                                if (typeof propvalue === 'object') {
+                                                    valueJson = propvalue;
                                                 } else {
-                                                    if (typeof propvalue === 'string') {
-
-                                                        if (self.isLoadedAll() || self.getFilter().getQuery() == '' || propvalue.length < 60) {
-                                                            doc[property] = propvalue;
-                                                        } else {
-                                                            var i = propvalue.toLowerCase().indexOf(keyword);
-                                                            doc[property] = propvalue.substr(i - 30 > 0 ? i - 30 : 0, 60);
+                                                    if (typeof propvalue === 'string' && ((propvalue.substr(0, 1) == '{') || ((propvalue.substr(0, 2) === '["' && propvalue.substr(-2, 2) === '"]')) || (propvalue.substr(0, 2) === '[{' && propvalue.substr(-2, 2) === '}]'))) {
+                                                        try {
+                                                            var valueJson = JSON.parse(propvalue);
+                                                        } catch (e) {
+                                                            valueJson = false;
                                                         }
 
                                                     }
                                                 }
 
+
+                                                if (valueJson) {
+
+                                                    angular.forEach(valueJson.getRecursiveStrings(), function (o) {
+
+                                                        if (typeof propvalue !== 'string' || self.isLoadedAll() || self.getFilter().getQuery() == '' || o.val.length < 60) {
+                                                            doc[property + '.' + o.key] = o.val;
+                                                        } else {
+                                                            var i = propvalue.toLowerCase().indexOf(keyword);
+                                                            doc[property + '.' + o.key] = o.val.substr(i - 30 > 0 ? i - 30 : 0, 60);
+                                                        }
+                                                    });
+
+                                                } else {
+
+                                                    if (typeof propvalue === 'string') {
+
+                                                        if (self.isLoadedAll() || self.getFilter().getQuery() == '' || propvalue.length < 60) {
+                                                            doc[property] = propvalue;
+                                                        } else {
+
+                                                            doc[property] = '';
+                                                            var c = propvalue.toLowerCase()
+                                                            angular.forEach(keywords, function(k) {
+                                                                var i = c.indexOf(k);
+                                                                if (i>-1) {
+                                                                    doc[property] += ' '+c.substr(i-k.length,k.length+k.length);
+                                                                }
+
+                                                            });
+
+                                                        }
+
+                                                    }
+                                                }
+
+
                                             }
 
 
                                         });
-
-
-                                        //
-                                        // if (keyword !== undefined && keyword !== '__') {
-                                        //
-                                        //     angular.forEach(Object.keys(doc), function (property) {
-                                        //
-                                        //         var propvalue = doc[property];
-                                        //         var i = typeof propvalue == 'string' ? propvalue.toLowerCase().indexOf(keyword) : -2;
-                                        //
-                                        //         if (i == -1) {
-                                        //             delete doc[property];
-                                        //         } else {
-                                        //             if (i != -2 && propvalue.length > 120) {
-                                        //                 doc[property] = propvalue.substr(i - 60 > 0 ? i - 60 : 0, keyword.length + 60);
-                                        //             } else {
-                                        //                 if (propvalue.length < 3) {
-                                        //                     delete doc[property];
-                                        //                 }
-                                        //             }
-                                        //         }
-                                        //
-                                        //     });
-                                        // }
 
 
                                         angular.forEach(Object.keys(doc), function (key) {
@@ -2671,6 +2675,7 @@
                                                 lunrSearch.addField(key);
                                             }
                                         });
+
 
 
                                         doc.id = value.node.identifier;
@@ -2899,24 +2904,24 @@
 
                                     //if (self.$$app.isFiltered(data.val().node) === false) {
 
-                                        self.$$app.addNodeByIdentifier(data.val());
-                                        self.$$app.addLocalIndex([data.val()]);
+                                    self.$$app.addNodeByIdentifier(data.val());
+                                    self.$$app.addLocalIndex([data.val()]);
 
-                                        if (timer !== false) {
-                                            clearTimeout(timer);
-                                        }
-                                        timer = setTimeout(function () {
+                                    if (timer !== false) {
+                                        clearTimeout(timer);
+                                    }
+                                    timer = setTimeout(function () {
+                                        self.$$app.search();
+                                    }, nodesArray.length > 50 ? 100 : 10);
+
+
+                                    // wait for updates
+                                    self.$$app.getIndexByNodeIdentifier(node).on("value", function (data) {
+                                        if (data.val()) {
+                                            self.$$app.addLocalIndex([data.val()]);
                                             self.$$app.search();
-                                        }, nodesArray.length > 50 ? 100 : 10);
-
-
-                                        // wait for updates
-                                        self.$$app.getIndexByNodeIdentifier(node).on("value", function (data) {
-                                            if (data.val()) {
-                                                self.$$app.addLocalIndex([data.val()]);
-                                                self.$$app.search();
-                                            }
-                                        });
+                                        }
+                                    });
                                     //}
 
                                 }
@@ -3946,8 +3951,8 @@
                  * @param {boolean} affectedBySearchResult dont affect current search result to distinct
                  * @returns {integer} count collection of property values
                  */
-                getDistinctCount: function (property,affectedBySearchResult) {
-                    return Object.keys(this.getDistinct(property,affectedBySearchResult)).length;
+                getDistinctCount: function (property, affectedBySearchResult) {
+                    return Object.keys(this.getDistinct(property, affectedBySearchResult)).length;
                 },
                 /**
                  * Check if given value string is in distinct result
