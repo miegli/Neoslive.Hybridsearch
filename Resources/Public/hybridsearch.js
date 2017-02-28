@@ -2295,11 +2295,10 @@
                                                     parsed = true;
                                                 }
 
+
                                                 if (parsed === false) {
                                                     data = null;
                                                 }
-                                                console.log(data);
-
 
                                             }
 
