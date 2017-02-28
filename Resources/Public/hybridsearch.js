@@ -2238,7 +2238,6 @@
                                             if (data !== null) {
 
 
-
                                                 if (keyword === null || keyword === '') {
 
                                                     if (indexdata['__'] === undefined) {
@@ -2274,7 +2273,6 @@
                                         clearTimeout(self.getIndexInterval());
 
                                         self.setIndexInterval(setTimeout(function () {
-
                                             angular.forEach(uniquarrayfinal, function (keyword) {
 
                                                 var refs = self.getIndex(keyword);
@@ -2289,7 +2287,7 @@
 
                                                         self.addPendingRequest($http({
                                                             method: 'get',
-                                                            url: uniquarrayfinalTerms[keyword] !== undefined ? ref.http.replace("$query", uniquarrayfinalTerms[keyword].trim()) : ref.http,
+                                                            url: ref.http,
                                                             cache: true,
                                                             timeout: canceller.promise,
                                                             cancel: function (reason) {
@@ -2320,9 +2318,7 @@
 
 
                                             });
-
                                         }, 10));
-
 
                                         if (lastSearchInstance.$$data.keywords.length) {
                                             // wait for all data and put it together to search index
@@ -2352,10 +2348,29 @@
                                             }, 20));
                                         }
 
+                                        if (self.getExternalSources()) {
+
+                                            // // add external sources
+                                            var canceller = $q.defer();
+                                            angular.forEach(self.getExternalSources(), function (ref) {
+                                                self.addPendingRequest($http({
+                                                    method: 'get',
+                                                    url: ref.http.replace("$query", self.getFilter().getQuery()),
+                                                    cache: true,
+                                                    timeout: canceller.promise,
+                                                    cancel: function (reason) {
+                                                        canceller.resolve(reason);
+                                                    }
+                                                }).success(function (data) {
+                                                   execute(self.getFilter().getQuery(), data, ref);
+                                                }));
+                                            });
+
+                                        }
+
                                     } else {
                                         //  results.$$app.clearResults();
                                         self.search();
-
                                     }
 
 
@@ -2510,14 +2525,6 @@
 
                             }
 
-
-                            // add external sources
-                            if (self.getExternalSources()) {
-                                angular.forEach(self.getExternalSources(),function(external) {
-                                    console.log(external);
-                                    queries.push(external);
-                                });
-                            }
 
                             index[keyword] = queries;
 
