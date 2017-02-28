@@ -4149,7 +4149,6 @@
                         if (self.$$data.distinctsConfiguration[property].valuesOnly === false) {
                             return self.$$data.distincts[property];
                         } else {
-
                             var v = [];
                             angular.forEach(self.$$data.distincts[property], function (i) {
                                 v.push(i.value);
@@ -4165,6 +4164,7 @@
                         if (self.$$data.unfilteredResultNodes.length === 0 || (node['_isfiltered'][property] === false)) {
 
                             variantsByNodes[node.identifier] = {};
+
 
                             propvalue = self.getPropertyFromNode(node, property);
 
@@ -4287,6 +4287,14 @@
 
 
                         }
+
+                        variants[k].getValue = function() {
+                            return this.value;
+                        }
+                        variants[k].count = function() {
+                            return this.count;
+                        }
+
 
 
                     });
