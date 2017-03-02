@@ -4288,12 +4288,6 @@
 
                         }
 
-                        variants[k].getValue = function() {
-                            return this.value;
-                        }
-                        variants[k].count = function() {
-                            return this.count;
-                        }
 
 
 
