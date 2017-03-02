@@ -3232,7 +3232,8 @@
                             }
 
                             scope["_hybridsearchSetQeuryInterval"] = window.setTimeout(function () {
-                                if (searchInput !== searchInputLast) {
+
+                              //  if (searchInput !== searchInputLast) {
 
                                     self.$$app.getFilter().setQuery(scope[input]);
                                     if (self.$$app.isRunning() === false) {
@@ -3250,7 +3251,7 @@
 
                                     }
 
-                                }
+                               // }
 
 
                             }, 5);
