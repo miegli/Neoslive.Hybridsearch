@@ -3469,8 +3469,16 @@
                  * @returns {string} Group label
                  */
                 getLabel: function () {
-                    console.log(this.$$hashKey);
+
                     return this.label !== undefined ? this.label : '';
+                },
+
+                /**
+                 * Get groups label.
+                 * @returns {string} Group label
+                 */
+                getHashKey: function () {
+                    return this.$$hashKey.substr(this.$$hashKey.indexOf(":")+1);
                 },
 
                 /**
