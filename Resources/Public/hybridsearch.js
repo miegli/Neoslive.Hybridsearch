@@ -3469,6 +3469,7 @@
                  * @returns {string} Group label
                  */
                 getLabel: function () {
+                    console.log(this.$$hashKey);
                     return this.label !== undefined ? this.label : '';
                 },
 
