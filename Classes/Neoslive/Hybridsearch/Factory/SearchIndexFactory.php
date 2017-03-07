@@ -1452,8 +1452,8 @@ class SearchIndexFactory
             $data->turbonode = false;
         }
 
-        $data->lastmodified = $node->getLastModificationDateTime();
-        $data->created = $node->getCreationDateTime();
+        $data->lastmodified = $node->getLastModificationDateTime()->getTimestamp();
+        $data->created = $node->getCreationDateTime()->getTimestamp();
 
 
         $p = $data->nodeType . "-rawcontent";

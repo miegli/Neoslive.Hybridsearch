@@ -482,6 +482,16 @@
                             self.properties.uri = self.uri;
                         }
 
+                        if (self.lastmodified !== undefined && nodeData.lastmodified !== undefined) {
+                            self.properties.lastmodified = nodeData.lastmodified;
+                        }
+
+                        if (self.created !== undefined && nodeData.created !== undefined) {
+                            self.properties.created = nodeData.created;
+
+                        }
+
+
                     };
 
                     HybridsearchResultsNode.prototype = {
