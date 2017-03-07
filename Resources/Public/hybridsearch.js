@@ -700,7 +700,20 @@
                          * @returns {string}
                          */
                         getUrl: function () {
-                            return this.url === undefined ? '' : this.url;
+
+                            if (this.url === undefined ) {
+                                return '';
+                            }
+
+                            // is neos backend
+                            if (window.location.pathname.indexOf("@user-") > -1) {
+                               return this.url.substr(0,this.url.lastIndexOf(".")) + window.location.pathname.substr(window.location.pathname.indexOf("@user-"));
+                            } else {
+                                return this.url;
+                            }
+
+
+
                         },
 
                         /**
@@ -1186,6 +1199,9 @@
                                 order = resultOrderBy !== undefined && resultOrderBy[this.getNodeTypeLabel(nodeType)] !== undefined ? resultOrderBy[this.getNodeTypeLabel(nodeType)] : [];
                             }
 
+                            if (order.length === 0 && resultOrderBy['*'] !== undefined) {
+                                order = resultOrderBy['*'];
+                            }
 
                             if (typeof order === 'string') {
                                 var g = order;
@@ -1382,6 +1398,85 @@
                             return this.getResults().$$data.nodes[identifier] === undefined ? null : new HybridsearchResultsNode(this.getResults().$$data.nodes[identifier], 1);
                         },
 
+
+
+                        /**
+                         * @private
+                         * @params array preOrdered
+                         * @returns mixed
+                         */
+                        sortNodes: function (preOrdered) {
+
+                            var self = this;
+
+                            if (self.hasOrderBy() === false) {
+                                return preOrdered;
+                            }
+
+                            var orderingkeys = [];
+                            var Ordered = [];
+                            var OrderedFinal = [];
+                            var reverse = false;
+                            var forcereverse = false;
+                            angular.forEach(preOrdered, function (node) {
+
+                                var orderingstring = 0;
+
+                                angular.forEach(self.getOrderBy(node.nodeType), function (property) {
+
+                                    if (property.substr(0,1) == '-') {
+                                        reverse = true;
+                                        property = property.substr(1);
+                                    } else {
+                                        reverse = false;
+                                    }
+
+                                    var s = self.getPropertyFromNode(node, property);
+                                    if (typeof s === 'string') {
+                                        orderingstring += s + " ";
+                                        if (reverse) {
+                                            forcereverse = true;
+                                        }
+                                    } else {
+
+                                        if (typeof s === 'number') {
+                                            if (reverse) {
+                                                s = 1/s;
+                                            }
+                                            orderingstring = parseFloat(orderingstring+s);
+                                        }
+
+                                    }
+                                });
+
+                                if (orderingstring == '') {
+                                    orderingstring = 0;
+                                }
+
+                                if (Ordered[orderingstring] == undefined) {
+                                    Ordered[orderingstring] = [];
+                                }
+
+                                if (orderingkeys.indexOf(orderingstring) == -1) {
+                                    orderingkeys.push(orderingstring);
+                                }
+
+                                Ordered[orderingstring].push(node);
+
+
+                            });
+
+
+                            angular.forEach(forcereverse ? orderingkeys.reverse() : orderingkeys.sort(),function(o) {
+                                angular.forEach(Ordered[o], function (node) {
+                                    OrderedFinal.push(node);
+                                });
+                            });
+
+                            return OrderedFinal;
+
+                        },
+
                         /**
                          * @private
                          * @params nodesFromInput
@@ -1449,22 +1544,8 @@
                                 }
 
 
-                                var Ordered = $filter('orderBy')(preOrdered, function (node) {
-                                    var ostring = '';
 
-                                    angular.forEach(self.getOrderBy(node.nodeType), function (property) {
-
-                                        var s = self.getPropertyFromNode(node, property);
-                                        if (typeof s === 'string') {
-                                            ostring += s;
-                                        }
-
-                                    });
-
-                                    return ostring;
-                                });
-
-                                angular.forEach(Ordered, function (node) {
+                                angular.forEach(self.sortNodes(preOrdered), function (node) {
                                     self.addNodeToSearchResult(node.identifier, 1, nodesFound, items, nodeTypeMaxScore, nodeTypeMinScore, nodeTypeScoreCount);
                                 });
 
@@ -1496,30 +1577,9 @@
                                         });
                                     }
 
-                                    if (self.hasOrderBy()) {
-                                        var Ordered = $filter('orderBy')(preOrdered, function (node) {
-
-                                            var ostring = '';
-
-                                            angular.forEach(self.getOrderBy(node.nodeType), function (property) {
-
-                                                var s = self.getPropertyFromNode(node, property);
-                                                if (typeof s === 'string') {
-                                                    ostring += s;
-                                                }
-
-                                            });
 
 
-                                            return ostring;
-
-
-                                        });
-                                    } else {
-                                        var Ordered = preOrdered;
-                                    }
-
-                                    angular.forEach(Ordered, function (node) {
+                                    angular.forEach(self.sortNodes(preOrdered), function (node) {
                                         self.addNodeToSearchResult(node.identifier, 1, nodesFound, items, nodeTypeMaxScore, nodeTypeMinScore, nodeTypeScoreCount);
                                     });
 
@@ -1640,60 +1700,7 @@
                                         return -1 * item.score;
                                     });
 
-                                    //var preOrderedFilteredRelevance = [];
-                                    // if (self.getFilter().getNodeType() == false) {
-                                    //     angular.forEach(preOrdered, function (item) {
-                                    //
-                                    //
-                                    //         if (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined) {
-                                    //             nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = item.score;
-                                    //         } else {
-                                    //             if (nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] < item.score) {
-                                    //                 nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = item.score;
-                                    //             }
-                                    //         }
-                                    //
-                                    //         if (nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)] === undefined) {
-                                    //             nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)] = {};
-                                    //         }
-                                    //
-                                    //         if (nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)][item.score] === undefined) {
-                                    //             nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)][item.score] = 1;
-                                    //         } else {
-                                    //             nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)][item.score]++;
-                                    //         }
-                                    //
-                                    //
-                                    //     });
-                                    // }
 
-
-                                    //  var ql = query.split(" ").length + 1;
-
-
-                                    // angular.forEach(preOrdered, function (item) {
-                                    // preOrderedFilteredRelevance.push(item);
-                                    //
-                                    // if (self.getFilter().getNodeType() !== false || Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length > 5) {
-                                    //     preOrderedFilteredRelevance.push(item);
-                                    // } else {
-                                    //
-                                    //     if (Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length == 1 || Object.keys(nodeTypeScoreCount[self.getNodeTypeLabel(nodes[item.ref].nodeType)]).length > 10) {
-                                    //         preOrderedFilteredRelevance.push(item);
-                                    //     } else {
-                                    //
-                                    //
-                                    //         if (item.score / nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)] < 1 / ql) {
-                                    //             // skip irelevant score
-                                    //           //  console.log(nodes[item.ref],'skipped');
-                                    //         } else {
-                                    //          //   console.log(item.score / nodeTypeMaxScore[self.getNodeTypeLabel(nodes[item.ref].nodeType)],nodes[item.ref]);
-                                    //             preOrderedFilteredRelevance.push(item);
-                                    //         }
-                                    //     }
-                                    // }
-
-                                    //  });
 
                                     var preOrderedFilteredRelevance = preOrdered;
 
