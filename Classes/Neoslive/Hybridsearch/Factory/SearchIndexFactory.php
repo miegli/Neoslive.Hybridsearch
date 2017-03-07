@@ -1452,6 +1452,9 @@ class SearchIndexFactory
             $data->turbonode = false;
         }
 
+        $data->lastmodified = $node->getLastModificationDateTime();
+        $data->created = $node->getCreationDateTime();
+
 
         $p = $data->nodeType . "-rawcontent";
         if (isset($properties->$p) === false) {

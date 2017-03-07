@@ -1245,6 +1245,7 @@
                         setOrderBy: function (orderBy) {
                             resultOrderBy = orderBy;
                         },
+
                         /**
                          * @private
                          * @param categorizedBy
@@ -1768,6 +1769,12 @@
                          */
                         addNodeToSearchResult: function (nodeId, score, nodesFound, items, nodeTypeMaxScore, nodeTypeMinScore, nodeTypeScoreCount) {
 
+                            if (this.getFilter().$$data.maxResultsFilter !== undefined && this.getFilter().$$data.maxResultsFilter > 0) {
+                                if (this.getFilter().$$data.maxResultsFilter <= Object.keys(items['_nodes']).length) {
+                                    return true;
+                                }
+                            }
+
 
                             if (nodes[nodeId] == undefined) {
                                 return false;
@@ -2117,6 +2124,12 @@
 
 
                             var self = this;
+
+
+                            if (self.getHybridsearch().getBranch() === false) {
+                                self.cancelAllPendingRequest();
+                                return false;
+                            }
 
                             if (self.isRunning() === false) {
                                 return false;
@@ -3150,6 +3163,30 @@
                     } else {
                         self.$$app.getFilter().setGenderFilter(gender);
                         self.$$app.setSearchIndex();
+                    }
+
+                    return this;
+
+                },
+
+                /**
+                 * Adds max imtem filter
+                 * @param {integer} max results
+                 * @param {scope} scope false if is simple string otherwise angular scope required for binding data
+                 * @returns {HybridsearchObject}
+                 */
+                setLimit: function (limit, scope) {
+
+                    var self = this;
+
+                    if (scope != undefined) {
+                        self.$$app.getFilter().$$data.maxResultsFilter = limit;
+                        scope.$watch(limit, function (v) {
+                            self.$$app.getFilter().$$data.maxResultsFilter = limit;
+                        }, true);
+
+                    } else {
+                        self.$$app.getFilter().$$data.maxResultsFilter = limit;
                     }
 
                     return this;
@@ -4620,6 +4657,19 @@
                     };
 
 
+                    return this;
+                },
+
+
+                /**
+                 * @param integer value
+                 * @returns HybridsearchObject
+                 */
+                setMaxResultsFilter: function (value) {
+                    if (this.$$data.maxResultsFilter == undefined) {
+                        this.$$data.maxResultsFilter = {};
+                    }
+                    this.$$data.maxResultsFilter = value;
                     return this;
                 },
 
