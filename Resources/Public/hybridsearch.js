@@ -863,6 +863,11 @@
                          */
                         setIsRunning: function () {
 
+                            if (hybridsearch.$$conf.databaseURL.length == 0) {
+                                isRunning = false;
+                                return false;
+                            }
+
                             if (hybridsearch.$$conf.branchisloading === undefined) {
 
                                 hybridsearch.$$conf.branchisloading = true;
