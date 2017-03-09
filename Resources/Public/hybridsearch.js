@@ -2433,6 +2433,31 @@
                                                             self.cleanLocalIndex();
                                                             cleanedup = true;
                                                         }
+
+                                                        if (self.getExternalSources()) {
+
+                                                            // // add external sources
+                                                            var canceller = $q.defer();
+                                                            angular.forEach(self.getExternalSources(), function (ref) {
+
+                                                                if (ref.standalone === undefined || ref.standalone == false) {
+                                                                    self.addPendingRequest($http({
+                                                                        method: 'get',
+                                                                        url: ref.http.replace("$query", self.getFilter().getQuery()),
+                                                                        cache: true,
+                                                                        timeout: canceller.promise,
+                                                                        cancel: function (reason) {
+                                                                            canceller.resolve(reason);
+                                                                        }
+                                                                    }).success(function (data) {
+                                                                        execute(self.getFilter().getQuery(), data, ref);
+                                                                    }));
+                                                                }
+
+                                                            });
+
+                                                        }
+
                                                         self.updateLocalIndex(indexdata, lastSearchInstance);
                                                     } else {
                                                         self.setLastIndexHash(hash);
@@ -2446,25 +2471,32 @@
                                             }, 20));
                                         }
 
+
                                         if (self.getExternalSources()) {
 
                                             // // add external sources
                                             var canceller = $q.defer();
                                             angular.forEach(self.getExternalSources(), function (ref) {
-                                                self.addPendingRequest($http({
-                                                    method: 'get',
-                                                    url: ref.http.replace("$query", self.getFilter().getQuery()),
-                                                    cache: true,
-                                                    timeout: canceller.promise,
-                                                    cancel: function (reason) {
-                                                        canceller.resolve(reason);
-                                                    }
-                                                }).success(function (data) {
-                                                   execute(self.getFilter().getQuery(), data, ref);
-                                                }));
+
+                                                if (ref.standalone != undefined && ref.standalone == true) {
+                                                    self.addPendingRequest($http({
+                                                        method: 'get',
+                                                        url: ref.http.replace("$query", self.getFilter().getQuery()),
+                                                        cache: true,
+                                                        timeout: canceller.promise,
+                                                        cancel: function (reason) {
+                                                            canceller.resolve(reason);
+                                                        }
+                                                    }).success(function (data) {
+                                                        execute(self.getFilter().getQuery(), data, ref);
+                                                    }));
+                                                }
+
                                             });
 
                                         }
+
+
 
                                     } else {
                                         //  results.$$app.clearResults();
