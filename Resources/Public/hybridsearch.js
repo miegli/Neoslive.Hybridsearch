@@ -1063,6 +1063,7 @@
                                         nodeType: config.nodeType,
                                         turbonode: false,
                                         identifier: id,
+                                        hash: id,
                                         url: properties['url'] !== undefined ? properties['url'] : null
                                     },
                                     nodeType: config.nodeType
@@ -1117,6 +1118,7 @@
                                         },
                                         nodeType: config.nodeType,
                                         turbonode: false,
+                                        hash: id,
                                         identifier: id,
                                         url: properties['url'] !== undefined ? properties['url'] : null
                                     },
@@ -2781,7 +2783,8 @@
 
                             angular.forEach(data, function (value, key) {
 
-                                    if (isloadingall === true || nodesIndexed[value.node.identifier] === undefined) {
+
+                                    if (isloadingall === true || nodesIndexed[value.node.hash] === undefined) {
 
                                         var doc = {};
 
@@ -2868,14 +2871,13 @@
 
                                                 doc.id = value.node.identifier;
                                                 lunrSearch.addDoc(doc);
-
-                                                nodesIndexed[doc.id] = true;
+                                                nodesIndexed[value.node.hash] = true;
                                             }
 
 
                                         }
 
-                                    }
+                                    } 
 
                                 }
                             );
