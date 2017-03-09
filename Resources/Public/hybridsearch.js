@@ -2775,7 +2775,7 @@
 
                                     var doc = {};
 
-                                    if (nodes[value.node.identifier] === undefined) {
+                                    if (nodes[value.node.identifier] === undefined || 1 == 1) {
 
                                         if (hasDistinct == true || self.isFiltered(value.node) === false) {
 
