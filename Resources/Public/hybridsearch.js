@@ -2532,6 +2532,10 @@
                         getKeywords: function (querysegment, instance) {
 
 
+                           if (this.getFilter().isBlockedKeyword(querysegment)) {
+                               return false;
+                           }
+
                             var q = metaphone(querysegment.toLowerCase().replace(/[^\w()/.%\-&üöäÜÖÄ]/gi, ''), 5);
                             if (q.length == 0) {
                                 q = querysegment;
@@ -2877,7 +2881,7 @@
 
                                         }
 
-                                    } 
+                                    }
 
                                 }
                             );
