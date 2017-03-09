@@ -176,7 +176,7 @@
              */
             var HybridsearchObject = function (hybridsearch) {
 
-                    var hybridsearchInstanceNumber, pendingRequests, results, filter, index, lunrSearch, nodes, nodesLastHash, nodeTypeLabels, resultGroupedBy, resultCategorizedBy, resultOrderBy, propertiesBoost, ParentNodeTypeBoostFactor, isRunning, firstfilterhash, searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier, nodesByIdentifier, searchCounter, searchCounterTimeout, nodeTypeProperties, isloadedall, externalSources;
+                    var hybridsearchInstanceNumber, pendingRequests, results, filter, index, lunrSearch, nodesIndexed, nodes, nodesLastHash, nodeTypeLabels, resultGroupedBy, resultCategorizedBy, resultOrderBy, propertiesBoost, ParentNodeTypeBoostFactor, isRunning, firstfilterhash, searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier, nodesByIdentifier, searchCounter, searchCounterTimeout, nodeTypeProperties, isloadedall, externalSources;
 
                     // count instances
                     if (window.hybridsearchInstances === undefined) {
@@ -199,6 +199,7 @@
                     externalSources = {};
                     nodeTypeProperties = {};
                     nodes = {};
+                    nodesIndexed = {};
                     index = {};
                     pendingRequests = [];
                     resultGroupedBy = {};
@@ -2341,9 +2342,10 @@
                                                         indexdata['__'].push(node);
                                                     });
 
-                                                    self.updateLocalIndex(indexdata, lastSearchInstance);
+                                                    self.updateLocalIndex(indexdata, lastSearchInstance, true);
                                                     self.search(nodes);
                                                     self.setIsLoadedAll();
+
                                                 } else {
                                                     if (indexdata[keyword] === undefined) {
                                                         indexdata[keyword] = [];
@@ -2353,6 +2355,7 @@
                                                         nodes[id] = node;
                                                         indexdata[keyword].push(node);
                                                     });
+
                                                     self.updateLocalIndex(indexdata, lastSearchInstance);
                                                     indexcounter++;
                                                 }
@@ -2695,9 +2698,9 @@
                             }
 
                             nodes = {};
+                            nodesIndexed = {};
 
                             this.getFilter().setAutocompletedKeywords('');
-                            lunrSearch = null;
                             lunrSearch = elasticlunr(function () {
                                 this.setRef('id');
                             });
@@ -2719,10 +2722,11 @@
                          * @param object data
                          * @returns void
                          */
-                        updateLocalIndex: function (data, lastSearchInstance) {
+                        updateLocalIndex: function (data, lastSearchInstance, isloadingall) {
 
 
                             var self = this, keywords = [];
+
 
                             angular.forEach(data, function (val, keyword) {
                                 angular.forEach(lastSearchInstance.$$data.keywords, function (k) {
@@ -2730,7 +2734,10 @@
                                         keywords.push(k.term);
                                     }
                                 });
-                                self.addLocalIndex(val, keyword, keywords);
+
+
+                                self.addLocalIndex(val, keyword, keywords, isloadingall);
+
                                 keywords = [];
                             });
 
@@ -2764,18 +2771,19 @@
                          * @param string keyword
                          * @returns mixed
                          */
-                        addLocalIndex: function (data, keyword, keywords) {
+                        addLocalIndex: function (data, keyword, keywords, isloadingall) {
 
                             var self = this;
                             var hasDistinct = self.getResults().hasDistincts();
-
+                            if (isloadingall === undefined) {
+                                isloadingall = false;
+                            }
 
                             angular.forEach(data, function (value, key) {
 
+                                    if (isloadingall === true || nodesIndexed[value.node.identifier] === undefined) {
 
-                                    var doc = {};
-
-                                    if (nodes[value.node.identifier] === undefined || 1 == 1) {
+                                        var doc = {};
 
                                         if (hasDistinct == true || self.isFiltered(value.node) === false) {
 
@@ -2860,12 +2868,15 @@
 
                                                 doc.id = value.node.identifier;
                                                 lunrSearch.addDoc(doc);
+
+                                                nodesIndexed[doc.id] = true;
                                             }
 
 
                                         }
 
                                     }
+
                                 }
                             );
 
