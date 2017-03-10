@@ -1075,6 +1075,7 @@
                                 };
 
 
+
                             });
 
 
@@ -1109,6 +1110,8 @@
                                 var id = Guid.create();
                                 id = id.value;
 
+
+
                                 angular.forEach(config.fields, function (fieldconfig, field) {
                                     properties[field] = i[fieldconfig];
                                 });
@@ -1129,6 +1132,7 @@
                                     },
                                     nodeType: config.nodeType
                                 };
+
 
                             });
 
@@ -2450,6 +2454,7 @@
                                                                         method: 'get',
                                                                         url: ref.http.replace("$query", self.getFilter().getQuery()),
                                                                         cache: true,
+                                                                        headers: ref.headers === undefined ? {} : ref.headers,
                                                                         timeout: canceller.promise,
                                                                         cancel: function (reason) {
                                                                             canceller.resolve(reason);
@@ -2488,6 +2493,7 @@
                                                         method: 'get',
                                                         url: ref.http.replace("$query", self.getFilter().getQuery()),
                                                         cache: true,
+                                                        headers: ref.headers === undefined ? {} : ref.headers,
                                                         timeout: canceller.promise,
                                                         cancel: function (reason) {
                                                             canceller.resolve(reason);
