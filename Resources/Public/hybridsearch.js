@@ -1030,12 +1030,14 @@
 
                             var items = {};
 
+
                             jQuery(html).find(config.results.selector).each(function (i) {
 
                                 var properties = {};
                                 var html = jQuery(this);
                                 var id = Guid.create();
                                 id = id.value;
+
                                 angular.forEach(config.fields, function (fieldconfig, field) {
 
 
@@ -1074,6 +1076,8 @@
                                     nodeType: config.nodeType
                                 };
 
+                                console.log(items[id]);
+
 
 
                             });
@@ -1100,8 +1104,14 @@
                         parseJson: function (json, config) {
 
 
+
+
                             var items = {}, selector = [];
-                            eval("selector = json." + config.results.selector);
+                           if (config.results !== undefined && config.results.selector !== undefined) {
+                               eval("selector = json." + config.results.selector);
+                           } else {
+                               selector = json;
+                           }
 
                             angular.forEach(selector, function (i) {
 
@@ -1132,6 +1142,7 @@
                                     },
                                     nodeType: config.nodeType
                                 };
+
 
 
                             });
