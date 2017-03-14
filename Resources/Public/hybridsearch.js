@@ -708,7 +708,11 @@
 
                             // is neos backend
                             if (window.location.pathname.indexOf("@user-") > -1) {
-                                return this.url.substr(0, this.url.lastIndexOf(".")) + window.location.pathname.substr(window.location.pathname.indexOf("@user-"));
+                                var url = this.url.substr(0, this.url.lastIndexOf(".")) + window.location.pathname.substr(window.location.pathname.indexOf("@user-"));
+                                if (url.substr(-4) !== '.html') {
+                                    url = url+".html";
+                                }
+                                return url;
                             } else {
                                 return this.url;
                             }
