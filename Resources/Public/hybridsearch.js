@@ -1652,7 +1652,7 @@
                                             });
                                         }
 
-                                        if (resultAnd.length < 5) {
+                                        if (resultAnd.length < 15) {
 
                                             resultAnd = lunrSearch.search(self.getFilter().getQuery() + ' ' + query, {
                                                 fields: fields,
@@ -1661,7 +1661,7 @@
                                             });
                                         }
 
-                                        if (resultAnd.length < 10) {
+                                        if (resultAnd.length < 5) {
 
                                             resultAnd = lunrSearch.search(self.getFilter().getQuery(), {
                                                 fields: fields,
@@ -1670,7 +1670,7 @@
                                             });
                                         }
 
-                                        if (resultAnd.length < 15) {
+                                        if (resultAnd.length < 2) {
                                             resultAnd = lunrSearch.search(self.getFilter().getQuery() + ' ' + query, {
                                                 fields: fields,
                                                 bool: "OR",
