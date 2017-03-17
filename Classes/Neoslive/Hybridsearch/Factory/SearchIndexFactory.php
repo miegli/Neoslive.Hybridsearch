@@ -474,6 +474,7 @@ class SearchIndexFactory
 
         $this->output->progressStart($moditifedNodeData->count());
 
+        $this->output->outputLine('indexing nodes');
 
         foreach ($moditifedNodeData as $nodedata) {
             $this->output->progressAdvance(1);
@@ -483,8 +484,13 @@ class SearchIndexFactory
         }
         $this->output->progressFinish();
 
+        $this->output->outputLine('preparing upload');
+
         $this->save();
         $this->unlockReltimeIndexer();
+
+        $this->output->outputLine('uploading indexed nodes');
+
         $this->proceedQueue();
         $this->updateFireBaseRules();
 
@@ -497,6 +503,7 @@ class SearchIndexFactory
 
         // remove trash
         $this->firebase->delete("/trash");
+        $this->unlockReltimeIndexer();
 
 
         return true;
@@ -1745,11 +1752,15 @@ class SearchIndexFactory
             $files = array();
 
             $fp = opendir($this->temporaryDirectory);
+
+            $filesize = 0;
+
             while (false !== ($entry = readdir($fp))) {
 
                 if (substr($entry, 0, 6) === 'queued' && substr($entry, -4) === 'json') {
                     list($name, $number, $uuid) = explode("_", $entry);
                     $files[$number][] = $this->temporaryDirectory . $entry;
+                    $filesize = $filesize + filesize($this->temporaryDirectory . $entry);
                 }
 
             }
@@ -1758,7 +1769,7 @@ class SearchIndexFactory
             ksort($files);
 
             if (count($files)) {
-                $this->output->progressStart(count($files));
+                $this->output->progressStart($filesize);
             }
 
             $count = 0;
@@ -1768,7 +1779,7 @@ class SearchIndexFactory
                 foreach ($filecollection as $file) {
 
                     $count++;
-                    $this->output->progressAdvance(1);
+
 
 
                     $content = json_decode(file_get_contents($file));
@@ -1793,6 +1804,9 @@ class SearchIndexFactory
                                 break;
                         }
 
+                        $this->output->progressAdvance(filesize($file));
+
+
                         if (strlen($out) < 255) {
 
                             if (!json_decode($out)) {
@@ -1810,6 +1824,9 @@ class SearchIndexFactory
                     } else {
                         unlink($file);
                     }
+
+
+
 
 
                 }
