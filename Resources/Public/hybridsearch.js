@@ -986,7 +986,7 @@
                          * @returns {{}|*}
                          */
                         getExternalSources: function () {
-                            return externalSources;
+                            return Object.keys(externalSources).length ? externalSources : null;
                         },
                         /**
                          * @private
@@ -1080,7 +1080,7 @@
                                     nodeType: config.nodeType
                                 };
 
-                                console.log(items[id]);
+
 
 
                             });
@@ -1520,7 +1520,7 @@
                                 if (self.getResults().countAll() === 0) {
                                     self.getResults().getApp().setNotFound(true);
                                 }
-                            }, this.isLoadedAll() ? 1 : 3000);
+                            }, this.isLoadedAll() ? 1 : 2000);
 
 
                             if (lunrSearch.getFields().length == 0 && self.getFilter().getFullSearchQuery() !== false) {
@@ -1639,7 +1639,6 @@
                                                 fields: fields,
                                                 bool: "AND"
                                             });
-
                                         }
 
                                         if (resultsSearch[1] != undefined && resultsSearch[1].length == 0) {
@@ -1677,6 +1676,8 @@
 
 
                                         var result = resultsSearch[resultsSearch.length - 1];
+
+
 
                                         var scoresum = 0;
                                         if (result.length > 0) {
@@ -1731,6 +1732,7 @@
 
 
                                     }
+
 
 
                                     // filter out not relevant items and apply parent node type boost factor
@@ -1830,7 +1832,6 @@
                                     return true;
                                 }
                             }
-
 
                             if (nodes[nodeId] == undefined) {
                                 return false;
@@ -2390,6 +2391,9 @@
                                                     self.setIsLoadedAll();
 
                                                 } else {
+
+                                                    keyword = Sha1.hash(ref.http)+"://"+keyword;
+
                                                     if (indexdata[keyword] === undefined) {
                                                         indexdata[keyword] = [];
                                                     }
@@ -2410,6 +2414,10 @@
 
 
                                         clearTimeout(self.getIndexInterval());
+
+                                        var loadedIndex = [];
+
+
 
                                         self.setIndexInterval(setTimeout(function () {
                                             angular.forEach(uniquarrayfinal, function (keyword) {
@@ -2444,10 +2452,19 @@
                                                                 }
 
 
-                                                            }, 2500)
+                                                            }, 6500)
                                                         }).success(function (data) {
 
-                                                            execute(keyword, data, ref);
+                                                            if (lastSearchInstance.$$data.keywords.length == 0) {
+                                                                execute(keyword, data, ref);
+                                                            } else {
+                                                                loadedIndex.push(
+                                                                    {
+                                                                        0: self.getFilter().getQuery(),
+                                                                        1: data,
+                                                                        2: ref
+                                                                    });
+                                                            }
                                                         }));
 
 
@@ -2457,50 +2474,70 @@
 
 
                                             });
-                                        }, 10));
+                                        }, 25));
+
+
+                                        var musthavelength = uniquarrayfinal.length;
 
                                         if (lastSearchInstance.$$data.keywords.length) {
+
+                                            if (self.getExternalSources()) {
+
+                                                // // add external sources
+                                                var canceller = $q.defer();
+                                                angular.forEach(self.getExternalSources(), function (ref) {
+
+                                                    if (ref.standalone === undefined || ref.standalone == false) {
+                                                        musthavelength++;
+                                                        self.addPendingRequest($http({
+                                                            method: 'get',
+                                                            url: ref.http.replace("$query", self.getFilter().getQuery()),
+                                                            cache: true,
+                                                            headers: ref.headers === undefined ? {} : ref.headers,
+                                                            timeout: canceller.promise,
+                                                            cancel: function (reason) {
+                                                                canceller.resolve(reason);
+                                                            }
+                                                        }).success(function (data) {
+                                                            loadedIndex.push(
+                                                                {
+                                                                    0: self.getFilter().getQuery(),
+                                                                    1: data,
+                                                                    2: ref
+                                                                });
+                                                        }));
+
+
+                                                    }
+
+                                                });
+
+                                            }
+
+
                                             // wait for all data and put it together to search index
                                             self.setIndexInterval(setInterval(function () {
 
-                                                if (indexintervalcounter > 5000 || indexcounter >= uniquarrayfinal.length) {
+                                                if (indexintervalcounter > 1500 || (loadedIndex.length >= musthavelength) ) {
                                                     clearInterval(self.getIndexInterval());
 
                                                     var hash = self.getFilter().getHash() + " " + Sha1.hash(JSON.stringify(indexdata));
 
                                                     if (hash !== self.getLastIndexHash() || results.count() === 0) {
+
+                                                        angular.forEach(loadedIndex,function(r){
+                                                            execute(r[0],r[1],r[2]);
+                                                        });
+
                                                         if (cleanedup === false) {
                                                             results.$$app.clearResults();
                                                             self.cleanLocalIndex();
                                                             cleanedup = true;
                                                         }
 
-                                                        if (self.getExternalSources()) {
-
-                                                            // // add external sources
-                                                            var canceller = $q.defer();
-                                                            angular.forEach(self.getExternalSources(), function (ref) {
-
-                                                                if (ref.standalone === undefined || ref.standalone == false) {
-                                                                    self.addPendingRequest($http({
-                                                                        method: 'get',
-                                                                        url: ref.http.replace("$query", self.getFilter().getQuery()),
-                                                                        cache: true,
-                                                                        headers: ref.headers === undefined ? {} : ref.headers,
-                                                                        timeout: canceller.promise,
-                                                                        cancel: function (reason) {
-                                                                            canceller.resolve(reason);
-                                                                        }
-                                                                    }).success(function (data) {
-                                                                        execute(self.getFilter().getQuery(), data, ref);
-                                                                    }));
-                                                                }
-
-                                                            });
-
-                                                        }
-
                                                         self.updateLocalIndex(indexdata, lastSearchInstance);
+
+                                                        self.search();
                                                     } else {
                                                         self.setLastIndexHash(hash);
                                                         self.search();
@@ -2511,12 +2548,51 @@
                                                 indexintervalcounter++;
 
                                             }, 20));
+
+
+                                            //
+                                            //
+                                            //     // wait for all data and put it together to search index
+                                            //     self.setIndexInterval(setInterval(function () {
+                                            //
+                                            //
+                                            //         if (indexintervalcounter > 1500 || (loadedIndex.length >= musthavelength) ) {
+                                            //             clearInterval(self.getIndexInterval());
+                                            //
+                                            //            // var hash = self.getFilter().getHash() + " " + Sha1.hash(JSON.stringify(indexdata));
+                                            //
+                                            //            // if (hash !== self.getLastIndexHash() || results.count() === 0) {
+                                            //                 angular.forEach(loadedIndex,function(r){
+                                            //                     execute(r[0],r[1],r[2]);
+                                            //                 });
+                                            //                 loadedIndex = [];
+                                            //                 // if (cleanedup === false) {
+                                            //                      results.$$app.clearResults();
+                                            //                      self.cleanLocalIndex();
+                                            //                 //     cleanedup = true;
+                                            //                 // }
+                                            //                 self.updateLocalIndex(indexdata, lastSearchInstance);
+                                            //                 //self.search();
+                                            //
+                                            //            // } else {
+                                            //            //     self.setLastIndexHash(hash);
+                                            //            //     self.search();
+                                            //            // }
+                                            //
+                                            //
+                                            //         }
+                                            //         indexintervalcounter++;
+                                            //
+                                            //     }, 10));
+                                            // }
+
                                         }
+
 
 
                                         if (self.getExternalSources()) {
 
-                                            // // add external sources
+                                            // standolone mode: add external sources
                                             var canceller = $q.defer();
                                             angular.forEach(self.getExternalSources(), function (ref) {
 
@@ -2538,6 +2614,9 @@
                                             });
 
                                         }
+
+
+
 
 
                                     } else {
@@ -2777,13 +2856,12 @@
                             var self = this, keywords = [];
 
 
-                            angular.forEach(data, function (val, keyword) {
-                                angular.forEach(lastSearchInstance.$$data.keywords, function (k) {
-                                    if (keyword == k.metaphone) {
-                                        keywords.push(k.term);
-                                    }
-                                });
 
+                            angular.forEach(data, function (val, keyword) {
+                                keyword = keyword.indexOf("://") ? keyword.substr(keyword.indexOf("://")+3) : keyword;
+                                angular.forEach(lastSearchInstance.$$data.keywords, function (k) {
+                                        keywords.push(k.term);
+                                });
 
                                 self.addLocalIndex(val, keyword, keywords, isloadingall);
 
@@ -2883,7 +2961,8 @@
 
                                                             if (typeof propvalue === 'string') {
 
-                                                                if (self.isLoadedAll() || self.getFilter().getQuery() == '' || propvalue.length < 60) {
+
+                                                                if (self.isLoadedAll() || self.getFilter().getQuery() == '' || propvalue.length < 350) {
                                                                     doc[property] = propvalue;
                                                                 } else {
 
@@ -3791,7 +3870,6 @@
 
                         self.$$data.nodes = nodes;
 
-
                         angular.forEach(results, function (val, key) {
 
                             var sorteable = [];
@@ -3828,10 +3906,17 @@
                      * @private
                      */
                     clearResults: function () {
-                        self.$$data.results = new HybridsearchResultsDataObject();
-                        self.$$data.groups = new HybridsearchResultsGroupObject();
-                        self.$$data.notfound = false;
-                        self.$$data.quickinfo = false;
+
+                        if (self.$$data.results['_nodes'] == undefined || self.$$data.results['_nodes'].length > 0) {
+                            self.$$data.results = new HybridsearchResultsDataObject();
+                            self.$$data.groups = new HybridsearchResultsGroupObject();
+                            self.$$data.notfound = false;
+                            self.$$data.quickinfo = false;
+                            return true;
+                        } else {
+                            return false;
+                        }
+
                     },
                     /**
                      * @param {boolean}
@@ -4032,7 +4117,6 @@
                  */
                 isLoading: function () {
 
-
                     if (this.$$data.isrunningfirsttimestamp === 0) {
                         return false;
                     } else {
@@ -4045,6 +4129,8 @@
                         } else {
                         }
                     }
+
+
 
                     if (this.$$data.searchCounter === 0) {
                         return true;
