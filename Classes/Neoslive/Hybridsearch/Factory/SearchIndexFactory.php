@@ -429,9 +429,10 @@ class SearchIndexFactory
      * Create full search index for given workspace
      * @param string $workspacename
      * @param string $nodetype
+     * @param boolean $verbose
      * @return void
      */
-    public function createFullIndex($workspacename = 'live', $nodetype = null)
+    public function createFullIndex($workspacename = 'live', $nodetype = null, $verbose = false)
     {
 
         $sites = array();
@@ -479,9 +480,12 @@ class SearchIndexFactory
         foreach ($moditifedNodeData as $nodedata) {
             $this->output->progressAdvance(1);
             try {
+                if ($verbose) {
+                    \Neos\Flow\var_dump($nodedata);
+                }
                 $this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace(), true);
             } catch (Exception $exception) {
-                $this->output->outputLine("error while indexing node ".$node->getIdentifier(). " on workspace ".$workspacename);
+                $this->output->outputLine("error while indexing node ".$nodedata->getIdentifier(). " on workspace ".$workspacename);
             }
 
 

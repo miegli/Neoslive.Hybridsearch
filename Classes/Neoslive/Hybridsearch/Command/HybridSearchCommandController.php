@@ -51,11 +51,12 @@ class HybridSearchCommandController extends CommandController
      *
      * @param string $workspace Name of the workspace
      * @param string $nodetype name of node type to index only
+     * @param boolean $verbose show verbose informations
      * @return void
      */
-    public function createFullIndexCommand($workspace = 'live', $nodetype = null)
+    public function createFullIndexCommand($workspace = 'live', $nodetype = null, $verbose = false)
     {
-        $this->searchIndexFactory->createFullIndex($workspace, $nodetype);
+        $this->searchIndexFactory->createFullIndex($workspace, $nodetype, $verbose);
     }
 
     /**
