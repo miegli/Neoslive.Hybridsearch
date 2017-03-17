@@ -478,7 +478,11 @@ class SearchIndexFactory
 
         foreach ($moditifedNodeData as $nodedata) {
             $this->output->progressAdvance(1);
-            $this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace(), true);
+            try {
+                $this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace(), true);
+            } catch (Exception $exception) {
+                $this->output->outputLine("error while indexing node ".$node->getIdentifier(). " on workspace ".$workspacename);
+            }
 
 
         }
