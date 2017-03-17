@@ -710,7 +710,7 @@
                             if (window.location.pathname.indexOf("@user-") > -1) {
                                 var url = this.url.substr(0, this.url.lastIndexOf(".")) + window.location.pathname.substr(window.location.pathname.indexOf("@user-"));
                                 if (url.substr(-5) !== '.html') {
-                                    url = url+".html";
+                                    url = url + ".html";
                                 }
                                 return url;
                             } else {
@@ -1083,7 +1083,6 @@
                                 console.log(items[id]);
 
 
-
                             });
 
 
@@ -1108,14 +1107,12 @@
                         parseJson: function (json, config) {
 
 
-
-
                             var items = {}, selector = [];
-                           if (config.results !== undefined && config.results.selector !== undefined) {
-                               eval("selector = json." + config.results.selector);
-                           } else {
-                               selector = json;
-                           }
+                            if (config.results !== undefined && config.results.selector !== undefined) {
+                                eval("selector = json." + config.results.selector);
+                            } else {
+                                selector = json;
+                            }
 
                             angular.forEach(selector, function (i) {
 
@@ -1123,7 +1120,6 @@
 
                                 var id = Guid.create();
                                 id = id.value;
-
 
 
                                 angular.forEach(config.fields, function (fieldconfig, field) {
@@ -1146,7 +1142,6 @@
                                     },
                                     nodeType: config.nodeType
                                 };
-
 
 
                             });
@@ -1632,56 +1627,78 @@
 
                                     } else {
 
-                                        var resultAnd = lunrSearch.search(self.getFilter().getQuery(), {
+                                        var resultsSearch = [];
+
+                                        resultsSearch[0] = lunrSearch.search(self.getFilter().getQuery(), {
                                             fields: fields,
                                             bool: "AND"
                                         });
 
-                                        if (resultAnd.length == 0) {
-                                            resultAnd = lunrSearch.search(query, {
+                                        if (resultsSearch[0].length == 0) {
+                                            resultsSearch[1] = lunrSearch.search(query, {
                                                 fields: fields,
                                                 bool: "AND"
                                             });
 
                                         }
 
-                                        if (resultAnd.length == 0) {
-                                            resultAnd = lunrSearch.search(query, {
+                                        if (resultsSearch[1] != undefined && resultsSearch[1].length == 0) {
+                                            resultsSearch[2] = lunrSearch.search(query, {
                                                 fields: fields,
                                                 bool: "OR"
                                             });
                                         }
 
-                                        if (resultAnd.length < 15) {
+                                        if (resultsSearch[2] != undefined && resultsSearch[2].length == 0) {
 
-                                            resultAnd = lunrSearch.search(self.getFilter().getQuery() + ' ' + query, {
+                                            resultsSearch[3] = lunrSearch.search(self.getFilter().getQuery() + ' ' + query, {
                                                 fields: fields,
                                                 bool: "AND",
                                                 expand: true
                                             });
                                         }
 
-                                        if (resultAnd.length < 5) {
+                                        if (resultsSearch[3] != undefined && resultsSearch[3].length == 0) {
 
-                                            resultAnd = lunrSearch.search(self.getFilter().getQuery(), {
+                                            resultsSearch[4] = lunrSearch.search(self.getFilter().getQuery(), {
                                                 fields: fields,
                                                 bool: "AND",
                                                 expand: true
                                             });
                                         }
 
-                                        if (resultAnd.length < 2) {
-                                            resultAnd = lunrSearch.search(self.getFilter().getQuery() + ' ' + query, {
+                                        if (resultsSearch[4] != undefined && resultsSearch[4].length == 0) {
+                                            resultsSearch[5] = lunrSearch.search(self.getFilter().getQuery() + ' ' + query, {
                                                 fields: fields,
                                                 bool: "OR",
                                                 expand: true
                                             });
                                         }
 
-                                        if (resultAnd.length > 0) {
+
+                                        var result = resultsSearch[resultsSearch.length - 1];
+
+                                        var scoresum = 0;
+                                        if (result.length > 0) {
+                                            angular.forEach(result, function (item) {
+                                                    scoresum = scoresum + item.score;
+                                                }
+                                            );
+                                            if (scoresum / result.length < 10) {
+                                                result = lunrSearch.search(self.getFilter().getQuery() + ' ' + query, {
+                                                    fields: fields,
+                                                    bool: "OR",
+                                                    expand: true
+                                                });
+
+                                            }
+                                        }
+
+
+                                        if (result.length > 0) {
 
                                             if (hasDistinct) {
-                                                angular.forEach(resultAnd, function (item) {
+                                                angular.forEach(result, function (item) {
                                                         if (nodes[item.ref] !== undefined) {
                                                             unfilteredResult.push(nodes[item.ref]);
                                                         }
@@ -1689,7 +1706,7 @@
                                                 );
                                             }
 
-                                            angular.forEach(resultAnd, function (item) {
+                                            angular.forEach(result, function (item) {
                                                     if (nodes[item.ref] !== undefined) {
 
                                                         if (self.isNodesByIdentifier()) {
@@ -2558,9 +2575,9 @@
                         getKeywords: function (querysegment, instance) {
 
 
-                           if (this.getFilter().isBlockedKeyword(querysegment)) {
-                               return false;
-                           }
+                            if (this.getFilter().isBlockedKeyword(querysegment)) {
+                                return false;
+                            }
 
                             var q = metaphone(querysegment.toLowerCase().replace(/[^\w()/.%\-&üöäÜÖÄ]/gi, ''), 5);
                             if (q.length == 0) {
