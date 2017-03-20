@@ -892,7 +892,7 @@
                                             }
 
                                         });
-                                    }, 1000);
+                                    },100);
 
                                 });
 
@@ -4117,12 +4117,15 @@
                  */
                 isLoading: function () {
 
+
+
                     if (this.$$data.isrunningfirsttimestamp === 0) {
                         return false;
                     } else {
                         if (this.$$data.isrunningfirsttimestamp > 0) {
-                            if (Date.now() - this.$$data.isrunningfirsttimestamp < 800) {
-                                return false;
+
+                            if (Date.now() - this.$$data.isrunningfirsttimestamp < 1000) {
+                                //return false;
                             } else {
                                 this.$$data.isrunningfirsttimestamp = -1;
                             }
