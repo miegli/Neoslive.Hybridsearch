@@ -1,12 +1,12 @@
-/*! @license Firebase v3.6.4
-    Build: 3.6.4-rc.2
+/*! @license Firebase v3.7.2
+    Build: 3.7.2-rc.1
     Terms: https://firebase.google.com/terms/ */
 declare namespace firebase {
   interface FirebaseError {
     code: string;
     message: string;
     name: string;
-    stack: string;
+    stack?: string;
   }
 
   class Promise<T> extends Promise_Instance<T> {
@@ -45,6 +45,7 @@ declare namespace firebase {
     refreshToken: string;
     reload(): firebase.Promise<any>;
     sendEmailVerification(): firebase.Promise<any>;
+    toJSON(): Object;
     unlink(providerId: string): firebase.Promise<any>;
     updateEmail(newEmail: string): firebase.Promise<any>;
     updatePassword(newPassword: string): firebase.Promise<any>;
@@ -80,9 +81,10 @@ declare namespace firebase.app {
     auth(): firebase.auth.Auth;
     database(): firebase.database.Database;
     delete(): firebase.Promise<any>;
+    messaging(): firebase.messaging.Messaging;
     name: string;
     options: Object;
-    storage(): firebase.storage.Storage;
+    storage(url?: string): firebase.storage.Storage;
   }
 }
 
@@ -201,6 +203,7 @@ declare namespace firebase.database {
     key: string|null;
     numChildren(): number;
     ref: firebase.database.Reference;
+    toJSON(): Object|null;
     val(): any;
   }
 
@@ -236,8 +239,8 @@ declare namespace firebase.database {
         context?: Object|null): any;
     on(eventType: string,
        callback: (a: firebase.database.DataSnapshot|null, b?: string) => any,
-       cancelCallbackOrContext?: Object|null, context?: Object|
-       null): (a: firebase.database.DataSnapshot|null, b?: string) => any;
+       cancelCallbackOrContext?: Object|null, context?: Object|null):
+        (a: firebase.database.DataSnapshot|null, b?: string) => any;
     once(
         eventType: string,
         successCallback?:
@@ -251,6 +254,7 @@ declare namespace firebase.database {
     ref: firebase.database.Reference;
     startAt(value: number|string|boolean|null, key?: string):
         firebase.database.Query;
+    toJSON(): Object;
     toString(): string;
   }
 
@@ -283,7 +287,8 @@ declare namespace firebase.database {
   interface ThenableReference extends firebase.database.Reference,
                                       firebase.Thenable<any> {}
 
-  function enableLogging(enabled?: boolean, persistent?: boolean): any;
+  function enableLogging(
+      logger?: boolean|((a: string) => any), persistent?: boolean): any;
 }
 
 declare namespace firebase.database.ServerValue {

@@ -1,7 +1,7 @@
 {
   "name": "angularfire",
   "description": "The officially supported AngularJS binding for Firebase",
-  "version": "2.1.0",
+  "version": "2.3.0",
   "authors": [
     "Firebase (https://firebase.google.com/)"
   ],
@@ -28,11 +28,11 @@
     "angular": "^1.3.0",
     "firebase": "3.x.x"
   },
-  "_release": "2.1.0",
+  "_release": "2.3.0",
   "_resolution": {
     "type": "version",
-    "tag": "v2.1.0",
-    "commit": "dddf83fbfd9ac2ef26a9a2b2c5b432bb80752c31"
+    "tag": "v2.3.0",
+    "commit": "8678f727648386019bc6fcaaadb7599ae064ca7b"
   },
   "_source": "https://github.com/firebase/angularFire.git",
   "_target": "*",

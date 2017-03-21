@@ -49,6 +49,7 @@
              * @param workspace {string} workspace, identifier of the workspace to use from indexed datebase
              * @param dimension {string} dimension, hash of the dimension configuration to use form indexed database
              * @param site {string} site identifier (uuid)
+             * @param cdnDatabaseURL {string} cdnDatabaseURL for json requests
              * @param debug {boolean}
              * @example
              * var hybridSearch = new $hybridsearchObject(
@@ -59,7 +60,7 @@
              * ));
              * @returns {Hybridsearch} used for HybridsearchObject constructor.
              */
-            function Hybridsearch(databaseURL, workspace, dimension, site, debug) {
+            function Hybridsearch(databaseURL, workspace, dimension, site, cdnDatabaseURL, debug) {
 
 
                 if (!(this instanceof Hybridsearch)) {
@@ -74,6 +75,7 @@
                     site: site,
                     branch: '',
                     databaseURL: databaseURL,
+                    cdnDatabaseURL: cdnDatabaseURL,
                     branchInitialized: false
                 };
 
@@ -2452,7 +2454,7 @@
                                                                 }
 
 
-                                                            }, 6500)
+                                                            }, 2000)
                                                         }).success(function (data) {
 
                                                             if (lastSearchInstance.$$data.keywords.length == 0) {
@@ -2729,7 +2731,7 @@
                                         queries.push(
                                             {
                                                 socket: hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + this.getFilter().getNodeType()),
-                                                http: hybridsearch.$$conf.databaseURL + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + this.getFilter().getNodeType() + ".json"
+                                                http: (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + this.getFilter().getNodeType() + ".json"
                                             }
                                         );
                                         index[this.getFilter().getNodeType()] = queries;
@@ -2739,7 +2741,7 @@
                                             queries.push(
                                                 {
                                                     socket: hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + nodeType),
-                                                    http: hybridsearch.$$conf.databaseURL + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + nodeType + ".json"
+                                                    http: (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + nodeType + ".json"
                                                 }
                                             );
                                         });
@@ -2754,7 +2756,7 @@
                                     if (typeof this.getFilter().getNodeType() == 'string') {
                                         queries.push({
                                             socket: hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + keyword),
-                                            http: hybridsearch.$$conf.databaseURL + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + keyword + ".json"
+                                            http: (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + keyword + ".json"
                                         });
                                     }
 
@@ -2775,7 +2777,7 @@
 
                                 queries.push({
                                     socket: hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + '/' + keyword),
-                                    http: hybridsearch.$$conf.databaseURL + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + '/' + keyword + ".json"
+                                    http: (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + '/' + keyword + ".json"
                                 });
 
                             }
