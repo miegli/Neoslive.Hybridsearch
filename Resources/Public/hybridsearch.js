@@ -2454,7 +2454,7 @@
                                                                 }
 
 
-                                                            }, 2000)
+                                                            }, 1000)
                                                         }).success(function (data) {
 
                                                             if (lastSearchInstance.$$data.keywords.length == 0) {
