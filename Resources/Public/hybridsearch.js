@@ -176,7 +176,7 @@
              */
             var HybridsearchObject = function (hybridsearch) {
 
-                    var hybridsearchInstanceNumber, pendingRequests, results, filter, index, lunrSearch, nodesIndexed, nodes, nodesLastHash, nodeTypeLabels, resultGroupedBy, resultCategorizedBy, resultOrderBy, propertiesBoost, ParentNodeTypeBoostFactor, isRunning, firstfilterhash, searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier, nodesByIdentifier, searchCounter, searchCounterTimeout, nodeTypeProperties, isloadedall, isloadedallNodetype, externalSources;
+                    var hybridsearchInstanceNumber, pendingRequests, results, filter, index, lunrSearch, nodesIndexed, nodes, nodesLastHash, nodeTypeLabels, resultGroupedBy, resultCategorizedBy, resultOrderBy, propertiesBoost, ParentNodeTypeBoostFactor, isRunning, firstfilterhash, searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier, nodesByIdentifier, searchCounter, searchCounterTimeout, nodeTypeProperties, isloadedall, externalSources;
 
                     // count instances
                     if (window.hybridsearchInstances === undefined) {
@@ -185,7 +185,6 @@
                         window.hybridsearchInstances++;
                     }
                     isloadedall = false;
-                    isloadedallNodetype = false;
                     searchCounter = 0;
                     nodesLastHash = 0;
                     searchCounterTimeout = false;
@@ -906,15 +905,7 @@
                          * @private
                          */
                         setIsLoadedAll: function () {
-                            
-                            var n = Sha1.hash(JSON.stringify(this.getFilter().getNodeType()));
-
-                            if (isloadedallNodetype == false || n == isloadedallNodetype) {
-                                isloadedall = true;
-                            } else {
-                                isloadedall = false;
-                            }
-                            isloadedallNodetype = n;
+                            isloadedall = true;
                         },
                         /**
                          * @private
