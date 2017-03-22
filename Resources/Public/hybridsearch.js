@@ -1606,6 +1606,8 @@
                                 } else {
 
 
+
+
                                     // execute query search
                                     angular.forEach(lunrSearch.getFields(), function (v, k) {
                                         if (self.getBoost(v) >= 0) {
@@ -1621,6 +1623,8 @@
 
                                     var tmp = {};
 
+
+
                                     if (self.isLoadedAll() && query == '') {
                                         // add all nodes to result
                                         angular.forEach(nodes, function (node, identifier) {
@@ -1635,6 +1639,8 @@
                                             fields: fields,
                                             bool: "AND"
                                         });
+
+
 
                                         if (resultsSearch[0].length == 0) {
                                             resultsSearch[1] = lunrSearch.search(query, {
@@ -1677,6 +1683,8 @@
                                         }
 
 
+
+
                                         var result = resultsSearch[resultsSearch.length - 1];
 
 
@@ -1708,6 +1716,8 @@
                                                     }
                                                 );
                                             }
+
+
 
                                             angular.forEach(result, function (item) {
                                                     if (nodes[item.ref] !== undefined) {
@@ -1781,6 +1791,7 @@
                                     }
 
 
+
                                     angular.forEach(Ordered, function (item) {
                                         self.addNodeToSearchResult(item.ref, item.score, nodesFound, items, nodeTypeMaxScore, nodeTypeMinScore, nodeTypeScoreCount);
                                     });
@@ -1810,6 +1821,9 @@
                                 results.updateDistincts(unfilteredResultNodes);
 
                             }
+
+
+
                             results.getApp().setResults(items, nodes, this);
 
 
@@ -1829,11 +1843,16 @@
                          */
                         addNodeToSearchResult: function (nodeId, score, nodesFound, items, nodeTypeMaxScore, nodeTypeMinScore, nodeTypeScoreCount) {
 
+
+
+
                             if (this.getFilter().$$data.maxResultsFilter !== undefined && this.getFilter().$$data.maxResultsFilter > 0) {
                                 if (this.getFilter().$$data.maxResultsFilter <= Object.keys(items['_nodes']).length) {
                                     return true;
                                 }
                             }
+
+
 
                             if (nodes[nodeId] == undefined) {
                                 return false;
@@ -1916,6 +1935,8 @@
                             if (items['_nodes'][hash] !== undefined) {
                                 items['_nodes'][hash].addGroupedNode(resultNode);
                             }
+
+
 
                             nodesFound[hash] = nodeId;
 
@@ -2396,6 +2417,8 @@
 
                                                     keyword = Sha1.hash(ref.http)+"://"+keyword;
 
+
+
                                                     if (indexdata[keyword] === undefined) {
                                                         indexdata[keyword] = [];
                                                     }
@@ -2446,16 +2469,24 @@
 
                                                                 if (ref.socket) {
                                                                     ref.socket.on("value", function (data) {
+
+                                                                        nodesIndexed= {};
+
                                                                         //if (ref.updated !== undefined) {
-                                                                            execute(keyword, data.val(), ref);
+                                                                        // var nodes = [];
+                                                                        // angular.forEach(data.val(),function(node) {
+                                                                        //    nodes[node.node.identifier] = node;
+                                                                        // });
+                                                                         execute(keyword, data.val(), ref);
                                                                         //}
                                                                         ref.updated = true;
                                                                     });
                                                                 }
 
 
-                                                            }, 1000)
+                                                            }, 500)
                                                         }).success(function (data) {
+
 
                                                             if (lastSearchInstance.$$data.keywords.length == 0) {
                                                                 execute(keyword, data, ref);
@@ -2864,11 +2895,12 @@
                                 angular.forEach(lastSearchInstance.$$data.keywords, function (k) {
                                         keywords.push(k.term);
                                 });
-
                                 self.addLocalIndex(val, keyword, keywords, isloadingall);
 
                                 keywords = [];
                             });
+
+
 
                             self.search();
 
@@ -2908,8 +2940,9 @@
                                 isloadingall = false;
                             }
 
-                            angular.forEach(data, function (value, key) {
 
+
+                            angular.forEach(data, function (value, key) {
 
                                     if (isloadingall === true || nodesIndexed[value.node.hash] === undefined) {
 
@@ -2995,6 +3028,7 @@
                                                         lunrSearch.addField(key);
                                                     }
                                                 });
+
 
 
                                                 doc.id = value.node.identifier;
