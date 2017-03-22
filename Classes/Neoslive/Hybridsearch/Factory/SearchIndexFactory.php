@@ -47,6 +47,7 @@ use Neos\Flow\Mvc\ActionRequest;
 use Neos\Fusion\View\FusionView;
 use Neos\Flow\Core\Bootstrap;
 use Neoslive\Hybridsearch\Request\HttpRequestHandler;
+use org\bovigo\vfs\vfsStreamWrapperAlreadyRegisteredTestCase;
 
 
 class SearchIndexFactory
@@ -485,7 +486,7 @@ class SearchIndexFactory
                 }
                 $this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace(), true);
             } catch (Exception $exception) {
-                $this->output->outputLine("error while indexing node ".$nodedata->getIdentifier(). " on workspace ".$workspacename);
+                $this->output->outputLine("error while indexing node ".$nodedata->getIdentifier(). " on workspace ".$workspacename.". ".$exception->getMessage());
             }
 
 
@@ -1152,7 +1153,7 @@ class SearchIndexFactory
             unset($indexData);
             unset($keywords);
 
-            if (time() - $this->time > 300) {
+            if (time() - $this->time > 300 || count($this->index->$workspaceHash->$dimensionConfigurationHash->$k) > 500) {
                 $this->time = time();
                 $this->save();
             };
