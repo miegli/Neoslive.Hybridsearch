@@ -482,7 +482,7 @@ class SearchIndexFactory
             $this->output->progressAdvance(1);
             try {
                 if ($verbose) {
-                    \Neos\Flow\var_dump($nodedata);
+                    \Neos\Flow\var_dump($nodedata->getIdentifier());
                 }
                 $this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace(), true);
             } catch (Exception $exception) {
