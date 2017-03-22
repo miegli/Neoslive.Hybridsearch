@@ -881,22 +881,22 @@
                                 $http.get((hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + "/branches/" + hybridsearch.$$conf.workspace + ".json?shallow=true").success(function (data) {
                                     hybridsearch.setBranch(data);
                                     isRunning = true;
-
-                                    window.setTimeout(function () {
-
-                                        /**
-                                         * watch branch
-                                         */
-                                        var query = hybridsearch.$firebase().database().ref("branches/" + hybridsearch.$$conf.workspace);
-                                        query.on("value", function (snapshot) {
-                                            if (snapshot.val() !== hybridsearch.getBranch()) {
-                                                hybridsearch.setBranch(snapshot.val());
-                                            }
-
-                                        });
-                                    },100);
-
                                 });
+
+
+                                window.setTimeout(function () {
+
+                                    /**
+                                     * watch branch
+                                     */
+                                    var query = hybridsearch.$firebase().database().ref("branches/" + hybridsearch.$$conf.workspace);
+                                    query.on("value", function (snapshot) {
+                                        if (snapshot.val() !== hybridsearch.getBranch()) {
+                                            hybridsearch.setBranch(snapshot.val());
+                                        }
+
+                                    });
+                                },100);
 
                             } else {
                                 isRunning = true;
