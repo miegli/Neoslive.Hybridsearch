@@ -2446,9 +2446,9 @@
 
                                                                 if (ref.socket) {
                                                                     ref.socket.on("value", function (data) {
-                                                                        if (ref.updated !== undefined) {
+                                                                        //if (ref.updated !== undefined) {
                                                                             execute(keyword, data.val(), ref);
-                                                                        }
+                                                                        //}
                                                                         ref.updated = true;
                                                                     });
                                                                 }
