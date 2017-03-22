@@ -878,7 +878,7 @@
 
                                 hybridsearch.$$conf.branchisloading = true;
 
-                                $http.get(hybridsearch.$$conf.databaseURL + "/branches/" + hybridsearch.$$conf.workspace + ".json?shallow=true").success(function (data) {
+                                $http.get((hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + "/branches/" + hybridsearch.$$conf.workspace + ".json?shallow=true").success(function (data) {
                                     hybridsearch.setBranch(data);
                                     isRunning = true;
 
