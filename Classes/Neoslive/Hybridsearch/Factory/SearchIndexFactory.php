@@ -453,7 +453,6 @@ class SearchIndexFactory
             array_push($sites, $this->getSiteIdentifier());
         }
 
-//
 
         $basenodedata = $this->nodeDataRepository->findOneByPath("/sites/" . $this->site->getNodeName(), $this->workspaceRepository->findByIdentifier($workspacename));
         $context = $this->createContext($basenodedata->getWorkspace()->getName(), $basenodedata->getDimensions(), array(), $this->site);
@@ -467,6 +466,7 @@ class SearchIndexFactory
         );
 
         $flowQuery = new FlowQuery(array($basenode));
+
 
         if ($nodetype) {
             $moditifedNodeData = $flowQuery->find("[instanceof $nodetype]");
