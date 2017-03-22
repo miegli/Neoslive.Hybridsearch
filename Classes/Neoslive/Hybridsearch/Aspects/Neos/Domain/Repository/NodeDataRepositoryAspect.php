@@ -96,9 +96,9 @@ class NodeDataRepositoryAspect
         if ($object instanceof NodeData && $object->getWorkspace()->getName() == 'live') {
 
             if (
-                (isset($this->settings['RealtimeNodeTypes']) && isset($this->settings['RealtimeNodeTypes']['*']) && $object->getNodeType()->hasConfiguration('properties.neoslivehybridsearchrealtime'))
+                ((isset($this->settings['RealtimeNodeTypes']) && isset($this->settings['RealtimeNodeTypes']['*']) ) || $object->getNodeType()->hasConfiguration('properties.neoslivehybridsearchrealtime'))
                 ||
-                (isset($this->settings['RealtimeNodeTypes']) && isset($this->settings['RealtimeNodeTypes'][$object->getNodeType()->getName()]) && $this->settings['RealtimeNodeTypes'][$object->getNodeType()->getName()])
+                (isset($this->settings['RealtimeNodeTypes']) && isset($this->settings['RealtimeNodeTypes'][$object->getNodeType()->getName()]) && $this->settings['RealtimeNodeTypes'][$object->getNodeType()->getName()] !== false)
             ) {
 
 
