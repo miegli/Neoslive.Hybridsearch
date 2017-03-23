@@ -2705,27 +2705,61 @@
 
                             instance.$$data.running++;
 
+                            var ref = {};
+                            ref.socket = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + q);
+                            ref.http = (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + ("/sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + q + ".json");
 
-                            var ref = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + q);
+                            var canceller = $q.defer();
 
-                            ref.once("value", function (data) {
-
-                                if (data !== undefined) {
-
-                                    angular.forEach(data.val(), function (v, k) {
-                                        instance.$$data.keywords.push({term: k, metaphone: q});
-                                    });
-
-                                    var ismatchexact = false;
-                                    angular.forEach(instance.$$data.keywords, function (v) {
-                                        if (ismatchexact === false && v.term == querysegment) {
-                                            ismatchexact = true;
-                                        }
-                                    });
-
+                            this.addPendingRequest($http({
+                                method: 'get',
+                                url: ref.http,
+                                cache: true,
+                                timeout: canceller.promise,
+                                cancel: function (reason) {
+                                    canceller.resolve(reason);
                                 }
+                            }).success(function (data) {
+
+                                    if (data !== undefined) {
+
+                                        angular.forEach(data, function (v, k) {
+                                            instance.$$data.keywords.push({term: k, metaphone: q});
+                                        });
+
+                                        var ismatchexact = false;
+                                        angular.forEach(instance.$$data.keywords, function (v) {
+                                            if (ismatchexact === false && v.term == querysegment) {
+                                                ismatchexact = true;
+                                            }
+                                        });
+
+                                    }
                                 instance.$$data.proceeded.push(1);
-                            });
+
+                            }).error(function (data) {
+
+                                ref.socket.once("value", function (data) {
+
+                                    if (data !== undefined) {
+
+                                        angular.forEach(data.val(), function (v, k) {
+                                            instance.$$data.keywords.push({term: k, metaphone: q});
+                                        });
+
+                                        var ismatchexact = false;
+                                        angular.forEach(instance.$$data.keywords, function (v) {
+                                            if (ismatchexact === false && v.term == querysegment) {
+                                                ismatchexact = true;
+                                            }
+                                        });
+
+                                    }
+                                    instance.$$data.proceeded.push(1);
+                                });
+
+                            }));
+
 
 
                         }
