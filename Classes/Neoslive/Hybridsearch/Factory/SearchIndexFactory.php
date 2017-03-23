@@ -1248,7 +1248,7 @@ class SearchIndexFactory
 
         $m = metaphone($string, 5);
 
-        return substr(substr(mb_strtoupper($string),0,5).$m,0,10);
+        return mb_substr(mb_substr(mb_strtoupper($string),0,5).$m,0,10);
 
     }
 
