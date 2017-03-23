@@ -2699,11 +2699,6 @@
                             q = q.substr(0,10).toUpperCase();
 
 
-                            console.log(q);
-
-
-
-
                             if (q.length == 0) {
                                 q = querysegment;
                             }
