@@ -2692,7 +2692,18 @@
                                 return false;
                             }
 
-                            var q = metaphone(querysegment.toLowerCase().replace(/[^\w()/.%\-&üöäÜÖÄ]/gi, ''), 5);
+                            var a = querysegment.toLowerCase().replace(/[^\w()/.%\-&üöäÜÖÄ]/gi, '');
+                            var q = metaphone(a, 5);
+
+                            q = a.substr(0,5) + q;
+                            q = q.substr(0,10).toUpperCase();
+
+
+                            console.log(q);
+
+
+
+
                             if (q.length == 0) {
                                 q = querysegment;
                             }

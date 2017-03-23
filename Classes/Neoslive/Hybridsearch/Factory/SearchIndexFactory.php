@@ -37,7 +37,6 @@ use Neos\ContentRepository\Domain\Repository\NodeDataRepository;
 use Neos\ContentRepository\Domain\Repository\WorkspaceRepository;
 use Neos\ContentRepository\Domain\Service\ContentDimensionCombinator;
 use Neos\Eel\FlowQuery\FlowQuery;
-use \ForceUTF8\Encoding;
 use Firebase\FirebaseLib;
 use Neos\Flow\Utility\Algorithms;
 use Neos\Flow\Core\Booting\Scripts;
@@ -47,7 +46,7 @@ use Neos\Flow\Mvc\ActionRequest;
 use Neos\Fusion\View\FusionView;
 use Neos\Flow\Core\Bootstrap;
 use Neoslive\Hybridsearch\Request\HttpRequestHandler;
-use org\bovigo\vfs\vfsStreamWrapperAlreadyRegisteredTestCase;
+use \ForceUTF8\Encoding;
 
 
 class SearchIndexFactory
@@ -1212,11 +1211,7 @@ class SearchIndexFactory
         foreach ($words as $w) {
 
             if (strlen($w) > 1) {
-                $wm = metaphone($w, 5);
-                if (strlen($wm) == 0) {
-                    $wm = $w;
-                }
-
+                $wm = $this->getMetaphone($w);
                 $wordsReduced[$wm][$w] = 1;
 
             }
@@ -1239,6 +1234,21 @@ class SearchIndexFactory
         unset($properties);
 
         return $keywords;
+
+    }
+
+
+    /**
+     * gets meta phone hash of given string
+     * @param string $string
+     * @return string
+     */
+    private function getMetaphone($string)
+    {
+
+        $m = metaphone($string, 5);
+
+        return substr(substr(mb_strtoupper($string),0,5).$m,0,10);
 
     }
 
