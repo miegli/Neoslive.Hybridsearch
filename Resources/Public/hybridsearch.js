@@ -878,6 +878,7 @@
 
                                 hybridsearch.$$conf.branchisloading = true;
 
+
                                 $http.get((hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + "/branches/" + hybridsearch.$$conf.workspace + ".json").success(function (data) {
                                     hybridsearch.setBranch(data);
                                     isRunning = true;
@@ -3494,7 +3495,8 @@
                                 //  if (searchInput !== searchInputLast) {
 
                                 self.$$app.getFilter().setQuery(scope[input]);
-                                if (self.$$app.isRunning() === false) {
+
+                                if (scope[input] !== '' && self.$$app.isRunning() === false) {
                                     self.run();
                                 }
                                 if (searchInput !== undefined) {
