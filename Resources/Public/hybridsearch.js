@@ -3001,14 +3001,14 @@
 
                                             if (value.node != undefined && value.node.properties != undefined) {
 
-
+                                                var propfoundcount = 0;
 
                                                 // var doc = JSON.parse(JSON.stringify(value.node.properties));
 
                                                 //angular.forEach(JSON.parse(JSON.stringify(value.node.properties)), function (propvalue, property) {
                                                 angular.forEach(value.node.properties, function (propvalue, property) {
 
-                                                    if (self.getBoost(property) > 0) {
+                                                    if (propfoundcount < 3 && self.getBoost(property) > 0) {
 
                                                         valueJson = false;
 
@@ -3034,6 +3034,9 @@
                                                                     doc[property + '.' + o.key] = o.val;
                                                                 } else {
                                                                     var i = propvalue.toLowerCase().indexOf(keyword);
+                                                                    if (i>-1) {
+                                                                        propfoundcount++;
+                                                                    }
                                                                     doc[property + '.' + o.key] = o.val.substr(i - 30 > 0 ? i - 30 : 0, 60);
                                                                 }
                                                             });
@@ -3052,6 +3055,7 @@
                                                                     angular.forEach(keywords, function (k) {
                                                                         var i = c.indexOf(k);
                                                                         if (i > -1) {
+                                                                            propfoundcount++;
                                                                             doc[property] += ' ' + c.substr(i - k.length, 59);
                                                                         }
 
@@ -3064,7 +3068,6 @@
 
 
                                                     }
-
 
                                                 });
 
