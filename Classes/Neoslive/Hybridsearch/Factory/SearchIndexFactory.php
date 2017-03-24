@@ -1885,7 +1885,12 @@ class SearchIndexFactory
             $mergedrules['rules']['sites'][$siteIdentifier] = array(
                 '.read' => true
             );
+            $mergedrules['rules']['sites'][$siteIdentifier]['logstore']['$workspace']['$branch']['$dimension']['$uid'] = array(
+                '.write' => true
+            );
+
         }
+
 
         $mergedrules['rules']['branches'] = array('.read' => true);
         $this->firebase->set('.settings/rules', $mergedrules);
