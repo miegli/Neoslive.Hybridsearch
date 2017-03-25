@@ -2707,6 +2707,7 @@
 
                             // get quick results
                             var q = this.getFilter().getQueryLogStoreHash();
+                            self.getResults().getApp().clearQuickNodes();
 
                             if (q.length > 2) {
                                 this.addPendingRequest($http({
@@ -4013,6 +4014,14 @@
                         this.executeCallbackMethod(self);
                     },
 
+                    /**
+                     * @private
+                     * @returns boolean
+                     */
+                    clearQuickNodes: function () {
+                        self.$$data.quicknodes = [];
+                        this.executeCallbackMethod(self);
+                    },
 
 
                     /**
