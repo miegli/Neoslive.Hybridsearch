@@ -1885,7 +1885,7 @@ class SearchIndexFactory
             $mergedrules['rules']['sites'][$siteIdentifier] = array(
                 '.read' => true
             );
-            $mergedrules['rules']['sites'][$siteIdentifier]['logstore']['$workspace']['$branch']['$dimension']['$uid'] = array(
+            $mergedrules['rules']['logstore'][$siteIdentifier]['$workspace']['$dimension']['$uid'] = array(
                 '.write' => true
             );
 

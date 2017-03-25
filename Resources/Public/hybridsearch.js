@@ -226,7 +226,7 @@
                         if (node !== undefined && node.scope() !== undefined && node.scope().node && logStoreApplied[node.scope().node.getIdentifier()] == undefined) {
                             var q = filter.getQueryLogStoreHash();
                             if (q.length > 2 && logStoreApplied[q] == undefined) {
-                                var ref = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "logstore/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + q);
+                                var ref = hybridsearch.$firebase().database().ref("logstore/" + hybridsearch.$$conf.site + "/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/" + q);
                                 ref.set(node.scope().node.getIdentifier());
                                 logStoreApplied[node.scope().node.getIdentifier()] = true;
                                 logStoreApplied[q] = true;
@@ -2750,7 +2750,7 @@
                             if (queryLogstore.length > 2) {
                                 this.addPendingRequest($http({
                                     method: 'get',
-                                    url: (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + ("/sites/" + hybridsearch.$$conf.site + "/" + "logstore/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + queryLogstore + ".json"),
+                                    url: (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + ("/logstore/" + hybridsearch.$$conf.site + "/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/" + queryLogstore + ".json"),
                                     cache: true,
                                     timeout: canceller.promise,
                                     cancel: function (reason) {
@@ -2764,7 +2764,7 @@
                                         if (hybridsearch.$$conf.cdnDatabaseURL != undefined) {
                                             self.addPendingRequest($http({
                                                 method: 'get',
-                                                url: hybridsearch.$$conf.databaseURL + ("/sites/" + hybridsearch.$$conf.site + "/" + "logstore/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + self.getFilter().getQueryLogStoreHash() + ".json"),
+                                                url: hybridsearch.$$conf.databaseURL + ("/logstore/" + hybridsearch.$$conf.site + "/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/" + self.getFilter().getQueryLogStoreHash() + ".json"),
                                                 cache: true,
                                                 timeout: canceller.promise,
                                                 cancel: function (reason) {

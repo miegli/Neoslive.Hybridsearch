@@ -74,7 +74,7 @@ class HybridSearchCommandController extends CommandController
     {
         $this->searchIndexFactory->sync($workspace, $nodetype, $timestamp,$node, $nodesSerialized);
     }
-
+    
     /**
      * Proceed index asynchronous
      *
