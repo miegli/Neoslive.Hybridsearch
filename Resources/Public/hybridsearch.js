@@ -2744,7 +2744,7 @@
 
                             // get quick results from logstore
                             var canceller = $q.defer();
-                            var q = this.getFilter().getQueryLogStoreHash();
+                            var q = this.getFilter().getQueryLogStoreHash().toUpperCase();
                             self.getResults().getApp().clearQuickNodes();
 
                             if (q.length > 2) {
