@@ -5306,7 +5306,7 @@
                  */
                 getQueryLogStoreHash: function () {
 
-                    var a = this.getQuery().toLowerCase().replace(/[^\w()/.%\-&üöäÜÖÄ]/gi, '');
+                    var a = this.getQuery().toLowerCase().replace(/[^\w()/%\-&üöäÜÖÄ]/gi, '');
                     var q = metaphone(a, 5);
                     q = a.substr(0, 5) + q;
                     return q.substr(0, 10).toUpperCase();
