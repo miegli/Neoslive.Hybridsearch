@@ -2741,16 +2741,16 @@
 
                             var self = this;
 
-
                             // get quick results from logstore
                             var canceller = $q.defer();
-                            var q = this.getFilter().getQueryLogStoreHash().toUpperCase();
+                            var queryLogstore = this.getFilter().getQueryLogStoreHash().toUpperCase();
+
                             self.getResults().getApp().clearQuickNodes();
 
-                            if (q.length > 2) {
+                            if (queryLogstore.length > 2) {
                                 this.addPendingRequest($http({
                                     method: 'get',
-                                    url: (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + ("/sites/" + hybridsearch.$$conf.site + "/" + "logstore/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + q + ".json"),
+                                    url: (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + ("/sites/" + hybridsearch.$$conf.site + "/" + "logstore/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + queryLogstore + ".json"),
                                     cache: true,
                                     timeout: canceller.promise,
                                     cancel: function (reason) {
@@ -2764,7 +2764,7 @@
                                         if (hybridsearch.$$conf.cdnDatabaseURL != undefined) {
                                             self.addPendingRequest($http({
                                                 method: 'get',
-                                                url: hybridsearch.$$conf.databaseURL + ("/sites/" + hybridsearch.$$conf.site + "/" + "logstore/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + q + ".json"),
+                                                url: hybridsearch.$$conf.databaseURL + ("/sites/" + hybridsearch.$$conf.site + "/" + "logstore/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + self.getFilter().getQueryLogStoreHash() + ".json"),
                                                 cache: true,
                                                 timeout: canceller.promise,
                                                 cancel: function (reason) {
