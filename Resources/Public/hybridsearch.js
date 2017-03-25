@@ -2685,6 +2685,43 @@
 
                             return hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + querysegment);
                         }
+                        ,
+                        /**
+                         * @private
+                         * @param array log store data
+                         * @returns {firebaseObject}
+                         */
+                        executeLogStoreData: function (data) {
+
+                            var canceller = $q.defer();
+                            var self = this;
+                            var datanodes = [];
+
+                            if (typeof data == 'string') {
+                                datanodes.push(data);
+                            } else {
+                                datanodes = data;
+                            }
+
+                            angular.forEach(datanodes, function (node) {
+                                self.addPendingRequest($http({
+                                    method: 'get',
+                                    url: self.getIndexUrlByNodeIdentifier(node),
+                                    cache: true,
+                                    timeout: canceller.promise,
+                                    cancel: function (reason) {
+                                        canceller.resolve(reason);
+                                    }
+                                }).success(function (n) {
+                                    nodes[n.node.identifier] = new HybridsearchResultsNode(n.node, 1);
+                                    self.getResults().getApp().addQuickNode(nodes[n.node.identifier]);
+                                }));
+
+                            });
+
+                            return this;
+
+                        }
 
                         ,
                         /**
@@ -2702,17 +2739,18 @@
                             }
 
 
-                            var canceller = $q.defer();
                             var self = this;
 
-                            // get quick results
+
+                            // get quick results from logstore
+                            var canceller = $q.defer();
                             var q = this.getFilter().getQueryLogStoreHash();
                             self.getResults().getApp().clearQuickNodes();
 
                             if (q.length > 2) {
                                 this.addPendingRequest($http({
                                     method: 'get',
-                                    url: hybridsearch.$$conf.databaseURL + ("/sites/" + hybridsearch.$$conf.site + "/" + "logstore/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + q + ".json"),
+                                    url: (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + ("/sites/" + hybridsearch.$$conf.site + "/" + "logstore/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + q + ".json"),
                                     cache: true,
                                     timeout: canceller.promise,
                                     cancel: function (reason) {
@@ -2720,30 +2758,26 @@
                                     }
                                 }).success(function (data) {
 
-                                    var datanodes = [];
-
-                                    if (typeof data == 'string') {
-                                        datanodes.push(data);
+                                    if (data) {
+                                        self.executeLogStoreData(data);
                                     } else {
-                                        datanodes = data;
-                                    }
-
-                                        angular.forEach(datanodes, function (node) {
+                                        if (hybridsearch.$$conf.cdnDatabaseURL != undefined) {
                                             self.addPendingRequest($http({
                                                 method: 'get',
-                                                url: self.getIndexUrlByNodeIdentifier(node),
+                                                url: hybridsearch.$$conf.databaseURL + ("/sites/" + hybridsearch.$$conf.site + "/" + "logstore/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + q + ".json"),
                                                 cache: true,
                                                 timeout: canceller.promise,
                                                 cancel: function (reason) {
                                                     canceller.resolve(reason);
                                                 }
-                                            }).success(function (n) {
-                                                 nodes[n.node.identifier] = new HybridsearchResultsNode(n.node, 1);
-                                                 self.getResults().getApp().addQuickNode(nodes[n.node.identifier]);
+                                            }).success(function (data) {
+                                                if (data) {
+                                                    self.executeLogStoreData(data);
+                                                }
                                             }));
 
-                                    });
-
+                                        }
+                                    }
                                 }));
 
                             }
