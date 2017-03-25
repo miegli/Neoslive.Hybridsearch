@@ -1886,7 +1886,8 @@ class SearchIndexFactory
                 '.read' => true
             );
             $mergedrules['rules']['logstore'][$siteIdentifier]['$workspace']['$dimension']['$uid'] = array(
-                '.write' => true
+                '.write' => true,
+                '.read' => true,
             );
 
         }
