@@ -2712,7 +2712,7 @@
                             if (q.length > 2) {
                                 this.addPendingRequest($http({
                                     method: 'get',
-                                    url: (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + ("/sites/" + hybridsearch.$$conf.site + "/" + "logstore/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + q + ".json"),
+                                    url: hybridsearch.$$conf.databaseURL + ("/sites/" + hybridsearch.$$conf.site + "/" + "logstore/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + q + ".json"),
                                     cache: true,
                                     timeout: canceller.promise,
                                     cancel: function (reason) {
