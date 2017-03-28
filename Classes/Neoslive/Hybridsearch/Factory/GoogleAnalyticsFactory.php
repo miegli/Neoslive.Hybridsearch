@@ -11,7 +11,6 @@ namespace Neoslive\Hybridsearch\Factory;
  * source code.
  */
 
-use Neos\Flow\Cli\ConsoleOutput;
 use Neos\Flow\Annotations as Flow;
 
 class GoogleAnalyticsFactory
@@ -25,11 +24,6 @@ class GoogleAnalyticsFactory
     protected $settings;
 
 
-    /**
-     * @var ConsoleOutput
-     * @Flow\Inject
-     */
-    protected $output;
 
 
     /**
