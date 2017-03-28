@@ -85,13 +85,6 @@ class SearchIndexFactory
 
 
     /**
-     * @var ConsoleOutput
-     * @Flow\Inject
-     */
-    protected $output;
-
-
-    /**
      * @Flow\Inject
      * @var WorkspaceRepository
      */
@@ -390,6 +383,7 @@ class SearchIndexFactory
     {
 
 
+
         $branch = $this->firebase->get("/branches/" . $workspacename);
 
         if ($branch === null || $branch == 'null') {
@@ -434,6 +428,8 @@ class SearchIndexFactory
      */
     public function createFullIndex($workspacename = 'live', $nodetype = null, $verbose = false)
     {
+
+        $this->output = new ConsoleOutput();
 
         $sites = array();
         $this->getBranch($workspacename);
@@ -630,6 +626,8 @@ class SearchIndexFactory
      */
     public function sync($workspaceName = 'live', $nodeTypeName = null, $timestamp = null, $nodeIdentifier = null, $nodesSerialized = null)
     {
+
+        $this->output = new ConsoleOutput();
 
         if ($this->isLockReltimeIndexer()) {
             return false;
