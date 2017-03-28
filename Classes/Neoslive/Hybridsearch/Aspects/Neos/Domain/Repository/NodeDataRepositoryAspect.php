@@ -77,8 +77,9 @@ class NodeDataRepositoryAspect
      */
     public function persistAllObjectToIndex(JoinPointInterface $joinPoint)
     {
-
-        $this->searchIndexFactory->executeRealtimeSync();
+        if (isset($GLOBALS['neoslivehybridsearchrealtimequeue'])) {
+            $this->searchIndexFactory->executeRealtimeSync();
+        }
     }
 
 
