@@ -1821,6 +1821,7 @@
 
                             }
 
+
                             if (hasDistinct) {
 
                                 var unfilteredResultNodes = [];
@@ -4587,6 +4588,8 @@
                  */
                 getDistinct: function (property, affectedBySearchResult, counterGroupedByNode, valuesOnly) {
 
+
+
                     var self = this, variants = {}, variantsByNodes = {}, propvalue = '', variantsfinal = [];
 
                     if (self.$$data.distinctsConfiguration[property] == undefined) {
@@ -4617,6 +4620,7 @@
                         }
 
                     }
+
 
 
                     angular.forEach(self.$$data.unfilteredResultNodes.length > 0 ? self.$$data.unfilteredResultNodes : this.getNodes(), function (node) {
@@ -4716,6 +4720,7 @@
                         }
 
                     });
+
 
 
                     angular.forEach(variants, function (v, k) {
