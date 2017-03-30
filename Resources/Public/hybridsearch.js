@@ -737,6 +737,9 @@
                                 if (url.substr(-5) !== '.html') {
                                     url = url + ".html";
                                 }
+                                if (url.substr(0,4) == 'http') {
+                                  return url.substr(url.substr(10).indexOf("/")+10);
+                                }
                                 return url;
                             } else {
                                 return this.url;
