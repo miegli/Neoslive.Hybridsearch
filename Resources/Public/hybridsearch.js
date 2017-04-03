@@ -737,8 +737,8 @@
                                 if (url.substr(-5) !== '.html') {
                                     url = url + ".html";
                                 }
-                                if (url.substr(0,4) == 'http') {
-                                  return url.substr(url.substr(10).indexOf("/")+10);
+                                if (url.substr(0, 4) == 'http') {
+                                    return url.substr(url.substr(10).indexOf("/") + 10);
                                 }
                                 return url;
                             } else {
@@ -4315,7 +4315,15 @@
                  * @returns {string} Search results hash
                  */
                 getHash: function () {
-                    return Sha1.hash(JSON.stringify(this.$$data.results));
+
+                    var ids = [];
+
+                    angular.forEach(this.getNodes(), function (node) {
+                        ids.push(node.getIdentifier());
+                    });
+
+
+                    return Sha1.hash(JSON.stringify(ids));
                 },
                 /**
                  *
@@ -4607,7 +4615,6 @@
                 getDistinct: function (property, affectedBySearchResult, counterGroupedByNode, valuesOnly) {
 
 
-
                     var self = this, variants = {}, variantsByNodes = {}, propvalue = '', variantsfinal = [];
 
                     if (self.$$data.distinctsConfiguration[property] == undefined) {
@@ -4638,7 +4645,6 @@
                         }
 
                     }
-
 
 
                     angular.forEach(self.$$data.unfilteredResultNodes.length > 0 ? self.$$data.unfilteredResultNodes : this.getNodes(), function (node) {
@@ -4738,7 +4744,6 @@
                         }
 
                     });
-
 
 
                     angular.forEach(variants, function (v, k) {
