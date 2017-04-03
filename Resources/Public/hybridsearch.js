@@ -4354,12 +4354,11 @@
 
                         if (this.$$data.isrunningfirsttimestamp > 0) {
 
-                            if (Date.now() - this.$$data.isrunningfirsttimestamp < 1000) {
+                            if (Date.now() - this.$$data.isrunningfirsttimestamp < 100) {
                                 //return false;
                             } else {
                                 this.$$data.isrunningfirsttimestamp = -1;
                             }
-                        } else {
                         }
                     }
 
