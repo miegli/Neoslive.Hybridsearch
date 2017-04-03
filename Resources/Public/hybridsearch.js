@@ -1372,7 +1372,7 @@
                                                 if (self.getFilter().getScopeProperties()[identifier][property] !== undefined) {
                                                     self.getFilter().getScopeByIdentifier(identifier)[property] = obj.value;
                                                     setTimeout(function () {
-                                                        self.getFilter().getScopeByIdentifier(identifier).$apply(function () {
+                                                        self.getFilter().getScopeByIdentifier(identifier).$digest(function () {
                                                         });
                                                     }, 2);
                                                 }
@@ -1383,7 +1383,7 @@
                                             if (self.getFilter().getScopeProperties()[identifier] !== undefined) {
                                                 self.getFilter().getScopeByIdentifier(identifier)[Object.keys(self.getFilter().getScopeProperties()[identifier])[0]] = filter;
                                                 setTimeout(function () {
-                                                    self.getFilter().getScopeByIdentifier(identifier).$apply(function () {
+                                                    self.getFilter().getScopeByIdentifier(identifier).$digest(function () {
                                                     });
                                                 }, 2);
                                             }
@@ -1401,7 +1401,7 @@
                                         case 'query':
                                             self.getFilter().getScopeByIdentifier(identifier)[Object.keys(self.getFilter().getScopeProperties()[identifier])[0]] = '';
                                             setTimeout(function () {
-                                                self.getFilter().getScopeByIdentifier(identifier).$apply(function () {
+                                                self.getFilter().getScopeByIdentifier(identifier).$digest(function () {
                                                 });
                                             }, 2);
                                     }
