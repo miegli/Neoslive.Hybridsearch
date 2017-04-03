@@ -1542,6 +1542,10 @@
                                 nodeTypeMinScore = {}, nodeTypeScoreCount = {}, nodeTypeCount = {};
                             var hasDistinct = self.getResults().hasDistincts();
 
+                            if (self.getFilter().getQuery().length == 0) {
+                                self.getResults().getApp().clearQuickNodes();
+                            }
+
 
                             // set not found if search was timed out withou any results
                             if (searchCounterTimeout) {
