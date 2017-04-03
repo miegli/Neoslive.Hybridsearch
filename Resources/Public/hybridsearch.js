@@ -852,6 +852,15 @@
                          * @private
                          * @return void
                          */
+                        hasPendingRequests: function () {
+
+                            return pendingRequests.length ? true : false;
+
+                        },
+                        /**
+                         * @private
+                         * @return void
+                         */
                         setHybridsearchInstanceNumber: function () {
                             hybridsearchInstanceNumber = window.hybridsearchInstances;
                         },
@@ -4333,6 +4342,8 @@
                     if (this.$$data.isrunningfirsttimestamp === 0) {
                         return false;
                     } else {
+
+
                         if (this.$$data.isrunningfirsttimestamp > 0) {
 
                             if (Date.now() - this.$$data.isrunningfirsttimestamp < 1000) {
