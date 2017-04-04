@@ -185,7 +185,7 @@
                     resultOrderBy, propertiesBoost, ParentNodeTypeBoostFactor, isRunning, firstfilterhash,
                     searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier,
                     nodesByIdentifier, searchCounter, searchCounterTimeout, nodeTypeProperties, isloadedall,
-                    externalSources, isLoadedFromLocalStorage;
+                    externalSources, isLoadedFromLocalStorage, lastSearchHash, lastSearchApplyTimeout;
 
                 var self = this;
 
@@ -217,6 +217,8 @@
                 pendingRequests = [];
                 resultGroupedBy = {};
                 resultOrderBy = {};
+                lastSearchHash = null;
+                lastSearchApplyTimeout = null;
                 resultCategorizedBy = 'nodeType';
                 lunrSearch = elasticlunr(function () {
                     this.setRef('id');
@@ -227,6 +229,7 @@
                  * init hybridsearch log store
                  */
                 document.addEventListener("click", function (event) {
+
                     var node = angular.element(event.target);
                     if (node !== undefined && node.scope() !== undefined && node.scope().node) {
                         if (logStoreApplied[node.scope().node.getIdentifier()] == undefined) {
@@ -240,15 +243,6 @@
                         }
                     }
                 });
-
-                /**
-                 * save current state and results to localstorage
-                 */
-                window.onbeforeunload = function (e) {
-                    if (isRunning) {
-                        self.save();
-                    }
-                };
 
 
                 /**
@@ -948,7 +942,7 @@
                                     }
 
                                 });
-                            }, 100);
+                            }, 50);
 
                         } else {
                             isRunning = true;
@@ -1020,6 +1014,14 @@
                      */
                     isLoadedFromLocalStorage: function () {
                         return isLoadedFromLocalStorage;
+                    },
+                    /**
+                     * @private
+                     * @param boolean value
+                     * @returns {boolean}
+                     */
+                    setLoadedFromLocalStorage: function (value) {
+                        isLoadedFromLocalStorage = value;
                     },
                     /**
                      * @private
@@ -1580,13 +1582,15 @@
                             return self;
                         }
 
-                        console.log(Object.keys(tempresult).length );
+
                         if (Object.keys(tempresult).length == 0) {
                             return self;
                         }
 
+                        console.log(Object.keys(tempresult).length);
+
                         isLoadedFromLocalStorage = true;
-                        self.setIsLoadedAll();
+
 
                         var items = {};
                         items['_nodes'] = {};
@@ -1598,6 +1602,7 @@
                             self.addNodeToSearchResult(node.identifier, 1, tempresult, items);
                             self.addLocalIndex([{node: node}]);
                         });
+
                         results.getApp().setResults(items, tempresult, this);
 
 
@@ -1634,7 +1639,7 @@
                             if (self.getResults().countAll() === 0) {
                                 self.getResults().getApp().setNotFound(true);
                             }
-                        }, this.isLoadedAll() ? 1 : 2000);
+                        }, this.isLoadedAll() ? 1 : 500);
 
 
                         if (lunrSearch.getFields().length == 0 && self.getFilter().getFullSearchQuery() !== false) {
@@ -1928,7 +1933,13 @@
                         }
 
 
-                        results.getApp().setResults(items, nodes, this);
+                        if (lastSearchApplyTimeout) {
+                            window.clearTimeout(lastSearchApplyTimeout);
+                        }
+                        lastSearchApplyTimeout = window.setTimeout(function() {
+                            results.getApp().setResults(items, nodes, self);
+                            lastSearchApplyTimeout = null;
+                        },lastSearchApplyTimeout ? 500 : 1);
 
 
                     },
@@ -2332,7 +2343,7 @@
                         }
 
 
-                        if (self.isLoadedAll() === false) {
+                        if (self.isLoadedAll() === false && self.isLoadedFromLocalStorage() == false) {
                             nodes = {};
                         }
 
@@ -2561,52 +2572,50 @@
                                             if (refs !== null && refs.length) {
                                                 angular.forEach(refs, function (ref) {
 
-                                                    //ref.cancelobj = $q.defer();
                                                     var canceller = $q.defer();
+                                                    if (ref.http) {
+
+                                                        self.addPendingRequest($http({
+                                                            method: 'get',
+                                                            url: ref.http,
+                                                            cache: true,
+                                                            timeout: canceller.promise,
+                                                            cancel: function (reason) {
+                                                                canceller.resolve(reason);
+                                                            },
+                                                            timeoutRef: setTimeout(function () {
+
+                                                                if (ref.socket) {
+                                                                    ref.socket.on("value", function (data) {
+                                                                        nodesIndexed = {};
+
+                                                                        //if (ref.updated !== undefined) {
+                                                                        // var nodes = [];
+                                                                        // angular.forEach(data.val(),function(node) {
+                                                                        //    nodes[node.node.identifier] = node;
+                                                                        // });
+                                                                        execute(keyword, data.val(), ref);
+                                                                        //}
+                                                                        ref.updated = true;
+                                                                    });
+                                                                }
 
 
-                                                    self.addPendingRequest($http({
-                                                        method: 'get',
-                                                        url: ref.http,
-                                                        cache: true,
-                                                        timeout: canceller.promise,
-                                                        cancel: function (reason) {
-                                                            canceller.resolve(reason);
-                                                        },
-                                                        timeoutRef: setTimeout(function () {
-
-                                                            if (ref.socket) {
-                                                                ref.socket.on("value", function (data) {
-
-                                                                    nodesIndexed = {};
-
-                                                                    //if (ref.updated !== undefined) {
-                                                                    // var nodes = [];
-                                                                    // angular.forEach(data.val(),function(node) {
-                                                                    //    nodes[node.node.identifier] = node;
-                                                                    // });
-                                                                    execute(keyword, data.val(), ref);
-                                                                    //}
-                                                                    ref.updated = true;
-                                                                });
+                                                            }, 500)
+                                                        }).success(function (data) {
+                                                            if (lastSearchInstance.$$data.keywords.length == 0) {
+                                                                execute(keyword, data, ref);
+                                                            } else {
+                                                                loadedIndex.push(
+                                                                    {
+                                                                        0: self.getFilter().getQuery(),
+                                                                        1: data,
+                                                                        2: ref
+                                                                    });
                                                             }
+                                                        }));
 
-
-                                                        }, 500)
-                                                    }).success(function (data) {
-
-
-                                                        if (lastSearchInstance.$$data.keywords.length == 0) {
-                                                            execute(keyword, data, ref);
-                                                        } else {
-                                                            loadedIndex.push(
-                                                                {
-                                                                    0: self.getFilter().getQuery(),
-                                                                    1: data,
-                                                                    2: ref
-                                                                });
-                                                        }
-                                                    }));
+                                                    }
 
 
                                                 });
@@ -2982,43 +2991,32 @@
 
                         if (queries.length === 0 && this.getFilter().getNodeType()) {
 
-                            if (keyword === "") {
 
-                                if (typeof this.getFilter().getNodeType() == 'string') {
-                                    queries.push(
-                                        {
-                                            socket: hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + this.getFilter().getNodeType()),
-                                            http: (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + this.getFilter().getNodeType() + ".json"
-                                        }
-                                    );
-                                    index[this.getFilter().getNodeType()] = queries;
-                                } else {
-
-                                    angular.forEach(this.getFilter().getNodeType(), function (nodeType) {
-                                        queries.push(
-                                            {
-                                                socket: hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + nodeType),
-                                                http: (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + nodeType + ".json"
-                                            }
-                                        );
-                                    });
-
-                                    index[this.getFilter().getNodeType()] = queries;
-
-
-                                }
-
+                            if (typeof this.getFilter().getNodeType() == 'string') {
+                                queries.push(
+                                    {
+                                        socket: hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + this.getFilter().getNodeType()),
+                                        http: (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + this.getFilter().getNodeType() + ".json"
+                                    }
+                                );
+                                index[this.getFilter().getNodeType()] = queries;
                             } else {
 
-                                if (typeof this.getFilter().getNodeType() == 'string') {
-                                    queries.push({
-                                        socket: hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + keyword),
-                                        http: (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + keyword + ".json"
-                                    });
-                                }
+                                angular.forEach(this.getFilter().getNodeType(), function (nodeType) {
+                                    queries.push(
+                                        {
+                                            socket: hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + nodeType),
+                                            http: (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + nodeType + ".json"
+                                        }
+                                    );
+                                });
+
+                                index[this.getFilter().getNodeType()] = queries;
 
 
                             }
+
+
                         }
 
 
@@ -3088,6 +3086,7 @@
                      * @returns void
                      */
                     cleanLocalIndex: function () {
+
 
                         if (results.hasDistincts()) {
                             this.setNodesLastHash(this.getLocalIndexHash());
@@ -3954,13 +3953,15 @@
                 var results = HybridsearchObject.$$app.getResults().$$data.results['_nodes'];
 
                 var resultNodes = {};
+
+
                 angular.forEach(results, function (result) {
                     resultNodes[result.getIdentifier()] = nodes[result.getIdentifier()];
                 });
 
                 $window.localStorage[filename] = angular.toJson(resultNodes);
 
-                console.log(filename, 'saved');
+
 
                 return this;
 
@@ -4227,39 +4228,37 @@
                     setResults: function (results, nodes) {
 
 
-                        this.clearResults();
+                            this.clearResults();
+
+                            self.$$data.nodes = nodes;
+
+                            angular.forEach(results, function (val, key) {
+
+                                var sorteable = [];
+                                angular.forEach(val, function (v, k) {
 
 
-                        self.$$data.nodes = nodes;
+                                    if (key === '_nodesByType') {
+                                        v.group = k;
+                                        sorteable.push(v);
+                                    } else {
+                                        sorteable.push(v);
+                                    }
 
 
-                        angular.forEach(results, function (val, key) {
+                                });
 
-                            var sorteable = [];
-                            angular.forEach(val, function (v, k) {
-
-
-                                if (key === '_nodesByType') {
-                                    v.group = k;
-                                    sorteable.push(v);
-                                } else {
-                                    sorteable.push(v);
-                                }
+                                self.$$data.results[key] = sorteable;
 
 
                             });
 
-                            self.$$data.results[key] = sorteable;
+                            self.$$data.searchCounter++;
 
+                            self.getApp().setNotFound(false);
 
-                        });
+                            this.executeCallbackMethod(self);
 
-                        self.$$data.searchCounter++;
-
-                        self.getApp().setNotFound(false);
-
-
-                        this.executeCallbackMethod(self);
 
 
                         return self;
@@ -4498,7 +4497,6 @@
                  */
                 isLoading: function () {
 
-
                     if (this.$$data.isrunningfirsttimestamp === 0) {
                         return false;
                     } else {
@@ -4514,9 +4512,8 @@
                         }
                     }
 
-
                     if (this.$$data.searchCounter === 0) {
-                        return true;
+                        return false;
                     } else {
                         return this.$$data.notfound == true ? false : (this.countAll() > 0) ? false : true;
                     }
