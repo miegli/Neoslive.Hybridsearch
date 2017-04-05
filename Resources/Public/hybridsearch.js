@@ -185,7 +185,7 @@
                     resultOrderBy, propertiesBoost, ParentNodeTypeBoostFactor, isRunning, firstfilterhash,
                     searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier,
                     nodesByIdentifier, searchCounter, searchCounterTimeout, nodeTypeProperties, isloadedall,
-                    externalSources, isLoadedFromLocalStorage, lastSearchHash, lastSearchApplyTimeout;
+                    externalSources, isLoadedFromLocalStorage, lastSearchHash, lastSearchApplyTimeout, isloadedallCount;
 
                 var self = this;
 
@@ -196,6 +196,7 @@
                     window.hybridsearchInstances++;
                 }
                 isloadedall = false;
+                isloadedallCount = 0;
                 isLoadedFromLocalStorage = false;
                 searchCounter = 0;
                 nodesLastHash = 0;
@@ -967,6 +968,14 @@
                      */
                     setIsLoadedAll: function () {
                         isloadedall = true;
+                        isloadedallCount++;
+                    },
+                    /**
+                     * @private
+                     */
+                    clearIsLoadedAll: function () {
+                        isloadedall = false;
+                        isloadedallCount = 0;
                     },
                     /**
                      * @private
@@ -1042,6 +1051,13 @@
                      */
                     isLoadedAll: function () {
                         return isloadedall;
+                    },
+                    /**
+                     * @private
+                     * @returns {boolean}
+                     */
+                    countIsLoadedAll: function () {
+                        return isloadedallCount;
                     },
                     /**
                      * @private
@@ -1586,8 +1602,9 @@
 
                         var self = this;
 
+
+
                         if (self.isLoadedFromLocalStorage() == false) {
-                            self.setLoadedFromLocalStorage(true);
 
                             if ($window.localStorage[identifier] == undefined) {
                                 return self;
@@ -2375,7 +2392,7 @@
                      */
                     inArray: function (target, array) {
 
-                        if (array !== undefined) {
+                        if (array !== undefined && typeof array == 'object' && array) {
                             for (var i = 0; i < array.length; i++) {
 
                                 if (array[i] == target) {
@@ -2552,6 +2569,7 @@
                                 var indexintervalcounter = 0;
                                 var indexcounter = 0;
                                 var indexdata = {};
+                                var executedRef = {};
 
                                 var cleanedup = false;
 
@@ -2565,75 +2583,82 @@
                                     var execute = function (keyword, data, ref) {
 
 
-                                        if (ref.parser) {
+                                        var h = Sha1.hash(ref.http);
 
-                                            var parsed = false;
+                                        if (executedRef[h] == undefined) {
 
-                                            if (ref.parser !== undefined && ref.parser.type == 'html') {
-                                                data = self.parseHtml(data, ref.parser.config);
-                                                parsed = true;
-                                            }
+                                            executedRef[h] = true;
 
-                                            if (ref.parser !== undefined && ref.parser.type == 'xml') {
-                                                data = self.parseXml(data, ref.parser.config);
-                                                parsed = true;
-                                            }
+                                            if (ref.parser) {
 
-                                            if (ref.parser !== undefined && ref.parser.type == 'json') {
-                                                data = self.parseJson(data, ref.parser.config);
-                                                parsed = true;
-                                            }
+                                                var parsed = false;
 
-
-                                            if (parsed === false) {
-                                                data = null;
-                                            }
-
-                                        }
-
-
-                                        if (data !== null) {
-
-
-                                            if (keyword === null || keyword === '') {
-
-                                                if (indexdata['__'] === undefined) {
-                                                    indexdata['__'] = [];
-                                                }
-                                                angular.forEach(data, function (node, id) {
-                                                    nodes[id] = node.node;
-                                                    indexdata['__'].push(node);
-                                                });
-
-                                                self.updateLocalIndex(indexdata, lastSearchInstance, true);
-                                                self.search(nodes);
-
-                                                // try to load last state
-                                                self.getSearchObject().load(window.location.hash.substr(2));
-
-                                                // set is loaded all
-                                                self.setIsLoadedAll();
-
-                                            } else {
-
-                                                keyword = Sha1.hash(ref.http) + "://" + keyword;
-
-
-                                                if (indexdata[keyword] === undefined) {
-                                                    indexdata[keyword] = [];
+                                                if (ref.parser !== undefined && ref.parser.type == 'html') {
+                                                    data = self.parseHtml(data, ref.parser.config);
+                                                    parsed = true;
                                                 }
 
-                                                angular.forEach(data, function (node, id) {
-                                                    nodes[id] = node;
-                                                    indexdata[keyword].push(node);
-                                                });
+                                                if (ref.parser !== undefined && ref.parser.type == 'xml') {
+                                                    data = self.parseXml(data, ref.parser.config);
+                                                    parsed = true;
+                                                }
 
-                                                self.updateLocalIndex(indexdata, lastSearchInstance);
-                                                indexcounter++;
+                                                if (ref.parser !== undefined && ref.parser.type == 'json') {
+                                                    data = self.parseJson(data, ref.parser.config);
+                                                    parsed = true;
+                                                }
+
+
+                                                if (parsed === false) {
+                                                    data = null;
+                                                }
+
                                             }
 
-                                        }
 
+                                            if (data !== null) {
+
+
+                                                if (keyword === null || keyword === '') {
+
+                                                    if (indexdata['__'] === undefined) {
+                                                        indexdata['__'] = [];
+                                                    }
+                                                    angular.forEach(data, function (node, id) {
+                                                        nodes[id] = node.node;
+                                                        indexdata['__'].push(node);
+                                                    });
+
+                                                    self.updateLocalIndex(indexdata, lastSearchInstance, true);
+                                                    self.search(nodes);
+
+                                                    // try to load last state
+                                                    self.getSearchObject().load(window.location.hash.substr(2));
+
+                                                    // set is loaded all
+
+                                                    self.setIsLoadedAll();
+
+                                                } else {
+
+                                                    keyword = Sha1.hash(ref.http) + "://" + keyword;
+
+
+                                                    if (indexdata[keyword] === undefined) {
+                                                        indexdata[keyword] = [];
+                                                    }
+
+                                                    angular.forEach(data, function (node, id) {
+                                                        nodes[id] = node;
+                                                        indexdata[keyword].push(node);
+                                                    });
+
+                                                    self.updateLocalIndex(indexdata, lastSearchInstance);
+                                                    indexcounter++;
+                                                }
+
+                                            }
+                                        }
 
                                     };
 
@@ -2644,6 +2669,7 @@
 
 
                                     self.setIndexInterval(setTimeout(function () {
+
                                         angular.forEach(uniquarrayfinal, function (keyword) {
 
                                             var refs = self.getIndex(keyword);
@@ -3492,6 +3518,7 @@
                         self.$$app.getFilter().setScopeProperty(scope, nodeType, 'nodeType');
                         scope.$watch(nodeType, function (filterNodeInput) {
                             self.$$app.getFilter().setNodeType(filterNodeInput);
+                            self.$$app.clearIsLoadedAll();
                             self.$$app.setSearchIndex();
 
                         }, true);
