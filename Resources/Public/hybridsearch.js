@@ -1602,8 +1602,6 @@
 
                             if (scope) {
 
-
-
                                 angular.forEach(storage.scope, function (value, key) {
 
                                     if (self.getFilter().isScopePropertyUsedAsFilter(key)) {
