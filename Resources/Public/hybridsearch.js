@@ -232,6 +232,7 @@
 
                     var node = angular.element(event.target);
                     if (node !== undefined && node.scope() !== undefined && node.scope().node) {
+
                         if (logStoreApplied[node.scope().node.getIdentifier()] == undefined) {
                             var q = filter.getQueryLogStoreHash();
                             if (q.length > 2 && logStoreApplied[q] == undefined) {
@@ -241,6 +242,12 @@
                                 logStoreApplied[q] = true;
                             }
                         }
+
+                        if (event.target.tagName == 'A') {
+                            window.location.hash = self.save().getIdentifier();
+                        }
+
+
                     }
                 });
 
@@ -1592,19 +1599,31 @@
                         if (storage.scope !== undefined) {
 
                             var scope = self.getFilter().getScope();
+
                             if (scope) {
+
+
+
                                 angular.forEach(storage.scope, function (value, key) {
+
                                     if (self.getFilter().isScopePropertyUsedAsFilter(key)) {
                                         scope[key] = value;
                                     } else {
 
-                                        if (excludedScopeProperties !== undefined && excludedScopeProperties.indexOf(key) == -1) {
-                                            if (key.substr(0) !== '_') {
-                                                scope[key] = value;
+                                        if (scope['__hybridsearchBindedResultTo'] !== key && (excludedScopeProperties == undefined || (excludedScopeProperties !== undefined && excludedScopeProperties.indexOf(key) == -1))) {
+                                            if (key.substr(0,1) !== '_' && typeof scope[key] !== 'boolean') {
+                                                    scope[key] = value;
+                                                window.setTimeout(function () {
+                                                    scope.$digest();
+                                                }, 2);
                                             }
                                         }
                                     }
+
+
                                 });
+
+
                                 window.setTimeout(function () {
                                     scope.$apply();
                                 }, 2);
@@ -1613,13 +1632,13 @@
 
                         }
 
-
                         return self;
 
 
                         if (storage.nodes == undefined || Object.keys(storage.nodes).length == 0) {
                             return self;
                         }
+
 
 
                         isLoadedFromLocalStorage = true;
@@ -3376,6 +3395,7 @@
 
                     this.$$app.getResults().$$app.setScope(scope);
                     scope[scopevar] = this.$$app.getResults();
+                    scope['__hybridsearchBindedResultTo'] = scopevar;
                     return this;
                 },
 
@@ -3390,6 +3410,11 @@
 
                     if (self.$$app.isRunning() === false) {
                         self.$$app.setIsRunning();
+
+                        // try to load last state
+                        this.load(window.location.hash.substr(2));
+
+
                     }
 
                     this.$$app.getResults().$$data.isrunningfirsttimestamp = Date.now();
@@ -3983,7 +4008,16 @@
              */
             var HybridsearchSnapshotObject = function (HybridsearchObject, identifier, savenodes) {
 
+                this.$$data = {
+                    identifier: identifier
+                };
+
+                Object.defineProperty(this, '$$data', {
+                    value: this.$$data
+                });
+
                 var filename = identifier == undefined ? Sha1.hash($location.$$absUrl + HybridsearchObject.$$app.getHybridsearchInstanceNumber()) : identifier;
+                this.$$data.identifier = filename;
                 var resultNodes = {};
                 var storage = {};
 
@@ -4031,8 +4065,8 @@
                 /**
                  * return the snapshot val
                  */
-                val: function () {
-                    return this.$$data.nodes;
+                getIdentifier: function () {
+                    return this.$$data.identifier;
                 }
 
 
