@@ -1605,14 +1605,16 @@
                                         }
                                     }
                                 });
+                                window.setTimeout(function () {
+                                    scope.$apply();
+                                }, 2);
                             }
-
-                            window.setTimeout(function () {
-                                scope.$apply();
-                            }, 2);
 
 
                         }
+
+
+                        return self;
 
 
                         if (storage.nodes == undefined || Object.keys(storage.nodes).length == 0) {
@@ -3456,7 +3458,7 @@
                  * @returns HybridsearchSnapshot of HybridsearchObject
                  */
                 save: function (identifier) {
-                    var snapshot = new HybridsearchSnapshotObject(this, identifier);
+                    var snapshot = new HybridsearchSnapshotObject(this, identifier, false);
                     return snapshot;
 
                 },
@@ -3976,23 +3978,24 @@
             /**
              * @param {HybridsearchObject} HybridsearchObject
              * @param string identifier (optional)
+             * @param boolean savenodes or not
              * @constructor HybridsearchSnapshotObject
              */
-            var HybridsearchSnapshotObject = function (HybridsearchObject, identifier) {
+            var HybridsearchSnapshotObject = function (HybridsearchObject, identifier, savenodes) {
 
                 var filename = identifier == undefined ? Sha1.hash($location.$$absUrl + HybridsearchObject.$$app.getHybridsearchInstanceNumber()) : identifier;
-                var nodes = HybridsearchObject.$$app.getResults().$$data.nodes;
-                var results = HybridsearchObject.$$app.getResults().$$data.results['_nodes'];
-
                 var resultNodes = {};
                 var storage = {};
 
-                angular.forEach(results, function (result) {
-                    resultNodes[result.getIdentifier()] = nodes[result.getIdentifier()];
-                });
+                if (savenodes == true) {
+                    var nodes = HybridsearchObject.$$app.getResults().$$data.nodes;
+                    var results = HybridsearchObject.$$app.getResults().$$data.results['_nodes'];
+                    angular.forEach(results, function (result) {
+                        resultNodes[result.getIdentifier()] = nodes[result.getIdentifier()];
+                    });
+                    storage['nodes'] = resultNodes;
+                }
 
-
-                storage['nodes'] = resultNodes;
 
                 var scope = HybridsearchObject.getScope();
 
@@ -4018,10 +4021,6 @@
                 storage['scope'] = scopeCopy;
 
                 $window.localStorage[filename] = angular.toJson(storage);
-
-
-                console.log(storage);
-
 
                 return this;
 
