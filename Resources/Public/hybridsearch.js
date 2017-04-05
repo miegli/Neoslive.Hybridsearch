@@ -1601,7 +1601,6 @@
                                         if (excludedScopeProperties !== undefined && excludedScopeProperties.indexOf(key) == -1) {
                                             if (key.substr(0) !== '_') {
                                                 scope[key] = value;
-                                                console.log(key, excludedScopeProperties.indexOf(key));
                                             }
                                         }
                                     }
