@@ -1609,14 +1609,13 @@
                         var self = this;
 
 
-
                         if (self.isLoadedFromLocalStorage() == false) {
 
                             if ($window.localStorage[identifier] == undefined) {
                                 return self;
                             }
 
-                            console.log(self.isLoadedFromLocalStorage(),identifier);
+
                             var storage = null;
 
                             try {
@@ -4080,7 +4079,7 @@
                     value: this.$$data
                 });
 
-                var filename = identifier == undefined ? Sha1.hash($location.$$absUrl + HybridsearchObject.$$app.getHybridsearchInstanceNumber()) : identifier;
+                var filename = identifier == undefined ? Sha1.hash(window.location.pathname + HybridsearchObject.$$app.getHybridsearchInstanceNumber()) : identifier;
                 this.$$data.identifier = filename;
                 var resultNodes = {};
                 var storage = {};
