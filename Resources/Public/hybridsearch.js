@@ -1483,7 +1483,8 @@
 
                     /**
                      * @private
-                     * @params array preOrdered
+                     * @params string identifier
+                     * @params boolean apply scope vars or not
                      * @returns mixed
                      */
                     sortNodes: function (preOrdered) {
@@ -1563,31 +1564,62 @@
 
                     },
 
-
-                    loadNodesFromLocalStorage: function (identifier) {
+                    /**
+                     * @private
+                     * @params string identifier
+                     * @params array excludedScopeProperties dont apply given scope property names
+                     * @returns mixed
+                     */
+                    loadNodesFromLocalStorage: function (identifier, excludedScopeProperties) {
 
                         var self = this;
+
 
                         if ($window.localStorage[identifier] == undefined) {
                             return self;
                         }
 
-                        var tempresult = null;
+                        var storage = null;
 
                         try {
-                            tempresult = angular.fromJson($window.localStorage[identifier]);
+                            storage = angular.fromJson($window.localStorage[identifier]);
                         } catch (e) {
                             // error in localstorage
-                            $window.localStorage.removeItem(identifier);
                             return self;
                         }
 
 
-                        if (Object.keys(tempresult).length == 0) {
+                        if (storage.scope !== undefined) {
+
+                            var scope = self.getFilter().getScope();
+                            if (scope) {
+                                angular.forEach(storage.scope, function (value, key) {
+                                    if (self.getFilter().isScopePropertyUsedAsFilter(key)) {
+                                        scope[key] = value;
+                                    } else {
+
+                                        if (excludedScopeProperties !== undefined && excludedScopeProperties.indexOf(key) == -1) {
+                                            if (key.substr(0) !== '_') {
+                                                scope[key] = value;
+                                                console.log(key, excludedScopeProperties.indexOf(key));
+                                            }
+                                        }
+                                    }
+                                });
+                            }
+
+                            window.setTimeout(function () {
+                                scope.$apply();
+                            }, 2);
+
+
+                        }
+
+
+                        if (storage.nodes == undefined || Object.keys(storage.nodes).length == 0) {
                             return self;
                         }
 
-                        console.log(Object.keys(tempresult).length);
 
                         isLoadedFromLocalStorage = true;
 
@@ -1598,12 +1630,12 @@
                         items['_nodesByType'] = {};
 
 
-                        angular.forEach(tempresult, function (node) {
-                            self.addNodeToSearchResult(node.identifier, 1, tempresult, items);
+                        angular.forEach(storage.nodes, function (node) {
+                            self.addNodeToSearchResult(node.identifier, 1, storage, items);
                             self.addLocalIndex([{node: node}]);
                         });
 
-                        results.getApp().setResults(items, tempresult, this);
+                        results.getApp().setResults(items, storage.nodes, this);
 
 
                         return this;
@@ -1936,10 +1968,10 @@
                         if (lastSearchApplyTimeout) {
                             window.clearTimeout(lastSearchApplyTimeout);
                         }
-                        lastSearchApplyTimeout = window.setTimeout(function() {
+                        lastSearchApplyTimeout = window.setTimeout(function () {
                             results.getApp().setResults(items, nodes, self);
                             lastSearchApplyTimeout = null;
-                        },lastSearchApplyTimeout ? 500 : 1);
+                        }, lastSearchApplyTimeout ? 500 : 1);
 
 
                     },
@@ -3782,12 +3814,13 @@
                 /**
                  * Load nodes form local storage (saved before using save() method)
                  * @param {string} identifier
+                 * @param {array} excludedScopeProperties don't apply given scope property names
                  * @returns {$hybridsearchResultsObject|*}
                  */
-                load: function (identifier) {
+                load: function (identifier, excludedScopeProperties) {
 
                     this.$$app.setHybridsearchInstanceNumber();
-                    this.$$app.loadNodesFromLocalStorage(identifier == undefined ? Sha1.hash($location.$$absUrl + this.$$app.getHybridsearchInstanceNumber()) : identifier);
+                    this.$$app.loadNodesFromLocalStorage(identifier == undefined || !identifier ? Sha1.hash($location.$$absUrl + this.$$app.getHybridsearchInstanceNumber()) : identifier, excludedScopeProperties);
                     return this;
 
                 },
@@ -3953,14 +3986,42 @@
                 var results = HybridsearchObject.$$app.getResults().$$data.results['_nodes'];
 
                 var resultNodes = {};
-
+                var storage = {};
 
                 angular.forEach(results, function (result) {
                     resultNodes[result.getIdentifier()] = nodes[result.getIdentifier()];
                 });
 
-                $window.localStorage[filename] = angular.toJson(resultNodes);
 
+                storage['nodes'] = resultNodes;
+
+                var scope = HybridsearchObject.getScope();
+
+                var scopeCopy = {};
+                angular.forEach(scope, function (value, key) {
+
+                    if (key.substr(0, 1) !== '$' && typeof value !== 'function') {
+
+                        var serialized = null;
+                        try {
+                            serialized = angular.toJson(value)
+                        } catch (e) {
+                        }
+
+                        if (serialized !== {}) {
+                            scopeCopy[key] = value;
+                        }
+                    }
+
+                });
+
+
+                storage['scope'] = scopeCopy;
+
+                $window.localStorage[filename] = angular.toJson(storage);
+
+
+                console.log(storage);
 
 
                 return this;
@@ -4228,37 +4289,36 @@
                     setResults: function (results, nodes) {
 
 
-                            this.clearResults();
+                        this.clearResults();
 
-                            self.$$data.nodes = nodes;
+                        self.$$data.nodes = nodes;
 
-                            angular.forEach(results, function (val, key) {
+                        angular.forEach(results, function (val, key) {
 
-                                var sorteable = [];
-                                angular.forEach(val, function (v, k) {
-
-
-                                    if (key === '_nodesByType') {
-                                        v.group = k;
-                                        sorteable.push(v);
-                                    } else {
-                                        sorteable.push(v);
-                                    }
+                            var sorteable = [];
+                            angular.forEach(val, function (v, k) {
 
 
-                                });
-
-                                self.$$data.results[key] = sorteable;
+                                if (key === '_nodesByType') {
+                                    v.group = k;
+                                    sorteable.push(v);
+                                } else {
+                                    sorteable.push(v);
+                                }
 
 
                             });
 
-                            self.$$data.searchCounter++;
+                            self.$$data.results[key] = sorteable;
 
-                            self.getApp().setNotFound(false);
 
-                            this.executeCallbackMethod(self);
+                        });
 
+                        self.$$data.searchCounter++;
+
+                        self.getApp().setNotFound(false);
+
+                        this.executeCallbackMethod(self);
 
 
                         return self;
@@ -5133,6 +5193,9 @@
                  */
                 setScopeProperty: function (scope, property, identifier) {
 
+                    if (this.$$data.scope == undefined && scope !== undefined) {
+                        this.$$data.scope = scope;
+                    }
                     if (this.$$data.scopes == undefined) {
                         this.$$data.scopes = {};
                     }
@@ -5165,6 +5228,40 @@
                 getScopeByIdentifier: function (identifier) {
 
                     return this.$$data.scopes[identifier];
+                },
+
+                /**
+                 * @param string identifier
+                 * @returns scope
+                 */
+                getScope: function () {
+
+                    return this.$$data.scope;
+                },
+
+                /**
+                 * @param string identifier
+                 * @returns scope
+                 */
+                isScopePropertyUsedAsFilter: function (property) {
+
+                    var check = false;
+
+                    angular.forEach(this.$$data.scopeProperties, function (values, keys) {
+                        angular.forEach(values, function (value, key) {
+
+                            if (property == key.substr(0, property.length)) {
+                                check = true;
+                                return check;
+                            }
+
+                        });
+
+                    });
+
+                    return check;
+
+
                 },
 
 
