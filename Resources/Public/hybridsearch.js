@@ -1670,7 +1670,7 @@
 
                                     jQuery('html, body').stop().animate({
                                         'scrollTop': storage.scrollTop
-                                    }, 900, 'swing', function () {
+                                    }, 10, 'swing', function () {
 
                                     });
 
