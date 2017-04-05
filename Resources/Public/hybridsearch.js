@@ -838,7 +838,13 @@
 
 
                 this.$$app = {
-
+                    /**
+                     * @private
+                     * @param boost
+                     */
+                    getSearchObject: function () {
+                        return self;
+                    },
                     /**
                      * @private
                      * @param request
@@ -1360,7 +1366,6 @@
                     setOrderBy: function (orderBy) {
                         resultOrderBy = orderBy;
                     },
-
                     /**
                      * @private
                      * @param categorizedBy
@@ -1581,80 +1586,93 @@
 
                         var self = this;
 
+                        if (self.isLoadedFromLocalStorage() == false) {
+                            self.setLoadedFromLocalStorage(true);
 
-                        if ($window.localStorage[identifier] == undefined) {
-                            return self;
-                        }
+                            if ($window.localStorage[identifier] == undefined) {
+                                return self;
+                            }
 
-                        var storage = null;
+                            var storage = null;
 
-                        try {
-                            storage = angular.fromJson($window.localStorage[identifier]);
-                        } catch (e) {
-                            // error in localstorage
-                            return self;
-                        }
-
-
-                        if (storage.scope !== undefined) {
-
-                            var scope = self.getFilter().getScope();
-
-                            if (scope) {
-
-                                angular.forEach(storage.scope, function (value, key) {
-
-                                    if (self.getFilter().isScopePropertyUsedAsFilter(key)) {
-                                        scope[key] = value;
-                                    } else {
-
-                                        if (scope['__hybridsearchBindedResultTo'] !== key && (excludedScopeProperties == undefined || (excludedScopeProperties !== undefined && excludedScopeProperties.indexOf(key) == -1))) {
-                                            if (key.substr(0,1) !== '_' && typeof scope[key] !== 'boolean') {
-                                                    scope[key] = value;
-                                                window.setTimeout(function () {
-                                                    scope.$digest();
-                                                }, 2);
-                                            }
-                                        }
-                                    }
-
-
-                                });
-
-
-                                window.setTimeout(function () {
-                                    scope.$apply();
-                                }, 2);
+                            try {
+                                storage = angular.fromJson($window.localStorage[identifier]);
+                            } catch (e) {
+                                // error in localstorage
+                                return self;
                             }
 
 
+                            if (storage.scope !== undefined) {
+
+                                var scope = self.getFilter().getScope();
+
+                                if (scope) {
+
+                                    angular.forEach(storage.scope, function (value, key) {
+
+                                        if (self.getFilter().isScopePropertyUsedAsFilter(key)) {
+                                            scope[key] = value;
+                                        } else {
+
+                                            if (scope['__hybridsearchBindedResultTo'] !== key && (excludedScopeProperties == undefined || (excludedScopeProperties !== undefined && excludedScopeProperties.indexOf(key) == -1))) {
+                                                if (key.substr(0, 1) !== '_' && typeof scope[key] !== 'boolean') {
+                                                    scope[key] = value;
+                                                    window.setTimeout(function () {
+                                                        scope.$digest();
+                                                    }, 2);
+                                                }
+                                            }
+                                        }
+
+
+                                    });
+
+
+                                    window.setTimeout(function () {
+                                        scope.$apply();
+                                    }, 2);
+                                }
+
+
+                            }
+
+
+                            if (storage.scrollTop !== undefined) {
+
+
+                                window.setTimeout(function () {
+
+                                    jQuery('html, body').stop().animate({
+                                        'scrollTop': storage.scrollTop
+                                    }, 900, 'swing', function () {
+
+                                    });
+
+                                }, 10);
+
+                            }
+
+
+                            if (storage.nodes == undefined || Object.keys(storage.nodes).length == 0) {
+                                return self;
+                            }
+
+                            var items = {};
+                            items['_nodes'] = {};
+                            items['_nodesTurbo'] = {};
+                            items['_nodesByType'] = {};
+
+
+                            angular.forEach(storage.nodes, function (node) {
+                                self.addNodeToSearchResult(node.identifier, 1, storage, items);
+                                self.addLocalIndex([{node: node}]);
+                            });
+
+                            results.getApp().setResults(items, storage.nodes, this);
+
+
                         }
-
-                        return self;
-
-
-                        if (storage.nodes == undefined || Object.keys(storage.nodes).length == 0) {
-                            return self;
-                        }
-
-
-
-                        isLoadedFromLocalStorage = true;
-
-
-                        var items = {};
-                        items['_nodes'] = {};
-                        items['_nodesTurbo'] = {};
-                        items['_nodesByType'] = {};
-
-
-                        angular.forEach(storage.nodes, function (node) {
-                            self.addNodeToSearchResult(node.identifier, 1, storage, items);
-                            self.addLocalIndex([{node: node}]);
-                        });
-
-                        results.getApp().setResults(items, storage.nodes, this);
-
 
                         return this;
 
@@ -1992,7 +2010,8 @@
                         }, lastSearchApplyTimeout ? 500 : 1);
 
 
-                    },
+                    }
+                    ,
 
 
                     /**
@@ -2107,7 +2126,8 @@
 
                         nodesFound[hash] = nodeId;
 
-                    },
+                    }
+                    ,
                     /**
                      * @private
                      * @param {object}
@@ -2119,7 +2139,8 @@
                         return window.HybridsearchGetPropertyFromObject(object, property);
 
 
-                    },
+                    }
+                    ,
 
 
                     /**
@@ -2131,7 +2152,8 @@
 
                         return window.HybridsearchGetPropertyFromNode(node, property);
 
-                    },
+                    }
+                    ,
 
                     /**
                      * @private
@@ -2341,7 +2363,8 @@
 
                         return propertyFiltered;
 
-                    },
+                    }
+                    ,
 
 
                     /**
@@ -2362,7 +2385,8 @@
                         }
 
                         return false;
-                    },
+                    }
+                    ,
 
 
                     /**
@@ -2448,7 +2472,8 @@
                         }
 
 
-                    },
+                    }
+                    ,
 
                     /**
                      * @private
@@ -2582,6 +2607,11 @@
 
                                                 self.updateLocalIndex(indexdata, lastSearchInstance, true);
                                                 self.search(nodes);
+
+                                                // try to load last state
+                                                self.getSearchObject().load(window.location.hash.substr(2));
+
+                                                // set is loaded all
                                                 self.setIsLoadedAll();
 
                                             } else {
@@ -3092,7 +3122,8 @@
 
                         return queries;
 
-                    },
+                    }
+                    ,
 
                     /**
                      * @private
@@ -3101,7 +3132,8 @@
                      */
                     getIndexByNodeIdentifier: function (identifier) {
                         return hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + identifier + "/" + identifier);
-                    },
+                    }
+                    ,
 
                     /**
                      * @private
@@ -3110,7 +3142,8 @@
                      */
                     getIndexUrlByNodeIdentifier: function (identifier) {
                         return (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + identifier + "/" + identifier + ".json";
-                    },
+                    }
+                    ,
 
                     /**
                      * @private
@@ -3121,7 +3154,8 @@
 
                         return hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + nodeType);
 
-                    },
+                    }
+                    ,
 
                     /**
                      * @private
@@ -3129,7 +3163,8 @@
                      */
                     getLocalIndexHash: function () {
                         return Sha1.hash(JSON.stringify({nodes: nodes, q: this.getFilter().getQuery()}));
-                    },
+                    }
+                    ,
                     /**
                      * @private
                      * @param array
@@ -3150,7 +3185,8 @@
                             this.setRef('id');
                         });
 
-                    },
+                    }
+                    ,
 
                     /**
                      * @private
@@ -3330,7 +3366,8 @@
 
                     }
 
-                };
+                }
+                ;
 
 
                 Object.defineProperty(this, '$$conf', {
@@ -3408,11 +3445,6 @@
 
                     if (self.$$app.isRunning() === false) {
                         self.$$app.setIsRunning();
-
-                        // try to load last state
-                        this.load(window.location.hash.substr(2));
-
-
                     }
 
                     this.$$app.getResults().$$data.isrunningfirsttimestamp = Date.now();
@@ -4051,6 +4083,14 @@
 
 
                 storage['scope'] = scopeCopy;
+
+                if (jQuery != undefined) {
+                    storage['scrollTop'] = jQuery(window).scrollTop();
+                }
+
+                if ($ != undefined) {
+                    storage['scrollTop'] = $(window).scrollTop();
+                }
 
                 $window.localStorage[filename] = angular.toJson(storage);
 
