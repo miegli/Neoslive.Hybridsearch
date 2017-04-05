@@ -980,6 +980,12 @@
                     /**
                      * @private
                      */
+                    clearIsLoadedAllCounter: function () {
+                        isloadedallCount = 0;
+                    },
+                    /**
+                     * @private
+                     */
                     setIsNodesByIdentifier: function () {
                         isNodesByIdentifier = true;
                     },
@@ -1610,6 +1616,7 @@
                                 return self;
                             }
 
+                            console.log(self.isLoadedFromLocalStorage(),identifier);
                             var storage = null;
 
                             try {
@@ -3518,7 +3525,7 @@
                         self.$$app.getFilter().setScopeProperty(scope, nodeType, 'nodeType');
                         scope.$watch(nodeType, function (filterNodeInput) {
                             self.$$app.getFilter().setNodeType(filterNodeInput);
-                            self.$$app.clearIsLoadedAll();
+                            self.$$app.clearIsLoadedAllCounter();
                             self.$$app.setSearchIndex();
 
                         }, true);
