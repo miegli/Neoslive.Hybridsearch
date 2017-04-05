@@ -1665,16 +1665,27 @@
 
                             if (storage.scrollTop !== undefined) {
 
+                                var intervalcounter = 0;
+                                var interval = window.setInterval(function() {
 
-                                window.setTimeout(function () {
+                                    intervalcounter++;
+                                    if (intervalcounter > 100 || self.getResults().isLoading() == false) {
+                                        window.setTimeout(function () {
+                                            jQuery('html, body').stop().animate({
+                                                'scrollTop': storage.scrollTop
+                                            }, 900, 'swing', function () {
 
-                                    jQuery('html, body').stop().animate({
-                                        'scrollTop': storage.scrollTop
-                                    }, 10, 'swing', function () {
+                                            });
 
-                                    });
+                                        }, 10);
+                                        window.clearInterval(interval);
+                                    }
 
-                                }, 10);
+
+                                },10);
+
+
+
 
                             }
 
