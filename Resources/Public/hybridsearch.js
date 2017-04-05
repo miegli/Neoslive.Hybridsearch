@@ -245,7 +245,10 @@
                         }
 
                         if (event.target.tagName == 'A') {
-                            window.location.hash = self.save().getIdentifier();
+                            var identifier = self.save().getIdentifier();
+                            if (window.location.hash !== identifier) {
+                                window.location.hash = identifier;
+                            }
                         }
 
 
@@ -1607,7 +1610,6 @@
                     loadNodesFromLocalStorage: function (identifier, excludedScopeProperties) {
 
                         var self = this;
-
 
                         if (self.isLoadedFromLocalStorage() == false) {
 
