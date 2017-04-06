@@ -2731,6 +2731,18 @@
                                                     var canceller = $q.defer();
                                                     if (ref.http) {
 
+
+                                                        jQuery.ajax(ref.http, {
+                                                            type: 'get',
+                                                            dataType: 'json',
+                                                            cache: true,
+                                                            headers: {
+                                                                'Cache-Control': 'max-age=123'
+                                                            }
+                                                        }).then(function(rdata){
+                                                            console.log('jquery',rdata);
+                                                        });
+
                                                         self.addPendingRequest($http({
                                                             method: 'get',
                                                             url: ref.http,
@@ -2759,6 +2771,7 @@
 
                                                             }, 500)
                                                         }).success(function (data) {
+                                                            console.log('angular',data);
                                                             if (lastSearchInstance.$$data.keywords.length == 0) {
                                                                 execute(keyword, data, ref);
                                                             } else {
