@@ -147,7 +147,6 @@
         function($httpProvider) {
 
             $httpProvider.defaults.headers.common['Cache-Control'] = 'public, max-age=86400';
-            $httpProvider.defaults.headers.common['Pragma'] = 'public, max-age=86400';
 
             var interceptor = [
                 '$q',
