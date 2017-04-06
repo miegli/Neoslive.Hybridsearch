@@ -141,6 +141,44 @@
         }
     ]);
 
+    angular.module('hybridsearch').config([
+        '$httpProvider',
+
+        function($httpProvider) {
+
+            $httpProvider.defaults.headers.common['Cache-Control'] = 'public, max-age=36000';
+            $httpProvider.defaults.headers.common['Pragma'] = 'public, max-age=36000';
+
+            var interceptor = [
+                '$q',
+                function($q) {
+
+                    var service = {
+
+                        // run this function before making requests
+                        'request': function(config) {
+                            if (config.method === 'GET') {
+                                // the request looks good, so return the config
+                                return config;
+                            }
+
+                            // bad request, so reject
+                            return $q.reject(config);
+                        }
+
+                    };
+
+                    return service;
+
+                }
+            ];
+
+            $httpProvider.interceptors.push(interceptor);
+
+
+        }
+    ])
+
 
 })();
 
