@@ -412,12 +412,24 @@
 
                     var value = '';
 
+
                     if (node.properties === undefined) {
+
                         return null;
                     }
 
                     if (node.properties[property] !== undefined) {
+
                         return node.properties[property];
+                    }
+
+
+                    if (property == 'identifier') {
+                        return node.identifier;
+                    }
+
+                    if (property == 'lastmodified') {
+                        return node.lastmodified;
                     }
 
 
@@ -1763,6 +1775,7 @@
                         var hasDistinct = self.getResults().hasDistincts();
 
 
+
                         if (self.getFilter().getQuery().length == 0) {
                             self.getResults().getApp().clearQuickNodes();
                         }
@@ -2274,6 +2287,7 @@
                             angular.forEach(this.getFilter().getPropertyFilters(), function (filter, property) {
 
 
+
                                 if (excludedProperty !== undefined) {
 
 
@@ -2290,7 +2304,6 @@
                                     } else {
 
                                         var filterApplied = false, filterobject = {};
-
 
                                         var propertyValue = self.getPropertyFromNode(node, property);
 
@@ -3638,6 +3651,8 @@
                     if (scope === false || scope === null) {
                         scope = undefined;
                     }
+
+
 
 
                     if (scope != undefined) {
@@ -5456,6 +5471,7 @@
                 addPropertyFilter: function (property, value, booleanmode, reverse, nodeType, fulltextmode) {
 
 
+
                     if (booleanmode === undefined) {
                         booleanmode = true;
                     }
@@ -5464,10 +5480,13 @@
                         this.$$data.propertyFilter = {};
                     }
 
+
+
                     if (value !== undefined && value !== null && typeof value === 'object' && (value.length === 0 || Object.keys(value).length === 0)) {
                         if (this.$$data.propertyFilter[property] !== undefined) {
-                            delete this.$$data.propertyFilter[property];
+                              delete this.$$data.propertyFilter[property];
                         }
+
                         return this;
                     }
 
