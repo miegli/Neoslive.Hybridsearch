@@ -146,6 +146,8 @@
 
         function($httpProvider) {
 
+            $httpProvider.defaults.headers.common['Cache-Control'] = 'public, max-age=36000';
+            $httpProvider.defaults.headers.common['Pragma'] = 'public, max-age=36000';
 
             var interceptor = [
                 '$q',
@@ -154,9 +156,14 @@
                     var service = {
 
                         // run this function before making requests
-                        'response': function(config) {
-                                                      config.headers['cache-control'] = 'public, max-age=86400';
-                            return config;
+                        'request': function(config) {
+                            if (config.method === 'GET') {
+                                // the request looks good, so return the config
+                                return config;
+                            }
+
+                            // bad request, so reject
+                            return $q.reject(config);
                         }
 
                     };
@@ -2731,18 +2738,6 @@
                                                     var canceller = $q.defer();
                                                     if (ref.http) {
 
-
-                                                        jQuery.ajax(ref.http, {
-                                                            type: 'get',
-                                                            dataType: 'json',
-                                                            cache: true,
-                                                            headers: {
-                                                                'Cache-Control': 'max-age=123'
-                                                            }
-                                                        }).then(function(rdata){
-                                                            console.log('jquery',rdata);
-                                                        });
-
                                                         self.addPendingRequest($http({
                                                             method: 'get',
                                                             url: ref.http,
@@ -2771,7 +2766,6 @@
 
                                                             }, 500)
                                                         }).success(function (data) {
-                                                            console.log('angular',data);
                                                             if (lastSearchInstance.$$data.keywords.length == 0) {
                                                                 execute(keyword, data, ref);
                                                             } else {
