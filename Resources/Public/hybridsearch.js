@@ -262,50 +262,6 @@
 
 
                 /**
-                 * init hybridsearch log store
-                 */
-                document.addEventListener("click", function (event) {
-
-                    var node = angular.element(event.target);
-                    if (node !== undefined && node.scope() !== undefined && node.scope().node) {
-
-                        if (logStoreApplied[node.scope().node.getIdentifier()] == undefined) {
-                            var q = filter.getQueryLogStoreHash();
-                            if (q.length > 2 && logStoreApplied[q] == undefined) {
-                                var ref = hybridsearch.$firebase().database().ref("logstore/" + hybridsearch.$$conf.site + "/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/" + q);
-                                ref.set(node.scope().node.getIdentifier());
-                                logStoreApplied[node.scope().node.getIdentifier()] = true;
-                                logStoreApplied[q] = true;
-                            }
-                        }
-
-                        if (event.target.tagName == 'A') {
-                            var identifier = self.save().getIdentifier();
-                            if (window.location.hash !== identifier) {
-                                window.location.hash = identifier;
-                            }
-                        }
-
-
-                    }
-                });
-
-
-                /**
-                 * init ga data
-                 */
-                if (filter.getGa() === undefined) {
-
-                    // hybridsearch.$firebase().database().ref().child("ga").orderByChild("url").equalTo(location.href).limitToFirst(1).once('value', function (data) {
-                    //     angular.forEach(data.val(), function (val) {
-                    //         filter.setGa(val);
-                    //     });
-                    // });
-
-                }
-
-
-                /**
                  * @private
                  * global function get property from object
                  */
@@ -935,15 +891,20 @@
                      * @private
                      * @return void
                      */
-                    setHybridsearchInstanceNumber: function () {
-                        hybridsearchInstanceNumber = window.hybridsearchInstances;
+                    setHybridsearchInstanceNumber: function (id) {
+                        if (id == undefined) {
+                            hybridsearchInstanceNumber = window.hybridsearchInstances;
+                        } else {
+                            hybridsearchInstanceNumber = id;
+                        }
+                        return this.getHybridsearchInstanceNumber();
                     },
                     /**
                      * @private
                      * @return integer instance number
                      */
                     getHybridsearchInstanceNumber: function () {
-                        return hybridsearchInstanceNumber === undefined ? 0 : hybridsearchInstanceNumber;
+                        return hybridsearchInstanceNumber;
                     },
                     /**
                      * @private
@@ -1658,6 +1619,10 @@
 
                         var self = this;
 
+                        if (identifier == undefined) {
+                            return self;
+                        }
+
                         if (self.isLoadedFromLocalStorage() == false) {
 
                             if ($window.localStorage[identifier] == undefined) {
@@ -1688,7 +1653,7 @@
                                         } else {
 
                                             if (scope['__hybridsearchBindedResultTo'] !== key && (excludedScopeProperties == undefined || (excludedScopeProperties !== undefined && excludedScopeProperties.indexOf(key) == -1))) {
-                                                if (key.substr(0, 1) !== '_' && typeof scope[key] !== 'boolean') {
+                                                if (key.substr(0, 1) !== '_') {
                                                     scope[key] = value;
                                                     window.setTimeout(function () {
                                                         scope.$digest();
@@ -2271,6 +2236,8 @@
                         if (this.getFilter().getNodePath().length > 0 && node.uri !== undefined && node.uri.path.substr(0, this.getFilter().getNodePath().length) != this.getFilter().getNodePath()) {
                             return true;
                         }
+
+
 
 
                         var propertyFiltered = Object.keys(this.getFilter().getPropertyFilters()).length > 0 ? true : false;
@@ -3524,7 +3491,62 @@
                     this.$$app.getResults().$$app.setScope(scope);
                     scope[scopevar] = this.$$app.getResults();
                     scope['__hybridsearchBindedResultTo'] = scopevar;
+                    this.startLogStore();
                     return this;
+                },
+
+                /**
+                 * @private
+                 * run logstore
+                 * @returns  {HybridsearchObject}
+                 */
+                startLogStore: function () {
+
+                    var id = this.getScope().$id;
+                    var logStoreApplied = {};
+                    var self = this;
+
+
+                    jQuery('.ng-scope').each(function() {
+
+                        if (angular.element(this).scope().$id == id) {
+
+                            jQuery(this).on("click",function(event) {
+
+                                    var node = angular.element(event.target);
+                                    if (node !== undefined && node.scope() !== undefined && node.scope().node) {
+
+                                        if (logStoreApplied[node.scope().node.getIdentifier()] == undefined) {
+                                            var q = self.$$app.getFilter().getQueryLogStoreHash();
+                                            if (q.length > 2 && logStoreApplied[q] == undefined) {
+                                                var ref = self.$$app.getHybridsearch().$firebase().database().ref("logstore/" + self.$$app.getHybridsearch().$$conf.site + "/" + self.$$app.getHybridsearch().$$conf.workspace + "/" + self.$$app.getHybridsearch().$$conf.dimension + "/" + q);
+                                                ref.set(node.scope().node.getIdentifier());
+                                                logStoreApplied[node.scope().node.getIdentifier()] = true;
+                                                logStoreApplied[q] = true;
+                                            }
+
+                                        }
+
+                                        if (event.target.tagName == 'A') {
+
+                                            var identifier = self.save().getIdentifier();
+                                            if (identifier !== undefined && window.location.hash !== identifier) {
+                                                window.location.hash = identifier;
+                                            }
+                                        }
+
+
+                                    }
+
+                            });
+
+
+                        }
+
+                    });
+
+                    return this;
+
                 },
 
                 /**
@@ -3549,7 +3571,7 @@
                             counter++;
                             if (counter > 20000 || self.$$app.getHybridsearch().getBranch()) {
                                 clearInterval(branchInitInterval);
-                                self.$$app.setHybridsearchInstanceNumber();
+                                self.getScope()['__hybridsearchInstanceNumber'] = self.$$app.setHybridsearchInstanceNumber(angular.element(self.getScope()).$id);
                                 self.$$app.setFirstFilterHash(self.$$app.getFilter().getHash());
                                 self.$$app.setSearchIndex();
                             }
@@ -3607,6 +3629,7 @@
                  * @returns HybridsearchSnapshot of HybridsearchObject
                  */
                 save: function (identifier) {
+
                     var snapshot = new HybridsearchSnapshotObject(this, identifier, false);
                     return snapshot;
 
@@ -3970,11 +3993,8 @@
                  * @returns {$hybridsearchResultsObject|*}
                  */
                 load: function (identifier, excludedScopeProperties) {
-
-                    this.$$app.setHybridsearchInstanceNumber();
                     this.$$app.loadNodesFromLocalStorage(identifier == undefined || !identifier ? Sha1.hash($location.$$absUrl + this.$$app.getHybridsearchInstanceNumber()) : identifier, excludedScopeProperties);
                     return this;
-
                 },
 
                 /**
@@ -4132,7 +4152,7 @@
              * @param boolean savenodes or not
              * @constructor HybridsearchSnapshotObject
              */
-            var HybridsearchSnapshotObject = function (HybridsearchObject, identifier, savenodes) {
+            var HybridsearchSnapshotObject = function (HybridsearchObject, identifier) {
 
                 this.$$data = {
                     identifier: identifier
@@ -4142,29 +4162,22 @@
                     value: this.$$data
                 });
 
-                var filename = identifier == undefined ? Sha1.hash(window.location.pathname + HybridsearchObject.$$app.getHybridsearchInstanceNumber()) : identifier;
-                this.$$data.identifier = filename;
-                var resultNodes = {};
-                var storage = {};
-
-                if (savenodes == true) {
-                    var nodes = HybridsearchObject.$$app.getResults().$$data.nodes;
-                    var results = HybridsearchObject.$$app.getResults().$$data.results['_nodes'];
-                    angular.forEach(results, function (result) {
-                        resultNodes[result.getIdentifier()] = nodes[result.getIdentifier()];
-                    });
-                    storage['nodes'] = resultNodes;
+                if (identifier == undefined && HybridsearchObject.$$app.getHybridsearchInstanceNumber() == undefined) {
+                    return this;
                 }
 
-
+                var filename = identifier == undefined ? Sha1.hash(window.location.pathname + HybridsearchObject.$$app.getHybridsearchInstanceNumber()) : identifier;
+                this.$$data.identifier = filename;
+                var storage = {};
                 var scope = HybridsearchObject.getScope();
 
                 var scopeCopy = {};
                 angular.forEach(scope, function (value, key) {
 
-                    if (key.substr(0, 1) !== '$' && typeof value !== 'function') {
+                    if (key.substr(0, 1) !== '$' && key.substr(0, 1) !== '_' && typeof value !== 'function') {
 
                         var serialized = null;
+
                         try {
                             serialized = angular.toJson(value)
                         } catch (e) {
