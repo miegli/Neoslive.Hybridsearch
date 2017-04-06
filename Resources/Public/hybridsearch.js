@@ -146,8 +146,8 @@
 
         function($httpProvider) {
 
-            $httpProvider.defaults.headers.common['Cache-Control'] = 'public, max-age=36000';
-            $httpProvider.defaults.headers.common['Pragma'] = 'public, max-age=36000';
+            $httpProvider.defaults.headers.common['Cache-Control'] = 'public, max-age=86400';
+            $httpProvider.defaults.headers.common['Pragma'] = 'public, max-age=86400';
 
             var interceptor = [
                 '$q',
@@ -157,13 +157,11 @@
 
                         // run this function before making requests
                         'request': function(config) {
-                            if (config.method === 'GET') {
+
                                 // the request looks good, so return the config
                                 return config;
-                            }
 
-                            // bad request, so reject
-                            return $q.reject(config);
+
                         }
 
                     };
@@ -1781,7 +1779,7 @@
                             if (self.getResults().countAll() === 0) {
                                 self.getResults().getApp().setNotFound(true);
                             }
-                        }, this.isLoadedAll() ? 1 : 500);
+                        }, this.isLoadedAll() ? 1 : 10);
 
 
                         if (lunrSearch.getFields().length == 0 && self.getFilter().getFullSearchQuery() !== false) {
@@ -2536,7 +2534,7 @@
 
 
                                 }
-                            }, 50);
+                            }, 5);
 
 
                         } else {
@@ -2787,7 +2785,7 @@
 
 
                                         });
-                                    }, 25));
+                                    }, 5));
 
 
                                     var musthavelength = uniquarrayfinal.length;
@@ -2860,7 +2858,7 @@
                                             }
                                             indexintervalcounter++;
 
-                                        }, 20));
+                                        }, 10));
 
 
                                         //
