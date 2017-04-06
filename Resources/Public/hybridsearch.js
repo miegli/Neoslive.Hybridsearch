@@ -146,8 +146,6 @@
 
         function($httpProvider) {
 
-            $httpProvider.defaults.headers.common['Cache-Control'] = 'public, max-age=36000';
-            $httpProvider.defaults.headers.common['Pragma'] = 'public, max-age=36000';
 
             var interceptor = [
                 '$q',
@@ -156,14 +154,9 @@
                     var service = {
 
                         // run this function before making requests
-                        'request': function(config) {
-                            if (config.method === 'GET') {
-                                // the request looks good, so return the config
-                                return config;
-                            }
-
-                            // bad request, so reject
-                            return $q.reject(config);
+                        'response': function(config) {
+                                                      config.headers['cache-control'] = 'public, max-age=86400';
+                            return config;
                         }
 
                     };
