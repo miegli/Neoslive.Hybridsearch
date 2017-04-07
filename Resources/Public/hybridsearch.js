@@ -144,8 +144,7 @@
     angular.module('hybridsearch').config([
         '$httpProvider',
 
-        function($httpProvider) {
-
+        function ($httpProvider) {
 
 
         }
@@ -953,7 +952,13 @@
                      * @private
                      */
                     setIsLoadedAll: function () {
-                        isloadedall = true;
+
+                        if (typeof this.getFilter().getNodeType() == 'string' || isloadedallCount == this.getFilter().getNodeType().length-1) {
+                            // try to load last state
+                            this.getSearchObject().load(window.location.hash.substr(2));
+                            isloadedall = true;
+                        }
+
                         isloadedallCount++;
                     },
                     /**
@@ -1653,7 +1658,7 @@
                             if (storage.scrollTop !== undefined) {
 
                                 var intervalcounter = 0;
-                                var interval = window.setInterval(function() {
+                                var interval = window.setInterval(function () {
 
                                     intervalcounter++;
                                     if (intervalcounter > 100 || self.getResults().isLoading() == false) {
@@ -1669,9 +1674,7 @@
                                     }
 
 
-                                },10);
-
-
+                                }, 10);
 
 
                             }
@@ -1713,7 +1716,6 @@
                         var fields = {}, items = {}, self = this, nodesFound = {}, nodeTypeMaxScore = {},
                             nodeTypeMinScore = {}, nodeTypeScoreCount = {}, nodeTypeCount = {};
                         var hasDistinct = self.getResults().hasDistincts();
-
 
 
                         if (self.getFilter().getQuery().length == 0) {
@@ -2213,8 +2215,6 @@
                         }
 
 
-
-
                         var propertyFiltered = Object.keys(this.getFilter().getPropertyFilters()).length > 0 ? true : false;
                         var propertyFilteredLength = Object.keys(this.getFilter().getPropertyFilters()).length;
                         var excludedProperty1 = null;
@@ -2227,7 +2227,6 @@
 
 
                             angular.forEach(this.getFilter().getPropertyFilters(), function (filter, property) {
-
 
 
                                 if (excludedProperty !== undefined) {
@@ -2477,7 +2476,6 @@
                             var counter = 0;
                             searchInstancesInterval = setInterval(function () {
                                 counter++;
-
                                 if (lastSearchInstance.$$data.canceled === true || counter > 55000 || lastSearchInstance.$$data.proceeded.length >= lastSearchInstance.$$data.running) {
                                     clearInterval(searchInstancesInterval);
                                     if (self.isLoadedAll() === false) {
@@ -2640,11 +2638,6 @@
 
                                                     self.updateLocalIndex(indexdata, lastSearchInstance, true);
                                                     self.search(nodes);
-
-                                                    // try to load last state
-                                                    self.getSearchObject().load(window.location.hash.substr(2));
-
-                                                    // set is loaded all
 
                                                     self.setIsLoadedAll();
 
@@ -3482,36 +3475,36 @@
                     var self = this;
 
 
-                    jQuery('.ng-scope').each(function() {
+                    jQuery('.ng-scope').each(function () {
 
                         if (angular.element(this).scope().$id == id) {
 
-                            jQuery(this).on("click",function(event) {
+                            jQuery(this).on("click", function (event) {
 
-                                    var node = angular.element(event.target);
-                                    if (node !== undefined && node.scope() !== undefined && node.scope().node) {
+                                var node = angular.element(event.target);
+                                if (node !== undefined && node.scope() !== undefined && node.scope().node) {
 
-                                        if (logStoreApplied[node.scope().node.getIdentifier()] == undefined) {
-                                            var q = self.$$app.getFilter().getQueryLogStoreHash();
-                                            if (q.length > 2 && logStoreApplied[q] == undefined) {
-                                                var ref = self.$$app.getHybridsearch().$firebase().database().ref("logstore/" + self.$$app.getHybridsearch().$$conf.site + "/" + self.$$app.getHybridsearch().$$conf.workspace + "/" + self.$$app.getHybridsearch().$$conf.dimension + "/" + q);
-                                                ref.set(node.scope().node.getIdentifier());
-                                                logStoreApplied[node.scope().node.getIdentifier()] = true;
-                                                logStoreApplied[q] = true;
-                                            }
-
+                                    if (logStoreApplied[node.scope().node.getIdentifier()] == undefined) {
+                                        var q = self.$$app.getFilter().getQueryLogStoreHash();
+                                        if (q.length > 2 && logStoreApplied[q] == undefined) {
+                                            var ref = self.$$app.getHybridsearch().$firebase().database().ref("logstore/" + self.$$app.getHybridsearch().$$conf.site + "/" + self.$$app.getHybridsearch().$$conf.workspace + "/" + self.$$app.getHybridsearch().$$conf.dimension + "/" + q);
+                                            ref.set(node.scope().node.getIdentifier());
+                                            logStoreApplied[node.scope().node.getIdentifier()] = true;
+                                            logStoreApplied[q] = true;
                                         }
-
-                                        if (event.target.tagName == 'A') {
-
-                                            var identifier = self.save().getIdentifier();
-                                            if (identifier !== undefined && window.location.hash !== identifier) {
-                                                window.location.hash = identifier;
-                                            }
-                                        }
-
 
                                     }
+
+                                    if (event.target.tagName == 'A') {
+
+                                        var identifier = self.save().getIdentifier();
+                                        if (identifier !== undefined && window.location.hash !== identifier) {
+                                            window.location.hash = identifier;
+                                        }
+                                    }
+
+
+                                }
 
                             });
 
@@ -3649,8 +3642,6 @@
                     if (scope === false || scope === null) {
                         scope = undefined;
                     }
-
-
 
 
                     if (scope != undefined) {
@@ -4402,6 +4393,7 @@
                     notfound: false,
                     searchCounter: 0,
                     quickinfo: false,
+                    isStartedFirstTime: false,
                     quicknodes: [],
                     isrunningfirsttimestamp: 0,
                     distinctsConfiguration: {},
@@ -4434,6 +4426,14 @@
                         this.executeCallbackMethod(self);
                     },
 
+                    /**
+                     * @private
+                     */
+                    setIsStartedFirstTime: function () {
+
+                        self.$$data.isStartedFirstTime = true;
+                    },
+
 
                     /**
                      * @private
@@ -4443,7 +4443,15 @@
                     setResults: function (results, nodes) {
 
 
-                        this.clearResults();
+                        if (self.$$data.isStartedFirstTime == false) {
+                            this.setIsStartedFirstTime();
+                        }
+
+                        if (self.isStarted()) {
+                            this.clearResults();
+
+                        }
+
 
                         self.$$data.nodes = nodes;
 
@@ -4470,9 +4478,10 @@
 
                         self.$$data.searchCounter++;
 
-                        self.getApp().setNotFound(false);
-
-                        this.executeCallbackMethod(self);
+                        if (self.isStarted()) {
+                            self.getApp().setNotFound(false);
+                            this.executeCallbackMethod(self);
+                        }
 
 
                         return self;
@@ -4711,13 +4720,11 @@
                  */
                 isLoading: function () {
 
+
                     if (this.$$data.isrunningfirsttimestamp === 0) {
                         return false;
                     } else {
-
-
                         if (this.$$data.isrunningfirsttimestamp > 0) {
-
                             if (Date.now() - this.$$data.isrunningfirsttimestamp < 100) {
                                 //return false;
                             } else {
@@ -5459,7 +5466,6 @@
                 addPropertyFilter: function (property, value, booleanmode, reverse, nodeType, fulltextmode) {
 
 
-
                     if (booleanmode === undefined) {
                         booleanmode = true;
                     }
@@ -5469,10 +5475,9 @@
                     }
 
 
-
                     if (value !== undefined && value !== null && typeof value === 'object' && (value.length === 0 || Object.keys(value).length === 0)) {
                         if (this.$$data.propertyFilter[property] !== undefined) {
-                              delete this.$$data.propertyFilter[property];
+                            delete this.$$data.propertyFilter[property];
                         }
 
                         return this;
