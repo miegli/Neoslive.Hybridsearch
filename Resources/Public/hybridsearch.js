@@ -146,31 +146,6 @@
 
         function($httpProvider) {
 
-            $httpProvider.defaults.headers.common['Cache-Control'] = 'public, max-age=86400';
-
-            var interceptor = [
-                '$q',
-                function($q) {
-
-                    var service = {
-
-                        // run this function before making requests
-                        'request': function(config) {
-
-                                // the request looks good, so return the config
-                                return config;
-
-
-                        }
-
-                    };
-
-                    return service;
-
-                }
-            ];
-
-            $httpProvider.interceptors.push(interceptor);
 
 
         }
