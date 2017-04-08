@@ -141,14 +141,19 @@
         }
     ]);
 
-    angular.module('hybridsearch').config([
-        '$httpProvider',
+    angular.module('hybridsearch').config(['$httpProvider', function($httpProvider) {
 
-        function ($httpProvider) {
-
-
+        //initialize get if not there
+        if (!$httpProvider.defaults.headers.get) {
+            $httpProvider.defaults.headers.get = {};
         }
-    ])
+
+        // Answer edited to include suggestions from comments
+        // because previous version of code introduced browser-related errors
+        // extra
+        $httpProvider.defaults.headers.get['Cache-Control'] = 'max-age=86000';
+        $httpProvider.defaults.headers.get['Pragma'] = 'max-age=86000';
+    }]);
 
 
 })();
