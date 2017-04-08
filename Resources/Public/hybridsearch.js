@@ -141,19 +141,30 @@
         }
     ]);
 
-    angular.module('hybridsearch').config(['$httpProvider', function($httpProvider) {
+    angular.module('hybridsearch').factory('httpRequestInterceptor', function () {
+        return {
+            request: function (config) {
 
-        //initialize get if not there
-        if (!$httpProvider.defaults.headers.get) {
-            $httpProvider.defaults.headers.get = {};
-        }
+                config.headers['Cache-Control'] = 'public, max-age=3600, s-maxage=360';
+                config.headers['Etag'] = '1';
 
-        // Answer edited to include suggestions from comments
-        // because previous version of code introduced browser-related errors
-        // extra
-        $httpProvider.defaults.headers.get['Cache-Control'] = 'max-age=86000';
-        $httpProvider.defaults.headers.get['Pragma'] = 'max-age=86000';
-    }]);
+                return config;
+            },
+            response: function (config) {
+
+                config.headers['Cache-Control'] = 'public, max-age=3600, s-maxage=360';
+                config.headers['Etag'] = '1';
+
+
+                return config;
+            }
+        };
+    });
+
+
+    angular.module('hybridsearch').config(function ($httpProvider) {
+        $httpProvider.interceptors.push('httpRequestInterceptor');
+    });
 
 
 })();
