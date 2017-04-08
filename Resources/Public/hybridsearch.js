@@ -144,18 +144,7 @@
     angular.module('hybridsearch').factory('httpRequestInterceptor', function () {
         return {
             request: function (config) {
-
                 config.headers['Cache-Control'] = 'public, max-age=3600, s-maxage=360';
-                config.headers['Etag'] = '1';
-
-                return config;
-            },
-            response: function (config) {
-
-                config.headers['Cache-Control'] = 'public, max-age=3600, s-maxage=360';
-                config.headers['Etag'] = '1';
-
-
                 return config;
             }
         };
