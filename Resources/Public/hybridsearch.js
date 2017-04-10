@@ -144,8 +144,11 @@
     angular.module('hybridsearch').factory('httpRequestInterceptor', function () {
         return {
             request: function (config) {
-                config.headers['Cache-Control'] = 'public, max-age=3600, s-maxage=3060';
-                config.headers['Access-Control-Allow-Headers'] = '*';
+
+                if (config.method == 'GET') {
+                    config.headers['Cache-Control'] = 'public, max-age=3600, s-maxage=3060';
+                }
+
                 return config;
             }
         };
