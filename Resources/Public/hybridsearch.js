@@ -2629,11 +2629,13 @@
                                                     });
 
 
+
                                                     // lazy load search index
                                                     self.search(nodes);
                                                     window.setTimeout(function() {
                                                         self.updateLocalIndex(indexdata, lastSearchInstance, true);
                                                         self.setIsLoadedAll();
+                                                        self.search(nodes);
                                                     },1000);
 
 
