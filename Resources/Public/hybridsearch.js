@@ -2645,10 +2645,27 @@
                                                         indexdata['__'].push(node);
                                                     });
 
-                                                    self.updateLocalIndex(indexdata, lastSearchInstance, true);
-                                                    self.search(nodes);
+                                                 
 
-                                                    self.setIsLoadedAll();
+                                                    if (self.getFilter().getQuery().length) {
+                                                        self.updateLocalIndex(indexdata, lastSearchInstance, true);
+                                                        self.setIsLoadedAll();
+                                                    } else {
+                                                        self.search(nodes);
+                                                        // lazy load search index
+                                                        window.setTimeout(function() {
+                                                            self.updateLocalIndex(indexdata, lastSearchInstance, true);
+                                                            self.setIsLoadedAll();
+                                                            self.search(nodes);
+                                                        },1000);
+                                                    }
+
+
+
+
+
+
+
 
                                                 } else {
 
