@@ -2629,18 +2629,13 @@
                                                     });
 
 
-                                                    if (self.getFilter().getQuery().length) {
+                                                    // lazy load search index
+                                                    self.search(nodes);
+                                                    window.setTimeout(function() {
                                                         self.updateLocalIndex(indexdata, lastSearchInstance, true);
                                                         self.setIsLoadedAll();
-                                                    } else {
-                                                        self.search(nodes);
-                                                        // lazy load search index
-                                                        window.setTimeout(function() {
-                                                            self.updateLocalIndex(indexdata, lastSearchInstance, true);
-                                                            self.setIsLoadedAll();
-                                                            self.search(nodes);
-                                                        },1000);
-                                                    }
+                                                    },1000);
+
 
                                                 } else {
 
