@@ -142,8 +142,6 @@
     ]);
 
 
-
-
 })();
 
 
@@ -1727,11 +1725,11 @@
                         }
 
 
-                        searchCounterTimeout = setTimeout(function () {
-                            if (self.getResults().countAll() === 0) {
-                                self.getResults().getApp().setNotFound(true);
-                            }
-                        }, this.isLoadedAll() ? 1 : 10);
+                        // searchCounterTimeout = setTimeout(function () {
+                        //     if (self.getResults().countAll() === 0) {
+                        //         self.getResults().getApp().setNotFound(true);
+                        //     }
+                        // }, this.isLoadedAll() ? 1 : 10);
 
 
                         if (lunrSearch.getFields().length == 0 && self.getFilter().getFullSearchQuery() !== false) {
@@ -2587,75 +2585,80 @@
 
                                     var execute = function (keyword, data, ref) {
 
-                                            if (ref.parser) {
+                                        if (ref.parser) {
 
-                                                var parsed = false;
+                                            var parsed = false;
 
-                                                if (ref.parser !== undefined && ref.parser.type == 'html') {
-                                                    data = self.parseHtml(data, ref.parser.config);
-                                                    parsed = true;
-                                                }
+                                            if (ref.parser !== undefined && ref.parser.type == 'html') {
+                                                data = self.parseHtml(data, ref.parser.config);
+                                                parsed = true;
+                                            }
 
-                                                if (ref.parser !== undefined && ref.parser.type == 'xml') {
-                                                    data = self.parseXml(data, ref.parser.config);
-                                                    parsed = true;
-                                                }
+                                            if (ref.parser !== undefined && ref.parser.type == 'xml') {
+                                                data = self.parseXml(data, ref.parser.config);
+                                                parsed = true;
+                                            }
 
-                                                if (ref.parser !== undefined && ref.parser.type == 'json') {
-                                                    data = self.parseJson(data, ref.parser.config);
-                                                    parsed = true;
-                                                }
-
-
-                                                if (parsed === false) {
-                                                    data = null;
-                                                }
-
+                                            if (ref.parser !== undefined && ref.parser.type == 'json') {
+                                                data = self.parseJson(data, ref.parser.config);
+                                                parsed = true;
                                             }
 
 
-                                            if (data !== null) {
+                                            if (parsed === false) {
+                                                data = null;
+                                            }
+
+                                        }
 
 
-                                                if (keyword === null || keyword === '') {
-
-                                                    if (indexdata['__'] === undefined) {
-                                                        indexdata['__'] = [];
-                                                    }
-                                                    angular.forEach(data, function (node, id) {
-                                                        nodes[id] = node.node;
-                                                        indexdata['__'].push(node);
-                                                    });
+                                        if (data !== null) {
 
 
-                                                    // lazy load search index
+                                            if (keyword === null || keyword === '') {
+
+                                                if (indexdata['__'] === undefined) {
+                                                    indexdata['__'] = [];
+                                                }
+                                                angular.forEach(data, function (node, id) {
+                                                    nodes[id] = node.node;
+                                                    indexdata['__'].push(node);
+                                                });
+
+
+                                                // lazy load search index
+                                                self.search(nodes);
+                                                window.setTimeout(function () {
+                                                    self.updateLocalIndex(indexdata, lastSearchInstance, true);
+                                                    self.setIsLoadedAll();
                                                     self.search(nodes);
-                                                    window.setTimeout(function() {
-                                                        self.updateLocalIndex(indexdata, lastSearchInstance, true);
-                                                        self.setIsLoadedAll();
-                                                        self.search(nodes);
-                                                    },1000);
+                                                }, 1000);
 
 
-                                                } else {
+                                            } else {
 
+                                                if (ref.http) {
                                                     keyword = Sha1.hash(ref.http) + "://" + keyword;
-
-
-                                                    if (indexdata[keyword] === undefined) {
-                                                        indexdata[keyword] = [];
+                                                } else {
+                                                    if (ref.socket) {
+                                                        Sha1.hash(ref.socket.path.toString()) + "://" + keyword;
                                                     }
-
-                                                    angular.forEach(data, function (node, id) {
-                                                        nodes[id] = node;
-                                                        indexdata[keyword].push(node);
-                                                    });
-
-                                                    self.updateLocalIndex(indexdata, lastSearchInstance);
-                                                    indexcounter++;
                                                 }
 
+                                                if (indexdata[keyword] === undefined) {
+                                                    indexdata[keyword] = [];
+                                                }
+
+                                                angular.forEach(data, function (node, id) {
+                                                    nodes[id] = node;
+                                                    indexdata[keyword].push(node);
+                                                });
+
+                                                self.updateLocalIndex(indexdata, lastSearchInstance);
+                                                indexcounter++;
                                             }
+
+                                        }
 
 
                                     };
@@ -2677,6 +2680,7 @@
                                                 angular.forEach(refs, function (ref) {
 
                                                     var canceller = $q.defer();
+
                                                     if (ref.http) {
 
                                                         self.addPendingRequest($http({
@@ -2692,21 +2696,21 @@
                                                                 if (ref.socket) {
                                                                     ref.socket.on("value", function (data) {
                                                                         nodesIndexed = {};
-
                                                                         //if (ref.updated !== undefined) {
                                                                         var nodes = [];
-                                                                        angular.forEach(data.val(),function(node) {
-                                                                           nodes[node.node.identifier] = node;
+                                                                        angular.forEach(data.val(), function (node) {
+                                                                            nodes[node.node.identifier] = node;
                                                                         });
                                                                         self.setIsLoadedAll(false);
                                                                         execute(keyword, data.val(), ref);
+                                                                        self.setIsLoadedAll();
                                                                         //}
                                                                         ref.updated = true;
                                                                     });
                                                                 }
 
 
-                                                            }, 500)
+                                                            }, 10)
                                                         }).success(function (data) {
                                                             if (lastSearchInstance.$$data.keywords.length == 0) {
                                                                 execute(keyword, data, ref);
@@ -2720,6 +2724,19 @@
                                                             }
                                                         }));
 
+                                                    } else {
+                                                        if (ref.socket) {
+                                                            ref.socket.on("value", function (data) {
+                                                                nodesIndexed = {};
+                                                                var nodes = [];
+                                                                angular.forEach(data.val(), function (node) {
+                                                                    nodes[node.node.identifier] = node;
+                                                                });
+                                                                self.setIsLoadedAll(false);
+                                                                execute(keyword, data.val(), ref);
+                                                                ref.updated = true;
+                                                            });
+                                                        }
                                                     }
 
 
