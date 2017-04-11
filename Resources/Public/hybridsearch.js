@@ -141,23 +141,7 @@
         }
     ]);
 
-    angular.module('hybridsearch').factory('httpRequestInterceptor', function () {
-        return {
-            request: function (config) {
 
-                if (config.method == 'GET') {
-                    config.headers['Cache-Control'] = 'public, max-age=3600, s-maxage=3060';
-                }
-
-                return config;
-            }
-        };
-    });
-
-
-    angular.module('hybridsearch').config(function ($httpProvider) {
-        $httpProvider.interceptors.push('httpRequestInterceptor');
-    });
 
 
 })();
@@ -931,8 +915,7 @@
 
                             hybridsearch.$$conf.branchisloading = true;
 
-
-                            $http.get((hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + "/branches/" + hybridsearch.$$conf.workspace + ".json").success(function (data) {
+                            $http.get(hybridsearch.$$conf.databaseURL + "/branches/" + hybridsearch.$$conf.workspace + ".json").success(function (data) {
                                 hybridsearch.setBranch(data);
                                 isRunning = true;
                             });
@@ -2645,7 +2628,6 @@
                                                         indexdata['__'].push(node);
                                                     });
 
-                                                 
 
                                                     if (self.getFilter().getQuery().length) {
                                                         self.updateLocalIndex(indexdata, lastSearchInstance, true);
@@ -2659,13 +2641,6 @@
                                                             self.search(nodes);
                                                         },1000);
                                                     }
-
-
-
-
-
-
-
 
                                                 } else {
 
@@ -2723,13 +2698,13 @@
                                                                     ref.socket.on("value", function (data) {
                                                                         nodesIndexed = {};
 
-                                                                        //if (ref.updated !== undefined) {
-                                                                        // var nodes = [];
-                                                                        // angular.forEach(data.val(),function(node) {
-                                                                        //    nodes[node.node.identifier] = node;
-                                                                        // });
+                                                                        if (ref.updated !== undefined) {
+                                                                        var nodes = [];
+                                                                        angular.forEach(data.val(),function(node) {
+                                                                           nodes[node.node.identifier] = node;
+                                                                        });
                                                                         execute(keyword, data.val(), ref);
-                                                                        //}
+                                                                        }
                                                                         ref.updated = true;
                                                                     });
                                                                 }
