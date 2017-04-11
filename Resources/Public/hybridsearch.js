@@ -2587,13 +2587,6 @@
 
                                     var execute = function (keyword, data, ref) {
 
-
-                                        var h = Sha1.hash(ref.http);
-
-                                        if (executedRef[h] == undefined) {
-
-                                            executedRef[h] = true;
-
                                             if (ref.parser) {
 
                                                 var parsed = false;
@@ -2663,7 +2656,7 @@
                                                 }
 
                                             }
-                                        }
+
 
                                     };
 
