@@ -943,15 +943,21 @@
                     /**
                      * @private
                      */
-                    setIsLoadedAll: function () {
+                    setIsLoadedAll: function (reset) {
 
-                        if (typeof this.getFilter().getNodeType() == 'string' || isloadedallCount == this.getFilter().getNodeType().length-1) {
-                            // try to load last state
-                            this.getSearchObject().load(window.location.hash.substr(2));
-                            isloadedall = true;
+                        if (reset === undefined) {
+                            if (typeof this.getFilter().getNodeType() == 'string' || isloadedallCount == this.getFilter().getNodeType().length - 1) {
+                                // try to load last state
+                                this.getSearchObject().load(window.location.hash.substr(2));
+                                isloadedall = true;
+                            }
+                            isloadedallCount++;
+                        } else {
+                            isloadedallCount--;
+                            isloadedall = false;
                         }
 
-                        isloadedallCount++;
+
                     },
                     /**
                      * @private
@@ -2629,7 +2635,6 @@
                                                     });
 
 
-
                                                     // lazy load search index
                                                     self.search(nodes);
                                                     window.setTimeout(function() {
@@ -2695,13 +2700,14 @@
                                                                     ref.socket.on("value", function (data) {
                                                                         nodesIndexed = {};
 
-                                                                        if (ref.updated !== undefined) {
+                                                                        //if (ref.updated !== undefined) {
                                                                         var nodes = [];
                                                                         angular.forEach(data.val(),function(node) {
                                                                            nodes[node.node.identifier] = node;
                                                                         });
+                                                                        self.setIsLoadedAll(false);
                                                                         execute(keyword, data.val(), ref);
-                                                                        }
+                                                                        //}
                                                                         ref.updated = true;
                                                                     });
                                                                 }
