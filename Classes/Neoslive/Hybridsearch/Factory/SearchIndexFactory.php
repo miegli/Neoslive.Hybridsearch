@@ -1268,7 +1268,7 @@ class SearchIndexFactory
      * @param string $parentNodeFilter
      * @return \stdClass
      */
-    private function convertNodeToSearchIndexResult($node, $grandParentNodeFilter = '', $parentNodeFilter = '')
+    private function convertNodeToSearchIndexResult($node, $grandParentNodeFilter = '', $parentNodeFilter = '', $depth = 0)
     {
 
 
@@ -1361,6 +1361,11 @@ class SearchIndexFactory
                         'y' => utf8_encode(strftime('%y', $val->getTimestamp()))
                     );
 
+                }
+
+                if ($val InstanceOf NodeInterface && $depth === 0) {
+                    $k = mb_strtolower(preg_replace("/[^A-z0-9]/", "-", $node->getNodeType()->getName() . ":" . $key));
+                    $properties->$k = $this->convertNodeToSearchIndexResult($val, '', '', 1);
                 }
 
 
