@@ -3585,6 +3585,8 @@
 
                     var self = this;
 
+
+
                     if (scope != undefined) {
                         self.$$app.getFilter().setScopeProperty(scope, nodeType, 'nodeType');
                         scope.$watch(nodeType, function (filterNodeInput) {
@@ -5334,10 +5336,26 @@
                  */
                 setNodeType: function (nodeType) {
 
+
+                    var normalizeNodeType = function(nodetype) {
+                        return nodetype.replace(/[:\.]/g,'-').toLowerCase();
+                    }
+
                     if (typeof nodeType == 'object' && nodeType.length == 1) {
-                        this.$$data.nodeType = nodeType[0];
+                        this.$$data.nodeType = normalizeNodeType(nodeType[0]);
                         return this;
                     }
+
+                    if (typeof nodeType == 'object') {
+                        angular.forEach(nodeType,function(val) {
+                           val = normalizeNodeType(val);
+                        });
+                    }
+
+                    if (typeof nodeType == 'string') {
+                        nodeType = normalizeNodeType(nodeType);
+                    }
+
                     this.$$data.nodeType = nodeType;
                     return this;
                 },
