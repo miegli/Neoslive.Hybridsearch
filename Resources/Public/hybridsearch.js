@@ -334,6 +334,10 @@
                     var value = '';
 
 
+                    if (property == '__index') {
+                        return node['__index'];
+                    }
+
                     if (node.properties === undefined) {
 
                         return null;
@@ -343,6 +347,7 @@
 
                         return node.properties[property];
                     }
+
 
 
                     if (property == 'identifier') {
@@ -672,9 +677,10 @@
                      */
                     getProperty: function (property) {
 
-
                         var value = '';
                         var propertyfullname = property;
+
+
 
                         if (this.properties == undefined) {
                             return value;
@@ -986,7 +992,10 @@
                     /**
                      * @private
                      */
-                    addNodeByIdentifier: function (node) {
+                    addNodeByIdentifier: function (node,index) {
+                        if (index !== undefined && index >= 0) {
+                            node.node['__index'] = index;
+                        }
                         nodesByIdentifier[node.node.identifier] = node.node;
                     },
                     /**
@@ -1536,7 +1545,10 @@
                                 var v = self.getOrderBy(node.nodeType);
                                 orderingstring = v(node);
                             } else {
+
+
                                 angular.forEach(self.getOrderBy(node.nodeType), function (property) {
+
 
                                     if (property.substr(0, 1) == '-') {
                                         reverse = true;
@@ -1546,6 +1558,7 @@
                                     }
 
                                     var s = self.getPropertyFromNode(node, property);
+
                                     if (typeof s === 'string') {
                                         orderingstring += s + " ";
                                         if (reverse) {
@@ -3697,16 +3710,23 @@
                     var timer = false;
 
 
+                    if (self.addedNodesByIdentifierIndex == undefined) {
+                        self.addedNodesByIdentifierIndex = {};
+                        self.addedNodesByIdentifierCounter = 0;
+                    }
+
                     var execute = function (nodesArray) {
                         angular.forEach(nodesArray, function (node) {
+
+                            self.addedNodesByIdentifierCounter++;
+                            self.addedNodesByIdentifierIndex[node] = self.addedNodesByIdentifierCounter + 1;
 
                             self.$$app.getIndexByNodeIdentifier(node).once("value", function (data) {
 
                                 if (data.val()) {
 
-                                    //if (self.$$app.isFiltered(data.val().node) === false) {
 
-                                    self.$$app.addNodeByIdentifier(data.val());
+                                    self.$$app.addNodeByIdentifier(data.val(),self.addedNodesByIdentifierIndex[data.val().node.identifier]);
                                     self.$$app.addLocalIndex([data.val()]);
 
                                     if (timer !== false) {
