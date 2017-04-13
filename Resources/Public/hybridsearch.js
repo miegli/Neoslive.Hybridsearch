@@ -3328,7 +3328,7 @@
 
                                             //angular.forEach(JSON.parse(JSON.stringify(value.node.properties)), function (propvalue, property) {
                                             angular.forEach(value.node.properties, function (propvalue, property) {
-                                                if (propvalue.getProperty == undefined) {
+                                                if (propvalue && propvalue.getProperty == undefined) {
                                                     if (propfoundcount < 3 && self.getBoost(property) > 0) {
 
                                                         valueJson = false;
