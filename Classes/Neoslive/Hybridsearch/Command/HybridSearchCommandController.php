@@ -16,6 +16,7 @@ use Neoslive\Hybridsearch\Factory\SearchIndexFactory;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Cli\CommandController;
 use Neos\Neos\Domain\Repository\SiteRepository;
+use Neos\Flow\Cli\ConsoleOutput;
 
 /**
  * Hybrid search command controller
@@ -56,6 +57,7 @@ class HybridSearchCommandController extends CommandController
      */
     public function createFullIndexCommand($workspace = 'live', $nodetype = null, $verbose = false)
     {
+        $this->output = new ConsoleOutput();
         $this->searchIndexFactory->createFullIndex($workspace, $nodetype, $verbose);
     }
 
@@ -72,6 +74,7 @@ class HybridSearchCommandController extends CommandController
      */
     public function syncCommand($workspace = 'live', $nodetype = null, $node = null, $timestamp = null, $nodesSerialized = null)
     {
+        $this->output = new ConsoleOutput();
         $this->searchIndexFactory->sync($workspace, $nodetype, $timestamp,$node, $nodesSerialized);
     }
 
@@ -84,6 +87,7 @@ class HybridSearchCommandController extends CommandController
      */
     public function proceedCommand()
     {
+        $this->output = new ConsoleOutput();
         $this->searchIndexFactory->proceedQueue();
     }
 

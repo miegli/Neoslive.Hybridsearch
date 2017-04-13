@@ -429,7 +429,7 @@ class SearchIndexFactory
     public function createFullIndex($workspacename = 'live', $nodetype = null, $verbose = false)
     {
 
-        $this->output = new ConsoleOutput();
+
 
         $sites = array();
         $this->getBranch($workspacename);
@@ -627,7 +627,7 @@ class SearchIndexFactory
     public function sync($workspaceName = 'live', $nodeTypeName = null, $timestamp = null, $nodeIdentifier = null, $nodesSerialized = null)
     {
 
-        $this->output = new ConsoleOutput();
+
 
         if ($this->isLockReltimeIndexer()) {
             return false;
