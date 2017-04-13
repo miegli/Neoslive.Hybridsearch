@@ -1823,7 +1823,7 @@ class SearchIndexFactory
                                 break;
                         }
 
-                        $this->output->progressAdvance(filesize($file));
+
 
 
                         if (strlen($out) < 255) {
@@ -1856,7 +1856,7 @@ class SearchIndexFactory
 
 
             $this->unlockReltimeIndexer();
-        } 
+        }
 
     }
 
