@@ -485,7 +485,15 @@
 
                     angular.forEach(nodeData, function (val, key) {
                         self[key] = val;
+
                     });
+
+                    angular.forEach(self.properties, function (val, key) {
+                        if (typeof val == 'object' && val.properties !== undefined && val.nodeType !== undefined && val.identifier !== undefined) {
+                            self.properties[key] = new HybridsearchResultsNode(val);
+                        }
+                    });
+
                     self.score = score;
                     self.groupedNodes = [];
                     self.grouped = false;
@@ -503,7 +511,6 @@
 
                     if (self.created !== undefined && nodeData.created !== undefined) {
                         self.properties.created = nodeData.created;
-
                     }
 
 
@@ -3320,68 +3327,68 @@
 
                                             //angular.forEach(JSON.parse(JSON.stringify(value.node.properties)), function (propvalue, property) {
                                             angular.forEach(value.node.properties, function (propvalue, property) {
+                                                if (propvalue.getProperty == undefined) {
+                                                    if (propfoundcount < 3 && self.getBoost(property) > 0) {
 
-                                                if (propfoundcount < 3 && self.getBoost(property) > 0) {
+                                                        valueJson = false;
 
-                                                    valueJson = false;
-
-                                                    if (typeof propvalue === 'object') {
-                                                        valueJson = propvalue;
-                                                    } else {
-                                                        if (typeof propvalue === 'string' && ((propvalue.substr(0, 1) == '{') || ((propvalue.substr(0, 2) === '["' && propvalue.substr(-2, 2) === '"]')) || (propvalue.substr(0, 2) === '[{' && propvalue.substr(-2, 2) === '}]'))) {
-                                                            try {
-                                                                var valueJson = JSON.parse(propvalue);
-                                                            } catch (e) {
-                                                                valueJson = false;
-                                                            }
-
-                                                        }
-                                                    }
-
-
-                                                    if (valueJson) {
-
-                                                        angular.forEach(valueJson.getRecursiveStrings(), function (o) {
-
-                                                            if (typeof propvalue !== 'string' || self.isLoadedAll() || self.getFilter().getQuery() == '' || o.val.length < 60) {
-                                                                doc[property + '.' + o.key] = o.val;
-                                                            } else {
-                                                                var i = propvalue.toLowerCase().indexOf(keyword);
-                                                                if (i > -1) {
-                                                                    propfoundcount++;
+                                                        if (typeof propvalue === 'object') {
+                                                            valueJson = propvalue;
+                                                        } else {
+                                                            if (typeof propvalue === 'string' && ((propvalue.substr(0, 1) == '{') || ((propvalue.substr(0, 2) === '["' && propvalue.substr(-2, 2) === '"]')) || (propvalue.substr(0, 2) === '[{' && propvalue.substr(-2, 2) === '}]'))) {
+                                                                try {
+                                                                    var valueJson = JSON.parse(propvalue);
+                                                                } catch (e) {
+                                                                    valueJson = false;
                                                                 }
-                                                                doc[property + '.' + o.key] = o.val.substr(i - 30 > 0 ? i - 30 : 0, 60);
+
                                                             }
-                                                        });
-
-                                                    } else {
-
-                                                        if (typeof propvalue === 'string') {
+                                                        }
 
 
-                                                            if (self.isLoadedAll() || self.getFilter().getQuery() == '' || propvalue.length < 350) {
-                                                                doc[property] = propvalue;
-                                                            } else {
+                                                        if (valueJson) {
 
-                                                                doc[property] = '';
-                                                                var c = propvalue.toLowerCase()
-                                                                angular.forEach(keywords, function (k) {
-                                                                    var i = c.indexOf(k);
+                                                            angular.forEach(valueJson.getRecursiveStrings(), function (o) {
+
+                                                                if (typeof propvalue !== 'string' || self.isLoadedAll() || self.getFilter().getQuery() == '' || o.val.length < 60) {
+                                                                    doc[property + '.' + o.key] = o.val;
+                                                                } else {
+                                                                    var i = propvalue.toLowerCase().indexOf(keyword);
                                                                     if (i > -1) {
                                                                         propfoundcount++;
-                                                                        doc[property] += ' ' + c.substr(i - k.length, 59);
                                                                     }
+                                                                    doc[property + '.' + o.key] = o.val.substr(i - 30 > 0 ? i - 30 : 0, 60);
+                                                                }
+                                                            });
 
-                                                                });
+                                                        } else {
+
+                                                            if (typeof propvalue === 'string') {
+
+
+                                                                if (self.isLoadedAll() || self.getFilter().getQuery() == '' || propvalue.length < 350) {
+                                                                    doc[property] = propvalue;
+                                                                } else {
+
+                                                                    doc[property] = '';
+                                                                    var c = propvalue.toLowerCase()
+                                                                    angular.forEach(keywords, function (k) {
+                                                                        var i = c.indexOf(k);
+                                                                        if (i > -1) {
+                                                                            propfoundcount++;
+                                                                            doc[property] += ' ' + c.substr(i - k.length, 59);
+                                                                        }
+
+                                                                    });
+
+                                                                }
 
                                                             }
-
                                                         }
+
+
                                                     }
-
-
                                                 }
-
                                             });
 
 
@@ -3584,7 +3591,6 @@
                 setNodeType: function (nodeType, scope) {
 
                     var self = this;
-
 
 
                     if (scope != undefined) {
@@ -5337,8 +5343,8 @@
                 setNodeType: function (nodeType) {
 
 
-                    var normalizeNodeType = function(nodetype) {
-                        return nodetype.replace(/[:\.]/g,'-').toLowerCase();
+                    var normalizeNodeType = function (nodetype) {
+                        return nodetype.replace(/[:\.]/g, '-').toLowerCase();
                     }
 
                     if (typeof nodeType == 'object' && nodeType.length == 1) {
@@ -5347,8 +5353,8 @@
                     }
 
                     if (typeof nodeType == 'object') {
-                        angular.forEach(nodeType,function(val) {
-                           val = normalizeNodeType(val);
+                        angular.forEach(nodeType, function (val) {
+                            val = normalizeNodeType(val);
                         });
                     }
 
@@ -6149,6 +6155,7 @@ Object.defineProperty(Object.prototype, 'getRecursiveStrings', {
                 r.push({'key': path.join('.'), val: value});
             }
         });
+
 
         return r;
 
