@@ -1790,6 +1790,9 @@ class SearchIndexFactory
 
             ksort($files);
 
+            if (count($files)) {
+                $this->output->progressStart($filesize);
+            }
 
             $count = 0;
             foreach ($files as $filecollection) {
@@ -1823,7 +1826,7 @@ class SearchIndexFactory
                                 break;
                         }
 
-
+                        $this->output->progressAdvance(filesize($file));
 
 
                         if (strlen($out) < 255) {
@@ -1851,11 +1854,15 @@ class SearchIndexFactory
                 }
 
             }
+            if (count($files)) {
+                $this->output->progressFinish();
+            }
 
-
-
+            $this->output->outputLine("done.");
 
             $this->unlockReltimeIndexer();
+        } else {
+            $this->output->outputLine("queue is locked .. skipping .. remove " . $this->temporaryDirectory . "/locked.txt" . " to unlock queue.");
         }
 
     }
