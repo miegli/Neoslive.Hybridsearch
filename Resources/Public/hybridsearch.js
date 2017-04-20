@@ -1442,7 +1442,7 @@
                                             if (self.getFilter().getScopeProperties()[identifier][property] !== undefined) {
                                                 self.getFilter().getScopeByIdentifier(identifier)[property] = obj.value;
                                                 setTimeout(function () {
-                                                    self.getFilter().getScopeByIdentifier(identifier).$digest(function () {
+                                                    self.getFilter().getScopeByIdentifier(identifier).$apply(function () {
                                                     });
                                                 }, 2);
                                             }
@@ -1453,7 +1453,7 @@
                                         if (self.getFilter().getScopeProperties()[identifier] !== undefined) {
                                             self.getFilter().getScopeByIdentifier(identifier)[Object.keys(self.getFilter().getScopeProperties()[identifier])[0]] = filter;
                                             setTimeout(function () {
-                                                self.getFilter().getScopeByIdentifier(identifier).$digest(function () {
+                                                self.getFilter().getScopeByIdentifier(identifier).$apply(function () {
                                                 });
                                             }, 2);
                                         }
@@ -1471,7 +1471,7 @@
                                     case 'query':
                                         self.getFilter().getScopeByIdentifier(identifier)[Object.keys(self.getFilter().getScopeProperties()[identifier])[0]] = '';
                                         setTimeout(function () {
-                                            self.getFilter().getScopeByIdentifier(identifier).$digest(function () {
+                                            self.getFilter().getScopeByIdentifier(identifier).$apply(function () {
                                             });
                                         }, 2);
                                 }
@@ -1660,7 +1660,7 @@
                                                 if (key.substr(0, 1) !== '_') {
                                                     scope[key] = value;
                                                     window.setTimeout(function () {
-                                                        scope.$digest();
+                                                        scope.$apply();
                                                     }, 2);
                                                 }
                                             }
@@ -3458,7 +3458,7 @@
                  *   .$watch(function (data) {
                  *           $scope.result = data;
                  *           setTimeout(function () {
-                 *               $scope.$digest();
+                 *               $scope.$apply();
                  *           }, 10);
                  *   });
                  *
@@ -4562,7 +4562,7 @@
 
                         if (this.getScope() !== undefined) {
                             setTimeout(function () {
-                                selfthis.getScope().$digest(function () {
+                                selfthis.getScope().$apply(function () {
                                 });
                             }, 1);
                         }
@@ -4632,7 +4632,7 @@
                         var self = this;
                         if (self.getScope() !== undefined) {
                             setTimeout(function () {
-                                self.getScope().$digest(function () {
+                                self.getScope().$apply(function () {
                                 });
                             }, 5);
 
