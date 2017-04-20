@@ -39,9 +39,9 @@
      * @module Angular main module
      * @returns {hybridsearch}
      */
-    angular.module('hybridsearch').factory('$hybridsearch', ['$hybridsearchObject',
+    angular.module('hybridsearch').factory('$hybridsearch', ['$hybridsearchObject', '$cookies',
 
-        function () {
+        function ($hybridsearchObject, $cookies) {
 
             /**
              * @class Hybridsearch
@@ -116,6 +116,8 @@
                  * @returns Firebase App
                  */
                 setBranch: function (branch) {
+
+                    $cookies.put('branch', branch);
                     this.$$conf.branch = branch;
                     return firebase;
                 },
@@ -126,9 +128,12 @@
                  */
                 getBranch: function () {
 
-
-                    if (this.$$conf.branch === null) {
-                        return 'master';
+                    if (!this.$$conf.branch) {
+                        if ($cookies.get('branch') !== undefined || (typeof $cookies.get('branch') == 'string' && $cookies.get('branch').length == 0)) {
+                            this.$$conf.branch = $cookies.get('branch');
+                            return this.$$conf.branch;
+                        }
+                        return false;
                     }
                     return this.$$conf.branch.length > 1 ? this.$$conf.branch : false;
                 }
@@ -347,7 +352,6 @@
 
                         return node.properties[property];
                     }
-
 
 
                     if (property == 'identifier') {
@@ -681,7 +685,6 @@
                         var propertyfullname = property;
 
 
-
                         if (this.properties == undefined) {
                             return value;
                         }
@@ -922,15 +925,20 @@
                             return false;
                         }
 
+
                         if (hybridsearch.$$conf.branchisloading === undefined) {
 
                             hybridsearch.$$conf.branchisloading = true;
 
-                            $http.get(hybridsearch.$$conf.databaseURL + "/branches/" + hybridsearch.$$conf.workspace + ".json").success(function (data) {
-                                hybridsearch.setBranch(data);
-                                isRunning = true;
-                            });
+                            if (!hybridsearch.getBranch()) {
+                                $http.get(hybridsearch.$$conf.databaseURL + "/branches/" + hybridsearch.$$conf.workspace + ".json").success(function (data) {
+                                    hybridsearch.setBranch(data);
+                                    isRunning = true;
+                                });
 
+                            } else {
+                                isRunning = true;
+                            }
 
                             window.setTimeout(function () {
 
@@ -992,7 +1000,7 @@
                     /**
                      * @private
                      */
-                    addNodeByIdentifier: function (node,index) {
+                    addNodeByIdentifier: function (node, index) {
                         if (index !== undefined && index >= 0) {
                             node.node['__index'] = index;
                         }
@@ -2717,14 +2725,14 @@
                                                                     ref.socket.on("value", function (data) {
                                                                         nodesIndexed = {};
                                                                         if (ref.updated === undefined || ref.updated < new Date().getTime() - (100 * Object.keys(data.val()).length)) {
-                                                                        var nodes = [];
-                                                                        angular.forEach(data.val(), function (node) {
-                                                                            nodes[node.node.identifier] = node;
-                                                                        });
-                                                                        self.setIsLoadedAll(false);
-                                                                        execute(keyword, data.val(), ref);
-                                                                        self.setIsLoadedAll();
-                                                                        ref.updated = new Date().getTime();
+                                                                            var nodes = [];
+                                                                            angular.forEach(data.val(), function (node) {
+                                                                                nodes[node.node.identifier] = node;
+                                                                            });
+                                                                            self.setIsLoadedAll(false);
+                                                                            execute(keyword, data.val(), ref);
+                                                                            self.setIsLoadedAll();
+                                                                            ref.updated = new Date().getTime();
                                                                         }
 
                                                                     });
@@ -3133,8 +3141,6 @@
 
 
                         if (queries.length === 0 && this.getFilter().getNodeType()) {
-
-
                             if (typeof this.getFilter().getNodeType() == 'string') {
                                 queries.push(
                                     {
@@ -3567,8 +3573,7 @@
 
                     this.$$app.getResults().$$data.isrunningfirsttimestamp = Date.now();
 
-                    if (self.$$app.getHybridsearch().getBranch() === false) {
-
+                    if (!self.$$app.getHybridsearch().getBranch()) {
                         var counter = 0;
                         var branchInitInterval = setInterval(function () {
                             counter++;
@@ -3583,9 +3588,7 @@
 
                         self.$$app.getHybridsearch().$$conf.branchInitialized = true;
 
-
                     } else {
-
                         if (self.$$app.isRunning() === false) {
                             self.$$app.setHybridsearchInstanceNumber();
                             self.$$app.setFirstFilterHash(self.$$app.getFilter().getHash());
@@ -3726,7 +3729,7 @@
                                 if (data.val()) {
 
 
-                                    self.$$app.addNodeByIdentifier(data.val(),self.addedNodesByIdentifierIndex[data.val().node.identifier]);
+                                    self.$$app.addNodeByIdentifier(data.val(), self.addedNodesByIdentifierIndex[data.val().node.identifier]);
                                     self.$$app.addLocalIndex([data.val()]);
 
                                     if (timer !== false) {
