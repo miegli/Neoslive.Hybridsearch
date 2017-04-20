@@ -3500,6 +3500,7 @@
                     this.$$app.getResults().$$app.setScope(scope);
                     scope[scopevar] = this.$$app.getResults();
                     scope['__hybridsearchBindedResultTo'] = scopevar;
+                    this.$$app.setHybridsearchInstanceNumber();
                     this.startLogStore();
                     return this;
                 },
@@ -3549,10 +3550,10 @@
 
                             });
 
-
                         }
 
                     });
+
 
                     return this;
 
@@ -3590,11 +3591,14 @@
 
                     } else {
                         if (self.$$app.isRunning() === false) {
-                            self.$$app.setHybridsearchInstanceNumber();
                             self.$$app.setFirstFilterHash(self.$$app.getFilter().getHash());
                             self.$$app.setSearchIndex();
                         }
 
+                    }
+
+                    if (self.$$app.getHybridsearchInstanceNumber() === undefined) {
+                        self.$$app.setHybridsearchInstanceNumber();
                     }
 
 
@@ -4174,11 +4178,14 @@
                     value: this.$$data
                 });
 
+
                 if (identifier == undefined && HybridsearchObject.$$app.getHybridsearchInstanceNumber() == undefined) {
                     return this;
                 }
 
+
                 var filename = identifier == undefined ? Sha1.hash(window.location.pathname + HybridsearchObject.$$app.getHybridsearchInstanceNumber()) : identifier;
+
                 this.$$data.identifier = filename;
                 var storage = {};
                 var scope = HybridsearchObject.getScope();
@@ -4634,7 +4641,7 @@
                             setTimeout(function () {
                                 self.getScope().$apply(function () {
                                 });
-                            }, 5);
+                            }, 1);
 
 
                         }
