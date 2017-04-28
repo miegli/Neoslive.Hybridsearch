@@ -2724,7 +2724,7 @@
                                                                 if (ref.socket) {
                                                                     ref.socket.on("value", function (data) {
                                                                         nodesIndexed = {};
-                                                                        if (ref.updated === undefined || ref.updated < new Date().getTime() - (100 * Object.keys(data.val()).length)) {
+                                                                        if (ref.updated !== undefined && ref.updated < new Date().getTime() - (100 * Object.keys(data.val()).length)) {
                                                                             var nodes = [];
                                                                             angular.forEach(data.val(), function (node) {
                                                                                 nodes[node.node.identifier] = node;
@@ -2732,6 +2732,9 @@
                                                                             self.setIsLoadedAll(false);
                                                                             execute(keyword, data.val(), ref);
                                                                             self.setIsLoadedAll();
+                                                                            ref.updated = new Date().getTime();
+                                                                        } else {
+                                                                            // skip first time
                                                                             ref.updated = new Date().getTime();
                                                                         }
 
