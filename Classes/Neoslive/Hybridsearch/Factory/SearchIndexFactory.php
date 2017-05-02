@@ -382,7 +382,9 @@ class SearchIndexFactory
     public function getBranch($workspacename = 'live')
     {
 
-
+        if ($this->firebase == null) {
+            throw new \Neos\Flow\Exception("firebase connection failed. please check configuration Neoslive/Hybridsearch/Firebase/token");
+        }
 
         $branch = $this->firebase->get("/branches/" . $workspacename);
 
@@ -805,7 +807,14 @@ class SearchIndexFactory
             $context = $this->contentContextFactory->create(['targetDimension' => $targetDimension, 'dimensions' => $dimensionConfiguration, 'workspaceName' => $nodedata->getWorkspace()->getName()]);
 
             $node = $context->getNodeByIdentifier($nodedata->getIdentifier());
-            if ($node) {
+
+            $skip = false;
+            $config = $node->getNodeType()->getConfiguration('hybridsearch');
+            if (isset($config['skip']) && $config['skip'] == true) {
+                $skip = true;
+            }
+
+            if ($node && $skip == false) {
 
                 if (isset($this->settings['Filter']['NodeTypeFilter'])) {
 
