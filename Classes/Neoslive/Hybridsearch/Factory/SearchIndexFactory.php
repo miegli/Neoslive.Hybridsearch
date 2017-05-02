@@ -809,7 +809,7 @@ class SearchIndexFactory
             $node = $context->getNodeByIdentifier($nodedata->getIdentifier());
 
             $skip = false;
-            $config = $node->getNodeType()->getConfiguration('hybridsearch');
+            $config = $node ? $node->getNodeType()->getConfiguration('hybridsearch') : array();
             if (isset($config['skip']) && $config['skip'] == true) {
                 $skip = true;
             }
@@ -2276,7 +2276,6 @@ class SearchIndexFactory
                 if ($ispage === false) {
                     $this->renderedcache[$node->getIdentifier() . "-" . $typoscriptPath] = $content;
                 }
-
 
                 return $content;
             } else {
