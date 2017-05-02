@@ -2745,6 +2745,8 @@
 
                                                     var canceller = $q.defer();
 
+                                                    // remove ref http  TODO
+                                                    ref.http = null;
 
                                                     if (ref.http) {
 
@@ -2799,8 +2801,6 @@
                                                                 });
 
                                                             }
-
-
                                                         }));
 
                                                     } else {
