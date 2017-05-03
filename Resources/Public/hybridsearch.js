@@ -488,7 +488,8 @@
                     });
 
                     angular.forEach(self.properties, function (val, key) {
-                        if (typeof val == 'object' && val.properties !== undefined && val.nodeType !== undefined && val.identifier !== undefined) {
+
+                        if (val !== null && typeof val == 'object' && val.properties !== undefined && val.nodeType !== undefined && val.identifier !== undefined) {
                             self.properties[key] = new HybridsearchResultsNode(val);
                         }
                     });
@@ -2640,8 +2641,9 @@
                                     }
 
                                     var execute = function (keyword, data, ref) {
-                                        if (ref && ref.socket !== undefined) {
-                                            if (self.isLoadedAll(ref.socket.toString()) === false) {
+
+                                        if (ref) {
+                                            if (self.isLoadedAll(ref.socket !== undefined ? ref.socket.toString() : null) === false) {
 
                                                 if (ref.parser) {
 
@@ -2745,11 +2747,14 @@
 
                                                     var canceller = $q.defer();
 
-                                                    // remove ref http  TODO
-                                                    ref.http = null;
+
+                                                    if (ref.socket !== undefined) {
+                                                        //ref.http = null;
+                                                    }
+
+                                                    console.log(ref.http, ref.socket);
 
                                                     if (ref.http) {
-
 
                                                         self.addPendingRequest($http({
                                                             method: 'get',
@@ -2764,43 +2769,22 @@
                                                             }, 10)
                                                         }).success(function (data) {
 
-                                                            if (lastSearchInstance.$$data.keywords.length == 0) {
-                                                                execute(keyword, data, ref);
-                                                            } else {
-                                                                loadedIndex.push(
-                                                                    {
-                                                                        0: self.getFilter().getQuery(),
-                                                                        1: data,
-                                                                        2: ref
-                                                                    });
+                                                            nodesIndexed = {};
+                                                            angular.forEach(data, function (node) {
+                                                                nodes[node.node.identifier] = node;
+                                                            });
+
+                                                            execute(keyword, data, ref);
+
+                                                            if (indexdata[keyword] === undefined) {
+                                                                indexdata[keyword] = [];
                                                             }
+                                                            angular.forEach(data, function (node, id) {
+                                                                indexdata[keyword].push(node);
+                                                            });
+                                                            self.updateLocalIndex(indexdata, lastSearchInstance, true);
+                                                            self.search();
 
-                                                            if (ref.socket) {
-                                                                ref.socket.on("value", function (data) {
-                                                                    if (ref.updated !== undefined) {
-                                                                        nodesIndexed = {};
-                                                                        var nodes = [];
-                                                                        angular.forEach(data.val(), function (node) {
-                                                                            nodes[node.node.identifier] = node;
-                                                                        });
-
-                                                                        if (ref.updated === undefined) {
-                                                                            execute(keyword, data.val(), ref);
-                                                                            self.search();
-                                                                        } else {
-                                                                            if (indexdata[keyword] === undefined) {
-                                                                                indexdata[keyword] = [];
-                                                                            }
-                                                                            angular.forEach(data.val(), function (node, id) {
-                                                                                indexdata[keyword].push(node);
-                                                                            });
-                                                                            self.updateLocalIndex(indexdata, lastSearchInstance, true);
-                                                                        }
-                                                                    }
-                                                                    ref.updated = true;
-                                                                });
-
-                                                            }
                                                         }));
 
                                                     } else {
@@ -2808,7 +2792,7 @@
                                                         if (ref.socket) {
                                                             ref.socket.on("value", function (data) {
                                                                 nodesIndexed = {};
-                                                                var nodes = [];
+                                                                //var nodes = [];
                                                                 angular.forEach(data.val(), function (node) {
                                                                     nodes[node.node.identifier] = node;
                                                                 });
@@ -2860,7 +2844,7 @@
                                             var canceller = $q.defer();
                                             angular.forEach(self.getExternalSources(), function (ref) {
 
-                                                if (ref.standalone === undefined || ref.standalone == false) {
+                                                if (ref.proceeded === undefined && (ref.standalone === undefined || ref.standalone == false)) {
                                                     musthavelength++;
                                                     self.addPendingRequest($http({
                                                         method: 'get',
@@ -2872,16 +2856,10 @@
                                                             canceller.resolve(reason);
                                                         }
                                                     }).success(function (data) {
-                                                        loadedIndex.push(
-                                                            {
-                                                                0: self.getFilter().getQuery(),
-                                                                1: data,
-                                                                2: ref
-                                                            });
+                                                        execute(self.getFilter().getQuery(), data, ref);
                                                     }));
-
-
                                                 }
+                                                ref.proceeded = true;
 
                                             });
 
@@ -2962,30 +2940,30 @@
                                     }
 
 
-                                    if (self.getExternalSources()) {
-
-                                        // standolone mode: add external sources
-                                        var canceller = $q.defer();
-                                        angular.forEach(self.getExternalSources(), function (ref) {
-
-                                            if (ref.standalone != undefined && ref.standalone == true) {
-                                                self.addPendingRequest($http({
-                                                    method: 'get',
-                                                    url: ref.http.replace("$query", self.getFilter().getQuery()),
-                                                    cache: true,
-                                                    headers: ref.headers === undefined ? {} : ref.headers,
-                                                    timeout: canceller.promise,
-                                                    cancel: function (reason) {
-                                                        canceller.resolve(reason);
-                                                    }
-                                                }).success(function (data) {
-                                                    execute(self.getFilter().getQuery(), data, ref);
-                                                }));
-                                            }
-
-                                        });
-
-                                    }
+                                    // if (self.getExternalSources()) {
+                                    //
+                                    //     // standolone mode: add external sources
+                                    //     var canceller = $q.defer();
+                                    //     angular.forEach(self.getExternalSources(), function (ref) {
+                                    //
+                                    //         if (ref.standalone != undefined && ref.standalone == true) {
+                                    //             self.addPendingRequest($http({
+                                    //                 method: 'get',
+                                    //                 url: ref.http.replace("$query", self.getFilter().getQuery()),
+                                    //                 cache: true,
+                                    //                 headers: ref.headers === undefined ? {} : ref.headers,
+                                    //                 timeout: canceller.promise,
+                                    //                 cancel: function (reason) {
+                                    //                     canceller.resolve(reason);
+                                    //                 }
+                                    //             }).success(function (data) {
+                                    //                 execute(self.getFilter().getQuery(), data, ref);
+                                    //             }));
+                                    //         }
+                                    //
+                                    //     });
+                                    //
+                                    // }
 
 
                                 } else {
