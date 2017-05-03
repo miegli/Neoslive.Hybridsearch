@@ -102,6 +102,13 @@ Adds a property filter to the query.
 
 Returns **HybridsearchObject** 
 
+## disableRealtime
+
+Disable realtime search. Use static data / cdn for better caching behaviour.
+
+
+Returns **HybridsearchObject** 
+
 ## setAgeFilter
 
 Adds an ange filter to the query. Show only nodes, that are visited mostly by given age bracket

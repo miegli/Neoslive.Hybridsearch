@@ -180,7 +180,7 @@
                     resultOrderBy, propertiesBoost, ParentNodeTypeBoostFactor, isRunning, firstfilterhash,
                     searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier,
                     nodesByIdentifier, searchCounter, searchCounterTimeout, nodeTypeProperties, isloadedall,
-                    externalSources, isLoadedFromLocalStorage, lastSearchHash, lastSearchApplyTimeout;
+                    externalSources, isLoadedFromLocalStorage, lastSearchHash, lastSearchApplyTimeout, config;
 
                 var self = this;
 
@@ -191,6 +191,7 @@
                     window.hybridsearchInstances++;
                 }
                 isloadedall = {};
+                config = {};
                 isLoadedFromLocalStorage = false;
                 searchCounter = 0;
                 nodesLastHash = 0;
@@ -872,6 +873,26 @@
                             hybridsearchInstanceNumber = id;
                         }
                         return this.getHybridsearchInstanceNumber();
+                    },
+
+                    /**
+                     * @private
+                     * @param string key
+                     * @return mixed
+                     */
+                    getConfig: function (key) {
+                        return config[key] !== undefined ? config[key] : null;
+                    },
+
+                    /**
+                     * @private
+                     * @param string key
+                     * @param string value
+                     * @return mixed
+                     */
+                    setConfig: function (key,value) {
+                        config[key] = value;
+                        return value;
                     },
                     /**
                      * @private
@@ -2688,16 +2709,6 @@
                                                         self.setIsLoadedAll(ref.socket.toString());
                                                         self.search(nodes);
 
-
-                                                        // lazy load search index
-                                                        // self.search(nodes);
-                                                        // window.setTimeout(function () {
-                                                        //     self.updateLocalIndex(indexdata, lastSearchInstance, true);
-                                                        //     self.setIsLoadedAll(Sha1.hash(JSON.stringify(ref)));
-                                                        //     self.search(nodes);
-                                                        // }, 1000);
-
-
                                                     } else {
 
                                                         if (ref.http) {
@@ -2747,12 +2758,9 @@
 
                                                     var canceller = $q.defer();
 
-
-                                                    if (ref.socket !== undefined) {
-                                                        //ref.http = null;
+                                                    if (self.getConfig('realtime') === null && ref.socket !== undefined) {
+                                                        ref.http = null;
                                                     }
-
-                                                    console.log(ref.http, ref.socket);
 
                                                     if (ref.http) {
 
@@ -2866,104 +2874,8 @@
                                         }
 
 
-                                        // wait for all data and put it together to search index
-                                        // self.setIndexInterval(setInterval(function () {
-                                        //     console.log(indexintervalcounter);
-                                        //     if (indexintervalcounter > 1500 || (loadedIndex.length >= musthavelength)) {
-                                        //         clearInterval(self.getIndexInterval());
-                                        //
-                                        //         var hash = self.getFilter().getHash() + " " + Sha1.hash(JSON.stringify(indexdata));
-                                        //
-                                        //         if (hash !== self.getLastIndexHash() || results.count() === 0) {
-                                        //
-                                        //             angular.forEach(loadedIndex, function (r) {
-                                        //                 execute(r[0], r[1], r[2]);
-                                        //             });
-                                        //
-                                        //             if (cleanedup === false) {
-                                        //                 results.$$app.clearResults();
-                                        //                 self.cleanLocalIndex();
-                                        //                 cleanedup = true;
-                                        //             }
-                                        //
-                                        //             self.updateLocalIndex(indexdata, lastSearchInstance);
-                                        //
-                                        //             self.search();
-                                        //         } else {
-                                        //             self.setLastIndexHash(hash);
-                                        //             self.search();
-                                        //         }
-                                        //
-                                        //
-                                        //     }
-                                        //     indexintervalcounter++;
-                                        //
-                                        // }, 10));
-
-
-                                        //
-                                        //
-                                        //     // wait for all data and put it together to search index
-                                        //     self.setIndexInterval(setInterval(function () {
-                                        //
-                                        //
-                                        //         if (indexintervalcounter > 1500 || (loadedIndex.length >= musthavelength) ) {
-                                        //             clearInterval(self.getIndexInterval());
-                                        //
-                                        //            // var hash = self.getFilter().getHash() + " " + Sha1.hash(JSON.stringify(indexdata));
-                                        //
-                                        //            // if (hash !== self.getLastIndexHash() || results.count() === 0) {
-                                        //                 angular.forEach(loadedIndex,function(r){
-                                        //                     execute(r[0],r[1],r[2]);
-                                        //                 });
-                                        //                 loadedIndex = [];
-                                        //                 // if (cleanedup === false) {
-                                        //                      results.$$app.clearResults();
-                                        //                      self.cleanLocalIndex();
-                                        //                 //     cleanedup = true;
-                                        //                 // }
-                                        //                 self.updateLocalIndex(indexdata, lastSearchInstance);
-                                        //                 //self.search();
-                                        //
-                                        //            // } else {
-                                        //            //     self.setLastIndexHash(hash);
-                                        //            //     self.search();
-                                        //            // }
-                                        //
-                                        //
-                                        //         }
-                                        //         indexintervalcounter++;
-                                        //
-                                        //     }, 10));
-                                        // }
-
                                     }
 
-
-                                    // if (self.getExternalSources()) {
-                                    //
-                                    //     // standolone mode: add external sources
-                                    //     var canceller = $q.defer();
-                                    //     angular.forEach(self.getExternalSources(), function (ref) {
-                                    //
-                                    //         if (ref.standalone != undefined && ref.standalone == true) {
-                                    //             self.addPendingRequest($http({
-                                    //                 method: 'get',
-                                    //                 url: ref.http.replace("$query", self.getFilter().getQuery()),
-                                    //                 cache: true,
-                                    //                 headers: ref.headers === undefined ? {} : ref.headers,
-                                    //                 timeout: canceller.promise,
-                                    //                 cancel: function (reason) {
-                                    //                     canceller.resolve(reason);
-                                    //                 }
-                                    //             }).success(function (data) {
-                                    //                 execute(self.getFilter().getQuery(), data, ref);
-                                    //             }));
-                                    //         }
-                                    //
-                                    //     });
-                                    //
-                                    // }
 
 
                                 } else {
@@ -3497,6 +3409,7 @@
                 Object.defineProperty(this, '$$conf', {
                     value: this.$$conf
                 });
+
                 Object.defineProperty(this, '$$app', {
                     value: this.$$app
                 });
@@ -3698,6 +3611,15 @@
                     var snapshot = new HybridsearchSnapshotObject(this, identifier, false);
                     return snapshot;
 
+                },
+
+                /**
+                 * Disable realtime search, use static data over cdn instead of
+                 * @returns {HybridsearchObject}
+                 */
+                disableRealtime: function () {
+                    this.$$app.setConfig('realtime',false);
+                    return this;
                 },
 
                 /**
