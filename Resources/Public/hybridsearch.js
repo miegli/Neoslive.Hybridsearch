@@ -2761,7 +2761,7 @@
                                                     if (self.getConfig('realtime') === null && ref.socket !== undefined) {
                                                         ref.http = null;
                                                     }
-
+                                                    
                                                     if (ref.http) {
 
                                                         self.addPendingRequest($http({
