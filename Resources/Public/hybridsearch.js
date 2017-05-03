@@ -1836,7 +1836,6 @@
                             // return all nodes bco no query set
                             if (hasDistinct) {
                                 angular.forEach(nodesFromInput, function (node) {
-
                                     if (self.isFiltered(node) === false) {
                                         preOrdered.push(node);
                                     }
@@ -2083,38 +2082,37 @@
                         }
 
 
-                        if (hasDistinct) {
-
-                            var unfilteredResultNodes = [];
-                            var nodeObject = null;
-
-                            angular.forEach(unfilteredResult, function (node) {
-
-
-                                nodeObject = new HybridsearchResultsNode(node, 1);
-                                nodeObject['_isfiltered'] = {};
-                                angular.forEach(self.getResults().$$data.distincts, function (distinct, property) {
-                                    nodeObject['_isfiltered'][property] = self.isFiltered(nodeObject, property);
-                                });
-                                unfilteredResultNodes.push(nodeObject);
-
-                            });
-
-                            results.updateDistincts(unfilteredResultNodes);
-
-                        }
 
 
                         if (lastSearchApplyTimeout) {
                             window.clearTimeout(lastSearchApplyTimeout);
                         }
 
-                        if (wasloadedfromInput == false) {
+
                             lastSearchApplyTimeout = window.setTimeout(function () {
-                                results.getApp().setResults(items, nodes, self);
-                                lastSearchApplyTimeout = null;
-                            }, lastSearchApplyTimeout ? 500 : 1);
-                        }
+
+                                if (hasDistinct && unfilteredResult.length) {
+                                    var unfilteredResultNodes = [];
+                                    var nodeObject = null;
+                                    angular.forEach(unfilteredResult, function (node) {
+                                        nodeObject = new HybridsearchResultsNode(node, 1);
+                                        nodeObject['_isfiltered'] = {};
+                                        angular.forEach(self.getResults().$$data.distincts, function (distinct, property) {
+                                            nodeObject['_isfiltered'][property] = self.isFiltered(nodeObject, property);
+                                        });
+                                        unfilteredResultNodes.push(nodeObject);
+                                    });
+                                      results.updateDistincts(unfilteredResultNodes);
+                                }
+
+
+                                if (wasloadedfromInput == false) {
+                                    results.getApp().setResults(items, nodes, self);
+                                    lastSearchApplyTimeout = null;
+                                }
+
+                            }, 10);
+
 
 
                     }
@@ -2761,7 +2759,7 @@
                                                     if (self.getConfig('realtime') === null && ref.socket !== undefined) {
                                                         ref.http = null;
                                                     }
-                                                    
+
                                                     if (ref.http) {
 
                                                         self.addPendingRequest($http({
@@ -5013,7 +5011,9 @@
                 getDistinct: function (property, affectedBySearchResult, counterGroupedByNode, valuesOnly) {
 
 
+
                     var self = this, variants = {}, variantsByNodes = {}, propvalue = '', variantsfinal = [];
+
 
                     if (self.$$data.distinctsConfiguration[property] == undefined) {
                         self.$$data.distinctsConfiguration[property] = {
@@ -5031,6 +5031,7 @@
                         self.$$data.distincts[property] = {};
                     }
 
+
                     if (Object.keys(self.$$data.distincts[property]).length) {
                         if (self.$$data.distinctsConfiguration[property].valuesOnly === false) {
                             return self.$$data.distincts[property];
@@ -5045,16 +5046,11 @@
                     }
 
 
-                    angular.forEach(self.$$data.unfilteredResultNodes.length > 0 ? self.$$data.unfilteredResultNodes : this.getNodes(), function (node) {
+                    angular.forEach(self.$$data.unfilteredResultNodes.length == 0 ? this.getNodes() : self.$$data.unfilteredResultNodes, function (node) {
 
-                        if (self.$$data.unfilteredResultNodes.length === 0 || (node['_isfiltered'][property] === false)) {
-
+                        if (self.$$data.distinctsConfiguration[property]['affectedBySearchResult'] == false || node['_isfiltered'] == undefined || node['_isfiltered'][property] === false || node['_isfiltered'][property] === undefined) {
                             variantsByNodes[node.identifier] = {};
-
-
                             propvalue = self.getPropertyFromNode(node, property);
-
-
                             if (typeof propvalue == 'object') {
 
                                 angular.forEach(propvalue, function (v, k) {
@@ -5136,8 +5132,6 @@
 
 
                                 }
-
-
                             }
                         }
 
