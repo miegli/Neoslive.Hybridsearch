@@ -2796,7 +2796,7 @@
                                                     } else {
 
                                                         if (ref.socket) {
-                                                            ref.socket.on("value", function (data) {
+                                                            ref.socket.limitToFirst(1000).on("value", function (data) {
                                                                 nodesIndexed = {};
                                                                 //var nodes = [];
                                                                 angular.forEach(data.val(), function (node) {
