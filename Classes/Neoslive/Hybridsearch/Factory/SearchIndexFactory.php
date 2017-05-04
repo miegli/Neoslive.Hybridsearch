@@ -1188,17 +1188,20 @@ class SearchIndexFactory
         $text = "";
 
         foreach ($properties as $property => $value) {
-            if (gettype($value) == 'string' || is_numeric($value)) {
 
-                $j = json_decode($value);
-                if ($j) {
-                    $text .= " " . (json_encode($j,JSON_UNESCAPED_UNICODE));
+            if (substr($property,-10) !== 'rawcontent') {
+                if (gettype($value) == 'string' || is_numeric($value)) {
+
+                    $j = json_decode($value);
+                    if ($j) {
+                        $text .= " " . (json_encode($j, JSON_UNESCAPED_UNICODE));
+                    } else {
+                        $text .= " " . $value;
+                    }
+
                 } else {
-                    $text .= " " . $value;
+                    $text .= " " . (json_encode($value, JSON_UNESCAPED_UNICODE));
                 }
-
-            } else {
-                $text .= " " . (json_encode($value,JSON_UNESCAPED_UNICODE));
             }
         }
 
@@ -1498,7 +1501,7 @@ class SearchIndexFactory
         if (isset($properties->$p) === false) {
             $properties->$p = $this->rawcontent($rendered);
         }
-        $properties->rawcontent = $properties->$p;
+        //$properties->rawcontent = $properties->$p;
 
         $data->hash = sha1(json_encode($properties));
         $data->url = $uri;
