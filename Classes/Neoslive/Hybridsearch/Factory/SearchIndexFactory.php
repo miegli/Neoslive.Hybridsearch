@@ -1163,8 +1163,13 @@ class SearchIndexFactory
                     }
                 }
 
-                $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier = array('node' => json_decode(json_encode($indexData)), 'nodeType' => $indexData->nodeType);
-                $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier['node']->rawcontent = mb_substr(trim(strip_tags($this->rawcontent($rawcontentSegments))), 0, 256);
+
+                if (strlen($rawcontentSegments) > 1) {
+                    $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier = array('node' => json_decode(json_encode($indexData)), 'nodeType' => $indexData->nodeType);
+                    $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier['node']->rawcontent = mb_substr(trim(strip_tags($this->rawcontent($rawcontentSegments))), 0, 256);
+                } else {
+                    $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier = array('node' => $indexData, 'nodeType' => $indexData->nodeType);
+                }
 
                 array_push($keywordsOfNode, $k);
 
