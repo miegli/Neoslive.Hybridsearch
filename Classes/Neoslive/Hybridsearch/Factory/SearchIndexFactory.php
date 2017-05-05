@@ -476,6 +476,7 @@ class SearchIndexFactory
         $this->output->outputLine('indexing nodes');
 
         foreach ($moditifedNodeData as $nodedata) {
+
             $this->output->progressAdvance(1);
             try {
                 if ($verbose) {
@@ -791,7 +792,12 @@ class SearchIndexFactory
 
         $counter = 0;
 
+        $config = $nodedata->getNodeType()->getConfiguration('hybridsearch');
+        if (isset($config['skip']) && $config['skip'] == true) {
+            return $counter;
+        }
 
+        
         if (count($this->allSiteKeys) === 0) {
             $this->allSiteKeys = json_decode($this->firebase->get('sites', array('shallow' => 'true')));
         }
@@ -808,13 +814,7 @@ class SearchIndexFactory
 
             $node = $context->getNodeByIdentifier($nodedata->getIdentifier());
 
-            $skip = false;
-            $config = $node ? $node->getNodeType()->getConfiguration('hybridsearch') : array();
-            if (isset($config['skip']) && $config['skip'] == true) {
-                $skip = true;
-            }
-
-            if ($node && $skip == false) {
+            if ($node) {
 
                 if (isset($this->settings['Filter']['NodeTypeFilter'])) {
 
