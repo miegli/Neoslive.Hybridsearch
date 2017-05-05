@@ -1,4 +1,5 @@
 <?php
+
 namespace Neoslive\Hybridsearch\Factory;
 
 /*
@@ -484,7 +485,7 @@ class SearchIndexFactory
                 }
                 $this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace(), true);
             } catch (Exception $exception) {
-                $this->output->outputLine("error while indexing node ".$nodedata->getIdentifier(). " on workspace ".$workspacename.". ".$exception->getMessage());
+                $this->output->outputLine("error while indexing node " . $nodedata->getIdentifier() . " on workspace " . $workspacename . ". " . $exception->getMessage());
             }
 
 
@@ -1100,11 +1101,13 @@ class SearchIndexFactory
 
 
             $indexData = $this->convertNodeToSearchIndexResult($node);
-            $rawcontent = $this->rawcontent($indexData->rawcontent);
+            $rawcontent = mb_strtolower($indexData->rawcontent);
 
             $identifier = $indexData->identifier;
 
             $keywords = $this->generateSearchIndexFromProperties($indexData->properties, $indexData->nodeType);
+
+            unset($indexData->properties->rawcontent);
 
             $nt = "__" . $this->getNodeTypeName($node);
             $keywords->$nt = true;
@@ -1137,26 +1140,34 @@ class SearchIndexFactory
 
 
                 $rawcontentSegments = "";
+                $skip = false;
 
-                foreach ($val as $sk => $subval) {
+                if (isset($keywords->$k) && is_array($keywords->$k)) {
+                    foreach ($keywords->$k as $sk => $subval) {
 
-                    if ($sk) {
-                        $sk = mb_strtolower($sk);
-                        $spos = mb_strpos(mb_strtolower($rawcontent), $sk);
+                        if (mb_strlen($sk)) {
 
-                        $matchSegment = mb_substr($rawcontent, $spos, 256);
-                        $spos = mb_strripos(($matchSegment), "  ");
-                        if ($spos) {
-                            $matchSegment = mb_substr($matchSegment, $spos,256);
-                        }
 
-                        $spos = mb_strpos(($matchSegment), ".");
-                        if ($spos) {
-                            $matchSegment = mb_substr($matchSegment, 0, $spos) . ".";
-                        }
-                        $matchSegment = trim($matchSegment);
-                        if (mb_strlen(trim($matchSegment))) {
-                            $rawcontentSegments = $matchSegment . " " . $rawcontentSegments;
+                            $sk = mb_strtolower($sk);
+                            $spos = mb_strpos($rawcontent, $sk);
+
+
+                            if ($spos) {
+
+                                $c = mb_substr($indexData->rawcontent,$spos,300);
+                                $sposEnd = mb_strpos($c, ".");
+                                if ($sposEnd) {
+                                    $c = mb_substr($indexData->rawcontent,0,$sposEnd).".";
+                                }
+
+                                $rawcontentSegments = $c." ". $rawcontentSegments;
+
+
+                            } else {
+                                if (mb_strlen($rawcontent) > 2) {
+                                    $skip = true;
+                                }
+                            }
                         }
 
 
@@ -1164,17 +1175,26 @@ class SearchIndexFactory
                 }
 
 
-                if (strlen($rawcontentSegments) > 1) {
+
+                if ($skip == false) {
+
                     $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier = array('node' => json_decode(json_encode($indexData)), 'nodeType' => $indexData->nodeType);
-                    $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier['node']->rawcontent = mb_substr(trim(strip_tags($this->rawcontent($rawcontentSegments))), 0, 256);
-                } else {
-                    $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier = array('node' => $indexData, 'nodeType' => $indexData->nodeType);
+
+                    if (strlen($rawcontentSegments) > 1) {
+                        $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier['node']->rawcontent = mb_substr(trim(strip_tags($this->rawcontent($rawcontentSegments))), 0, 256);
+                    } else {
+                        $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier['node']->rawcontent = mb_substr(trim(strip_tags($this->rawcontent($indexData->rawcontent))), 0, 256);
+                    }
+
+                    array_push($keywordsOfNode, $k);
+
                 }
 
-                array_push($keywordsOfNode, $k);
+
 
 
             }
+
 
 
             if (isset($this->index->$workspaceHash->$dimensionConfigurationHash->___keywords) === false) {
@@ -1228,7 +1248,6 @@ class SearchIndexFactory
 
         foreach ($properties as $property => $value) {
 
-            if (substr($property,-10) !== 'rawcontent') {
                 if (gettype($value) == 'string' || is_numeric($value)) {
 
                     $j = json_decode($value);
@@ -1241,13 +1260,12 @@ class SearchIndexFactory
                 } else {
                     $text .= " " . (json_encode($value, JSON_UNESCAPED_UNICODE));
                 }
-            }
+
         }
 
-    $text = (Encoding::UTF8FixWin1252Chars(html_entity_decode($text)));
+        $text = (Encoding::UTF8FixWin1252Chars(html_entity_decode($text)));
 
-       $text = preg_replace('~[^\p{L}\p{N}]++~u'," ",mb_strtolower($text));
-
+        $text = preg_replace('~[^\p{L}\p{N}]++~u', " ", mb_strtolower($text));
 
 
         $words = explode(" ", ($text));
@@ -1276,7 +1294,6 @@ class SearchIndexFactory
                 }
             }
         }
-
 
 
         $properties = null;
@@ -1356,7 +1373,6 @@ class SearchIndexFactory
                 $k = mb_strtolower(preg_replace("/[^A-z0-9]/", "-", $node->getNodeType()->getName() . ":" . $key));
                 $properties->$k = json_encode($val);
             }
-
 
 
             if (gettype($val) === 'object') {
@@ -1513,7 +1529,7 @@ class SearchIndexFactory
                 }
             }
             $p = $data->nodeType . "-grandparent";
-            $properties->$p =  (Encoding::UTF8FixWin1252Chars($grandParentPropertiesText));
+            $properties->$p = (Encoding::UTF8FixWin1252Chars($grandParentPropertiesText));
         }
 
         $rendered = $this->getRenderedNode($node);
@@ -1529,8 +1545,7 @@ class SearchIndexFactory
 
         $data->hash = sha1(json_encode($properties));
 
-        $data->rawcontent = $rendered;
-
+        $data->rawcontent = $this->rawcontent($rendered);
 
 
         $data->url = $uri;
@@ -1715,7 +1730,7 @@ class SearchIndexFactory
 //                    $data = ob_get_contents();
 //                    ob_end_clean();
                     $fp = fopen($filename, 'w+');
-                    $this->fwrite_stream($fp,serialize($data));
+                    $this->fwrite_stream($fp, serialize($data));
                     fclose($fp);
 
                 }
@@ -1847,7 +1862,6 @@ class SearchIndexFactory
                     $count++;
 
 
-
                     $content = json_decode(file_get_contents($file));
 
                     if ($content) {
@@ -1890,9 +1904,6 @@ class SearchIndexFactory
                     } else {
                         unlink($file);
                     }
-
-
-
 
 
                 }
@@ -2001,7 +2012,6 @@ class SearchIndexFactory
     protected
     function save($directpush = false)
     {
-
 
 
         foreach ($this->index as $workspace => $workspaceData) {
@@ -2177,7 +2187,7 @@ class SearchIndexFactory
     private
     function rawcontent($text)
     {
-        return preg_replace("/[ ]{2,}/", "  ", preg_replace("/\r|\n/", " ", strip_tags($text,'<h1><h2><h3>')));
+        return preg_replace("[^A-z]","  ",preg_replace("/[ ]{2,}/", " ", preg_replace("/\r|\n/", " ", strip_tags($text))));
 
     }
 
