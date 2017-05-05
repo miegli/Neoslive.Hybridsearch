@@ -1669,8 +1669,12 @@ class SearchIndexFactory
 
             if (is_string($content) === false) {
                 if (json_last_error() === JSON_ERROR_UTF8) {
-                    echo "\nwarning utf-8 malformed string. skipped $path ";
-                    \Neos\Flow\var_dump($data);
+                    $filename = $this->temporaryDirectory . "/error_" . time() . $this->queuecounter . "_" . Algorithms::generateUUID() . ".json";
+                    echo "\nwarning utf-8 malformed string. skipped $path. see log file $filename";
+                    $fp = fopen($filename, 'w+');
+                    $this->fwrite_stream($fp, $data);
+                    fclose($fp);
+
                 }
             } else {
 
