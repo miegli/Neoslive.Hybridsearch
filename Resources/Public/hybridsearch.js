@@ -2955,44 +2955,44 @@
 
                         // get quick results from logstore
                         var canceller = $q.defer();
-                        var queryLogstore = this.getFilter().getQueryLogStoreHash().toUpperCase();
-
-                        self.getResults().getApp().clearQuickNodes();
-
-                        if (queryLogstore.length > 2) {
-                            this.addPendingRequest($http({
-                                method: 'get',
-                                url: (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + ("/logstore/" + hybridsearch.$$conf.site + "/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/" + queryLogstore + ".json"),
-                                cache: true,
-                                timeout: canceller.promise,
-                                cancel: function (reason) {
-                                    canceller.resolve(reason);
-                                }
-                            }).success(function (data) {
-
-                                if (data) {
-                                    self.executeLogStoreData(data);
-                                } else {
-                                    if (hybridsearch.$$conf.cdnDatabaseURL != undefined) {
-                                        self.addPendingRequest($http({
-                                            method: 'get',
-                                            url: hybridsearch.$$conf.databaseURL + ("/logstore/" + hybridsearch.$$conf.site + "/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/" + self.getFilter().getQueryLogStoreHash() + ".json"),
-                                            cache: true,
-                                            timeout: canceller.promise,
-                                            cancel: function (reason) {
-                                                canceller.resolve(reason);
-                                            }
-                                        }).success(function (data) {
-                                            if (data) {
-                                                self.executeLogStoreData(data);
-                                            }
-                                        }));
-
-                                    }
-                                }
-                            }));
-
-                        }
+                        // var queryLogstore = this.getFilter().getQueryLogStoreHash().toUpperCase();
+                        //
+                        // self.getResults().getApp().clearQuickNodes();
+                        //
+                        // if (queryLogstore.length > 2) {
+                        //     this.addPendingRequest($http({
+                        //         method: 'get',
+                        //         url: (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + ("/logstore/" + hybridsearch.$$conf.site + "/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/" + queryLogstore + ".json"),
+                        //         cache: true,
+                        //         timeout: canceller.promise,
+                        //         cancel: function (reason) {
+                        //             canceller.resolve(reason);
+                        //         }
+                        //     }).success(function (data) {
+                        //
+                        //         if (data) {
+                        //             self.executeLogStoreData(data);
+                        //         } else {
+                        //             if (hybridsearch.$$conf.cdnDatabaseURL != undefined) {
+                        //                 self.addPendingRequest($http({
+                        //                     method: 'get',
+                        //                     url: hybridsearch.$$conf.databaseURL + ("/logstore/" + hybridsearch.$$conf.site + "/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/" + self.getFilter().getQueryLogStoreHash() + ".json"),
+                        //                     cache: true,
+                        //                     timeout: canceller.promise,
+                        //                     cancel: function (reason) {
+                        //                         canceller.resolve(reason);
+                        //                     }
+                        //                 }).success(function (data) {
+                        //                     if (data) {
+                        //                         self.executeLogStoreData(data);
+                        //                     }
+                        //                 }));
+                        //
+                        //             }
+                        //         }
+                        //     }));
+                        //
+                        // }
 
 
                         // get search results
@@ -3044,26 +3044,7 @@
 
 
                         }).error(function (data) {
-
-                            ref.socket.once("value", function (data) {
-
-                                if (data !== undefined) {
-
-                                    angular.forEach(data.val(), function (v, k) {
-                                        instance.$$data.keywords.push({term: k, metaphone: q});
-                                    });
-
-                                    var ismatchexact = false;
-                                    angular.forEach(instance.$$data.keywords, function (v) {
-                                        if (ismatchexact === false && v.term == querysegment) {
-                                            ismatchexact = true;
-                                        }
-                                    });
-
-                                }
-                                instance.$$data.proceeded.push(1);
-                            });
-
+                           // skip
                         }));
 
 
@@ -3443,47 +3424,47 @@
                  */
                 startLogStore: function () {
 
-                    var id = this.getScope().$id;
-                    var logStoreApplied = {};
-                    var self = this;
-
-
-                    jQuery('.ng-scope').each(function () {
-
-                        if (angular.element(this).scope().$id == id) {
-
-                            jQuery(this).on("click", function (event) {
-
-                                var node = angular.element(event.target);
-                                if (node !== undefined && node.scope() !== undefined && node.scope().node) {
-
-                                    if (logStoreApplied[node.scope().node.getIdentifier()] == undefined) {
-                                        var q = self.$$app.getFilter().getQueryLogStoreHash();
-                                        if (q.length > 2 && logStoreApplied[q] == undefined) {
-                                            var ref = self.$$app.getHybridsearch().$firebase().database().ref("logstore/" + self.$$app.getHybridsearch().$$conf.site + "/" + self.$$app.getHybridsearch().$$conf.workspace + "/" + self.$$app.getHybridsearch().$$conf.dimension + "/" + q);
-                                            ref.set(node.scope().node.getIdentifier());
-                                            logStoreApplied[node.scope().node.getIdentifier()] = true;
-                                            logStoreApplied[q] = true;
-                                        }
-
-                                    }
-
-                                    if (event.target.tagName == 'A') {
-
-                                        var identifier = self.save().getIdentifier();
-                                        if (identifier !== undefined && window.location.hash !== identifier) {
-                                            window.location.hash = identifier;
-                                        }
-                                    }
-
-
-                                }
-
-                            });
-
-                        }
-
-                    });
+                    // var id = this.getScope().$id;
+                    // var logStoreApplied = {};
+                    // var self = this;
+                    //
+                    //
+                    // jQuery('.ng-scope').each(function () {
+                    //
+                    //     if (angular.element(this).scope().$id == id) {
+                    //
+                    //         jQuery(this).on("click", function (event) {
+                    //
+                    //             var node = angular.element(event.target);
+                    //             if (node !== undefined && node.scope() !== undefined && node.scope().node) {
+                    //
+                    //                 if (logStoreApplied[node.scope().node.getIdentifier()] == undefined) {
+                    //                     var q = self.$$app.getFilter().getQueryLogStoreHash();
+                    //                     if (q.length > 2 && logStoreApplied[q] == undefined) {
+                    //                         var ref = self.$$app.getHybridsearch().$firebase().database().ref("logstore/" + self.$$app.getHybridsearch().$$conf.site + "/" + self.$$app.getHybridsearch().$$conf.workspace + "/" + self.$$app.getHybridsearch().$$conf.dimension + "/" + q);
+                    //                         ref.set(node.scope().node.getIdentifier());
+                    //                         logStoreApplied[node.scope().node.getIdentifier()] = true;
+                    //                         logStoreApplied[q] = true;
+                    //                     }
+                    //
+                    //                 }
+                    //
+                    //                 if (event.target.tagName == 'A') {
+                    //
+                    //                     var identifier = self.save().getIdentifier();
+                    //                     if (identifier !== undefined && window.location.hash !== identifier) {
+                    //                         window.location.hash = identifier;
+                    //                     }
+                    //                 }
+                    //
+                    //
+                    //             }
+                    //
+                    //         });
+                    //
+                    //     }
+                    //
+                    // });
 
 
                     return this;
