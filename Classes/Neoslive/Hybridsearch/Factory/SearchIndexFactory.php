@@ -1491,7 +1491,7 @@ class SearchIndexFactory
 
         $data->hash = sha1(json_encode($properties));
 
-        $properties->rawcontent = substr($this->rawcontent($rendered),0,isset($this->settings['rawContentLength']) ? $this->settings['rawContentLength'] : 512);
+        $properties->rawcontent = mb_substr($this->rawcontent($rendered),0,isset($this->settings['rawContentLength']) ? $this->settings['rawContentLength'] : 512);
 
 
 
