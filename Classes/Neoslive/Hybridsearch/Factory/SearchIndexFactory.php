@@ -797,7 +797,7 @@ class SearchIndexFactory
             return $counter;
         }
 
-        
+
         if (count($this->allSiteKeys) === 0) {
             $this->allSiteKeys = json_decode($this->firebase->get('sites', array('shallow' => 'true')));
         }
