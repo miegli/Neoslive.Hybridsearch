@@ -793,6 +793,7 @@ class SearchIndexFactory
         $counter = 0;
 
         $config = $nodedata->getNodeType()->getConfiguration('hybridsearch');
+
         if (isset($config['skip']) && $config['skip'] == true) {
             return $counter;
         }
