@@ -1671,16 +1671,13 @@ class SearchIndexFactory
                 if (json_last_error() === JSON_ERROR_UTF8) {
                     $filename = $this->temporaryDirectory . "/error_" . time() . $this->queuecounter . "_" . Algorithms::generateUUID() . ".json";
                     echo "\nwarning utf-8 malformed string. skipped $path. see log file $filename";
-                    $fp = fopen($filename, 'w+');
 
-                    $data = preg_replace("/([{,])([a-zA-Z][^: ]+):/", "\$1\"$2\":", $data);
-                    $data = preg_replace("/:([a-zA-Z\'][^:]+)([,}])/", ":\"$1\"$2", $data);
-                    $data = json_decode($data,true);
-                    function trimer($val){
-                        return trim(trim($val,"'"),"\"");
-                    }
-                    $data = array_map('trimer', $data);
-                    $this->fwrite_stream($fp, json_encode($data));
+                    ob_start();
+                    var_dump($data);
+                    $data = ob_get_contents();
+                    ob_end_clean();
+                    $fp = fopen($filename, 'w+');
+                    $this->fwrite_stream($fp,$data);
                     fclose($fp);
 
                 }
