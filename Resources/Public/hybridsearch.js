@@ -125,6 +125,9 @@
                  * @returns Firebase App
                  */
                 getBranch: function () {
+                    if (this.$$conf.branch === undefined) {
+                        return 'master';
+                    }
                     return this.$$conf.branch.length > 1 ? this.$$conf.branch : false;
                 }
 
