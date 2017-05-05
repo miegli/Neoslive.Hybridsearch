@@ -127,7 +127,8 @@
                 getBranch: function () {
 
                     if (this.$$conf.branch === undefined || this.$$conf.branch == null) {
-                        return this.$$conf.branch;
+                        this.$$conf.branch = 'master';
+                        return 'master';
                     }
                     return this.$$conf.branch.length > 1 ? this.$$conf.branch : false;
                 }
@@ -1898,8 +1899,6 @@
                             } else {
 
 
-
-
                                 // execute query search
                                 angular.forEach(lunrSearch.getFields(), function (v, k) {
                                     if (self.getBoost(v) >= 0) {
@@ -1917,6 +1916,7 @@
 
 
                                 if (self.isLoadedAll() && query == '') {
+
                                     // add all nodes to result
                                     angular.forEach(nodes, function (node, identifier) {
                                         preOrdered.push({ref: identifier, score: 1});
@@ -1973,6 +1973,8 @@
                                     }
 
 
+
+
                                     var result = resultsSearch[resultsSearch.length - 1];
 
 
@@ -2005,10 +2007,11 @@
                                         }
 
 
+
+
                                         angular.forEach(result, function (item) {
                                                 if (nodes[item.ref] !== undefined) {
-
-                                                    if (self.isNodesByIdentifier()) {
+                                                   if (self.isNodesByIdentifier()) {
                                                         // post filter node
                                                         if (self.isFiltered(nodes[item.ref]) === false) {
                                                             preOrdered.push(item);
@@ -2038,6 +2041,7 @@
                                     item.score = item.score * self.getParentNodeTypeBoostFactor(nodes[item.ref]);
                                     return -1 * item.score;
                                 });
+
 
 
                                 var preOrderedFilteredRelevance = preOrdered;
@@ -2091,6 +2095,8 @@
                         }
 
 
+
+
                         lastSearchApplyTimeout = window.setTimeout(function () {
 
                             if (hasDistinct && unfilteredResult.length) {
@@ -2134,6 +2140,8 @@
                     addNodeToSearchResult: function (nodeId, score, nodesFound, items, nodeTypeMaxScore, nodeTypeMinScore, nodeTypeScoreCount) {
 
 
+
+
                         if (this.getFilter().$$data.maxResultsFilter !== undefined && this.getFilter().$$data.maxResultsFilter > 0) {
                             if (this.getFilter().$$data.maxResultsFilter <= Object.keys(items['_nodes']).length) {
                                 return true;
@@ -2155,6 +2163,8 @@
                         var hash = nodes[nodeId].hash;
                         var groupedBy = this.getGroupedBy(nodes[nodeId].nodeType);
                         var nodeTypeLabel = this.getCategorizedBy() == 'nodeType' ? this.getNodeTypeLabel(nodes[nodeId].nodeType) : resultNode.getProperty(this.getCategorizedBy());
+
+
 
 
                         if (groupedBy.length) {

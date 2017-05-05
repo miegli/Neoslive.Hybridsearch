@@ -1488,7 +1488,12 @@ class SearchIndexFactory
         }
 
         $data->lastmodified = $node->getLastModificationDateTime()->getTimestamp();
+
+        $data->hash = sha1(json_encode($properties));
+
         $properties->rawcontent = substr($this->rawcontent($rendered),0,isset($this->settings['rawContentLength']) ? $this->settings['rawContentLength'] : 512);
+
+
 
         $data->url = $uri;
         $data->uri = $this->mb_parse_url($uri);
