@@ -127,7 +127,6 @@
                 getBranch: function () {
 
                     if (this.$$conf.branch === undefined || this.$$conf.branch == null) {
-                        this.$$conf.branch = 'master';
                         return this.$$conf.branch;
                     }
                     return this.$$conf.branch.length > 1 ? this.$$conf.branch : false;
