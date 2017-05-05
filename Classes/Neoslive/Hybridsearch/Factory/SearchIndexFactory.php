@@ -1179,6 +1179,7 @@ class SearchIndexFactory
     protected function generateSearchIndexFromProperties($properties, $nodeTypeName)
     {
 
+
         if (count($properties) === 0) {
             return $properties;
         }
@@ -1466,7 +1467,6 @@ class SearchIndexFactory
         $grandParentPropertiesText = '';
         if ($grandParentNode) {
 
-
             foreach ($grandParentNode->getProperties() as $key => $val) {
                 if (gettype($val) === 'string') {
                     $k = mb_strtolower(preg_replace("/[^A-z]/", "-", $grandParentNode->getNodeType()->getName() . ":" . $key));
@@ -1474,15 +1474,9 @@ class SearchIndexFactory
                     $grandParentPropertiesText .= (Encoding::UTF8FixWin1252Chars($val)) . " ";
                 }
             }
-
-
-            $grandParentPropertiesText .= mb_strtolower(preg_replace("/[^A-z0-9]/", " ", $uri . " " . $this->rawcontent($breadcrumb)));
-            $properties->grandparent = (Encoding::UTF8FixWin1252Chars($grandParentPropertiesText));
             $p = $data->nodeType . "-grandparent";
-            $properties->$p = $properties->grandparent;
-
+            $properties->$p =  (Encoding::UTF8FixWin1252Chars($grandParentPropertiesText));
         }
-
 
         $rendered = $this->getRenderedNode($node);
 
@@ -1494,19 +1488,10 @@ class SearchIndexFactory
         }
 
         $data->lastmodified = $node->getLastModificationDateTime()->getTimestamp();
-        $data->created = $node->getCreationDateTime()->getTimestamp();
+        $properties->rawcontent = substr($this->rawcontent($rendered),0,isset($this->settings['rawContentLength']) ? $this->settings['rawContentLength'] : 512);
 
-
-        $p = $data->nodeType . "-rawcontent";
-        if (isset($properties->$p) === false) {
-            $properties->$p = $this->rawcontent($rendered);
-        }
-        //$properties->rawcontent = $properties->$p;
-
-        $data->hash = sha1(json_encode($properties));
         $data->url = $uri;
         $data->uri = $this->mb_parse_url($uri);
-
 
         if ($this->creatingFullIndex && $data->url !== '' && isset($data->uri['path'])) {
 
@@ -1522,16 +1507,7 @@ class SearchIndexFactory
             }
 
             if ($gaData) {
-
                 $properties->__google = $gaData['keywords'];
-                $properties->__userGender = $gaData['userGender'];
-                $properties->__userAgeBracket = $gaData['userAgeBracket'];
-                $properties->__trendingHour = $gaData['trendingHour'];
-                if ($gaData['trendingRating']) {
-                    $t = "__" . $gaData['trendingRating'];
-                    $properties->$t = 'trendingRating';
-                }
-
             }
         }
 
@@ -2234,7 +2210,6 @@ class SearchIndexFactory
 
 
         $i = $node->getNodeType()->getConfiguration('hybridsearch.render') ? 1 : 0;
-
 
         if ($typoscriptPath == 'page' && $node->getNodeType()->getConfiguration('hybridsearch.render') == false) {
             return '';

@@ -1,6 +1,8 @@
-
 Neos:
   Neos:
     fusion:
       autoInclude:
         Neoslive.Hybridsearch: true
+Neoslive:
+  Hybridsearch:
+    rawContentLength: 156
