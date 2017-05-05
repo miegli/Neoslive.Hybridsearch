@@ -890,7 +890,7 @@
                      * @param string value
                      * @return mixed
                      */
-                    setConfig: function (key,value) {
+                    setConfig: function (key, value) {
                         config[key] = value;
                         return value;
                     },
@@ -2082,37 +2082,34 @@
                         }
 
 
-
-
                         if (lastSearchApplyTimeout) {
                             window.clearTimeout(lastSearchApplyTimeout);
                         }
 
 
-                            lastSearchApplyTimeout = window.setTimeout(function () {
+                        lastSearchApplyTimeout = window.setTimeout(function () {
 
-                                if (hasDistinct && unfilteredResult.length) {
-                                    var unfilteredResultNodes = [];
-                                    var nodeObject = null;
-                                    angular.forEach(unfilteredResult, function (node) {
-                                        nodeObject = new HybridsearchResultsNode(node, 1);
-                                        nodeObject['_isfiltered'] = {};
-                                        angular.forEach(self.getResults().$$data.distincts, function (distinct, property) {
-                                            nodeObject['_isfiltered'][property] = self.isFiltered(nodeObject, property);
-                                        });
-                                        unfilteredResultNodes.push(nodeObject);
+                            if (hasDistinct && unfilteredResult.length) {
+                                var unfilteredResultNodes = [];
+                                var nodeObject = null;
+                                angular.forEach(unfilteredResult, function (node) {
+                                    nodeObject = new HybridsearchResultsNode(node, 1);
+                                    nodeObject['_isfiltered'] = {};
+                                    angular.forEach(self.getResults().$$data.distincts, function (distinct, property) {
+                                        nodeObject['_isfiltered'][property] = self.isFiltered(nodeObject, property);
                                     });
-                                      results.updateDistincts(unfilteredResultNodes);
-                                }
+                                    unfilteredResultNodes.push(nodeObject);
+                                });
+                                results.updateDistincts(unfilteredResultNodes);
+                            }
 
 
-                                if (wasloadedfromInput == false) {
-                                    results.getApp().setResults(items, nodes, self);
-                                    lastSearchApplyTimeout = null;
-                                }
+                            if (wasloadedfromInput == false) {
+                                results.getApp().setResults(items, nodes, self);
+                                lastSearchApplyTimeout = null;
+                            }
 
-                            }, 10);
-
+                        }, 10);
 
 
                     }
@@ -2875,7 +2872,6 @@
                                     }
 
 
-
                                 } else {
                                     //  results.$$app.clearResults();
                                     self.search();
@@ -2907,33 +2903,33 @@
                      */
                     executeLogStoreData: function (data) {
 
-                        var canceller = $q.defer();
-                        var self = this;
-                        var datanodes = [];
-
-                        if (typeof data == 'string') {
-                            datanodes.push(data);
-                        } else {
-                            datanodes = data;
-                        }
-
-                        angular.forEach(datanodes, function (node) {
-                            self.addPendingRequest($http({
-                                method: 'get',
-                                url: self.getIndexUrlByNodeIdentifier(node),
-                                cache: true,
-                                timeout: canceller.promise,
-                                cancel: function (reason) {
-                                    canceller.resolve(reason);
-                                }
-                            }).success(function (n) {
-                                if (n !== null) {
-                                    nodes[n.node.identifier] = new HybridsearchResultsNode(n.node, 1);
-                                    self.getResults().getApp().addQuickNode(nodes[n.node.identifier]);
-                                }
-                            }));
-
-                        });
+                        // var canceller = $q.defer();
+                        // var self = this;
+                        // var datanodes = [];
+                        //
+                        // if (typeof data == 'string') {
+                        //     datanodes.push(data);
+                        // } else {
+                        //     datanodes = data;
+                        // }
+                        //
+                        // angular.forEach(datanodes, function (node) {
+                        //     self.addPendingRequest($http({
+                        //         method: 'get',
+                        //         url: self.getIndexUrlByNodeIdentifier(node),
+                        //         cache: true,
+                        //         timeout: canceller.promise,
+                        //         cancel: function (reason) {
+                        //             canceller.resolve(reason);
+                        //         }
+                        //     }).success(function (n) {
+                        //         if (n !== null) {
+                        //             nodes[n.node.identifier] = new HybridsearchResultsNode(n.node, 1);
+                        //             self.getResults().getApp().addQuickNode(nodes[n.node.identifier]);
+                        //         }
+                        //     }));
+                        //
+                        // });
 
                         return this;
 
@@ -3146,7 +3142,7 @@
 
 
                             queries.push({
-                                socket: hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + '/' + keyword ),
+                                socket: hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + '/' + keyword),
                                 http: (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + '/' + keyword + ".json" + '?limitToFirst=1000&orderBy="$key"'
                             });
 
@@ -3295,7 +3291,7 @@
 
                         angular.forEach(data, function (value, key) {
 
-                                if (isloadingall === true || nodesIndexed[value.node.hash] === undefined) {
+
 
                                     var doc = {};
 
@@ -3326,73 +3322,42 @@
                                                                 } catch (e) {
                                                                     valueJson = false;
                                                                 }
-
                                                             }
                                                         }
-
 
                                                         if (valueJson) {
-
                                                             angular.forEach(valueJson.getRecursiveStrings(), function (o) {
-
-                                                                if (typeof propvalue !== 'string' || self.isLoadedAll() || self.getFilter().getQuery() == '' || o.val.length < 60) {
-                                                                    doc[property + '.' + o.key] = o.val;
-                                                                } else {
-                                                                    var i = propvalue.toLowerCase().indexOf(keyword);
-                                                                    if (i > -1) {
-                                                                        propfoundcount++;
-                                                                    }
-                                                                    doc[property + '.' + o.key] = o.val.substr(i - 30 > 0 ? i - 30 : 0, 60);
-                                                                }
+                                                                doc[property + '.' + o.key] = o.val;
                                                             });
-
                                                         } else {
-
                                                             if (typeof propvalue === 'string') {
-
-
-                                                                if (self.isLoadedAll() || self.getFilter().getQuery() == '' || propvalue.length < 350) {
-                                                                    doc[property] = propvalue;
-                                                                } else {
-
-                                                                    doc[property] = '';
-                                                                    var c = propvalue.toLowerCase()
-                                                                    angular.forEach(keywords, function (k) {
-                                                                        var i = c.indexOf(k);
-                                                                        if (i > -1) {
-                                                                            propfoundcount++;
-                                                                            doc[property] += ' ' + c.substr(i - k.length, 59);
-                                                                        }
-
-                                                                    });
-
-                                                                }
-
+                                                                doc[property] = propvalue;
                                                             }
                                                         }
-
 
                                                     }
                                                 }
                                             });
 
+                                            if (Object.keys(doc).length) {
+                                                angular.forEach(Object.keys(doc), function (key) {
+                                                    if (lunrSearch.getFields().indexOf(key) < 0) {
+                                                        lunrSearch.addField(key);
+                                                    }
+                                                });
 
-                                            angular.forEach(Object.keys(doc), function (key) {
-                                                if (lunrSearch.getFields().indexOf(key) < 0) {
-                                                    lunrSearch.addField(key);
-                                                }
-                                            });
 
+                                                doc.id = value.node.identifier;
+                                                lunrSearch.addDoc(doc);
+                                                nodesIndexed[value.node.hash] = true;
+                                            }
 
-                                            doc.id = value.node.identifier;
-                                            lunrSearch.addDoc(doc);
-                                            nodesIndexed[value.node.hash] = true;
                                         }
 
 
                                     }
 
-                                }
+
 
                             }
                         );
@@ -3616,7 +3581,7 @@
                  * @returns {HybridsearchObject}
                  */
                 disableRealtime: function () {
-                    this.$$app.setConfig('realtime',false);
+                    this.$$app.setConfig('realtime', false);
                     return this;
                 },
 
@@ -5009,7 +4974,6 @@
                  * @returns {array} collection of property values
                  */
                 getDistinct: function (property, affectedBySearchResult, counterGroupedByNode, valuesOnly) {
-
 
 
                     var self = this, variants = {}, variantsByNodes = {}, propvalue = '', variantsfinal = [];

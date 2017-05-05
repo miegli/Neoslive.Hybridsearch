@@ -1951,6 +1951,7 @@ class SearchIndexFactory
     {
 
 
+
         foreach ($this->index as $workspace => $workspaceData) {
             foreach ($workspaceData as $dimension => $dimensionData) {
                 $patch = array();
