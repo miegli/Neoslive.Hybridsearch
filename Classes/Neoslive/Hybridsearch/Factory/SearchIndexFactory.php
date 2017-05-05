@@ -1257,9 +1257,9 @@ class SearchIndexFactory
     private function getMetaphone($string)
     {
 
-        $m = metaphone($string, 5);
+        return metaphone(mb_strtolower($string), 5);
 
-        return mb_substr(mb_substr(mb_strtoupper($string),0,5).$m,0,10);
+        // return mb_substr(mb_substr(mb_strtoupper($string),0,5).$m,0,10);
 
     }
 
