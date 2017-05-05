@@ -1138,25 +1138,33 @@ class SearchIndexFactory
                 $rawcontentSegments = "";
 
                 foreach ($val as $sk => $subval) {
-                    $spos = mb_strpos(mb_strtolower($rawcontent),$sk);
-                    $matchSegment = mb_substr($rawcontent,$spos > 64 ? $spos - 64 : $spos,256);
-                    $spos = mb_strpos(($matchSegment),"  ");
-                    if ($spos) {
-                        $matchSegment = mb_substr($matchSegment,$spos);
-                    }
 
-                    $spos = mb_strpos(($matchSegment),".");
-                    if ($spos) {
-                        $matchSegment = mb_substr($matchSegment,0,$spos).".";
-                    }
-                    $matchSegment = trim($matchSegment);
-                    if (mb_strlen(trim($matchSegment))) {
-                        $rawcontentSegments = $matchSegment . " ". $rawcontentSegments;
+                    if ($sk) {
+                        $sk = mb_strtolower($sk);
+                        $spos = mb_strpos(mb_strtolower($rawcontent), $sk);
+
+                        $matchSegment = mb_substr($rawcontent, $spos, 256);
+                        $spos = mb_strripos(($matchSegment), "  ");
+                        if ($spos) {
+                            $matchSegment = mb_substr($matchSegment, $spos,256);
+                        }
+
+                        $spos = mb_strpos(($matchSegment), ".");
+                        if ($spos) {
+                            $matchSegment = mb_substr($matchSegment, 0, $spos) . ".";
+                        }
+                        $matchSegment = trim($matchSegment);
+                        if (mb_strlen(trim($matchSegment))) {
+                            $rawcontentSegments = $matchSegment . " " . $rawcontentSegments;
+                        }
+
+
                     }
                 }
 
                 $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier = array('node' => json_decode(json_encode($indexData)), 'nodeType' => $indexData->nodeType);
-                $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier['node']->rawcontent = mb_substr(trim(strip_tags($this->rawcontent($rawcontentSegments))),0,256);
+                $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier['node']->rawcontent = mb_substr(trim(strip_tags($this->rawcontent($rawcontentSegments))), 0, 256);
+
                 array_push($keywordsOfNode, $k);
 
 
