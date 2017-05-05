@@ -1347,7 +1347,7 @@ class SearchIndexFactory
                     $properties->$k = $v;
                 }
 
-                if ($val InstanceOf \DateTime) {
+                if ($val InstanceOf \DateTime && $val !== null) {
 
                     $k = mb_strtolower(preg_replace("/[^A-z0-9]/", "-", $node->getNodeType()->getName() . ":" . $key));
                     $properties->$k = [];
