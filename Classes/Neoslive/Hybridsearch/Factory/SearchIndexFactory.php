@@ -1672,12 +1672,12 @@ class SearchIndexFactory
                     $filename = $this->temporaryDirectory . "/error_" . time() . $this->queuecounter . "_" . Algorithms::generateUUID() . ".json";
                     echo "\nwarning utf-8 malformed string. skipped $path. see log file $filename";
 
-                    ob_start();
-                    var_dump($data);
-                    $data = ob_get_contents();
-                    ob_end_clean();
+//                    ob_start();
+//                    var_dump($data);
+//                    $data = ob_get_contents();
+//                    ob_end_clean();
                     $fp = fopen($filename, 'w+');
-                    $this->fwrite_stream($fp,$data);
+                    $this->fwrite_stream($fp,serialize($data));
                     fclose($fp);
 
                 }
