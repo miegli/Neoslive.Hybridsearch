@@ -770,8 +770,7 @@
                         if (maxlength === undefined) {
                             maxlength = 512;
                         }
-
-                        var preview = this.properties.rawcontent === undefined ? '' : this.properties.rawcontent.substr(0, maxlength) + (this.properties.rawcontent.length >= maxlength ? ' ...' : '');
+                        var preview = this.rawcontent === undefined ? '' : this.rawcontent.substr(0, maxlength) + (this.rawcontent.length >= maxlength ? ' ...' : '');
 
                         return preview.trim().replace(/<\/?[a-z][a-z0-9]*[^<>]*>/ig, "").replace(/\t/g, delimiter === undefined ? " ... " : delimiter);
                     },
@@ -3335,6 +3334,9 @@
                                             });
 
                                             if (Object.keys(doc).length) {
+                                                if (doc.rawcontent == undefined && value.node.rawcontent !== undefined) {
+                                                    doc.rawcontent = value.node.rawcontent;
+                                                }
                                                 angular.forEach(Object.keys(doc), function (key) {
                                                     if (lunrSearch.getFields().indexOf(key) < 0) {
                                                         lunrSearch.addField(key);

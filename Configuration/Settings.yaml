@@ -5,4 +5,4 @@ Neos:
         Neoslive.Hybridsearch: true
 Neoslive:
   Hybridsearch:
-    rawContentLength: 156
+    rawContentLength: 256

@@ -1099,7 +1099,7 @@ class SearchIndexFactory
 
 
             $indexData = $this->convertNodeToSearchIndexResult($node);
-
+            $rawcontent = $this->rawcontent($indexData->rawcontent);
 
             $identifier = $indexData->identifier;
 
@@ -1133,8 +1133,32 @@ class SearchIndexFactory
                 if (isset($this->index->$workspaceHash->$dimensionConfigurationHash->$k) === false) {
                     $this->index->$workspaceHash->$dimensionConfigurationHash->$k = new \stdClass();
                 }
-                $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier = array('node' => $indexData, 'nodeType' => $indexData->nodeType);
+
+
+                $rawcontentSegments = "";
+
+                foreach ($val as $sk => $subval) {
+                    $spos = mb_strpos(mb_strtolower($rawcontent),$sk);
+                    $matchSegment = mb_substr($rawcontent,$spos > 64 ? $spos - 64 : $spos,256);
+                    $spos = mb_strpos(($matchSegment),"  ");
+                    if ($spos) {
+                        $matchSegment = mb_substr($matchSegment,$spos);
+                    }
+
+                    $spos = mb_strpos(($matchSegment),".");
+                    if ($spos) {
+                        $matchSegment = mb_substr($matchSegment,0,$spos).".";
+                    }
+                    $matchSegment = trim($matchSegment);
+                    if (mb_strlen(trim($matchSegment))) {
+                        $rawcontentSegments = $matchSegment . " ". $rawcontentSegments;
+                    }
+                }
+
+                $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier = array('node' => json_decode(json_encode($indexData)), 'nodeType' => $indexData->nodeType);
+                $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier['node']->rawcontent = mb_substr(trim(strip_tags($this->rawcontent($rawcontentSegments))),0,256);
                 array_push($keywordsOfNode, $k);
+
 
             }
 
@@ -1491,7 +1515,7 @@ class SearchIndexFactory
 
         $data->hash = sha1(json_encode($properties));
 
-        $properties->rawcontent = mb_substr($this->rawcontent($rendered),0,isset($this->settings['rawContentLength']) ? $this->settings['rawContentLength'] : 512);
+        $data->rawcontent = $rendered;
 
 
 
@@ -2139,7 +2163,7 @@ class SearchIndexFactory
     private
     function rawcontent($text)
     {
-        return preg_replace("/[ ]{2,}/", " ", preg_replace("/\r|\n/", "", strip_tags($text)));
+        return preg_replace("/[ ]{2,}/", "  ", preg_replace("/\r|\n/", " ", strip_tags($text,'<h1><h2><h3>')));
 
     }
 
