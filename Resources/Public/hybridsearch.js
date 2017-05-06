@@ -2816,19 +2816,21 @@
                                                                 nodesIndexed = {};
                                                                 var tmpNodes = {};
                                                                 var reqNodesCount = data.val() ? Object.keys(data.val()).length : 0;
-                                                                console.log(reqNodesCount,ref);
+                                                        
 
                                                                 if (reqNodesCount) {
 
                                                                     angular.forEach(data.val(), function (node, identifier) {
-                                                                        self.getIndexByNodeIdentifierAndNodeType(identifier, node.nodeType).once("value", function (data) {
+                                                                        self.getIndexByNodeIdentifierAndNodeType(identifier, node.nodeType).on("value", function (data) {
+
                                                                             nodes[identifier] = data.val();
                                                                             tmpNodes[identifier] = data.val();
+
                                                                             if (Object.keys(tmpNodes).length == reqNodesCount) {
-                                                                                console.log(keyword);
                                                                                 execute(keyword, tmpNodes, ref);
                                                                                 self.search();
                                                                             }
+
 
                                                                         });
                                                                         //
