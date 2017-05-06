@@ -434,11 +434,15 @@ class SearchIndexFactory
 
         $this->output = new ConsoleOutput();
 
+
+
         $sites = array();
         $this->getBranch($workspacename);
 
         $this->deleteQueue();
         $this->lockReltimeIndexer();
+
+
         $this->firebase->set("/lastsync/$workspacename/" . $this->branch, time());
 
         $this->creatingFullIndex = true;
@@ -1138,59 +1142,11 @@ class SearchIndexFactory
                     $this->index->$workspaceHash->$dimensionConfigurationHash->$k = new \stdClass();
                 }
 
-
-                $rawcontentSegments = "";
-                $skip = false;
-
-                if (isset($keywords->$k) && is_array($keywords->$k)) {
-                    foreach ($keywords->$k as $sk => $subval) {
-
-                        if (mb_strlen($sk)) {
-
-
-                            $sk = mb_strtolower($sk);
-                            $spos = mb_strpos($rawcontent, $sk);
-
-
-                            if ($spos) {
-
-                                $c = mb_substr($indexData->rawcontent,$spos,300);
-                                $sposEnd = mb_strpos($c, ".");
-                                if ($sposEnd) {
-                                    $c = mb_substr($indexData->rawcontent,0,$sposEnd).".";
-                                }
-
-                                $rawcontentSegments = $c." ". $rawcontentSegments;
-
-
-                            } else {
-                                if (mb_strlen($rawcontent) > 2) {
-                                    $skip = true;
-                                }
-                            }
-                        }
-
-
-                    }
+                if (substr($k,0,2) == '__') {
+                    $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier = array('node' => $indexData, 'nodeType' => $indexData->nodeType);
+                } else {
+                    $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier = array('node' => null, 'nodeType' => $indexData->nodeType);
                 }
-
-
-
-                if ($skip == false) {
-
-                    $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier = array('node' => json_decode(json_encode($indexData)), 'nodeType' => $indexData->nodeType);
-
-                    if (strlen($rawcontentSegments) > 1) {
-                        $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier['node']->rawcontent = mb_substr(trim(strip_tags($this->rawcontent($rawcontentSegments))), 0, 512);
-                    } else {
-                        $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier['node']->rawcontent = mb_substr(trim(strip_tags($this->rawcontent($indexData->rawcontent))), 0, 512);
-                    }
-
-                    array_push($keywordsOfNode, $k);
-
-                }
-
-
 
 
             }
@@ -1312,7 +1268,7 @@ class SearchIndexFactory
     private function getMetaphone($string)
     {
 
-        return mb_strtoupper(metaphone(mb_strtolower($string), 5));
+        return metaphone(mb_strtolower($string), 10);
 
         // return mb_substr(mb_substr(mb_strtoupper($string),0,5).$m,0,10);
 
@@ -1457,7 +1413,8 @@ class SearchIndexFactory
 
 
         $flowQuery = new FlowQuery(array($node));
-        $parentNode = $flowQuery->parentsUntil($parentNodeFilter)->closest($parentNodeFilter)->get(0);
+        $parentNode = $flowQuery->parent()->closest($parentNodeFilter)->get(0);
+
         $grandParentNode = $flowQuery->closest($grandParentNodeFilter)->get(0);
         $documentNode = $flowQuery->closest("[instanceof Neos.Neos:Document]")->get(0);
 

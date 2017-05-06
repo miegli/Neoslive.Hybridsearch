@@ -781,8 +781,8 @@
                         preview = preview.trim().replace(/<\/?[a-z][a-z0-9]*[^<>]*>/ig, "").replace(/\t/g, delimiter === undefined ? " ... " : delimiter);
                         var point = preview.indexOf(".");
                         if (point) {
-                            if (point > maxlength/3*2) {
-                                maxlength = point+1;
+                            if (point > maxlength / 3 * 2) {
+                                maxlength = point + 1;
                             }
                         }
 
@@ -1986,8 +1986,6 @@
                                     }
 
 
-
-
                                     var result = resultsSearch[resultsSearch.length - 1];
 
 
@@ -2020,11 +2018,9 @@
                                         }
 
 
-
-
                                         angular.forEach(result, function (item) {
                                                 if (nodes[item.ref] !== undefined) {
-                                                   if (self.isNodesByIdentifier()) {
+                                                    if (self.isNodesByIdentifier()) {
                                                         // post filter node
                                                         if (self.isFiltered(nodes[item.ref]) === false) {
                                                             preOrdered.push(item);
@@ -2054,7 +2050,6 @@
                                     item.score = item.score * self.getParentNodeTypeBoostFactor(nodes[item.ref]);
                                     return -1 * item.score;
                                 });
-
 
 
                                 var preOrderedFilteredRelevance = preOrdered;
@@ -2108,8 +2103,6 @@
                         }
 
 
-
-
                         lastSearchApplyTimeout = window.setTimeout(function () {
 
                             if (hasDistinct && unfilteredResult.length) {
@@ -2153,8 +2146,6 @@
                     addNodeToSearchResult: function (nodeId, score, nodesFound, items, nodeTypeMaxScore, nodeTypeMinScore, nodeTypeScoreCount) {
 
 
-
-
                         if (this.getFilter().$$data.maxResultsFilter !== undefined && this.getFilter().$$data.maxResultsFilter > 0) {
                             if (this.getFilter().$$data.maxResultsFilter <= Object.keys(items['_nodes']).length) {
                                 return true;
@@ -2176,8 +2167,6 @@
                         var hash = nodes[nodeId].hash;
                         var groupedBy = this.getGroupedBy(nodes[nodeId].nodeType);
                         var nodeTypeLabel = this.getCategorizedBy() == 'nodeType' ? this.getNodeTypeLabel(nodes[nodeId].nodeType) : resultNode.getProperty(this.getCategorizedBy());
-
-
 
 
                         if (groupedBy.length) {
@@ -2685,6 +2674,7 @@
 
                                     var execute = function (keyword, data, ref) {
 
+
                                         if (ref) {
                                             if (self.isLoadedAll(ref.socket !== undefined ? ref.socket.toString() : null) === false) {
 
@@ -2820,26 +2810,54 @@
                                                     } else {
 
                                                         if (ref.socket) {
-                                                            ref.socket.limitToFirst(1000).on("value", function (data) {
-                                                                nodesIndexed = {};
-                                                                //var nodes = [];
-                                                                angular.forEach(data.val(), function (node) {
-                                                                    nodes[node.node.identifier] = node;
-                                                                });
 
-                                                                if (ref.updated === undefined) {
-                                                                    execute(keyword, data.val(), ref);
-                                                                    self.search();
-                                                                } else {
-                                                                    if (indexdata[keyword] === undefined) {
-                                                                        indexdata[keyword] = [];
-                                                                    }
-                                                                    angular.forEach(data.val(), function (node, id) {
-                                                                        indexdata[keyword].push(node);
+                                                            ref.socket.on("value", function (data) {
+
+                                                                nodesIndexed = {};
+                                                                var tmpNodes = {};
+                                                                var reqNodesCount = data.val() ? Object.keys(data.val()).length : 0;
+                                                                console.log(reqNodesCount,ref);
+
+                                                                if (reqNodesCount) {
+
+                                                                    angular.forEach(data.val(), function (node, identifier) {
+                                                                        self.getIndexByNodeIdentifierAndNodeType(identifier, node.nodeType).once("value", function (data) {
+                                                                            nodes[identifier] = data.val();
+                                                                            tmpNodes[identifier] = data.val();
+                                                                            if (Object.keys(tmpNodes).length == reqNodesCount) {
+                                                                                console.log(keyword);
+                                                                                execute(keyword, tmpNodes, ref);
+                                                                                self.search();
+                                                                            }
+
+                                                                        });
+                                                                        //
+                                                                        // angular.forEach(data.val(), function (node,identifier) {
+                                                                        //     self.getIndexByNodeIdentifierAndNodeType(identifier,node.nodeType).once("value", function (data) {
+                                                                        //         nodes[identifier] = data.val();
+                                                                        //         execute(keyword, data.val(), ref);
+                                                                        //         self.search();
+                                                                        //     });
+                                                                        // });
+
                                                                     });
-                                                                    self.updateLocalIndex(indexdata, lastSearchInstance, true);
+
+
+                                                                    // if (ref.updated === undefined) {
+                                                                    //     execute(keyword, data.val(), ref);
+                                                                    //     self.search();
+                                                                    // } else {
+                                                                    //     if (indexdata[keyword] === undefined) {
+                                                                    //         indexdata[keyword] = [];
+                                                                    //     }
+                                                                    //     angular.forEach(data.val(), function (node, identifier) {
+                                                                    //         indexdata[keyword].push(node);
+                                                                    //     });
+                                                                    //     self.updateLocalIndex(indexdata, lastSearchInstance, true);
+                                                                    // }
+                                                                    // ref.updated = true;
                                                                 }
-                                                                ref.updated = true;
+
                                                             });
 
                                                         }
@@ -3024,11 +3042,11 @@
 
                         // get search results
 
-                       // var a = querysegment.toLowerCase().replace(/[^\w()/.%\-&üöäÜÖÄ]/gi, '');
-                        var q = metaphone(querysegment.toLowerCase(), 5);
+                        // var a = querysegment.toLowerCase().replace(/[^\w()/.%\-&üöäÜÖÄ]/gi, '');
+                        var q = metaphone(querysegment.toLowerCase(), 10);
 
-                      //  q = a.substr(0, 5) + q;
-                      //  q = q.substr(0, 10).toUpperCase();
+                        //  q = a.substr(0, 5) + q;
+                        //  q = q.substr(0, 10).toUpperCase();
 
 
                         if (q.length == 0) {
@@ -3071,7 +3089,7 @@
 
 
                         }).error(function (data) {
-                           // skip
+                            // skip
                         }));
 
 
@@ -3173,6 +3191,15 @@
                         return hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + identifier + "/" + identifier);
                     }
                     ,
+                    /**
+                     * @private
+                     * @param string identifier
+                     * @returns {firebaseObject}
+                     */
+                    getIndexByNodeIdentifierAndNodeType: function (identifier, nodeType) {
+                        return hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + nodeType + "/" + identifier);
+                    }
+                    ,
 
                     /**
                      * @private
@@ -3247,7 +3274,6 @@
 
                         var self = this, keywords = [];
 
-
                         angular.forEach(data, function (val, keyword) {
                             keyword = keyword.indexOf("://") ? keyword.substr(keyword.indexOf("://") + 3) : keyword;
                             angular.forEach(lastSearchInstance.$$data.keywords, function (k) {
@@ -3300,74 +3326,73 @@
                         angular.forEach(data, function (value, key) {
 
 
+                                var doc = {};
 
-                                    var doc = {};
+                                if (hasDistinct == true || self.isFiltered(value.node) === false) {
 
-                                    if (hasDistinct == true || self.isFiltered(value.node) === false) {
-
-                                        nodes[value.node.identifier] = value.node;
+                                    nodes[value.node.identifier] = value.node;
 
 
-                                        if (value.node != undefined && value.node.properties != undefined) {
+                                    if (value.node != undefined && value.node.properties != undefined) {
 
-                                            var propfoundcount = 0;
+                                        var propfoundcount = 0;
 
-                                            // var doc = JSON.parse(JSON.stringify(value.node.properties));
+                                        // var doc = JSON.parse(JSON.stringify(value.node.properties));
 
-                                            //angular.forEach(JSON.parse(JSON.stringify(value.node.properties)), function (propvalue, property) {
-                                            angular.forEach(value.node.properties, function (propvalue, property) {
-                                                if (propvalue && propvalue.getProperty == undefined) {
-                                                    if (propfoundcount < 3 && self.getBoost(property) > 0) {
+                                        //angular.forEach(JSON.parse(JSON.stringify(value.node.properties)), function (propvalue, property) {
+                                        angular.forEach(value.node.properties, function (propvalue, property) {
+                                            if (propvalue && propvalue.getProperty == undefined) {
+                                                if (propfoundcount < 3 && self.getBoost(property) > 0) {
 
-                                                        valueJson = false;
+                                                    valueJson = false;
 
-                                                        if (typeof propvalue === 'object') {
-                                                            valueJson = propvalue;
-                                                        } else {
-                                                            if (typeof propvalue === 'string' && ((propvalue.substr(0, 1) == '{') || ((propvalue.substr(0, 2) === '["' && propvalue.substr(-2, 2) === '"]')) || (propvalue.substr(0, 2) === '[{' && propvalue.substr(-2, 2) === '}]'))) {
-                                                                try {
-                                                                    var valueJson = JSON.parse(propvalue);
-                                                                } catch (e) {
-                                                                    valueJson = false;
-                                                                }
+                                                    if (typeof propvalue === 'object') {
+                                                        valueJson = propvalue;
+                                                    } else {
+                                                        if (typeof propvalue === 'string' && ((propvalue.substr(0, 1) == '{') || ((propvalue.substr(0, 2) === '["' && propvalue.substr(-2, 2) === '"]')) || (propvalue.substr(0, 2) === '[{' && propvalue.substr(-2, 2) === '}]'))) {
+                                                            try {
+                                                                var valueJson = JSON.parse(propvalue);
+                                                            } catch (e) {
+                                                                valueJson = false;
                                                             }
                                                         }
-
-                                                        if (valueJson) {
-                                                            angular.forEach(valueJson.getRecursiveStrings(), function (o) {
-                                                                doc[property + '.' + o.key] = o.val;
-                                                            });
-                                                        } else {
-                                                            if (typeof propvalue === 'string') {
-                                                                doc[property] = propvalue;
-                                                            }
-                                                        }
-
                                                     }
+
+                                                    if (valueJson) {
+                                                        angular.forEach(valueJson.getRecursiveStrings(), function (o) {
+                                                            doc[property + '.' + o.key] = o.val;
+                                                        });
+                                                    } else {
+                                                        if (typeof propvalue === 'string') {
+                                                            doc[property] = propvalue;
+                                                        }
+                                                    }
+
+                                                }
+                                            }
+                                        });
+
+                                        if (Object.keys(doc).length) {
+
+                                            if (doc.rawcontent == undefined && value.node.rawcontent !== undefined) {
+                                                doc.rawcontent = value.node.rawcontent;
+                                            }
+                                            angular.forEach(Object.keys(doc), function (key) {
+                                                if (lunrSearch.getFields().indexOf(key) < 0) {
+                                                    lunrSearch.addField(key);
                                                 }
                                             });
 
-                                            if (Object.keys(doc).length) {
-                                                if (doc.rawcontent == undefined && value.node.rawcontent !== undefined) {
-                                                    doc.rawcontent = value.node.rawcontent;
-                                                }
-                                                angular.forEach(Object.keys(doc), function (key) {
-                                                    if (lunrSearch.getFields().indexOf(key) < 0) {
-                                                        lunrSearch.addField(key);
-                                                    }
-                                                });
 
-
-                                                doc.id = value.node.identifier;
-                                                lunrSearch.addDoc(doc);
-                                                nodesIndexed[value.node.hash] = true;
-                                            }
-
+                                            doc.id = value.node.identifier;
+                                            lunrSearch.addDoc(doc);
+                                            nodesIndexed[value.node.hash] = true;
                                         }
-
 
                                     }
 
+
+                                }
 
 
                             }
@@ -5793,7 +5818,7 @@
                 getQueryLogStoreHash: function () {
 
                     var a = this.getQuery().toLowerCase().replace(/[^\w()/%\-&üöäÜÖÄ]/gi, '');
-                    var q = metaphone(a, 5);
+                    var q = metaphone(a, 10);
                     q = a.substr(0, 5) + q;
                     return q.substr(0, 10).toUpperCase();
 
