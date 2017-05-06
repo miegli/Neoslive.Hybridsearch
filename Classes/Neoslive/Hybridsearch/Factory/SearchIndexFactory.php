@@ -1181,9 +1181,9 @@ class SearchIndexFactory
                     $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier = array('node' => json_decode(json_encode($indexData)), 'nodeType' => $indexData->nodeType);
 
                     if (strlen($rawcontentSegments) > 1) {
-                        $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier['node']->rawcontent = mb_substr(trim(strip_tags($this->rawcontent($rawcontentSegments))), 0, 256);
+                        $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier['node']->rawcontent = mb_substr(trim(strip_tags($this->rawcontent($rawcontentSegments))), 0, 512);
                     } else {
-                        $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier['node']->rawcontent = mb_substr(trim(strip_tags($this->rawcontent($indexData->rawcontent))), 0, 256);
+                        $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier['node']->rawcontent = mb_substr(trim(strip_tags($this->rawcontent($indexData->rawcontent))), 0, 512);
                     }
 
                     array_push($keywordsOfNode, $k);
@@ -1457,7 +1457,7 @@ class SearchIndexFactory
 
 
         $flowQuery = new FlowQuery(array($node));
-        $parentNode = $flowQuery->parent()->closest($parentNodeFilter)->get(0);
+        $parentNode = $flowQuery->parentsUntil($parentNodeFilter)->parent()->get(0);
         $grandParentNode = $flowQuery->closest($grandParentNodeFilter)->get(0);
         $documentNode = $flowQuery->closest("[instanceof Neos.Neos:Document]")->get(0);
 

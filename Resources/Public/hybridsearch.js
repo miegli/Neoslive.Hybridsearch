@@ -763,16 +763,30 @@
                     /**
                      * Preview html content of node.
                      * @param maxlength
+                     * @param string property
                      * @param delimiter
                      * @returns {string}
                      */
-                    getPreview: function (maxlength, delimiter) {
+                    getPreview: function (maxlength, property, delimiter) {
                         if (maxlength === undefined) {
                             maxlength = 512;
                         }
-                        var preview = this.rawcontent === undefined ? '' : this.rawcontent.substr(0, maxlength) + (this.rawcontent.length >= maxlength ? ' ...' : '');
+                        var preview = '';
+                        if (property == undefined) {
+                            preview = this.rawcontent === undefined ? '' : this.rawcontent;
+                        } else {
+                            preview = this.getProperty(property);
+                        }
 
-                        return preview.trim().replace(/<\/?[a-z][a-z0-9]*[^<>]*>/ig, "").replace(/\t/g, delimiter === undefined ? " ... " : delimiter);
+                        preview = preview.trim().replace(/<\/?[a-z][a-z0-9]*[^<>]*>/ig, "").replace(/\t/g, delimiter === undefined ? " ... " : delimiter);
+                        var point = preview.indexOf(".");
+                        if (point) {
+                            if (point > maxlength/3*2) {
+                                maxlength = point+1;
+                            }
+                        }
+
+                        return preview.substr(0, maxlength);
                     },
 
                     /**
