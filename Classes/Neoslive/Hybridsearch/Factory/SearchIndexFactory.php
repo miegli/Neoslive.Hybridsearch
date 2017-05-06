@@ -1457,7 +1457,7 @@ class SearchIndexFactory
 
 
         $flowQuery = new FlowQuery(array($node));
-        $parentNode = $flowQuery->parentsUntil($parentNodeFilter)->parent()->get(0);
+        $parentNode = $flowQuery->parentsUntil($parentNodeFilter)->closest($parentNodeFilter)->get(0);
         $grandParentNode = $flowQuery->closest($grandParentNodeFilter)->get(0);
         $documentNode = $flowQuery->closest("[instanceof Neos.Neos:Document]")->get(0);
 
