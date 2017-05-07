@@ -513,7 +513,7 @@ class SearchIndexFactory
         }
 
         // remove trash
-        $this->firebase->delete("/trash", array('shallow' => 'true'));
+        $this->firebase->delete("/trash", array('print' => 'silent'));
 
         $this->updateFireBaseRules();
 
@@ -807,7 +807,7 @@ class SearchIndexFactory
 
 
         if (count($this->allSiteKeys) === 0) {
-            $this->allSiteKeys = json_decode($this->firebase->get('sites', array('shallow' => 'true')));
+            $this->allSiteKeys = json_decode($this->firebase->get('sites', array('print' => 'silent')));
         }
 
 
@@ -1068,11 +1068,11 @@ class SearchIndexFactory
             }
             $this->firebase->update("sites/$siteIdentifier/index/$workspaceHash/$branch/$dimensionConfigurationHash", $keywordsremove,array('print' => 'silent'));
             if (count($keywordsOfNode) === 0) {
-                $this->firebase->delete("sites/" . $siteIdentifier . "/index/$workspaceHash/$branch/$dimensionConfigurationHash" . "/___keywords/" . urlencode($nodeIdentifier), array('shallow' => 'true'));
+                $this->firebase->delete("sites/" . $siteIdentifier . "/index/$workspaceHash/$branch/$dimensionConfigurationHash" . "/___keywords/" . urlencode($nodeIdentifier), array('print' => 'silent'));
             }
         }
 
-        $this->firebase->delete("trash/$siteIdentifier/$workspaceHash/$branch/$dimensionConfigurationHash/$nodeIdentifier", array('shallow' => 'true'));
+        $this->firebase->delete("trash/$siteIdentifier/$workspaceHash/$branch/$dimensionConfigurationHash/$nodeIdentifier", array('print' => 'silent'));
 
 
     }
@@ -1665,7 +1665,7 @@ class SearchIndexFactory
     function firebaseDelete($path)
     {
 
-        $this->firebase->delete($path, array('shallow' => 'true'));
+        $this->firebase->delete($path, array('print' => 'silent'));
 
     }
 
@@ -1908,7 +1908,7 @@ class SearchIndexFactory
 
 
         $mergedrules = array();
-        $this->allSiteKeys = json_decode($this->firebase->get('sites', array('shallow' => 'true')));
+        $this->allSiteKeys = json_decode($this->firebase->get('sites', array('print' => 'silent')));
 
         if (count($this->allSiteKeys) === 0) {
             return false;
@@ -2108,20 +2108,20 @@ class SearchIndexFactory
 
         if ($branch) {
 
-            $workspaces = json_decode($this->firebase->get("sites/" . $site . "/index", array('shallow' => 'true')));
+            $workspaces = json_decode($this->firebase->get("sites/" . $site . "/index", array('print' => 'silent')));
 
             if ($workspaces) {
                 foreach ($workspaces as $workspace => $workspaceData) {
-                    $this->firebase->delete("sites/" . $site . "/index/$workspace/" . $branch, array('shallow' => 'true'));
-                    $this->firebase->delete("sites/" . $site . "/keywords/$workspace/" . $branch,array('shallow' => 'true'));
+                    $this->firebase->delete("sites/" . $site . "/index/$workspace/" . $branch, array('print' => 'silent'));
+                    $this->firebase->delete("sites/" . $site . "/keywords/$workspace/" . $branch,array('print' => 'silent'));
                 }
             }
 
 
         } else {
 
-            $this->firebase->delete("sites/" . $site, array('shallow' => 'true'));
-            $this->firebase->delete("/trash/" . $site, array('shallow' => 'true'));
+            $this->firebase->delete("sites/" . $site, array('print' => 'silent'));
+            $this->firebase->delete("/trash/" . $site, array('print' => 'silent'));
         }
 
 
