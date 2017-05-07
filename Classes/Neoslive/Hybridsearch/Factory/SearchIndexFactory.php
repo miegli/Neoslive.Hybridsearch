@@ -1848,10 +1848,6 @@ class SearchIndexFactory
 
                     if ($content) {
 
-                        if ($count > 10 && $count % 8 == 0) {
-                            sleep(8);
-                        }
-
                         switch ($content->method) {
                             case 'update':
                                 $out = $this->firebase->update($content->path, $content->data, array('print' => 'silent'));
@@ -1866,17 +1862,10 @@ class SearchIndexFactory
                                 break;
                         }
 
-                        $this->output->progressAdvance(filesize($file));
-
-
-                        if (strlen($out) > 1) {
-                            rename($file, $file . ".error.log");
-                            } else {
-                            unlink($file);
+                        if (strlen($out)) {
+                            \Neos\Flow\var_dump($out);
                         }
-
-
-                    } else {
+                        $this->output->progressAdvance(filesize($file));
                         unlink($file);
                     }
 
