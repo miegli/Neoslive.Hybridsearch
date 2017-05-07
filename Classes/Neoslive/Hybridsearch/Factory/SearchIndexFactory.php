@@ -1122,7 +1122,17 @@ class SearchIndexFactory
 
 
             $indexData = $this->convertNodeToSearchIndexResult($node);
-            $rawcontent = mb_strtolower($indexData->rawcontent);
+
+            if (count($indexData->properties) == 1) {
+                foreach ($indexData->properties as $p) {
+                    if (!$p) {
+                        // skip emtpy nodes
+                        return null;
+                    }
+                }
+            }
+
+            
 
             $identifier = $indexData->identifier;
 
