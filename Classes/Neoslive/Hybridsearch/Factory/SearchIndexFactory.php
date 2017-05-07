@@ -506,7 +506,6 @@ class SearchIndexFactory
 
 
 
-
         // remove old sites data
         foreach ($sites as $s) {
             $this->switchBranch($workspacename);
@@ -943,7 +942,7 @@ class SearchIndexFactory
 
                 $this->site = $node->getContext()->getCurrentSite();
 
-                $this->firebase->set("/trash/" . $p[2] . "/" . $this->getWorkspaceHash($nodedata->getWorkspace()) . "/" . $this->branch . "/" . $this->getDimensionConfiugurationHash($node->getDimensions()) . "/" . $nodedata->getIdentifier(), time());
+                $this->firebase->set("/trash/" . $p[2] . "/" . $this->getWorkspaceHash($nodedata->getWorkspace()) . "/" . $this->branch . "/" . $this->getDimensionConfiugurationHash($node->getDimensions()) . "/" . $nodedata->getIdentifier(), time(),array('print' => 'silent'));
 
                 // remove parent nodes from index and set last modification time for reindexing
                 $counter = 0;
@@ -955,7 +954,7 @@ class SearchIndexFactory
                     /* @var Node $parentNode */
                     $parentNode->getNodeData()->setLastPublicationDateTime($lastpublicationsdate);
                     $this->nodeDataRepository->update($parentNode->getNodeData());
-                    $this->firebase->set("/trash/" . $p[2] . "/" . $this->getWorkspaceHash($nodedata->getWorkspace()) . "/" . $this->branch . "/" . $this->getDimensionConfiugurationHash($node->getDimensions()) . "/" . $parentNode->getIdentifier(), time());
+                    $this->firebase->set("/trash/" . $p[2] . "/" . $this->getWorkspaceHash($nodedata->getWorkspace()) . "/" . $this->branch . "/" . $this->getDimensionConfiugurationHash($node->getDimensions()) . "/" . $parentNode->getIdentifier(), time(),array('print' => 'silent'));
                     $this->persistenceManager->persistAll();
                     $parentNode = $parentNode->getParent();
                     $counter++;
@@ -983,7 +982,7 @@ class SearchIndexFactory
             $flowQuery = new FlowQuery(array($node));
             if ($flowQuery->is($this->settings['Filter']['NodeTypeFilter']) === true) {
                 $this->site = $node->getContext()->getCurrentSite();
-                $this->firebase->set("/trash/" . $this->getSiteIdentifier() . "/" . $this->getWorkspaceHash($targetWorkspace) . "/" . $this->branch . "/" . $this->getDimensionConfiugurationHash($node->getDimensions()) . "/" . $node->getIdentifier(), time());
+                $this->firebase->set("/trash/" . $this->getSiteIdentifier() . "/" . $this->getWorkspaceHash($targetWorkspace) . "/" . $this->branch . "/" . $this->getDimensionConfiugurationHash($node->getDimensions()) . "/" . $node->getIdentifier(), time(),array('print' => 'silent'));
             }
         }
 
@@ -1067,7 +1066,7 @@ class SearchIndexFactory
                     $keywordsremove[$keyword . "/" . urlencode($nodeIdentifier)] = null;
                 }
             }
-            $this->firebase->update("sites/$siteIdentifier/index/$workspaceHash/$branch/$dimensionConfigurationHash", $keywordsremove);
+            $this->firebase->update("sites/$siteIdentifier/index/$workspaceHash/$branch/$dimensionConfigurationHash", $keywordsremove,array('print' => 'silent'));
             if (count($keywordsOfNode) === 0) {
                 $this->firebase->delete("sites/" . $siteIdentifier . "/index/$workspaceHash/$branch/$dimensionConfigurationHash" . "/___keywords/" . urlencode($nodeIdentifier));
             }
@@ -1855,31 +1854,24 @@ class SearchIndexFactory
 
                         switch ($content->method) {
                             case 'update':
-                                $out = $this->firebase->update($content->path, $content->data);
+                                $out = $this->firebase->update($content->path, $content->data, array('print' => 'silent'));
                                 break;
 
                             case 'delete':
-                                $out = $this->firebase->delete($content->path);
+                                $out = $this->firebase->delete($content->path,array('print' => 'silent'));
                                 break;
 
                             case 'set':
-                                $out = $this->firebase->set($content->path, $content->data);
+                                $out = $this->firebase->set($content->path, $content->data, array('print' => 'silent'));
                                 break;
                         }
 
                         $this->output->progressAdvance(filesize($file));
 
 
-                        if (strlen($out) < 255) {
-
-                            if (!json_decode($out)) {
-                                $this->output->outputLine($out);
-                                rename($file, $file . ".error.log");
+                        if (strlen($out) > 1) {
+                            rename($file, $file . ".error.log");
                             } else {
-                                unlink($file);
-                            }
-
-                        } else {
                             unlink($file);
                         }
 
@@ -2015,7 +2007,7 @@ class SearchIndexFactory
 
                 } else {
                     if ($directpush) {
-                        $this->firebase->update("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $this->branch, $patch);
+                        $this->firebase->update("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $this->branch, $patch,array('print' => 'silent'));
                     } else {
                         $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $this->branch, $patch);
                     }
@@ -2043,7 +2035,7 @@ class SearchIndexFactory
                 $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/keywords/", $patch);
             } else {
                 if ($directpush) {
-                    $this->firebase->update("sites/" . $this->getSiteIdentifier() . "/keywords/", $patch);
+                    $this->firebase->update("sites/" . $this->getSiteIdentifier() . "/keywords/", $patch,array('print' => 'silent'));
                 } else {
                     $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/keywords/", $patch);
                 }
