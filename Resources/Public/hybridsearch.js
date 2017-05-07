@@ -2847,29 +2847,56 @@
 
                                                         if (ref.socket) {
 
-                                                            ref.socket.on("value", function (data) {
 
-                                                                nodesIndexed = {};
-                                                                var tmpNodes = {};
-                                                                var reqNodesCount = data.val() ? Object.keys(data.val()).length : 0;
+                                                            if (ref.isLoadingAllFromNodeType == undefined) {
+
+                                                                ref.socket.on("value", function (data) {
+
+                                                                    nodesIndexed = {};
+                                                                    var tmpNodes = {};
+                                                                    var reqNodesCount = data.val() ? Object.keys(data.val()).length : 0;
 
 
-                                                                if (reqNodesCount) {
+                                                                    if (reqNodesCount) {
 
-                                                                    angular.forEach(data.val(), function (node, identifier) {
-                                                                        self.getIndexByNodeIdentifierAndNodeType(identifier, node.nodeType).on("value", function (data) {
-                                                                            nodes[identifier] = data.val();
-                                                                            tmpNodes[identifier] = data.val();
-                                                                            if (Object.keys(tmpNodes).length == reqNodesCount) {
-                                                                                execute(keyword, tmpNodes, ref);
-                                                                                self.search();
-                                                                            }
+                                                                        angular.forEach(data.val(), function (node, identifier) {
+                                                                            self.getIndexByNodeIdentifierAndNodeType(identifier, node.nodeType).on("value", function (data) {
+                                                                                nodes[identifier] = data.val();
+                                                                                tmpNodes[identifier] = data.val();
+                                                                                if (Object.keys(tmpNodes).length == reqNodesCount) {
+                                                                                    execute(keyword, tmpNodes, ref);
+                                                                                    self.search();
+                                                                                }
+                                                                            });
+
                                                                         });
+                                                                    }
 
+                                                                });
+
+                                                            } else {
+
+
+                                                                ref.socket.once("value", function (data) {
+                                                                    if (data.val()) {
+                                                                        execute(keyword, data.val(), ref);
+                                                                        self.search();
+                                                                    }
+                                                                    angular.forEach(data.val(), function (node, identifier) {
+
+                                                                        self.getIndexByNodeIdentifierAndNodeType(identifier, node.nodeType).on("child_changed", function (data) {
+                                                                            nodes[identifier] = data.val();
+                                                                       });
                                                                     });
-                                                                }
 
-                                                            });
+                                                                });
+
+
+
+
+                                                            }
+
+
 
                                                         }
                                                     }
@@ -3146,6 +3173,7 @@
                             if (typeof this.getFilter().getNodeType() == 'string') {
                                 queries.push(
                                     {
+                                        isLoadingAllFromNodeType: true,
                                         socket: hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + this.getFilter().getNodeType()),
                                         http: (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + this.getFilter().getNodeType() + ".json"
                                     }
@@ -3156,6 +3184,7 @@
                                 angular.forEach(this.getFilter().getNodeType(), function (nodeType) {
                                     queries.push(
                                         {
+                                            isLoadingAllFromNodeType: true,
                                             socket: hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + nodeType),
                                             http: (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + nodeType + ".json"
                                         }
