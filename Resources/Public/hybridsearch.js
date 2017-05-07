@@ -2176,7 +2176,7 @@
                             angular.forEach(groupedBy, function (property) {
 
                                 if (property === 'url') {
-                                    var p = resultNode.getUrl();
+                                    var p = resultNode.uri.path
                                 } else {
                                     var p = resultNode.getProperty(property);
                                 }
@@ -2768,6 +2768,7 @@
 
                                                 if (self.isLoadedAll(ref.socket.toString()) == false) {
 
+
                                                     var canceller = $q.defer();
 
                                                     if (self.getConfig('realtime') === null && ref.socket !== undefined) {
@@ -2790,20 +2791,55 @@
                                                         }).success(function (data) {
 
                                                             nodesIndexed = {};
-                                                            angular.forEach(data, function (node) {
-                                                                nodes[node.node.identifier] = node;
-                                                            });
+                                                            var tmpNodes = {};
+                                                            var tmpNodesInterval = null;
+                                                            var tmpNodesIsInInterval = false;
+                                                            var tmpNodesIntervalCounter = 0;
+                                                            var reqNodesCount = data ? Object.keys(data).length : 0;
 
-                                                            execute(keyword, data, ref);
+                                                            if (reqNodesCount) {
+                                                                angular.forEach(data, function (node, identifier) {
 
-                                                            if (indexdata[keyword] === undefined) {
-                                                                indexdata[keyword] = [];
+                                                                    if (node.node == undefined) {
+
+                                                                        tmpNodesIsInInterval = true;
+
+                                                                        self.getIndexByNodeIdentifierAndNodeType(identifier, node.nodeType).once("value", function (data) {
+                                                                            nodes[identifier] = data.val();
+                                                                            tmpNodes[identifier] = data.val();
+                                                                            if (Object.keys(tmpNodes).length == reqNodesCount) {
+                                                                                clearInterval(tmpNodesInterval);
+                                                                                execute(keyword, tmpNodes, ref);
+                                                                                self.search();
+                                                                            }
+                                                                        });
+
+                                                                    } else {
+                                                                        nodes[identifier] = node;
+                                                                        tmpNodes[identifier] = node;
+                                                                        if (Object.keys(tmpNodes).length == reqNodesCount) {
+                                                                            execute(keyword, tmpNodes, ref);
+                                                                            self.search();
+                                                                        }
+                                                                    }
+
+                                                                });
+
+                                                                if (tmpNodesIsInInterval) {
+                                                                    // force execution of broken cache
+                                                                    tmpNodesInterval = window.setInterval(function () {
+                                                                        tmpNodesIntervalCounter++;
+                                                                        execute(keyword, tmpNodes, ref);
+                                                                        self.search();
+                                                                        if (tmpNodesIntervalCounter > 3) {
+                                                                            clearInterval(tmpNodesInterval);
+                                                                        }
+                                                                    }, 500);
+                                                                }
+
+
                                                             }
-                                                            angular.forEach(data, function (node, id) {
-                                                                indexdata[keyword].push(node);
-                                                            });
-                                                            self.updateLocalIndex(indexdata, lastSearchInstance, true);
-                                                            self.search();
+
 
                                                         }));
 
@@ -2816,48 +2852,21 @@
                                                                 nodesIndexed = {};
                                                                 var tmpNodes = {};
                                                                 var reqNodesCount = data.val() ? Object.keys(data.val()).length : 0;
-                                                        
+
 
                                                                 if (reqNodesCount) {
 
                                                                     angular.forEach(data.val(), function (node, identifier) {
                                                                         self.getIndexByNodeIdentifierAndNodeType(identifier, node.nodeType).on("value", function (data) {
-
                                                                             nodes[identifier] = data.val();
                                                                             tmpNodes[identifier] = data.val();
-
                                                                             if (Object.keys(tmpNodes).length == reqNodesCount) {
                                                                                 execute(keyword, tmpNodes, ref);
                                                                                 self.search();
                                                                             }
-
-
                                                                         });
-                                                                        //
-                                                                        // angular.forEach(data.val(), function (node,identifier) {
-                                                                        //     self.getIndexByNodeIdentifierAndNodeType(identifier,node.nodeType).once("value", function (data) {
-                                                                        //         nodes[identifier] = data.val();
-                                                                        //         execute(keyword, data.val(), ref);
-                                                                        //         self.search();
-                                                                        //     });
-                                                                        // });
 
                                                                     });
-
-
-                                                                    // if (ref.updated === undefined) {
-                                                                    //     execute(keyword, data.val(), ref);
-                                                                    //     self.search();
-                                                                    // } else {
-                                                                    //     if (indexdata[keyword] === undefined) {
-                                                                    //         indexdata[keyword] = [];
-                                                                    //     }
-                                                                    //     angular.forEach(data.val(), function (node, identifier) {
-                                                                    //         indexdata[keyword].push(node);
-                                                                    //     });
-                                                                    //     self.updateLocalIndex(indexdata, lastSearchInstance, true);
-                                                                    // }
-                                                                    // ref.updated = true;
                                                                 }
 
                                                             });
@@ -3691,7 +3700,6 @@
 
 
                     var self = this;
-                    var timer = false;
 
 
                     if (self.addedNodesByIdentifierIndex == undefined) {
@@ -3708,28 +3716,20 @@
                             self.$$app.getIndexByNodeIdentifier(node).once("value", function (data) {
 
                                 if (data.val()) {
-
-
-                                    self.$$app.addNodeByIdentifier(data.val(), self.addedNodesByIdentifierIndex[data.val().node.identifier]);
-                                    self.$$app.addLocalIndex([data.val()]);
-
-                                    if (timer !== false) {
-                                        clearTimeout(timer);
-                                    }
-                                    timer = setTimeout(function () {
-                                        self.$$app.search();
-                                    }, nodesArray.length > 50 ? 100 : 10);
-
-
-                                    // wait for updates
-                                    self.$$app.getIndexByNodeIdentifier(node).on("value", function (data) {
-                                        if (data.val()) {
+                                    var identifier = data.getKey();
+                                    if (self.$$app.getConfig('realtime') == null) {
+                                        self.$$app.getIndexByNodeIdentifierAndNodeType(identifier, data.val().nodeType).on("value", function (data) {
+                                            self.$$app.addNodeByIdentifier(data.val(), self.addedNodesByIdentifierIndex[data.val().node.identifier]);
                                             self.$$app.addLocalIndex([data.val()]);
                                             self.$$app.search();
-                                        }
-                                    });
-                                    //}
-
+                                        });
+                                    } else {
+                                        self.$$app.getIndexByNodeIdentifierAndNodeType(identifier, data.val().nodeType).once("value", function (data) {
+                                            self.$$app.addNodeByIdentifier(data.val(), self.addedNodesByIdentifierIndex[data.val().node.identifier]);
+                                            self.$$app.addLocalIndex([data.val()]);
+                                            self.$$app.search();
+                                        });
+                                    }
                                 }
 
 
