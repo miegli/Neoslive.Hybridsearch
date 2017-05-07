@@ -1861,10 +1861,12 @@ class SearchIndexFactory
                         $this->output->progressAdvance(floor(filesize($file)/2));
                         $out = "";
 
-                        if (count($content->data)) {
+
                             switch ($content->method) {
                                 case 'update':
-                                    $out = $this->firebase->update($content->path, $content->data, array('print' => 'silent'));
+                                    if (count($content->data)) {
+                                        $out = $this->firebase->update($content->path, $content->data, array('print' => 'silent'));
+                                    }
                                     break;
 
                                 case 'delete':
@@ -1872,10 +1874,12 @@ class SearchIndexFactory
                                     break;
 
                                 case 'set':
-                                    $out = $this->firebase->set($content->path, $content->data, array('print' => 'silent'));
+                                    if (count($content->data)) {
+                                        $out = $this->firebase->set($content->path, $content->data, array('print' => 'silent'));
+                                    }
                                     break;
                             }
-                        }
+
 
                         $this->output->progressAdvance(floor(filesize($file)/2));
 
