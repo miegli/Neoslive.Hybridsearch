@@ -1864,7 +1864,7 @@ class SearchIndexFactory
                                 break;
                         }
 
-                        $this->output->progressAdvance(filesize($file));
+                        $this->output->progressAdvance(floor(filesize($file)/2));
 
                         if (strlen($out)) {
                             \Neos\Flow\var_dump($out,'see log file '.$file . ".error.log");
