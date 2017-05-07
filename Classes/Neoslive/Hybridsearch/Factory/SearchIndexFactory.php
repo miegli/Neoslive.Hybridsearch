@@ -1280,10 +1280,13 @@ class SearchIndexFactory
      */
     private function getMetaphone($string)
     {
+        if (is_numeric($string)) {
+            return $string;
+        }
 
-        return metaphone(mb_strtolower($string), 0);
+        $metaphone = metaphone(mb_strtolower($string), 0);
+        return mb_strtoupper(mb_substr($metaphone,0,mb_strlen($metaphone)-1));
 
-        // return mb_substr(mb_substr(mb_strtoupper($string),0,5).$m,0,10);
 
     }
 
