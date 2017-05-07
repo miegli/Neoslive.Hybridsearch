@@ -1123,7 +1123,7 @@ class SearchIndexFactory
 
             $indexData = $this->convertNodeToSearchIndexResult($node);
 
-            if (count($indexData->properties) == 1) {
+            if (count(get_object_vars($indexData->properties)) == 1) {
                 foreach ($indexData->properties as $p) {
                     if (!$p) {
                         // skip emtpy nodes
