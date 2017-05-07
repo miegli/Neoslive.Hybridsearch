@@ -437,12 +437,11 @@ class SearchIndexFactory
 
         $sites = array();
         $this->getBranch($workspacename);
-
         $this->deleteQueue();
         $this->lockReltimeIndexer();
 
-
         $this->firebase->set("/lastsync/$workspacename/" . $this->branch, time());
+
 
         $this->creatingFullIndex = true;
 
@@ -504,7 +503,6 @@ class SearchIndexFactory
 
         $this->proceedQueue();
 
-      return true;
 
         $this->updateFireBaseRules();
 
