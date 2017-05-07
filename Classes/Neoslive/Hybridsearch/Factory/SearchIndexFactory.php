@@ -1682,7 +1682,7 @@ class SearchIndexFactory
     {
 
 
-        if ($chunkcounter < 100 && count($data) > 2 && strlen(json_encode($data)) > 50000000) {
+        if ($chunkcounter < 100 && count($data) > 2 && strlen(json_encode($data)) > 10000000) {
             $chunkcounter++;
             $this->addToQueue($path, array_slice($data, 0, floor(count($data) / 2)), $method, $chunkcounter);
             $this->addToQueue($path, array_slice($data, ceil(count($data) / 2)), $method, $chunkcounter);
@@ -1848,6 +1848,8 @@ class SearchIndexFactory
 
                     if ($content) {
 
+                        $this->output->progressAdvance(floor(filesize($file)/2));
+
                         switch ($content->method) {
                             case 'update':
                                 $out = $this->firebase->update($content->path, $content->data, array('print' => 'silent'));
@@ -1862,13 +1864,15 @@ class SearchIndexFactory
                                 break;
                         }
 
+                        $this->output->progressAdvance(filesize($file));
+
                         if (strlen($out)) {
                             \Neos\Flow\var_dump($out,'see log file '.$file . ".error.log");
                             rename($file, $file . ".error.log");
                         } else {
                             unlink($file);
                         }
-                        $this->output->progressAdvance(filesize($file));
+
 
                     }
 
