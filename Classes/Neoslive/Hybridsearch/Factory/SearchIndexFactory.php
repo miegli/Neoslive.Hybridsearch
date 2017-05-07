@@ -1132,7 +1132,7 @@ class SearchIndexFactory
                 }
             }
 
-            
+
 
             $identifier = $indexData->identifier;
 
@@ -1859,8 +1859,9 @@ class SearchIndexFactory
                     if ($content) {
 
                         $this->output->progressAdvance(floor(filesize($file)/2));
+                        $out = "";
 
-                        switch ($content->method) {
+                        switch ($content->method && count($content->data)) {
                             case 'update':
                                 $out = $this->firebase->update($content->path, $content->data, array('print' => 'silent'));
                                 break;
