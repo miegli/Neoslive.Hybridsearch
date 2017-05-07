@@ -2108,7 +2108,7 @@ class SearchIndexFactory
 
         if ($branch) {
 
-            $workspaces = json_decode($this->firebase->get("sites/" . $site . "/index", array('print' => 'silent')));
+            $workspaces = json_decode($this->firebase->get("sites/" . $site . "/index"));
 
             if ($workspaces) {
                 foreach ($workspaces as $workspace => $workspaceData) {
