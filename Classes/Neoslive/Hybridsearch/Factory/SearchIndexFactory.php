@@ -513,7 +513,7 @@ class SearchIndexFactory
         }
 
         // remove trash
-        $this->firebase->delete("/trash");
+        $this->firebase->delete("/trash", array('shallow' => 'true'));
 
         $this->updateFireBaseRules();
 
@@ -1068,11 +1068,11 @@ class SearchIndexFactory
             }
             $this->firebase->update("sites/$siteIdentifier/index/$workspaceHash/$branch/$dimensionConfigurationHash", $keywordsremove,array('print' => 'silent'));
             if (count($keywordsOfNode) === 0) {
-                $this->firebase->delete("sites/" . $siteIdentifier . "/index/$workspaceHash/$branch/$dimensionConfigurationHash" . "/___keywords/" . urlencode($nodeIdentifier));
+                $this->firebase->delete("sites/" . $siteIdentifier . "/index/$workspaceHash/$branch/$dimensionConfigurationHash" . "/___keywords/" . urlencode($nodeIdentifier), array('shallow' => 'true'));
             }
         }
 
-        $this->firebase->delete("trash/$siteIdentifier/$workspaceHash/$branch/$dimensionConfigurationHash/$nodeIdentifier");
+        $this->firebase->delete("trash/$siteIdentifier/$workspaceHash/$branch/$dimensionConfigurationHash/$nodeIdentifier", array('shallow' => 'true'));
 
 
     }
@@ -1665,7 +1665,7 @@ class SearchIndexFactory
     function firebaseDelete($path)
     {
 
-        $this->firebase->delete($path);
+        $this->firebase->delete($path, array('shallow' => 'true'));
 
     }
 
@@ -2112,16 +2112,16 @@ class SearchIndexFactory
 
             if ($workspaces) {
                 foreach ($workspaces as $workspace => $workspaceData) {
-                    $this->firebase->delete("sites/" . $site . "/index/$workspace/" . $branch);
-                    $this->firebase->delete("sites/" . $site . "/keywords/$workspace/" . $branch);
+                    $this->firebase->delete("sites/" . $site . "/index/$workspace/" . $branch, array('shallow' => 'true'));
+                    $this->firebase->delete("sites/" . $site . "/keywords/$workspace/" . $branch,array('shallow' => 'true'));
                 }
             }
 
 
         } else {
 
-            $this->firebase->delete("sites/" . $site);
-            $this->firebase->delete("/trash/" . $site);
+            $this->firebase->delete("sites/" . $site, array('shallow' => 'true'));
+            $this->firebase->delete("/trash/" . $site, array('shallow' => 'true'));
         }
 
 
