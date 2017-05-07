@@ -807,7 +807,7 @@ class SearchIndexFactory
 
 
         if (count($this->allSiteKeys) === 0) {
-            $this->allSiteKeys = json_decode($this->firebase->get('sites', array('print' => 'silent')));
+            $this->allSiteKeys = json_decode($this->firebase->get('sites', array('shallow' => 'true')));
         }
 
 
@@ -1908,7 +1908,7 @@ class SearchIndexFactory
 
 
         $mergedrules = array();
-        $this->allSiteKeys = json_decode($this->firebase->get('sites', array('print' => 'silent')));
+        $this->allSiteKeys = json_decode($this->firebase->get('sites', array('shallow' => 'true')));
 
         if (count($this->allSiteKeys) === 0) {
             return false;
