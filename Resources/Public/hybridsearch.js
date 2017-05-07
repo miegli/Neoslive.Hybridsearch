@@ -2683,6 +2683,7 @@
 
 
                                         if (ref) {
+
                                             if (self.isLoadedAll(ref.socket !== undefined ? ref.socket.toString() : null) === false) {
 
 
@@ -2780,6 +2781,8 @@
                                                         ref.http = null;
                                                     }
 
+
+
                                                     if (ref.http) {
 
                                                         self.addPendingRequest($http({
@@ -2805,6 +2808,7 @@
                                                             if (reqNodesCount) {
                                                                 angular.forEach(data, function (node, identifier) {
 
+
                                                                     if (node.node == undefined) {
 
                                                                         tmpNodesIsInInterval = true;
@@ -2816,6 +2820,7 @@
                                                                                 clearInterval(tmpNodesInterval);
                                                                                 execute(keyword, tmpNodes, ref);
                                                                                 self.search();
+                                                                                self.setIsLoadedAll(ref.socket.toString());
                                                                             }
                                                                         });
 
@@ -2825,6 +2830,7 @@
                                                                         if (Object.keys(tmpNodes).length == reqNodesCount) {
                                                                             execute(keyword, tmpNodes, ref);
                                                                             self.search();
+                                                                            self.setIsLoadedAll(ref.socket.toString());
                                                                         }
                                                                     }
 
@@ -2835,6 +2841,7 @@
                                                                     tmpNodesInterval = window.setInterval(function () {
                                                                         tmpNodesIntervalCounter++;
                                                                         execute(keyword, tmpNodes, ref);
+                                                                        self.setIsLoadedAll(ref.socket.toString());
                                                                         self.search();
                                                                         if (tmpNodesIntervalCounter > 3) {
                                                                             clearInterval(tmpNodesInterval);
@@ -2845,7 +2852,7 @@
 
                                                             }
 
-                                                            self.setIsLoadedAll(ref.socket.toString());
+
 
 
                                                         }));
@@ -2872,8 +2879,8 @@
                                                                                 tmpNodes[identifier] = data.val();
                                                                                 if (Object.keys(tmpNodes).length == reqNodesCount) {
                                                                                     execute(keyword, tmpNodes, ref);
-                                                                                    self.setIsLoadedAll(ref.socket.toString());
                                                                                     self.search();
+                                                                                    self.setIsLoadedAll(ref.socket.toString());
                                                                                 }
                                                                             });
 
@@ -2897,7 +2904,7 @@
                                                                         });
                                                                     });
 
-                                                                    self.setIsLoadedAll(ref.socket.toString());
+
 
                                                                 });
 
