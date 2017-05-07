@@ -3054,7 +3054,7 @@
                         // get search results
 
                         // var a = querysegment.toLowerCase().replace(/[^\w()/.%\-&üöäÜÖÄ]/gi, '');
-                        var q = metaphone(querysegment.toLowerCase(), 0);
+                        var q = metaphone(querysegment.toLowerCase(), 6);
                             q = q.substr(0,q.length-1).toUpperCase();
 
                         //  q = a.substr(0, 5) + q;
