@@ -1864,9 +1864,12 @@ class SearchIndexFactory
 
                         if (strlen($out)) {
                             \Neos\Flow\var_dump($out);
+                            rename($file, $file . ".error.log");
+                        } else {
+                            unlink($file);
                         }
                         $this->output->progressAdvance(filesize($file));
-                        unlink($file);
+
                     }
 
 
