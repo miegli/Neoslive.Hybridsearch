@@ -1080,6 +1080,13 @@ class SearchIndexFactory
 
         $this->indexcounter++;
 
+        $config = $node->getNodeType()->getConfiguration('hybridsearch');
+
+        if (isset($config['skip']) && $config['skip'] == true) {
+            return null;
+        }
+
+
         $workspaceHash = $this->getWorkspaceHash($workspace);
 
 
