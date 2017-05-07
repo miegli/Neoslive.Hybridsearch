@@ -504,7 +504,7 @@ class SearchIndexFactory
         $this->proceedQueue();
 
 
-        $this->updateFireBaseRules();
+
 
 
         // remove old sites data
@@ -515,6 +515,9 @@ class SearchIndexFactory
 
         // remove trash
         $this->firebase->delete("/trash");
+
+        $this->updateFireBaseRules();
+
         $this->unlockReltimeIndexer();
 
 
