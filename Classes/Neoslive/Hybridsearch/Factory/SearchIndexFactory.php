@@ -1285,8 +1285,14 @@ class SearchIndexFactory
             return $string;
         }
 
-        $metaphone = metaphone(mb_strtolower($string), 6);
-        return mb_strtoupper(mb_substr($metaphone,0,mb_strlen($metaphone)-1));
+        $metaphone = mb_strtoupper(metaphone(mb_strtolower($string), 6));
+
+
+        if (mb_strlen($metaphone) > 5) {
+            $metaphone = mb_substr($metaphone,0,mb_strlen($metaphone)-1);
+        }
+
+        return $metaphone;
 
 
     }

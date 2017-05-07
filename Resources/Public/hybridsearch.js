@@ -3054,8 +3054,10 @@
                         // get search results
 
                         // var a = querysegment.toLowerCase().replace(/[^\w()/.%\-&üöäÜÖÄ]/gi, '');
-                        var q = metaphone(querysegment.toLowerCase(), 6);
-                            q = q.substr(0,q.length-1).toUpperCase();
+                        var q = metaphone(querysegment.toLowerCase(), 6).toUpperCase();
+                            if (q.length > 5) {
+                                q = q.substr(0,q.length-1);
+                            }
 
                         //  q = a.substr(0, 5) + q;
                         //  q = q.substr(0, 10).toUpperCase();
