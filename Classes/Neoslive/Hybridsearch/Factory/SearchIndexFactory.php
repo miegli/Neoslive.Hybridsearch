@@ -503,6 +503,9 @@ class SearchIndexFactory
         $this->output->outputLine('uploading indexed nodes');
 
         $this->proceedQueue();
+
+      return true;
+
         $this->updateFireBaseRules();
 
 
