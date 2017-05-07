@@ -435,7 +435,6 @@ class SearchIndexFactory
         $this->output = new ConsoleOutput();
 
 
-
         $sites = array();
         $this->getBranch($workspacename);
 
@@ -811,30 +810,63 @@ class SearchIndexFactory
 
         foreach ($this->getAllDimensionCombinations() as $dimensionConfiguration) {
 
-
             $targetDimension = array_map(function ($dimensionValues) {
                 return array_shift($dimensionValues);
             }, $dimensionConfiguration);
 
-            $context = $this->contentContextFactory->create(['targetDimension' => $targetDimension, 'dimensions' => $dimensionConfiguration, 'workspaceName' => $nodedata->getWorkspace()->getName()]);
 
-            $node = $context->getNodeByIdentifier($nodedata->getIdentifier());
-
-            if ($node) {
-
-                if (isset($this->settings['Filter']['NodeTypeFilter'])) {
+            $dimensionHash = $this->getDimensionConfiugurationHash($dimensionConfiguration);
+            if ((isset($this->settings['Dimensions']) && array_key_exists($dimensionHash,$this->settings['Dimensions']) && $this->settings['Dimensions'][$dimensionHash] == false) || (isset($this->settings['Dimensions']) && array_key_exists($dimensionHash,$this->settings['Dimensions']) == false)) {
+                // skip dimension
+            } else {
 
 
-                    $flowQuery = $noparentcheck ? null : new FlowQuery(array($node));
+                $context = $this->contentContextFactory->create(['targetDimension' => $targetDimension, 'dimensions' => $dimensionConfiguration, 'workspaceName' => $nodedata->getWorkspace()->getName()]);
 
-                    if ($noparentcheck === true || $flowQuery->is($this->settings['Filter']['NodeTypeFilter'])) {
-                        if ($node->isHidden() || $node->isRemoved()) {
-                            $this->removeSingleIndex($node->getIdentifier(), $this->getWorkspaceHash($workspace), $this->branch, $this->getDimensionConfiugurationHash($dimensionConfiguration));
+                $node = $context->getNodeByIdentifier($nodedata->getIdentifier());
+
+                if ($node) {
+
+                    if (isset($this->settings['Filter']['NodeTypeFilter'])) {
+
+
+                        $flowQuery = $noparentcheck ? null : new FlowQuery(array($node));
+
+                        if ($noparentcheck === true || $flowQuery->is($this->settings['Filter']['NodeTypeFilter'])) {
+                            if ($node->isHidden() || $node->isRemoved()) {
+                                $this->removeSingleIndex($node->getIdentifier(), $this->getWorkspaceHash($workspace), $this->branch, $this->getDimensionConfiugurationHash($dimensionConfiguration));
+                            } else {
+
+                                if ($noparentcheck === false) {
+
+                                    $parent = $flowQuery->closest($this->settings['Filter']['GrantParentNodeTypeFilter'])->get(0);
+                                    if ($parent) {
+
+                                        $flowQueryParent = new FlowQuery(array($parent));
+                                        $parentNode = $flowQueryParent->closest($this->settings['Filter']['NodeTypeFilter'])->get(0);
+                                        if ($parentNode) {
+                                            $this->generateSingleIndex($parentNode, $workspace, $this->getDimensionConfiugurationHash($parentNode->getContext()->getDimensions()));
+                                        }
+
+                                    }
+
+                                }
+
+
+                                $this->generateSingleIndex($node, $workspace, $this->getDimensionConfiugurationHash($node->getContext()->getDimensions()));
+                                $counter++;
+                            }
+
                         } else {
 
-                            if ($noparentcheck === false) {
+                            $nextnode = $flowQuery->closest($this->settings['Filter']['NodeTypeFilter'])->get(0);
+                            if ($nextnode) {
 
-                                $parent = $flowQuery->closest($this->settings['Filter']['GrantParentNodeTypeFilter'])->get(0);
+                                $this->generateSingleIndex($nextnode, $workspace, $this->getDimensionConfiugurationHash($nextnode->getContext()->getDimensions()));
+
+                                $flowQueryNext = new FlowQuery(array($nextnode));
+                                $parent = $flowQueryNext->closest($this->settings['Filter']['GrantParentNodeTypeFilter'])->get(0);
+
                                 if ($parent) {
 
                                     $flowQueryParent = new FlowQuery(array($parent));
@@ -843,56 +875,31 @@ class SearchIndexFactory
                                         $this->generateSingleIndex($parentNode, $workspace, $this->getDimensionConfiugurationHash($parentNode->getContext()->getDimensions()));
                                     }
 
-                                }
 
-                            }
-
-
-                            $this->generateSingleIndex($node, $workspace, $this->getDimensionConfiugurationHash($node->getContext()->getDimensions()));
-                            $counter++;
-                        }
-
-                    } else {
-
-                        $nextnode = $flowQuery->closest($this->settings['Filter']['NodeTypeFilter'])->get(0);
-                        if ($nextnode) {
-
-                            $this->generateSingleIndex($nextnode, $workspace, $this->getDimensionConfiugurationHash($nextnode->getContext()->getDimensions()));
-
-                            $flowQueryNext = new FlowQuery(array($nextnode));
-                            $parent = $flowQueryNext->closest($this->settings['Filter']['GrantParentNodeTypeFilter'])->get(0);
-
-                            if ($parent) {
-
-                                $flowQueryParent = new FlowQuery(array($parent));
-                                $parentNode = $flowQueryParent->closest($this->settings['Filter']['NodeTypeFilter'])->get(0);
-                                if ($parentNode) {
-                                    $this->generateSingleIndex($parentNode, $workspace, $this->getDimensionConfiugurationHash($parentNode->getContext()->getDimensions()));
                                 }
 
 
                             }
-
 
                         }
 
                     }
 
+
                 }
 
 
-            }
+                $context = null;
+                $node = null;
 
 
-            $context = null;
-            $node = null;
+                unset($context);
+                unset($node);
+                if (isset($flowQuery)) {
+                    $flowQuery = null;
+                    unset($flowQuery);
+                }
 
-
-            unset($context);
-            unset($node);
-            if (isset($flowQuery)) {
-                $flowQuery = null;
-                unset($flowQuery);
             }
 
         }
@@ -1149,7 +1156,7 @@ class SearchIndexFactory
                     $this->index->$workspaceHash->$dimensionConfigurationHash->$k = new \stdClass();
                 }
 
-                if (substr($k,0,2) == '__') {
+                if (substr($k, 0, 2) == '__') {
                     $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier = array('node' => $indexData, 'nodeType' => $indexData->nodeType);
                 } else {
                     $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier = array('node' => null, 'nodeType' => $indexData->nodeType);
@@ -1157,7 +1164,6 @@ class SearchIndexFactory
 
 
             }
-
 
 
             if (isset($this->index->$workspaceHash->$dimensionConfigurationHash->___keywords) === false) {
@@ -1211,18 +1217,18 @@ class SearchIndexFactory
 
         foreach ($properties as $property => $value) {
 
-                if (gettype($value) == 'string' || is_numeric($value)) {
+            if (gettype($value) == 'string' || is_numeric($value)) {
 
-                    $j = json_decode($value);
-                    if ($j) {
-                        $text .= " " . (json_encode($j, JSON_UNESCAPED_UNICODE));
-                    } else {
-                        $text .= " " . $value;
-                    }
-
+                $j = json_decode($value);
+                if ($j) {
+                    $text .= " " . (json_encode($j, JSON_UNESCAPED_UNICODE));
                 } else {
-                    $text .= " " . (json_encode($value, JSON_UNESCAPED_UNICODE));
+                    $text .= " " . $value;
                 }
+
+            } else {
+                $text .= " " . (json_encode($value, JSON_UNESCAPED_UNICODE));
+            }
 
         }
 
@@ -2151,7 +2157,7 @@ class SearchIndexFactory
     private
     function rawcontent($text)
     {
-        return preg_replace("[^A-z]","  ",preg_replace("/[ ]{2,}/", " ", preg_replace("/\r|\n/", " ", strip_tags($text))));
+        return preg_replace("[^A-z]", "  ", preg_replace("/[ ]{2,}/", " ", preg_replace("/\r|\n/", " ", strip_tags($text))));
 
     }
 
