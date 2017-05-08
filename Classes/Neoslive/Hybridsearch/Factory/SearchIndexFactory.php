@@ -691,6 +691,10 @@ class SearchIndexFactory
             if ($timestamp) {
                 $date->setTime($date->format("H"), $date->format("i"), 0);
             }
+            if ($date->format("Y") < 2000) {
+                $this->output->outputLine("error can't sync from " . $date->format("d.m.Y H:i:s"));
+                return false;
+            }
         }
 
         $lastSyncDateTime = new \DateTime();
