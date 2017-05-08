@@ -768,6 +768,7 @@
                      * @returns {string}
                      */
                     getPreview: function (property, maxlength, delimiter) {
+
                         if (maxlength === undefined || !maxlength) {
                             maxlength = 512;
                         }
@@ -779,10 +780,13 @@
                         }
 
                         preview = preview.trim().replace(/<\/?[a-z][a-z0-9]*[^<>]*>/ig, "").replace(/\t/g, delimiter === undefined ? " ... " : delimiter);
-                        var point = preview.indexOf(".");
-                        if (point) {
-                            if (point < preview.length / 3 * 2) {
-                                maxlength = point + 1;
+
+                        if (preview.length > maxlength) {
+                            var point = preview.indexOf(".");
+                            if (point) {
+                                if (point < preview.length / 3 * 2) {
+                                    maxlength = point + 1;
+                                }
                             }
                         }
 
