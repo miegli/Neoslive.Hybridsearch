@@ -781,7 +781,6 @@
                         preview = preview.trim().replace(/<\/?[a-z][a-z0-9]*[^<>]*>/ig, "").replace(/\t/g, delimiter === undefined ? " ... " : delimiter);
                         var point = preview.indexOf(".");
                         if (point) {
-                            console.log(property,point,preview.length);
                             if (point < preview.length / 3 * 2) {
                                 maxlength = point + 1;
                             }
@@ -804,7 +803,17 @@
                      * @returns {HybridsearchResultsNode}
                      */
                     getParent: function () {
-                        return this.parentNode ? new HybridsearchResultsNode(this.parentNode) : false;
+
+                        if (this._parentNode == undefined) {
+                            if (this.parentNode) {
+                                this._parentNode = new HybridsearchResultsNode(this.parentNode);
+                            }  else {
+                                this._parentNode = null;
+                            }
+                        }
+
+
+                        return this._parentNode;
                     },
 
                     /**
@@ -812,7 +821,19 @@
                      * @returns {HybridsearchResultsNode}
                      */
                     getDocumentNode: function () {
-                        return this.grandParentNode ? new HybridsearchResultsNode(this.grandParentNode) : false;
+
+
+                        if (this._grandParentNode == undefined) {
+                            if (this.grandParentNode) {
+                                this._grandParentNode = new HybridsearchResultsNode(this.grandParentNode);
+                            }  else {
+                                this._grandParentNode = null;
+                            }
+                        }
+
+
+                        return this._grandParentNode;
+
                     },
 
                     /**
