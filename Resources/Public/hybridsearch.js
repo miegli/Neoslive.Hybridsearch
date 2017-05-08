@@ -2181,11 +2181,14 @@
                             angular.forEach(groupedBy, function (property) {
 
                                 if (property === 'url') {
-
                                     var p = resultNode.uri !== undefined ? resultNode.uri.path : resultNode.getUrl();
-
                                 } else {
-                                    var p = resultNode.getProperty(property);
+                                    if (property.substr(0,12) == 'documentNode') {
+                                        var p = resultNode.getDocumentNode() ? resultNode.getDocumentNode().getProperty(property) : null;
+                                    } else {
+                                        var p = resultNode.getProperty(property);
+                                    }
+
                                 }
 
                                 if (typeof p === 'string' && p.trim() === '') {
@@ -2802,7 +2805,7 @@
                                                             var tmpNodes = {};
                                                             var tmpNodesInterval = null;
                                                             var tmpNodesIsInInterval = false;
-                                                            var tmpNodesIntervalCounter = 0;
+
                                                             var reqNodesCount = data ? Object.keys(data).length : 0;
 
                                                             if (reqNodesCount) {
@@ -2811,10 +2814,12 @@
 
                                                                     if (node.node == undefined) {
 
-                                                                        tmpNodesIsInInterval = true;
+
 
                                                                         self.getIndexByNodeIdentifierAndNodeType(identifier, node.nodeType).once("value", function (data) {
-                                                                            nodes[identifier] = data.val();
+                                                                            if (data.val()) {
+                                                                                nodes[identifier] = data.val();
+                                                                            }
                                                                             tmpNodes[identifier] = data.val();
                                                                             if (Object.keys(tmpNodes).length == reqNodesCount) {
                                                                                 clearInterval(tmpNodesInterval);
@@ -2836,18 +2841,7 @@
 
                                                                 });
 
-                                                                if (tmpNodesIsInInterval) {
-                                                                    // force execution of broken cache
-                                                                    tmpNodesInterval = window.setInterval(function () {
-                                                                        tmpNodesIntervalCounter++;
-                                                                        execute(keyword, tmpNodes, ref);
-                                                                        self.setIsLoadedAll(ref.socket.toString());
-                                                                        self.search();
-                                                                        if (tmpNodesIntervalCounter > 3) {
-                                                                            clearInterval(tmpNodesInterval);
-                                                                        }
-                                                                    }, 500);
-                                                                }
+
 
 
                                                             }
