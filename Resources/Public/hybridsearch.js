@@ -1650,6 +1650,8 @@
 
                                     var s = self.getPropertyFromNode(node, property);
 
+
+
                                     if (typeof s === 'string') {
                                         orderingstring += s + " ";
                                         if (reverse) {
