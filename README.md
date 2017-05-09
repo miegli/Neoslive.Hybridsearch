@@ -10,9 +10,9 @@ HybridSearch is a powerful realtime search engine written in Javascript/AngularJ
 * Creates search index from rendered and structured data, not just from raw data.
 * No configuration needed while indexing.
 * **Provides a javascript framework for creating fantastic user experience**.
-* Minimal, but **powerful configurations** (relevance boosting, filtering, facets, etc.)
-* **High performance**, no Server-side utilization while searching.
-* Supports up to 10'000 parallel/concurrency search requests.
+* Minimal, but **powerful configurations** (relevance boosting, filtering, distincts, facets, etc.)
+* **High performance**, no Server-side utilization while searching and very low cpu usage while indexing.
+* Supports up to 100'000 concurrency search request. To reach 100,000 concurrent search requests, you usually first need to accumulate tens of millions of daily actives
 
 ## Demo / Show case 
 http://phlu.ch.phlu-eduweb5.nine.ch/weiterbildung.html
