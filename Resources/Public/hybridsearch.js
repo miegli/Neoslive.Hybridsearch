@@ -3057,45 +3057,6 @@
 
                         // get quick results from logstore
                         var canceller = $q.defer();
-                        // var queryLogstore = this.getFilter().getQueryLogStoreHash().toUpperCase();
-                        //
-                        // self.getResults().getApp().clearQuickNodes();
-                        //
-                        // if (queryLogstore.length > 2) {
-                        //     this.addPendingRequest($http({
-                        //         method: 'get',
-                        //         url: (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + ("/logstore/" + hybridsearch.$$conf.site + "/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/" + queryLogstore + ".json"),
-                        //         cache: true,
-                        //         timeout: canceller.promise,
-                        //         cancel: function (reason) {
-                        //             canceller.resolve(reason);
-                        //         }
-                        //     }).success(function (data) {
-                        //
-                        //         if (data) {
-                        //             self.executeLogStoreData(data);
-                        //         } else {
-                        //             if (hybridsearch.$$conf.cdnDatabaseURL != undefined) {
-                        //                 self.addPendingRequest($http({
-                        //                     method: 'get',
-                        //                     url: hybridsearch.$$conf.databaseURL + ("/logstore/" + hybridsearch.$$conf.site + "/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.dimension + "/" + self.getFilter().getQueryLogStoreHash() + ".json"),
-                        //                     cache: true,
-                        //                     timeout: canceller.promise,
-                        //                     cancel: function (reason) {
-                        //                         canceller.resolve(reason);
-                        //                     }
-                        //                 }).success(function (data) {
-                        //                     if (data) {
-                        //                         self.executeLogStoreData(data);
-                        //                     }
-                        //                 }));
-                        //
-                        //             }
-                        //         }
-                        //     }));
-                        //
-                        // }
-
 
                         // get search results
 
@@ -3106,14 +3067,6 @@
                         }
                         if (q.length == 0) {
                             q = querysegment.toLowerCase();
-                        }
-
-                        //  q = a.substr(0, 5) + q;
-                        //  q = q.substr(0, 10).toUpperCase();
-
-
-                        if (q.length == 0) {
-                            q = querysegment;
                         }
 
                         instance.$$data.running++;
@@ -3145,7 +3098,9 @@
                                         ismatchexact = true;
                                     }
                                 });
-                                self.search();
+                                if (instance.$$data.keywords.length) {
+                                    self.search();
+                                }
 
                             }
                             instance.$$data.proceeded.push(1);
@@ -3177,9 +3132,9 @@
                             if (self.getFilter().isInQuery(keyw) === false || keyword == keyw) {
                                 angular.forEach(refs, function (ref) {
                                     if (ref.socket) {
-                                        if (ref.socket.toString(), self.isLoadedAll(ref.socket.toString()) == false) {
+                                        //if (ref.socket.toString(), self.isLoadedAll(ref.socket.toString()) == false) {
                                             ref.socket.off('value');
-                                        }
+                                       // }
                                     }
                                 });
                             }
