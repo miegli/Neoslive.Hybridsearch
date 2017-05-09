@@ -811,7 +811,7 @@
                         if (this._parentNode == undefined) {
                             if (this.parentNode) {
                                 this._parentNode = new HybridsearchResultsNode(this.parentNode);
-                            }  else {
+                            } else {
                                 this._parentNode = null;
                             }
                         }
@@ -830,7 +830,7 @@
                         if (this._grandParentNode == undefined) {
                             if (this.grandParentNode) {
                                 this._grandParentNode = new HybridsearchResultsNode(this.grandParentNode);
-                            }  else {
+                            } else {
                                 this._grandParentNode = null;
                             }
                         }
@@ -989,29 +989,21 @@
                             hybridsearch.$$conf.branchisloading = true;
 
                             if (!hybridsearch.getBranch()) {
-                                $http.get(hybridsearch.$$conf.databaseURL + "/branches/" + hybridsearch.$$conf.workspace + ".json").success(function (data) {
-                                    hybridsearch.setBranch(data);
-                                    isRunning = true;
-                                });
-
-                            } else {
-                                isRunning = true;
-                            }
-
-                            window.setTimeout(function () {
 
                                 /**
                                  * watch branch
                                  */
                                 var query = hybridsearch.$firebase().database().ref("branches/" + hybridsearch.$$conf.workspace);
                                 query.on("value", function (snapshot) {
-                                    if (snapshot.val() !== hybridsearch.getBranch()) {
-                                        hybridsearch.setBranch(snapshot.val());
-                                    }
+                                    hybridsearch.setBranch(snapshot.val());
+                                    isRunning = true;
 
                                 });
-                            }, 50);
 
+
+                            } else {
+                                isRunning = true;
+                            }
                         } else {
                             isRunning = true;
                         }
@@ -1655,7 +1647,6 @@
                                     var s = self.getPropertyFromNode(node, property);
 
 
-
                                     if (typeof s === 'string') {
                                         orderingstring += s + " ";
                                         if (reverse) {
@@ -1834,7 +1825,6 @@
                         }
 
                         searchCounterTimeout = window.setTimeout(function () {
-
 
 
                             var fields = {}, items = {}, nodesFound = {}, nodeTypeMaxScore = {},
@@ -2211,7 +2201,7 @@
                                 if (property === 'url') {
                                     var p = resultNode.uri !== undefined ? resultNode.uri.path : resultNode.getUrl();
                                 } else {
-                                    if (property.substr(0,12) == 'documentNode') {
+                                    if (property.substr(0, 12) == 'documentNode') {
                                         var p = resultNode.getDocumentNode() ? resultNode.getDocumentNode().getProperty(property) : null;
                                     } else {
                                         var p = resultNode.getProperty(property);
@@ -2813,7 +2803,6 @@
                                                     }
 
 
-
                                                     if (ref.http) {
 
                                                         self.addPendingRequest($http({
@@ -2843,7 +2832,6 @@
                                                                     if (node.node == undefined) {
 
 
-
                                                                         self.getIndexByNodeIdentifierAndNodeType(identifier, node.nodeType).once("value", function (data) {
                                                                             if (data.val()) {
                                                                                 nodes[identifier] = data.val();
@@ -2870,11 +2858,7 @@
                                                                 });
 
 
-
-
                                                             }
-
-
 
 
                                                         }));
@@ -2925,7 +2909,6 @@
                                                                             nodes[identifier] = data.val();
                                                                         });
                                                                     });
-
 
 
                                                                 });
@@ -3117,9 +3100,12 @@
                         // get search results
 
                         // var a = querysegment.toLowerCase().replace(/[^\w()/.%\-&üöäÜÖÄ]/gi, '');
-                        var q = metaphone(querysegment.toLowerCase(), 6).toUpperCase();
-                        if (q.length > 5) {
+                        var q = metaphone(querysegment.toLowerCase()).toUpperCase();
+                        if (q.length > 7) {
                             q = q.substr(0, q.length - 1);
+                        }
+                        if (q.length == 0) {
+                            q = querysegment.toLowerCase();
                         }
 
                         //  q = a.substr(0, 5) + q;

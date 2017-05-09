@@ -1301,11 +1301,14 @@ class SearchIndexFactory
             return $string;
         }
 
-        $metaphone = mb_strtoupper(metaphone(mb_strtolower($string), 6));
+        $metaphone = mb_strtoupper(metaphone(mb_strtolower($string)));
 
 
-        if (mb_strlen($metaphone) > 5) {
+        if (mb_strlen($metaphone) > 7) {
             $metaphone = mb_substr($metaphone,0,mb_strlen($metaphone)-1);
+        }
+        if (mb_strlen($metaphone) == 0) {
+            return $string;
         }
 
         return $metaphone;
