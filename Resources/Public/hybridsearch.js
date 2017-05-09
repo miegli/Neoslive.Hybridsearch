@@ -2794,149 +2794,167 @@
                                         if (refs !== null && refs.length) {
                                             angular.forEach(refs, function (ref) {
 
-                                                if (self.isLoadedAll(ref.socket.toString()) == false) {
+                                                    if (self.isLoadedAll(ref.socket.toString()) == false) {
 
-                                                    var canceller = $q.defer();
+                                                        var canceller = $q.defer();
 
-                                                    if (self.getConfig('realtime') === null && ref.socket !== undefined) {
-                                                        ref.http = null;
-                                                    }
-
-
-                                                    if (ref.http) {
-
-                                                        self.addPendingRequest($http({
-                                                            method: 'get',
-                                                            url: ref.http,
-                                                            cache: true,
-                                                            timeout: canceller.promise,
-                                                            cancel: function (reason) {
-                                                                canceller.resolve(reason);
-                                                            },
-                                                            timeoutRef: setTimeout(function () {
-
-                                                            }, 10)
-                                                        }).success(function (data) {
-
-                                                            nodesIndexed = {};
-                                                            var tmpNodes = {};
-                                                            var tmpNodesInterval = null;
-                                                            var tmpNodesIsInInterval = false;
-
-                                                            var reqNodesCount = data ? Object.keys(data).length : 0;
-
-                                                            if (reqNodesCount) {
-                                                                angular.forEach(data, function (node, identifier) {
+                                                        if (self.getConfig('realtime') === null && ref.socket !== undefined) {
+                                                            ref.http = null;
+                                                        }
 
 
-                                                                    if (node.node == undefined) {
+                                                        if (ref.http) {
+
+                                                            self.addPendingRequest($http({
+                                                                method: 'get',
+                                                                url: ref.http,
+                                                                cache: true,
+                                                                timeout: canceller.promise,
+                                                                cancel: function (reason) {
+                                                                    canceller.resolve(reason);
+                                                                },
+                                                                timeoutRef: setTimeout(function () {
+
+                                                                }, 10)
+                                                            }).success(function (data) {
+
+                                                                nodesIndexed = {};
+                                                                var tmpNodes = {};
+                                                                var tmpNodesInterval = null;
+                                                                var tmpNodesIsInInterval = false;
+
+                                                                var reqNodesCount = data ? Object.keys(data).length : 0;
+
+                                                                if (reqNodesCount) {
+                                                                    angular.forEach(data, function (node, identifier) {
 
 
-                                                                        self.getIndexByNodeIdentifierAndNodeType(identifier, node.nodeType).once("value", function (data) {
-                                                                            if (data.val()) {
-                                                                                nodes[identifier] = data.val();
-                                                                            }
-                                                                            tmpNodes[identifier] = data.val();
-                                                                            if (Object.keys(tmpNodes).length == reqNodesCount) {
-                                                                                clearInterval(tmpNodesInterval);
-                                                                                execute(keyword, tmpNodes, ref);
-                                                                                self.search();
-                                                                                self.setIsLoadedAll(ref.socket.toString());
-                                                                            }
-                                                                        });
-
-                                                                    } else {
-                                                                        nodes[identifier] = node;
-                                                                        tmpNodes[identifier] = node;
-                                                                        if (Object.keys(tmpNodes).length == reqNodesCount) {
-                                                                            execute(keyword, tmpNodes, ref);
-                                                                            self.search();
-                                                                            self.setIsLoadedAll(ref.socket.toString());
-                                                                        }
-                                                                    }
-
-                                                                });
+                                                                        if (node.node == undefined) {
 
 
-                                                            }
-
-
-                                                        }));
-
-                                                    } else {
-
-                                                        if (ref.socket) {
-
-
-                                                            if (ref.isLoadingAllFromNodeType == undefined) {
-
-                                                                ref.socket.on("value", function (data) {
-
-                                                                    nodesIndexed = {};
-                                                                    var tmpNodes = {};
-                                                                    var reqNodesCount = data.val() ? Object.keys(data.val()).length : 0;
-
-
-                                                                    if (reqNodesCount) {
-
-                                                                        angular.forEach(data.val(), function (node, identifier) {
-                                                                            self.getIndexByNodeIdentifierAndNodeType(identifier, node.nodeType).on("value", function (data) {
-                                                                                nodes[identifier] = data.val();
+                                                                            self.getIndexByNodeIdentifierAndNodeType(identifier, node.nodeType).once("value", function (data) {
+                                                                                if (data.val()) {
+                                                                                    nodes[identifier] = data.val();
+                                                                                }
                                                                                 tmpNodes[identifier] = data.val();
                                                                                 if (Object.keys(tmpNodes).length == reqNodesCount) {
+                                                                                    clearInterval(tmpNodesInterval);
                                                                                     execute(keyword, tmpNodes, ref);
                                                                                     self.search();
                                                                                     self.setIsLoadedAll(ref.socket.toString());
                                                                                 }
                                                                             });
 
-                                                                        });
-                                                                    }
+                                                                        } else {
+                                                                            nodes[identifier] = node;
+                                                                            tmpNodes[identifier] = node;
+                                                                            if (Object.keys(tmpNodes).length == reqNodesCount) {
+                                                                                execute(keyword, tmpNodes, ref);
+                                                                                self.search();
+                                                                                self.setIsLoadedAll(ref.socket.toString());
+                                                                            }
+                                                                        }
 
-                                                                });
-
-                                                            } else {
-
-
-                                                                ref.socket.once("value", function (data) {
-                                                                    if (data.val()) {
-                                                                        execute(keyword, data.val(), ref);
-                                                                        self.search();
-                                                                    }
-                                                                    angular.forEach(data.val(), function (node, identifier) {
-
-                                                                        self.getIndexByNodeIdentifierAndNodeType(identifier, node.nodeType).on("child_changed", function (data) {
-                                                                            nodes[identifier] = data.val();
-                                                                        });
                                                                     });
 
 
-                                                                });
+                                                                }
+
+
+                                                            }));
+
+                                                        } else {
+
+                                                            if (ref.socket) {
+
+
+                                                                if (ref.isLoadingAllFromNodeType == undefined) {
+
+                                                                    ref.socket.on("value", function (data) {
+
+                                                                        nodesIndexed = {};
+
+                                                                        var tmpNodes = {};
+                                                                        var reqNodesCount = data.val() ? Object.keys(data.val()).length : 0;
+                                                                        self.setIsNotLoadedAll(ref.socket.toString());
+
+                                                                        if (reqNodesCount) {
+
+                                                                            angular.forEach(data.val(), function (node, identifier) {
+
+                                                                                    if (nodes[identifier] == undefined) {
+                                                                                        self.getIndexByNodeIdentifierAndNodeType(identifier, node.nodeType).on("value", function (data) {
+                                                                                            if (nodes[identifier] == undefined) {
+                                                                                                // add node
+                                                                                                tmpNodes[identifier] = data.val();
+                                                                                                if (Object.keys(tmpNodes).length == reqNodesCount) {
+                                                                                                    execute(keyword, tmpNodes, ref);
+                                                                                                    self.search();
+                                                                                                    self.setIsLoadedAll(ref.socket.toString());
+                                                                                                }
+                                                                                            } else {
+                                                                                                // update node
+                                                                                                nodes[identifier] = data.val().node;
+                                                                                                self.search();
+                                                                                            }
+                                                                                        });
+                                                                                    } else {
+                                                                                        // skip node update
+                                                                                        tmpNodes[identifier] = nodes[identifier];
+                                                                                    }
+
+                                                                                }
+                                                                            );
+                                                                        }
+
+                                                                    });
+
+
+                                                                } else {
+
+
+                                                                    ref.socket.once("value", function (data) {
+                                                                        if (data.val()) {
+                                                                            execute(keyword, data.val(), ref);
+                                                                            self.search();
+                                                                        }
+                                                                        angular.forEach(data.val(), function (node, identifier) {
+
+                                                                            self.getIndexByNodeIdentifierAndNodeType(identifier, node.nodeType).on("child_changed", function (data) {
+                                                                                nodes[identifier] = data.val();
+                                                                            });
+                                                                        });
+
+
+                                                                    });
+
+
+                                                                }
 
 
                                                             }
-
-
                                                         }
+
                                                     }
+                                                    else {
 
-                                                } else {
+                                                        if (keyword) {
+                                                            self.search();
+                                                        } else {
+                                                            self.search(nodes);
+                                                        }
 
-                                                    if (keyword) {
-                                                        self.search();
-                                                    } else {
-                                                        self.search(nodes);
+
                                                     }
-
-
                                                 }
-                                            });
+                                            );
 
                                         }
 
 
-                                    });
-                                    //}, 5));
+                                    })
+                                    ;
+//}, 5));
 
 
                                     var musthavelength = uniquarrayfinal.length;
@@ -3133,8 +3151,8 @@
                                 angular.forEach(refs, function (ref) {
                                     if (ref.socket) {
                                         //if (ref.socket.toString(), self.isLoadedAll(ref.socket.toString()) == false) {
-                                            ref.socket.off('value');
-                                       // }
+                                        ref.socket.off('value');
+                                        // }
                                     }
                                 });
                             }
