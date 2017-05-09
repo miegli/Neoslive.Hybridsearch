@@ -334,6 +334,10 @@
                     var value = '';
 
 
+                    if (typeof property == 'function') {
+                        return property(node);
+                    }
+
                     if (property == '__index') {
                         return node['__index'];
                     }
@@ -781,7 +785,7 @@
 
                         preview = preview.trim().replace(/<\/?[a-z][a-z0-9]*[^<>]*>/ig, "").replace(/\t/g, delimiter === undefined ? " ... " : delimiter);
 
-                        if (preview.length > maxlength) {
+                        if (preview.length > maxlength && maxlength > 0) {
                             var point = preview.indexOf(".");
                             if (point) {
                                 if (point < preview.length / 3 * 2) {
@@ -790,7 +794,7 @@
                             }
                         }
 
-                        return preview.substr(0, maxlength);
+                        return maxlength > 0 ? preview.substr(0, maxlength) : preview;
                     },
 
                     /**
@@ -1135,14 +1139,6 @@
 
                             });
 
-                            // if (typeof this.getFilter().getNodeType() == 'string') {
-                            //     console.log(this.getFilter().getNodeType());
-                            //
-                            //     return false;
-                            //
-                            // } else {
-                            //     return this.getFilter().getNodeType().length == Object.keys(isloadedall).length;
-                            // }
                         }
 
                         return isloadedall[hash] == undefined ? false : isloadedall[hash];
@@ -1410,7 +1406,7 @@
                             order = resultOrderBy['*'];
                         }
 
-                        if (typeof order === 'string') {
+                        if (typeof order === 'string' || typeof order === 'function') {
                             var g = order;
                             order = [];
                             order.push(g);
@@ -1637,7 +1633,7 @@
                                 angular.forEach(self.getOrderBy(node.nodeType), function (property) {
 
 
-                                    if (property.substr(0, 1) == '-') {
+                                    if (typeof property == 'string' && property.substr(0, 1) == '-') {
                                         reverse = true;
                                         property = property.substr(1);
                                     } else {
@@ -2082,19 +2078,24 @@
                                         var Ordered = $filter('orderBy')(preOrderedFilteredRelevance, function (item) {
 
                                             var orderBy = self.getOrderBy(nodes[item.ref].nodeType);
-                                            if (orderBy) {
+
+
+                                            if (orderBy.length) {
 
                                                 var ostring = '';
 
                                                 angular.forEach(orderBy, function (property) {
+
                                                     if (property === 'score') {
                                                         ostring += item.score;
                                                     } else {
                                                         var s = self.getPropertyFromNode(nodes[item.ref], property);
-                                                        if (typeof s === 'string') {
+                                                        if (typeof s === 'string' || typeof s === 'number') {
                                                             ostring += s;
                                                         }
                                                     }
+
+
                                                 });
 
 
