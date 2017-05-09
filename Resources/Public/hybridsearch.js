@@ -3766,7 +3766,7 @@
                                 execute(nodesArray);
                             }
 
-                        }, 10);
+                        }, 5);
                     } else {
                         execute(nodesArray);
                     }
