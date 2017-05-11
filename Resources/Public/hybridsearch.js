@@ -63,6 +63,7 @@
             function Hybridsearch(databaseURL, workspace, dimension, site, cdnDatabaseURL, debug) {
 
 
+
                 if (!(this instanceof Hybridsearch)) {
                     return new Hybridsearch();
                 }
@@ -91,6 +92,7 @@
                 };
                 try {
                     firebase.initializeApp(firebaseconfig);
+                    firebase.database().goOnline();
                     if (debug == true) {
                         firebase.database.enableLogging(true);
                     }
