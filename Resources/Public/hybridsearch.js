@@ -2313,6 +2313,10 @@
                         var self = this;
 
 
+                        if (node.removed !== undefined && node.removed === true) {
+                            return true;
+                        }
+
                         if (this.getFilter().getNodeType()) {
 
                             if (typeof this.getFilter().getNodeType() == 'string') {
@@ -2882,6 +2886,16 @@
 
                                                                 if (ref.isLoadingAllFromNodeType == undefined) {
 
+
+                                                                    ref.socket.on("child_removed", function (data) {
+                                                                        // node was removed
+                                                                        if (nodes[data.key] !== undefined) {
+                                                                            nodes[data.key].removed = true;
+                                                                        }
+                                                                        self.search();
+                                                                    });
+
+
                                                                     ref.socket.on("value", function (data) {
 
                                                                         nodesIndexed = {};
@@ -2893,13 +2907,13 @@
 
                                                                         self.setIsNotLoadedAll(ref.socket.toString());
 
+
                                                                         if (reqNodesCount) {
 
                                                                             angular.forEach(nodeData, function (node, identifier) {
 
                                                                                     if (nodes[identifier] == undefined) {
                                                                                         self.getIndexByNodeIdentifierAndNodeType(identifier, node.nodeType).on("value", function (data) {
-
 
                                                                                             if (nodes[identifier] == undefined) {
                                                                                                 // add node
@@ -2909,12 +2923,17 @@
 
                                                                                                 // update node
                                                                                                 tmpNodesCount++;
+
                                                                                                 if (data.val()) {
                                                                                                     if (data.val().node === undefined) {
                                                                                                         // node was removed
-                                                                                                        nodes[identifier] = {node: null, parentNode: null};
+                                                                                                        if (nodes[identifier] !== undefined) {
+                                                                                                            nodes[identifier].removed = true;
+                                                                                                        }
                                                                                                     } else {
-                                                                                                        nodes[identifier] = data.val().node;
+                                                                                                        if (nodes[identifier] == undefined || (nodes[identifier].removed == undefined)) {
+                                                                                                            nodes[identifier] = data.val().node;
+                                                                                                        }
                                                                                                     }
 
                                                                                                     self.search();
@@ -2926,7 +2945,9 @@
                                                                                                 execute(keyword, tmpNodes, ref);
                                                                                                 self.search();
                                                                                                 self.setIsLoadedAll(ref.socket.toString());
+
                                                                                             }
+
                                                                                         });
                                                                                     } else {
                                                                                         // skip node update
@@ -3183,6 +3204,8 @@
                                     if (ref.socket) {
                                         //if (ref.socket.toString(), self.isLoadedAll(ref.socket.toString()) == false) {
                                         ref.socket.off('value');
+                                        ref.socket.off('child_removed');
+                                        ref.socket.off('child_added');
                                         // }
                                     }
                                 });
@@ -3442,7 +3465,6 @@
                                                 }
                                             });
 
-                                            
                                             if (Object.keys(doc).length) {
 
                                                 if (doc.rawcontent == undefined && value.node.rawcontent !== undefined) {
