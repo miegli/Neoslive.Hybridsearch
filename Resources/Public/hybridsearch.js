@@ -1207,7 +1207,6 @@
                      * @returns {number}
                      */
                     getBoost: function (property) {
-
                         return propertiesBoost !== undefined && propertiesBoost[property] !== undefined ? propertiesBoost[property] : 10;
                     },
 
