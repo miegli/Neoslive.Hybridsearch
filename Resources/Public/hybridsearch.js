@@ -2939,9 +2939,9 @@
                                                                             self.search();
                                                                         }
                                                                         angular.forEach(data.val(), function (node, identifier) {
-
                                                                             self.getIndexByNodeIdentifierAndNodeType(identifier, node.nodeType).on("child_changed", function (data) {
                                                                                 nodes[identifier] = data.val();
+                                                                                self.search();
                                                                             });
                                                                         });
 
