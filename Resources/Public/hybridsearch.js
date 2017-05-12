@@ -2879,11 +2879,13 @@
                                                                         var tmpNodes = [];
                                                                         var tmpNodesCount = 0;
                                                                         var reqNodesCount = data.val() ? Object.keys(data.val()).length : 0;
+                                                                        var nodeData = data.val();
+
                                                                         self.setIsNotLoadedAll(ref.socket.toString());
 
                                                                         if (reqNodesCount) {
 
-                                                                            angular.forEach(data.val(), function (node, identifier) {
+                                                                            angular.forEach(nodeData, function (node, identifier) {
 
                                                                                     if (nodes[identifier] == undefined) {
                                                                                         self.getIndexByNodeIdentifierAndNodeType(identifier, node.nodeType).on("value", function (data) {
@@ -2899,7 +2901,6 @@
                                                                                             }
 
                                                                                             if (tmpNodesCount == reqNodesCount) {
-                                                                                                console.log(tmpNodesCount);
                                                                                                 execute(keyword, tmpNodes, ref);
                                                                                                 self.search();
                                                                                                 self.setIsLoadedAll(ref.socket.toString());
@@ -2907,6 +2908,7 @@
                                                                                         });
                                                                                     } else {
                                                                                         // skip node update
+                                                                                        tmpNodesCount++;
                                                                                         tmpNodes[identifier] = nodes[identifier];
                                                                                     }
 
