@@ -63,7 +63,6 @@
             function Hybridsearch(databaseURL, workspace, dimension, site, cdnDatabaseURL, debug) {
 
 
-
                 if (!(this instanceof Hybridsearch)) {
                     return new Hybridsearch();
                 }
@@ -1541,8 +1540,7 @@
                             });
                         } else {
 
-                            var scopeproperties = self.getFilter().getScopeProperties();
-                            angular.forEach(scopeproperties, function (obj, identifier) {
+                            angular.forEach(self.getFilter().getScopeProperties(), function (obj, identifier) {
 
                                 switch (identifier) {
                                     // remove current query
@@ -1632,8 +1630,8 @@
                                 orderingstring = v(node);
                             } else {
 
-                                var each = self.getOrderBy(node.nodeType);
-                                angular.forEach(each, function (property) {
+
+                                angular.forEach(self.getOrderBy(node.nodeType), function (property) {
 
 
                                     if (typeof property == 'string' && property.substr(0, 1) == '-') {
@@ -1681,8 +1679,8 @@
 
                         });
 
-                        var each = forcereverse ? orderingkeys.reverse() : orderingkeys.sort();
-                        angular.forEach(each, function (o) {
+
+                        angular.forEach(forcereverse ? orderingkeys.reverse() : orderingkeys.sort(), function (o) {
                             angular.forEach(Ordered[o], function (node) {
                                 OrderedFinal.push(node);
                             });
@@ -1890,8 +1888,8 @@
                                     });
                                 }
 
-                                var each = self.sortNodes(preOrdered);
-                                angular.forEach(each, function (node) {
+
+                                angular.forEach(self.sortNodes(preOrdered), function (node) {
                                     self.addNodeToSearchResult(node.identifier, 1, nodesFound, items, nodeTypeMaxScore, nodeTypeMinScore, nodeTypeScoreCount);
                                 });
                                 wasloadedfromInput = true;
@@ -1925,8 +1923,8 @@
                                         });
                                     }
 
-                                    var each = self.sortNodes(preOrdered);
-                                    angular.forEach(each, function (node) {
+
+                                    angular.forEach(self.sortNodes(preOrdered), function (node) {
                                         self.addNodeToSearchResult(node.identifier, 1, nodesFound, items, nodeTypeMaxScore, nodeTypeMinScore, nodeTypeScoreCount);
                                     });
 
@@ -1934,8 +1932,7 @@
 
 
                                     // execute query search
-                                    var each = lunrSearch.getFields();
-                                    angular.forEach(each, function (v, k) {
+                                    angular.forEach(lunrSearch.getFields(), function (v, k) {
                                         if (self.getBoost(v) >= 0) {
                                             fields[v] = {boost: self.getBoost(v), expand: false}
                                         }
@@ -2139,8 +2136,7 @@
                                     angular.forEach(unfilteredResult, function (node) {
                                         nodeObject = new HybridsearchResultsNode(node, 1);
                                         nodeObject['_isfiltered'] = {};
-                                        var each = self.getResults().$$data.distincts;
-                                        angular.forEach(each, function (distinct, property) {
+                                        angular.forEach(self.getResults().$$data.distincts, function (distinct, property) {
                                             nodeObject['_isfiltered'][property] = self.isFiltered(nodeObject, property);
                                         });
                                         unfilteredResultNodes.push(nodeObject);
@@ -2350,9 +2346,9 @@
 
 
                             var propertyMatching = 0;
-                            var each = this.getFilter().getPropertyFilters();
 
-                            angular.forEach(each, function (filter, property) {
+
+                            angular.forEach(this.getFilter().getPropertyFilters(), function (filter, property) {
 
                                 if (filter === undefined || node == undefined) {
                                     return true;
@@ -2772,7 +2768,7 @@
                                                         }
 
                                                         angular.forEach(data, function (node, id) {
-                                                            nodes[id] = node;
+                                                            nodes[node.node.identifier] = node;
                                                             indexdata[keyword].push(node);
                                                         });
 
@@ -2826,12 +2822,10 @@
 
                                                                 nodesIndexed = {};
                                                                 var tmpNodes = {};
-
                                                                 var tmpNodesInterval = null;
-
+                                                                var tmpNodesIsInInterval = false;
 
                                                                 var reqNodesCount = data ? Object.keys(data).length : 0;
-                                                                var NodesCount = 0;
 
                                                                 if (reqNodesCount) {
                                                                     angular.forEach(data, function (node, identifier) {
@@ -2839,13 +2833,13 @@
 
                                                                         if (node.node == undefined) {
 
+
                                                                             self.getIndexByNodeIdentifierAndNodeType(identifier, node.nodeType).once("value", function (data) {
                                                                                 if (data.val()) {
                                                                                     nodes[identifier] = data.val();
                                                                                 }
                                                                                 tmpNodes[identifier] = data.val();
-                                                                                NodesCount++;
-                                                                                if (NodesCount == reqNodesCount) {
+                                                                                if (Object.keys(tmpNodes).length == reqNodesCount) {
                                                                                     clearInterval(tmpNodesInterval);
                                                                                     execute(keyword, tmpNodes, ref);
                                                                                     self.search();
@@ -2856,8 +2850,7 @@
                                                                         } else {
                                                                             nodes[identifier] = node;
                                                                             tmpNodes[identifier] = node;
-                                                                            NodesCount++;
-                                                                            if (NodesCount == reqNodesCount) {
+                                                                            if (Object.keys(tmpNodes).length == reqNodesCount) {
                                                                                 execute(keyword, tmpNodes, ref);
                                                                                 self.search();
                                                                                 self.setIsLoadedAll(ref.socket.toString());
@@ -2883,30 +2876,33 @@
 
                                                                         nodesIndexed = {};
 
-                                                                        var tmpNodes = {};
+                                                                        var tmpNodes = [];
+                                                                        var tmpNodesCount = 0;
                                                                         var reqNodesCount = data.val() ? Object.keys(data.val()).length : 0;
-                                                                        var NodesCount = 0;
                                                                         self.setIsNotLoadedAll(ref.socket.toString());
 
                                                                         if (reqNodesCount) {
-                                                                            var each = data.val();
-                                                                            angular.forEach(each, function (node, identifier) {
+
+                                                                            angular.forEach(data.val(), function (node, identifier) {
 
                                                                                     if (nodes[identifier] == undefined) {
                                                                                         self.getIndexByNodeIdentifierAndNodeType(identifier, node.nodeType).on("value", function (data) {
                                                                                             if (nodes[identifier] == undefined) {
                                                                                                 // add node
-                                                                                                tmpNodes[identifier] = data.val();
-                                                                                                NodesCount++;
-                                                                                                if (NodesCount == reqNodesCount) {
-                                                                                                    execute(keyword, tmpNodes, ref);
-                                                                                                    self.search();
-                                                                                                    self.setIsLoadedAll(ref.socket.toString());
-                                                                                                }
+                                                                                                tmpNodes.push(data.val());
+                                                                                                tmpNodesCount++;
                                                                                             } else {
                                                                                                 // update node
+                                                                                                tmpNodesCount++;
                                                                                                 nodes[identifier] = data.val().node;
                                                                                                 self.search();
+                                                                                            }
+
+                                                                                            if (tmpNodesCount == reqNodesCount) {
+                                                                                                console.log(tmpNodesCount);
+                                                                                                execute(keyword, tmpNodes, ref);
+                                                                                                self.search();
+                                                                                                self.setIsLoadedAll(ref.socket.toString());
                                                                                             }
                                                                                         });
                                                                                     } else {
@@ -2929,8 +2925,7 @@
                                                                             execute(keyword, data.val(), ref);
                                                                             self.search();
                                                                         }
-                                                                        var each = data.val();
-                                                                        angular.forEach(each, function (node, identifier) {
+                                                                        angular.forEach(data.val(), function (node, identifier) {
 
                                                                             self.getIndexByNodeIdentifierAndNodeType(identifier, node.nodeType).on("child_changed", function (data) {
                                                                                 nodes[identifier] = data.val();
@@ -2977,8 +2972,7 @@
 
                                             // // add external sources
                                             var canceller = $q.defer();
-                                            var each = self.getExternalSources();
-                                            angular.forEach(each, function (ref) {
+                                            angular.forEach(self.getExternalSources(), function (ref) {
 
                                                 if (ref.proceeded === undefined && (ref.standalone === undefined || ref.standalone == false)) {
                                                     musthavelength++;
@@ -3325,6 +3319,7 @@
 
                         var self = this, keywords = [];
 
+
                         angular.forEach(data, function (val, keyword) {
                             keyword = keyword.indexOf("://") ? keyword.substr(keyword.indexOf("://") + 3) : keyword;
                             angular.forEach(lastSearchInstance.$$data.keywords, function (k) {
@@ -3409,8 +3404,7 @@
                                                         }
 
                                                         if (valueJson) {
-                                                            var each = valueJson.getRecursiveStrings();
-                                                            angular.forEach(each, function (o) {
+                                                            angular.forEach(valueJson.getRecursiveStrings(), function (o) {
                                                                 doc[property + '.' + o.key] = o.val;
                                                             });
                                                         } else {
@@ -3428,14 +3422,13 @@
                                                 if (doc.rawcontent == undefined && value.node.rawcontent !== undefined) {
                                                     doc.rawcontent = value.node.rawcontent;
                                                 }
-                                                var okeys = Object.keys(doc);
-                                                var lkeys = lunrSearch.getFields();
-                                                angular.forEach(okeys, function (key) {
-                                                    if (lkeys.indexOf(key) < 0) {
+                                                var eachObjecKeys = Object.keys(doc);
+                                                var lunrFields = lunrSearch.getFields();
+                                                angular.forEach(eachObjecKeys, function (key) {
+                                                    if (lunrFields.indexOf(key) < 0) {
                                                         lunrSearch.addField(key);
                                                     }
                                                 });
-
 
                                                 doc.id = value.node.identifier;
                                                 lunrSearch.addDoc(doc);
@@ -3830,12 +3823,12 @@
                         self.$$app.getIndexByNodeType(nodetype).once("value", function (data) {
 
                             var addnodes = [];
+                            var datanodes = data.val();
 
-                            var each = data.val();
-                            if (each) {
+                            if (datanodes) {
 
 
-                                angular.forEach(each, function (node) {
+                                angular.forEach(datanodes, function (node) {
                                     addnodes.push(node);
                                 });
                                 self.$$app.addLocalIndex(addnodes);
@@ -4764,8 +4757,9 @@
                 getHash: function () {
 
                     var ids = [];
-                    var each = this.getNodes();
-                    angular.forEach(each, function (node) {
+                    var eachNodes = this.getNodes();
+
+                    angular.forEach(eachNodes, function (node) {
                         ids.push(node.getIdentifier());
                     });
 
@@ -4842,8 +4836,8 @@
                         if (properties) {
 
                             var t = {};
-                            var each = s.split(" ");
-                            angular.forEach(each, function (term) {
+                            var tsplit = s.split(" ");
+                            angular.forEach(tsplit, function (term) {
                                 term = term.toLowerCase();
 
                                 if (term.length > 1) {
@@ -5034,8 +5028,8 @@
                 isInDistinct: function (property, value) {
 
                     var found = false;
-                    var each = this.getDistinct(property);
-                    angular.forEach(each, function (o) {
+                    var foreachDistinct = this.getDistinct(property);
+                    angular.forEach(foreachDistinct, function (o) {
                         if (o.value == value) {
                             found = true;
                             return found;
@@ -5091,8 +5085,8 @@
 
                     }
 
-                    var each = self.$$data.unfilteredResultNodes.length == 0 ? this.getNodes() : self.$$data.unfilteredResultNodes;
-                    angular.forEach(each, function (node) {
+                    var eachResultNodes = self.$$data.unfilteredResultNodes.length == 0 ? this.getNodes() : self.$$data.unfilteredResultNodes;
+                    angular.forEach(eachResultNodes, function (node) {
 
                         if (self.$$data.distinctsConfiguration[property]['affectedBySearchResult'] == false || node['_isfiltered'] == undefined || node['_isfiltered'][property] === false || node['_isfiltered'][property] === undefined) {
                             variantsByNodes[node.identifier] = {};
@@ -5278,8 +5272,8 @@
                     if (self.$$data.groups.count() > 0) {
                         return self.$$data.groups;
                     }
-                    var each = this.getData()._nodesByType;
-                    angular.forEach(each, function (result, key) {
+                    var eachGetDataNodesByType = this.getData()._nodesByType;
+                    angular.forEach(eachGetDataNodesByType, function (result, key) {
 
                         if (Object.keys(result).length > 1) {
                             self.$$data.groups.addItem(result.group, result);
@@ -5702,8 +5696,8 @@
                     var termsstring = '';
 
                     var s = this.$$data.additionalKeywords.replace(filterReg, " ");
-                    var each = s.split(" ");
-                    angular.forEach(each, function (term) {
+
+                    angular.forEach(s.split(" "), function (term) {
                         term = term.replace(filterReg, "");
                         if (term !== undefined && term.length > 0) terms[term] = term;
                     });
@@ -5849,8 +5843,8 @@
                 getQueryString: function () {
 
                     var s = '';
-                    var each = this.getQueryKeywords();
-                    angular.forEach(each, function (key, term) {
+
+                    angular.forEach(this.getQueryKeywords(), function (key, term) {
                         s += term + " ";
                     });
 
@@ -5889,8 +5883,8 @@
 
                     s = s + " " + t;
                     s = s.toLowerCase();
-                    var each = s.split(" ");
-                    angular.forEach(each, function (term) {
+
+                    angular.forEach(s.split(" "), function (term) {
                         term = term.replace(filterReg, "");
                         if (term.length > 0) keywords[term] = true;
                     });
@@ -5911,8 +5905,8 @@
 
                     angular.forEach(keywords, function (k, term) {
 
-                        var each = self.getMagicReplacements(term);
-                        angular.forEach(each, function (a, t) {
+
+                        angular.forEach(self.getMagicReplacements(term), function (a, t) {
                             if (t.length > 1) {
                                 magickeywords.push(t);
                             }
