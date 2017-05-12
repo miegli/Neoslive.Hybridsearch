@@ -2745,8 +2745,9 @@
                                                         if (indexdata['__'] === undefined) {
                                                             indexdata['__'] = [];
                                                         }
+
                                                         angular.forEach(data, function (node, id) {
-                                                            nodes[id] = node.node;
+                                                            nodes[node.node.identifier] = node.node;
                                                             indexdata['__'].push(node);
                                                         });
 
@@ -2768,8 +2769,10 @@
                                                         }
 
                                                         angular.forEach(data, function (node, id) {
-                                                            nodes[node.node.identifier] = node;
-                                                            indexdata[keyword].push(node);
+                                                            if (node) {
+                                                                nodes[node.node.identifier] = node.node;
+                                                                indexdata[keyword].push(node);
+                                                            }
                                                         });
 
                                                         self.updateLocalIndex(indexdata, lastSearchInstance);
@@ -2821,36 +2824,44 @@
                                                             }).success(function (data) {
 
                                                                 nodesIndexed = {};
-                                                                var tmpNodes = {};
+                                                                var tmpNodes = [];
                                                                 var tmpNodesInterval = null;
-                                                                var tmpNodesIsInInterval = false;
+                                                                var tmpNodesCounter = 0;
 
                                                                 var reqNodesCount = data ? Object.keys(data).length : 0;
 
                                                                 if (reqNodesCount) {
+
                                                                     angular.forEach(data, function (node, identifier) {
 
 
                                                                         if (node.node == undefined) {
-
-
                                                                             self.getIndexByNodeIdentifierAndNodeType(identifier, node.nodeType).once("value", function (data) {
-                                                                                if (data.val()) {
-                                                                                    nodes[identifier] = data.val();
+                                                                                if (nodes[identifier] == undefined) {
+                                                                                    // add node
+                                                                                    tmpNodes.push(data.val());
+                                                                                    tmpNodesCounter++;
+                                                                                } else {
+                                                                                    // update node
+                                                                                    tmpNodesCounter++;
+                                                                                    nodes[identifier] = data.val().node;
+                                                                                    self.search();
                                                                                 }
-                                                                                tmpNodes[identifier] = data.val();
-                                                                                if (Object.keys(tmpNodes).length == reqNodesCount) {
-                                                                                    clearInterval(tmpNodesInterval);
+
+                                                                                if (tmpNodesCounter == reqNodesCount) {
                                                                                     execute(keyword, tmpNodes, ref);
                                                                                     self.search();
                                                                                     self.setIsLoadedAll(ref.socket.toString());
                                                                                 }
                                                                             });
 
+
                                                                         } else {
+
                                                                             nodes[identifier] = node;
-                                                                            tmpNodes[identifier] = node;
-                                                                            if (Object.keys(tmpNodes).length == reqNodesCount) {
+                                                                            tmpNodes.push(node);
+                                                                            tmpNodesCounter++;
+                                                                            if (tmpNodesCounter == reqNodesCount) {
                                                                                 execute(keyword, tmpNodes, ref);
                                                                                 self.search();
                                                                                 self.setIsLoadedAll(ref.socket.toString());
