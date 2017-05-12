@@ -1,6 +1,10 @@
+/*! @license Firebase v3.9.0
+Build: rev-cc77c9e
+Terms: https://firebase.google.com/terms/ */
+
 /**
  * @fileoverview Firebase Storage API.
- * Version: 3.7.2
+ * Version: 3.9.0
  *
  * Copyright 2017 Google Inc. All Rights Reserved.
  *
