@@ -2899,15 +2899,27 @@
 
                                                                                     if (nodes[identifier] == undefined) {
                                                                                         self.getIndexByNodeIdentifierAndNodeType(identifier, node.nodeType).on("value", function (data) {
+
+
                                                                                             if (nodes[identifier] == undefined) {
                                                                                                 // add node
                                                                                                 tmpNodes.push(data.val());
                                                                                                 tmpNodesCount++;
                                                                                             } else {
+
                                                                                                 // update node
                                                                                                 tmpNodesCount++;
-                                                                                                nodes[identifier] = data.val().node;
-                                                                                                self.search();
+                                                                                                if (data.val()) {
+                                                                                                    if (data.val().node === undefined) {
+                                                                                                        // node was removed
+                                                                                                        nodes[identifier] = {node: null, parentNode: null};
+                                                                                                    } else {
+                                                                                                        nodes[identifier] = data.val().node;
+                                                                                                    }
+
+                                                                                                    self.search();
+                                                                                                }
+
                                                                                             }
 
                                                                                             if (tmpNodesCount == reqNodesCount) {
@@ -3416,12 +3428,13 @@
                                                         }
 
                                                         if (valueJson) {
-                                                            angular.forEach(valueJson.getRecursiveStrings(), function (o) {
-                                                                doc[property + '.' + o.key] = o.val;
+                                                            var recstring = valueJson.getRecursiveStrings();
+                                                            angular.forEach(recstring, function (o) {
+                                                                doc[property + '.' + o.key] = o.val.replace(/(<([^>]+)>)/ig," ");
                                                             });
                                                         } else {
                                                             if (typeof propvalue === 'string') {
-                                                                doc[property] = propvalue;
+                                                                doc[property] = propvalue.replace(/(<([^>]+)>)/ig," ");
                                                             }
                                                         }
 
@@ -3429,6 +3442,7 @@
                                                 }
                                             });
 
+                                            
                                             if (Object.keys(doc).length) {
 
                                                 if (doc.rawcontent == undefined && value.node.rawcontent !== undefined) {

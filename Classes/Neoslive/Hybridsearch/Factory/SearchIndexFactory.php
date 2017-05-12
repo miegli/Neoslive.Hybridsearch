@@ -680,9 +680,14 @@ class SearchIndexFactory
 
         if ($timestamp == null) {
             $lastsync = $this->firebase->get("/lastsync/$workspaceName/" . $this->branch);
+            if ($lastsync == null || $lastsync == 'null') {
+                $lastsync = time();
+            }
         } else {
             $lastsync = $timestamp;
         }
+
+
 
         $date = new \DateTime();
 
@@ -810,6 +815,8 @@ class SearchIndexFactory
         }
 
 
+
+
         if (count($this->allSiteKeys) === 0) {
             $this->allSiteKeys = json_decode($this->firebase->get('sites', array('shallow' => 'true')));
         }
@@ -830,18 +837,23 @@ class SearchIndexFactory
 
                 $context = $this->contentContextFactory->create(['targetDimension' => $targetDimension, 'dimensions' => $dimensionConfiguration, 'workspaceName' => $nodedata->getWorkspace()->getName()]);
 
+
+
                 $node = $context->getNodeByIdentifier($nodedata->getIdentifier());
 
                 if ($node) {
 
                     if (isset($this->settings['Filter']['NodeTypeFilter'])) {
 
-
                         $flowQuery = $noparentcheck ? null : new FlowQuery(array($node));
 
                         if ($noparentcheck === true || $flowQuery->is($this->settings['Filter']['NodeTypeFilter'])) {
+
+
+
+
                             if ($node->isHidden() || $node->isRemoved()) {
-                                $this->removeSingleIndex($node->getIdentifier(), $this->getWorkspaceHash($workspace), $this->branch, $this->getDimensionConfiugurationHash($dimensionConfiguration));
+                                $this->removeSingleIndex($node->getIdentifier(), $this->getWorkspaceHash($workspace), $this->branch, $this->getDimensionConfiugurationHash($dimensionConfiguration), array(), null, $this->getNodeTypeName($node));
                             } else {
 
                                 if ($noparentcheck === false) {
@@ -892,6 +904,13 @@ class SearchIndexFactory
 
                     }
 
+
+                } else {
+                    // delete node index
+
+                    foreach ($this->allSiteKeys as $siteKey => $siteVal) {
+                    $this->removeSingleIndex($nodedata->getIdentifier(), $this->getWorkspaceHash($workspace), $this->branch, $this->getDimensionConfiugurationHash($dimensionConfiguration), array(), $siteKey, $this->getNodeTypeName($nodedata));
+                    }
 
                 }
 
@@ -1052,9 +1071,11 @@ class SearchIndexFactory
      * @param String $branch
      * @param string $dimensionConfigurationHash
      * @param array $keywordsOfNode current keywords
+     * @param string $siteIdentifier
+     * @param mixed $removeNodeByNodeTypeName
      * @return void
      */
-    private function removeSingleIndex($nodeIdentifier, $workspaceHash, $branch, $dimensionConfigurationHash, $keywordsOfNode = array(), $siteIdentifier = null)
+    private function removeSingleIndex($nodeIdentifier, $workspaceHash, $branch, $dimensionConfigurationHash, $keywordsOfNode = array(), $siteIdentifier = null, $removeNodeByNodeTypeName = null)
     {
         if ($siteIdentifier === null) {
             $siteIdentifier = $this->getSiteIdentifier();
@@ -1070,13 +1091,21 @@ class SearchIndexFactory
                     $keywordsremove[$keyword . "/" . urlencode($nodeIdentifier)] = null;
                 }
             }
+
             $this->firebase->update("sites/$siteIdentifier/index/$workspaceHash/$branch/$dimensionConfigurationHash", $keywordsremove,array('print' => 'silent'));
+
             if (count($keywordsOfNode) === 0) {
                 $this->firebase->delete("sites/" . $siteIdentifier . "/index/$workspaceHash/$branch/$dimensionConfigurationHash" . "/___keywords/" . urlencode($nodeIdentifier), array('print' => 'silent'));
             }
         }
 
         $this->firebase->delete("trash/$siteIdentifier/$workspaceHash/$branch/$dimensionConfigurationHash/$nodeIdentifier", array('print' => 'silent'));
+
+        if ($removeNodeByNodeTypeName) {
+            $this->firebase->set("sites/$siteIdentifier/index/$workspaceHash/$branch/$dimensionConfigurationHash/__$removeNodeByNodeTypeName/$nodeIdentifier",'removed', array('print' => 'silent'));
+        }
+
+
 
 
     }
@@ -1153,6 +1182,13 @@ class SearchIndexFactory
 
             foreach ($keywords as $keyword => $val) {
                 $k = strval($keyword);
+
+
+
+                if (substr($k, 0, 2) !== "__") {
+                    array_push($keywordsOfNode,$k);
+                }
+
                 if (substr($k, 0, 9) === "_nodetype") {
                     $k = "_" . $this->getNodeTypeName($node) . mb_substr($k, 9);
                 }
@@ -1160,7 +1196,7 @@ class SearchIndexFactory
                 if ($k) {
                     if (isset($this->keywords->$workspaceHash->$dimensionConfigurationHash[$k]) == false) {
                         $this->keywords->$workspaceHash->$dimensionConfigurationHash[$k] = array();
-                    }
+                        }
                     if (is_array($val) == false) {
                         $val = array($k);
                     }
@@ -1182,10 +1218,10 @@ class SearchIndexFactory
 
             }
 
-
             if (isset($this->index->$workspaceHash->$dimensionConfigurationHash->___keywords) === false) {
                 $this->index->$workspaceHash->$dimensionConfigurationHash->___keywords = new \stdClass();
             }
+
             $this->index->$workspaceHash->$dimensionConfigurationHash->___keywords->$identifier = $keywordsOfNode;
 
 
