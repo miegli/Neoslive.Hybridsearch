@@ -2772,7 +2772,7 @@
                                                         }
 
                                                         angular.forEach(data, function (node, id) {
-                                                            if (node) {
+                                                            if (node && node.node !== undefined) {
                                                                 nodes[node.node.identifier] = node.node;
                                                                 indexdata[keyword].push(node);
                                                             }
