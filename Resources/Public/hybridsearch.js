@@ -2839,25 +2839,31 @@
 
 
                                                                         if (node.node == undefined) {
-                                                                            self.getIndexByNodeIdentifierAndNodeType(identifier, node.nodeType).once("value", function (data) {
-                                                                                if (nodes[identifier] == undefined) {
-                                                                                    // add node
-                                                                                    tmpNodes.push(data.val());
-                                                                                    tmpNodesCounter++;
-                                                                                } else {
-                                                                                    // update node
-                                                                                    tmpNodesCounter++;
-                                                                                    nodes[identifier] = data.val().node;
-                                                                                    self.search();
-                                                                                }
 
-                                                                                if (tmpNodesCounter == reqNodesCount) {
-                                                                                    execute(keyword, tmpNodes, ref);
-                                                                                    self.search();
-                                                                                    self.setIsLoadedAll(ref.socket.toString());
-                                                                                }
-                                                                            });
+                                                                            if (self.getFilter().getNodeType() && (self.getFilter().getNodeType() !== node.nodeType && self.getFilter().getNodeType().indexOf(node.nodeType) < 0)) {
+                                                                                // skip filtered nodetype
+                                                                                tmpNodesCounter++;
+                                                                            } else {
 
+                                                                                self.getIndexByNodeIdentifierAndNodeType(identifier, node.nodeType).once("value", function (data) {
+                                                                                    if (nodes[identifier] == undefined) {
+                                                                                        // add node
+                                                                                        tmpNodes.push(data.val());
+                                                                                        tmpNodesCounter++;
+                                                                                    } else {
+                                                                                        // update node
+                                                                                        tmpNodesCounter++;
+                                                                                        nodes[identifier] = data.val().node;
+                                                                                        self.search();
+                                                                                    }
+
+                                                                                    if (tmpNodesCounter == reqNodesCount) {
+                                                                                        execute(keyword, tmpNodes, ref);
+                                                                                        self.search();
+                                                                                        self.setIsLoadedAll(ref.socket.toString());
+                                                                                    }
+                                                                                });
+                                                                            }
 
                                                                         } else {
 
@@ -2913,42 +2919,53 @@
                                                                             angular.forEach(nodeData, function (node, identifier) {
 
                                                                                     if (nodes[identifier] == undefined) {
-                                                                                        self.getIndexByNodeIdentifierAndNodeType(identifier, node.nodeType).on("value", function (data) {
 
-                                                                                            if (nodes[identifier] == undefined) {
-                                                                                                // add node
-                                                                                                tmpNodes.push(data.val());
-                                                                                                tmpNodesCount++;
-                                                                                            } else {
 
-                                                                                                // update node
-                                                                                                tmpNodesCount++;
+                                                                                        if (self.getFilter().getNodeType() && (self.getFilter().getNodeType() !== node.nodeType && self.getFilter().getNodeType().indexOf(node.nodeType) < 0)) {
+                                                                                            // skip filtered nodetype
+                                                                                            tmpNodesCount++;
+                                                                                        } else {
 
-                                                                                                if (data.val()) {
-                                                                                                    if (data.val().node === undefined) {
-                                                                                                        // node was removed
-                                                                                                        if (nodes[identifier] !== undefined) {
-                                                                                                            nodes[identifier].removed = true;
+
+                                                                                            self.getIndexByNodeIdentifierAndNodeType(identifier, node.nodeType).on("value", function (data) {
+
+                                                                                                if (nodes[identifier] == undefined) {
+                                                                                                    // add node
+                                                                                                    tmpNodes.push(data.val());
+                                                                                                    tmpNodesCount++;
+                                                                                                } else {
+
+                                                                                                    // update node
+                                                                                                    tmpNodesCount++;
+
+                                                                                                    if (data.val()) {
+                                                                                                        if (data.val().node === undefined) {
+                                                                                                            // node was removed
+                                                                                                            if (nodes[identifier] !== undefined) {
+                                                                                                                nodes[identifier].removed = true;
+                                                                                                            }
+                                                                                                        } else {
+                                                                                                            if (nodes[identifier] == undefined || (nodes[identifier].removed == undefined)) {
+                                                                                                                nodes[identifier] = data.val().node;
+                                                                                                            }
                                                                                                         }
-                                                                                                    } else {
-                                                                                                        if (nodes[identifier] == undefined || (nodes[identifier].removed == undefined)) {
-                                                                                                            nodes[identifier] = data.val().node;
-                                                                                                        }
+
+                                                                                                        self.search();
                                                                                                     }
 
-                                                                                                    self.search();
                                                                                                 }
 
-                                                                                            }
+                                                                                                if (tmpNodesCount == reqNodesCount) {
+                                                                                                    execute(keyword, tmpNodes, ref);
+                                                                                                    self.search();
+                                                                                                    self.setIsLoadedAll(ref.socket.toString());
 
-                                                                                            if (tmpNodesCount == reqNodesCount) {
-                                                                                                execute(keyword, tmpNodes, ref);
-                                                                                                self.search();
-                                                                                                self.setIsLoadedAll(ref.socket.toString());
+                                                                                                }
 
-                                                                                            }
+                                                                                            });
 
-                                                                                        });
+                                                                                        }
+
                                                                                     } else {
                                                                                         // skip node update
                                                                                         tmpNodesCount++;
@@ -3219,25 +3236,50 @@
 
 
                         if (queries.length === 0 && this.getFilter().getNodeType()) {
-                            if (typeof this.getFilter().getNodeType() == 'string') {
-                                queries.push(
-                                    {
-                                        isLoadingAllFromNodeType: true,
-                                        socket: hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + this.getFilter().getNodeType()),
-                                        http: (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + this.getFilter().getNodeType() + ".json"
-                                    }
-                                );
-                                index[this.getFilter().getNodeType()] = queries;
-                            } else {
 
-                                angular.forEach(this.getFilter().getNodeType(), function (nodeType) {
+
+                            if (typeof this.getFilter().getNodeType() == 'string') {
+
+                                if (keyword.length) {
+                                    queries.push({
+                                        socket: hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + '/' + keyword),
+                                        http: (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + '/' + keyword + ".json"
+                                    });
+                                } else {
                                     queries.push(
                                         {
                                             isLoadingAllFromNodeType: true,
-                                            socket: hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + nodeType),
-                                            http: (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + nodeType + ".json"
+                                            socket: hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + this.getFilter().getNodeType()),
+                                            http: (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + this.getFilter().getNodeType() + ".json"
                                         }
                                     );
+                                }
+
+                                index[this.getFilter().getNodeType()] = queries;
+
+
+                            } else {
+
+                                angular.forEach(this.getFilter().getNodeType(), function (nodeType) {
+
+                                    if (keyword.length) {
+                                        queries.push({
+                                            socket: hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + '/' + keyword),
+                                            http: (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + '/' + keyword + ".json"
+                                        });
+
+                                    } else {
+
+                                        queries.push(
+                                            {
+                                                isLoadingAllFromNodeType: true,
+                                                socket: hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + nodeType),
+                                                http: (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + nodeType + ".json"
+                                            }
+                                        );
+                                    }
+
+
                                 });
 
                                 index[this.getFilter().getNodeType()] = queries;
@@ -3453,11 +3495,11 @@
                                                         if (valueJson) {
                                                             var recstring = valueJson.getRecursiveStrings();
                                                             angular.forEach(recstring, function (o) {
-                                                                doc[property + '.' + o.key] = o.val.replace(/(<([^>]+)>)/ig," ");
+                                                                doc[property + '.' + o.key] = o.val.replace(/(<([^>]+)>)/ig, " ");
                                                             });
                                                         } else {
                                                             if (typeof propvalue === 'string') {
-                                                                doc[property] = propvalue.replace(/(<([^>]+)>)/ig," ");
+                                                                doc[property] = propvalue.replace(/(<([^>]+)>)/ig, " ");
                                                             }
                                                         }
 
