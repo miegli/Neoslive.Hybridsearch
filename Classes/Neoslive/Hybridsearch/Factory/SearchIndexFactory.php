@@ -849,9 +849,6 @@ class SearchIndexFactory
 
                         if ($noparentcheck === true || $flowQuery->is($this->settings['Filter']['NodeTypeFilter'])) {
 
-
-
-
                             if ($node->isHidden() || $node->isRemoved()) {
                                 $this->removeSingleIndex($node->getIdentifier(), $this->getWorkspaceHash($workspace), $this->branch, $this->getDimensionConfiugurationHash($dimensionConfiguration), array(), null, $this->getNodeTypeName($node));
                             } else {
@@ -1077,9 +1074,17 @@ class SearchIndexFactory
      */
     private function removeSingleIndex($nodeIdentifier, $workspaceHash, $branch, $dimensionConfigurationHash, $keywordsOfNode = array(), $siteIdentifier = null, $removeNodeByNodeTypeName = null)
     {
-        if ($siteIdentifier === null) {
+
+        if ($this->creatingFullIndex) {
+            return null;
+        }
+
+
+        if ($siteIdentifier === null || $siteIdentifier == 0) {
             $siteIdentifier = $this->getSiteIdentifier();
         }
+
+
 
         $keywords = \json_decode($this->firebase->get("sites/" . $siteIdentifier . "/index/$workspaceHash/$branch/$dimensionConfigurationHash" . "/___keywords/" . urlencode($nodeIdentifier)));
 
