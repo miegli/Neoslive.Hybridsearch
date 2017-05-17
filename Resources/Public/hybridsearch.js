@@ -3149,8 +3149,8 @@
 
                         // var a = querysegment.toLowerCase().replace(/[^\w()/.%\-&üöäÜÖÄ]/gi, '');
                         var q = metaphone(querysegment.toLowerCase()).toUpperCase();
-                        if (q.length > 7) {
-                            q = q.substr(0, q.length - 1);
+                        if (q.length > 5) {
+                            q = q.substr(0, q.length - 2);
                         }
                         if (q.length == 0) {
                             q = querysegment.toLowerCase();
