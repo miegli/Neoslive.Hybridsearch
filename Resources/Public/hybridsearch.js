@@ -1207,7 +1207,7 @@
                      * @returns {number}
                      */
                     getBoost: function (property) {
-                        return propertiesBoost !== undefined && propertiesBoost[property] !== undefined ? propertiesBoost[property] : 10;
+                        return propertiesBoost !== undefined && propertiesBoost[property] !== undefined ? propertiesBoost[property] : property == 'breadcrumb' ? 50 : 10;
                     },
 
                     /**
@@ -3509,9 +3509,17 @@
 
                                             if (Object.keys(doc).length) {
 
+
                                                 if (doc.rawcontent == undefined && value.node.rawcontent !== undefined) {
                                                     doc.rawcontent = value.node.rawcontent;
                                                 }
+
+                                                if (value.node.breadcrumb !== undefined) {
+                                                    doc.breadcrumb = value.node.breadcrumb.replace(/(<([^>]+)>)/ig, "");
+                                                    doc.breadcrumb = doc.breadcrumb.substr(doc.breadcrumb.trim().lastIndexOf(" ")).toLowerCase();
+                                                    doc.breadcrumb = doc.breadcrumb.replace(/[^A-zöäü^>]/ig, " ");
+                                                }
+
                                                 var eachObjecKeys = Object.keys(doc);
                                                 var lunrFields = lunrSearch.getFields();
                                                 angular.forEach(eachObjecKeys, function (key) {
