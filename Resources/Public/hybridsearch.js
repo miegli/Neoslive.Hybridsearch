@@ -1208,8 +1208,14 @@
                      */
                     getBoost: function (property) {
 
+
                         if (propertiesBoost !== undefined && propertiesBoost[property] == undefined && property.indexOf(".")) {
                             property = property.substr(0,property.indexOf("."));
+
+                            if (property == '') {
+                                return 1;
+                            }
+
                         }
 
                         return propertiesBoost !== undefined && propertiesBoost[property] !== undefined ? propertiesBoost[property] : property == 'breadcrumb' ? 50 : 10;
