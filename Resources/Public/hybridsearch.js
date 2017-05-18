@@ -1208,17 +1208,14 @@
                      */
                     getBoost: function (property) {
 
-
-                        if (propertiesBoost !== undefined && propertiesBoost[property] == undefined && property.indexOf(".")) {
+                        if (propertiesBoost !== undefined && propertiesBoost[property] == undefined && property.indexOf(".") > -1) {
                             property = property.substr(0,property.indexOf("."));
-
                             if (property == '') {
                                 return 1;
                             }
 
                         }
-
-                        return propertiesBoost !== undefined && propertiesBoost[property] !== undefined ? propertiesBoost[property] : property == 'breadcrumb' ? 50 : 10;
+                        return propertiesBoost !== undefined && propertiesBoost[property] !== undefined ? propertiesBoost[property] : property == 'breadcrumb' ? 50 : property.substr(-28) == 'neoslivehybridsearchkeywords' ? 500 : 10;
                     },
 
                     /**
