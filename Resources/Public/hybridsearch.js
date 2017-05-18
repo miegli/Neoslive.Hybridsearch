@@ -1624,6 +1624,7 @@
 
                             var orderingstring = 0;
 
+
                             if (typeof self.getOrderBy(node.nodeType) == 'function') {
                                 var v = self.getOrderBy(node.nodeType);
                                 orderingstring = v(node);
@@ -1633,31 +1634,41 @@
                                 angular.forEach(self.getOrderBy(node.nodeType), function (property) {
 
 
-                                    if (typeof property == 'string' && property.substr(0, 1) == '-') {
-                                        reverse = true;
-                                        property = property.substr(1);
+                                    if (typeof property == 'function') {
+                                        var v = property;
+                                        orderingstring = v(node);
                                     } else {
-                                        reverse = false;
-                                    }
 
-                                    var s = self.getPropertyFromNode(node, property);
-
-
-                                    if (typeof s === 'string') {
-                                        orderingstring += s + " ";
-                                        if (reverse) {
-                                            forcereverse = true;
+                                        if (typeof property == 'string' && property.substr(0, 1) == '-') {
+                                            reverse = true;
+                                            property = property.substr(1);
+                                        } else {
+                                            reverse = false;
                                         }
-                                    } else {
 
-                                        if (typeof s === 'number') {
+                                        var s = self.getPropertyFromNode(node, property);
+
+
+                                        if (typeof s === 'string') {
+                                            orderingstring += s + " ";
                                             if (reverse) {
-                                                s = 1 / s;
+                                                forcereverse = true;
                                             }
-                                            orderingstring = parseFloat(orderingstring + s);
+                                        } else {
+
+                                            if (typeof s === 'number') {
+                                                if (reverse) {
+                                                    s = 1 / s;
+                                                }
+                                                orderingstring = parseFloat(orderingstring + s);
+                                            }
+
                                         }
 
+
                                     }
+
+
                                 });
                             }
 
