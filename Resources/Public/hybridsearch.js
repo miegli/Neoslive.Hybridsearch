@@ -3546,7 +3546,7 @@
                                                             });
                                                         } else {
                                                             if (typeof propvalue === 'string') {
-                                                                doc[property] = propvalue.replace(/(<([^>]+)>)|\./ig, " ");
+                                                                doc[property] = propvalue.replace(/(<([^>]+)>)/ig, " ");
                                                             }
                                                         }
 
