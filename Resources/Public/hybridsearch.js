@@ -186,7 +186,8 @@
                     resultOrderBy, propertiesBoost, ParentNodeTypeBoostFactor, isRunning, firstfilterhash,
                     searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier,
                     nodesByIdentifier, searchCounter, searchCounterTimeout, nodeTypeProperties, isloadedall,
-                    externalSources, isLoadedFromLocalStorage, lastSearchHash, lastSearchApplyTimeout, config;
+                    externalSources, isLoadedFromLocalStorage, lastSearchHash, lastSearchApplyTimeout, config,
+                    getKeywordsTimeout, getIndexTimeout;
 
                 var self = this;
 
@@ -219,6 +220,8 @@
                 pendingRequests = [];
                 resultGroupedBy = {};
                 resultOrderBy = {};
+                getKeywordsTimeout = null;
+                getIndexTimeout = null;
                 lastSearchHash = null;
                 lastSearchApplyTimeout = null;
                 resultCategorizedBy = 'nodeType';
@@ -1209,7 +1212,7 @@
                     getBoost: function (property) {
 
                         if (propertiesBoost !== undefined && propertiesBoost[property] == undefined && property.indexOf(".") > -1) {
-                            property = property.substr(0,property.indexOf("."));
+                            property = property.substr(0, property.indexOf("."));
                             if (property == '') {
                                 return 1;
                             }
@@ -2592,7 +2595,7 @@
                         if (self.isNodesByIdentifier() === false && self.isRunning() && filter.hasFilters()) {
 
 
-                            if (lastSearchInstance) {
+                            if (lastSearchInstance && lastSearchInstance.$$data !== undefined) {
                                 // cancel old requests
                                 angular.forEach(lastSearchInstance.$$data.promises, function (unbind) {
                                     unbind();
@@ -2612,17 +2615,24 @@
                             // fetch index from given keywords
                             var searchIndex = new this.SearchIndexInstance(self, keywords);
 
-                            lastSearchInstance = searchIndex.getIndex();
 
-                            var counter = 0;
-                            searchInstancesInterval = setInterval(function () {
-                                counter++;
-                                if (lastSearchInstance.$$data.canceled === true || counter > 55000 || lastSearchInstance.$$data.proceeded.length >= lastSearchInstance.$$data.running) {
-                                    clearInterval(searchInstancesInterval);
-                                    lastSearchInstance.execute(self, lastSearchInstance);
-                                    self.search(nodes);
-                                }
-                            }, 2);
+                            window.clearTimeout(getIndexTimeout);
+
+                            getIndexTimeout = window.setTimeout(function () {
+                                lastSearchInstance = searchIndex.getIndex();
+
+
+                                var counter = 0;
+
+                                searchInstancesInterval = setInterval(function () {
+                                    counter++;
+                                    if (lastSearchInstance.$$data.canceled === true || counter > 55000 || lastSearchInstance.$$data.proceeded.length >= lastSearchInstance.$$data.running) {
+                                        clearInterval(searchInstancesInterval);
+                                        lastSearchInstance.execute(self, lastSearchInstance);
+                                        self.search(nodes);
+                                    }
+                                }, 2);
+                            }, 10);
 
 
                         } else {
@@ -2661,8 +2671,8 @@
                          */
                         this.getIndex = function () {
 
-                            var instance = this;
 
+                            var instance = this;
 
                             if (Object.keys(keywords).length > 0) {
                                 angular.forEach(keywords, function (keyword) {
@@ -2672,6 +2682,7 @@
                                 instance.$$data.running++;
                                 instance.$$data.proceeded.push(1);
                             }
+
 
                             return instance;
 
@@ -3182,40 +3193,58 @@
                         ref.http = (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + ("/sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + q + ".json");
 
 
-                        this.addPendingRequest($http({
-                            method: 'get',
-                            url: ref.http,
-                            cache: true,
-                            timeout: canceller.promise,
-                            cancel: function (reason) {
-                                canceller.resolve(reason);
-                            }
-                        }).success(function (data) {
+                        window.clearTimeout(getKeywordsTimeout);
 
-                            if (data !== undefined) {
 
-                                angular.forEach(data, function (v, k) {
-                                    instance.$$data.keywords.push({term: k, metaphone: q});
-                                });
+                        getKeywordsTimeout = window.setTimeout(function () {
 
-                                var ismatchexact = false;
-                                angular.forEach(instance.$$data.keywords, function (v) {
-                                    if (ismatchexact === false && v.term == querysegment) {
-                                        ismatchexact = true;
-                                    }
-                                });
-                                if (instance.$$data.keywords.length) {
-                                    self.search();
+
+                            self.addPendingRequest($http({
+                                method: 'get',
+                                url: ref.http,
+                                cache: true,
+                                timeout: canceller.promise,
+                                cancel: function (reason) {
+                                    canceller.resolve(reason);
                                 }
+                            }).success(function (data) {
 
-                            }
-                            instance.$$data.proceeded.push(1);
+                                if (data !== undefined) {
+
+                                    var ismatchexact = false;
+                                    angular.forEach(data, function (v, k) {
+                                        if (ismatchexact === false && k == querysegment) {
+                                            ismatchexact = true;
+
+                                        }
+                                    });
+
+                                    angular.forEach(data, function (v, k) {
+                                        if (ismatchexact == false) {
+                                            if (querysegment.indexOf((k.substr(0, 2))) == 0) {
+                                                instance.$$data.keywords.push({term: k, metaphone: q});
+                                            }
+                                        } else {
+                                            if (querysegment == k) {
+                                                instance.$$data.keywords.push({term: k, metaphone: q});
+                                            }
+                                        }
+
+                                    });
+
+                                    // if (instance.$$data.keywords.length) {
+                                    //     self.search();
+                                    // }
+
+                                }
+                                instance.$$data.proceeded.push(1);
 
 
-                        }).error(function (data) {
-                            // skip
-                        }));
+                            }).error(function (data) {
+                                // skip
+                            }));
 
+                        }, 5);
 
                     }
 
@@ -3488,14 +3517,13 @@
 
                                         if (value.node != undefined && value.node.properties != undefined) {
 
-                                            var propfoundcount = 0;
 
                                             // var doc = JSON.parse(JSON.stringify(value.node.properties));
 
                                             //angular.forEach(JSON.parse(JSON.stringify(value.node.properties)), function (propvalue, property) {
                                             angular.forEach(value.node.properties, function (propvalue, property) {
                                                 if (propvalue && propvalue.getProperty == undefined) {
-                                                    if (propfoundcount < 3 && self.getBoost(property) > 0) {
+                                                    if (self.getBoost(property) > 0) {
 
                                                         valueJson = false;
 
@@ -3518,7 +3546,7 @@
                                                             });
                                                         } else {
                                                             if (typeof propvalue === 'string') {
-                                                                doc[property] = propvalue.replace(/(<([^>]+)>)/ig, " ");
+                                                                doc[property] = propvalue.replace(/(<([^>]+)>)|\./ig, " ");
                                                             }
                                                         }
 
