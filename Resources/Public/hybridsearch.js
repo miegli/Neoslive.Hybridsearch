@@ -3169,12 +3169,6 @@
                             return false;
                         }
 
-
-                        var self = this;
-
-                        // get quick results from logstore
-                        var canceller = $q.defer();
-
                         // get search results
 
                         var q = metaphone(querysegment.toLowerCase()).toUpperCase();
@@ -3191,29 +3185,16 @@
                         ref.socket = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + q);
                         ref.http = (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + ("/sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + q + ".json");
 
+                            ref.socket.once("value",function(data) {
+                               if (data.val()) {
+                                   angular.forEach(data.val(), function (v, k) {
+                                       instance.$$data.keywords.push({term: k, metaphone: q});
+                                   });
+                               }
+                            });
 
-                            self.addPendingRequest($http({
-                                method: 'get',
-                                url: ref.http,
-                                cache: true,
-                                timeout: canceller.promise,
-                                cancel: function (reason) {
-                                    canceller.resolve(reason);
-                                }
-                            }).success(function (data) {
-
-                                if (data !== undefined) {
-                                    angular.forEach(data, function (v, k) {
-                                        instance.$$data.keywords.push({term: k, metaphone: q});
-                                    });
-                                }
-                                instance.$$data.proceeded.push(1);
-
-                            }).error(function (data) {
-                                // skip
-                            }));
-
-
+                        instance.$$data.keywords.push({term: q, metaphone: q});
+                        instance.$$data.proceeded.push(1);
 
                     }
 
@@ -5425,11 +5406,6 @@
             var filterReg = /[^0-9a-zA-ZöäüÖÄÜ]/g;
 
 
-            var defaultStopWords = [
-                "a", "ab", "aber", "ach", "acht", "achte", "achten", "achter", "achtes", "ag", "alle", "allein", "allem", "allen", "aller", "allerdings", "alles", "allgemeinen", "als", "also", "am", "an", "andere", "anderen", "andern", "anders", "au", "auch", "auf", "aus", "ausser", "ausserdem", "außer", "außerdem", "b", "bald", "bei", "beide", "beiden", "beim", "beispiel", "bekannt", "bereits", "besonders", "besser", "besten", "bin", "bis", "bisher", "bist", "c", "d", "d.h", "da", "dabei", "dadurch", "dafür", "dagegen", "daher", "dahin", "dahinter", "damals", "damit", "danach", "daneben", "dank", "dann", "daran", "darauf", "daraus", "darf", "darfst", "darin", "darum", "darunter", "darüber", "das", "dasein", "daselbst", "dass", "dasselbe", "davon", "davor", "dazu", "dazwischen", "daß", "dein", "deine", "deinem", "deiner", "dem", "dementsprechend", "demgegenüber", "demgemäss", "demgemäß", "demselben", "demzufolge", "den", "denen", "denn", "denselben", "der", "deren", "derjenige", "derjenigen", "dermassen", "dermaßen", "derselbe", "derselben", "des", "deshalb", "desselben", "dessen", "deswegen", "dich", "die", "diejenige", "diejenigen", "dies", "diese", "dieselbe", "dieselben", "diesem", "diesen", "dieser", "dieses", "dir", "doch", "dort", "drei", "drin", "dritte", "dritten", "dritter", "drittes", "du", "durch", "durchaus", "durfte", "durften", "dürfen", "dürft", "e", "eben", "ebenso", "ehrlich", "ei", "ei,", "eigen", "eigene", "eigenen", "eigener", "eigenes", "ein", "einander", "eine", "einem", "einen", "einer", "eines", "einige", "einigen", "einiger", "einiges", "einmal", "eins", "elf", "en", "ende", "endlich", "entweder", "er", "erst", "erste", "ersten", "erster", "erstes", "es", "etwa", "etwas", "euch", "euer", "eure", "f", "folgende", "früher", "fünf", "fünfte", "fünften", "fünfter", "fünftes", "für", "g", "gab", "ganz", "ganze", "ganzen", "ganzer", "ganzes", "gar", "gedurft", "gegen", "gegenüber", "gehabt", "gehen", "geht", "gekannt", "gekonnt", "gemacht", "gemocht", "gemusst", "genug", "gerade", "gern", "gesagt", "geschweige", "gewesen", "gewollt", "geworden", "gibt", "ging", "gleich", "gott", "gross", "grosse", "grossen", "grosser", "grosses", "groß", "große", "großen", "großer", "großes", "gut", "gute", "guter", "gutes", "h", "habe", "haben", "habt", "hast", "hat", "hatte", "hatten", "hattest", "hattet", "heisst", "her", "heute", "hier", "hin", "hinter", "hoch", "hätte", "hätten", "i", "ich", "ihm", "ihn", "ihnen", "ihr", "ihre", "ihrem", "ihren", "ihrer", "ihres", "im", "immer", "in", "indem", "infolgedessen", "ins", "irgend", "ist", "j", "ja", "jahr", "jahre", "jahren", "je", "jede", "jedem", "jeden", "jeder", "jedermann", "jedermanns", "jedes", "jedoch", "jemand", "jemandem", "jemanden", "jene", "jenem", "jenen", "jener", "jenes", "jetzt", "k", "kam", "kann", "kannst", "kaum", "kein", "keine", "keinem", "keinen", "keiner", "kleine", "kleinen", "kleiner", "kleines", "kommen", "kommt", "konnte", "konnten", "kurz", "können", "könnt", "könnte", "l", "lang", "lange", "leicht", "leide", "lieber", "los", "m", "machen", "macht", "machte", "mag", "magst", "mahn", "mal", "man", "manche", "manchem", "manchen", "mancher", "manches", "mann", "mehr", "mein", "meine", "meinem", "meinen", "meiner", "meines", "mich", "mir", "mit", "mittel", "mochte", "mochten", "morgen", "muss", "musst", "musste", "mussten", "muß", "mußt", "möchte", "mögen", "möglich", "mögt", "müssen", "müsst", "müßt", "n", "na", "nach", "nachdem", "nahm", "natürlich", "neben", "nein", "neue", "neuen", "neun", "neunte", "neunten", "neunter", "neuntes", "nicht", "nichts", "nie", "niemand", "niemandem", "niemanden", "noch", "nun", "nur", "o", "ob", "oben", "oder", "offen", "oft", "ohne", "p", "q", "r", "recht", "rechte", "rechten", "rechter", "rechtes", "richtig", "rund", "s", "sa", "sache", "sagt", "sagte", "sah", "satt", "schlecht", "schon", "sechs", "sechste", "sechsten", "sechster", "sechstes", "sehr", "sei", "seid", "seien", "sein", "seine", "seinem", "seinen", "seiner", "seines", "seit", "seitdem", "selbst", "sich", "sie", "sieben", "siebente", "siebenten", "siebenter", "siebentes", "sind", "so", "solang", "solche", "solchem", "solchen", "solcher", "solches", "soll", "sollen", "sollst", "sollt", "sollte", "sollten", "sondern", "sonst", "soweit", "sowie", "später", "startseite", "statt", "steht", "suche", "t", "tag", "tage", "tagen", "tat", "teil", "tel", "tritt", "trotzdem", "tun", "u", "uhr", "um", "und", "und?", "uns", "unser", "unsere", "unserer", "unter", "v", "vergangenen", "viel", "viele", "vielem", "vielen", "vielleicht", "vier", "vierte", "vierten", "vierter", "viertes", "vom", "von", "vor", "w", "wahr", "wann", "war", "waren", "wart", "warum", "was", "wegen", "weil", "weit", "weiter", "weitere", "weiteren", "weiteres", "welche", "welchem", "welchen", "welcher", "welches", "wem", "wen", "wenig", "wenige", "weniger", "weniges", "wenigstens", "wenn", "wer", "werde", "werden", "werdet", "weshalb", "wessen", "wie", "wieder", "wieso", "will", "willst", "wir", "wird", "wirklich", "wirst", "wissen", "wo", "wohl", "wollen", "wollt", "wollte", "wollten", "worden", "wurde", "wurden", "während", "währenddem", "währenddessen", "wäre", "würde", "würden", "x", "y", "z", "z.b", "zehn", "zehnte", "zehnten", "zehnter", "zehntes", "zeit", "zu", "zuerst", "zugleich", "zum", "zunächst", "zur", "zurück", "zusammen", "zwanzig", "zwar", "zwei", "zweite", "zweiten", "zweiter", "zweites", "zwischen", "zwölf", "über", "überhaupt", "übrigens"
-            ];
-
-
             /**
              * HybridsearchFilterObject.
              * @private
@@ -5841,10 +5817,6 @@
                  */
                 isBlockedKeyword: function (keyword) {
 
-                    if (defaultStopWords.indexOf(keyword) >= 0) {
-                        return true;
-                    }
-
                     return false;
                 },
 
@@ -6003,107 +5975,16 @@
                         if (term.length > 0) keywords[term] = true;
                     });
 
-
-                    return this.getMagicQuery(keywords);
-
-                },
-
-                /**
-                 * @param object keywords
-                 * @returns object
-                 */
-                getMagicQuery: function (keywords) {
-
-                    var magickeywords = [];
-                    var self = this;
-
-                    angular.forEach(keywords, function (k, term) {
-
-
-                        angular.forEach(self.getMagicReplacements(term), function (a, t) {
-                            if (t.length > 1) {
-                                magickeywords.push(t);
-                            }
-                        });
-
-
+                    var finalkeywords = [];
+                    angular.forEach(keywords, function (a, t) {
+                        if (t.length > 1) {
+                            finalkeywords.push(t);
+                        }
                     });
 
-
-                    self.$$data.magickeywords = ' ';
-                    angular.forEach(magickeywords, function (term) {
-                        self.$$data.magickeywords += term + ' ';
-                    });
-                    self.$$data.magickeywords += ' ';
-
-
-                    return magickeywords.sort();
-
-                },
-
-                /**
-                 * @param string
-                 * @returns object
-                 */
-                getMagicReplacements: function (string) {
-
-
-                    var magicreplacements = {};
-
-                    // keep original term
-                    magicreplacements[string] = true;
-
-                    return magicreplacements;
-
-
-                    if (string.length > 8) {
-                        // double consonants
-                        var d = string.replace(/([bcdfghjklmnpqrstvwxyz])\1+/, "$1");
-
-                        magicreplacements[d.replace(/(.*)([bcdfghjklmnpqrstvwxyz])([^bcdfghjklmnpqrstvwxyz]*)/, "$1$2$2$3").replace(/([bcdfghjklmnpqrstvwxyz])\3+/, "$1$1")] = true;
-                        magicreplacements[d.replace(/(.*)([bcdfghjklmnpqrstvwxyz])([^bcdfghjklmnpqrstvwxyz]*)([bcdfghjklmnpqrstvwxyz])([^bcdfghjklmnpqrstvwxyz]*)/, "$1$2$2$3$4$4$5").replace(/([bcdfghjklmnpqrstvwxyz])\3+/, "$1$1")] = true;
-
-                        // common typo errors
-                        magicreplacements[d.replace(/th/, "t")] = true;
-                        magicreplacements[d.replace(/t/, "th")] = true;
-
-                        magicreplacements[d.replace(/üe/, "ü")] = true;
-                        magicreplacements[d.replace(/ü/, "üe")] = true;
-
-                        magicreplacements[d.replace(/(.*)ph(.*)/, "$1f$2")] = true;
-                        magicreplacements[d.replace(/(.*)f(.*)/, "$1ph$2")] = true;
-                        magicreplacements[d.replace(/(.*)tz(.*)/, "$1t$2")] = true;
-                        magicreplacements[d.replace(/(.*)t(.*)/, "$1tz$2")] = true;
-                        magicreplacements[d.replace(/(.*)rm(.*)/, "$1m$2")] = true;
-                        magicreplacements[d.replace(/(.*)m(.*)/, "$1rm$2")] = true;
-                        magicreplacements[d.replace(/(.*)th(.*)/, "$1t$2")] = true;
-                        magicreplacements[d.replace(/(.*)t(.*)/, "$1th$2")] = true;
-                        magicreplacements[d.replace(/(.*)a(.*)/, "$1ia$2")] = true;
-                        magicreplacements[d.replace(/(.*)ai(.*)/, "$1a$2")] = true;
-                        magicreplacements[d.replace(/(.*)rd(.*)/, "$1d$2")] = true;
-                        magicreplacements[d.replace(/(.*)d(.*)/, "$1rd$2")] = true;
-                        magicreplacements[d.replace(/(.*)t(.*)/, "$1d$2")] = true;
-                        magicreplacements[d.replace(/(.*)d(.*)/, "$1t$2")] = true;
-                        magicreplacements[d.replace(/(.*)k(.*)/, "$1x$2")] = true;
-                        magicreplacements[d.replace(/(.*)x(.*)/, "$1k$2")] = true;
-                        magicreplacements[d.replace(/(.*)k(.*)/, "$1c$2")] = true;
-                        magicreplacements[d.replace(/(.*)c(.*)/, "$1k$2")] = true;
-                        magicreplacements[d.replace(/(.*)ck(.*)/, "$1k$2")] = true;
-                        magicreplacements[d.replace(/(.*)ck(.*)/, "$1ch$2")] = true;
-                        magicreplacements[d.replace(/(.*)ch(.*)/, "$1ck$2")] = true;
-                        magicreplacements[d.replace(/(.*)ie(.*)/, "$1i$2")] = true;
-                        magicreplacements[d.replace(/(.*)i(.*)/, "$1ie$2")] = true;
-                        magicreplacements[d.replace(/(.*)v(.*)/, "$1w$2")] = true;
-                        magicreplacements[d.replace(/(.*)w(.*)/, "$1v$2")] = true;
-
-
-                    }
-
-
-                    return magicreplacements;
+                    return finalkeywords;
 
                 }
-
 
             };
 
