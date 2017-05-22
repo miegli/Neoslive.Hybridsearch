@@ -69,7 +69,6 @@
 
 
                 this.$$conf = {
-                    firebase: firebaseconfig,
                     workspace: workspace,
                     dimension: dimension,
                     site: site,
@@ -90,11 +89,18 @@
                     databaseURL: databaseURL
                 };
 
-                firebase.initializeApp(firebaseconfig);
+
+                if (window.hybridsearchInstancesApp == undefined) {
+                    window.hybridsearchInstancesApp = 0;
+                }
+
+                window.hybridsearchInstancesApp++;
+
+                firebase.initializeApp(firebaseconfig,"instance"+window.hybridsearchInstancesApp);
+                this.$$conf.firebase = firebase.app("instance"+window.hybridsearchInstancesApp);
                 if (debug == true) {
                     firebase.database.enableLogging(true);
                 }
-
 
 
             }
@@ -106,7 +112,11 @@
                  * @returns Firebase App
                  */
                 $firebase: function () {
-                    return firebase;
+
+                  if (this.$$conf.firebase !== undefined) {
+                         return this.$$conf.firebase ;
+                  }
+
                 },
 
                 /**
@@ -115,7 +125,7 @@
                  */
                 setBranch: function (branch) {
                     this.$$conf.branch = branch;
-                    return firebase;
+
                 },
 
                 /**
@@ -2154,6 +2164,7 @@
                                         });
                                         unfilteredResultNodes.push(nodeObject);
                                     });
+
                                     results.updateDistincts(unfilteredResultNodes);
                                 }
 
@@ -4735,6 +4746,22 @@
                         return this.scope;
                     },
 
+
+                    /**
+                     * @param string identifier
+                     * @returns scope
+                     */
+                    applyScope: function () {
+
+                        var self = this;
+                        if (self.getScope() !== undefined) {
+                            setTimeout(function () {
+                                self.getScope().$digest(function () {
+                                });
+                            }, 1);
+                        }
+                    },
+
                     /**
                      * @private
                      * @param obj
@@ -5088,12 +5115,15 @@
                 clearDistincts: function () {
 
                     var self = this;
+
                     angular.forEach(self.$$data.distincts, function (distinct, property) {
                         if (self.$$data.distinctsConfiguration[property].affectedBySearchResult) {
                             delete self.$$data.distincts[property];
                         }
 
                     });
+
+                    self.getApp().applyScope();
 
                 },
                 /**
@@ -5567,6 +5597,7 @@
 
                     return this.$$data.scope;
                 },
+
 
                 /**
                  * @param string identifier
