@@ -1,6 +1,6 @@
 /**
- * @license AngularJS v1.6.3
- * (c) 2010-2017 Google, Inc. http://angularjs.org
+ * @license AngularJS v1.6.0
+ * (c) 2010-2016 Google, Inc. http://angularjs.org
  * License: MIT
  */
 (function(window, angular) {'use strict';
@@ -23,7 +23,6 @@ var forEach;
 var isDefined;
 var lowercase;
 var noop;
-var nodeContains;
 var htmlParser;
 var htmlSanitizeWriter;
 
@@ -224,11 +223,6 @@ function $SanitizeProvider() {
   htmlParser = htmlParserImpl;
   htmlSanitizeWriter = htmlSanitizeWriterImpl;
 
-  nodeContains = window.Node.prototype.contains || /** @this */ function(arg) {
-    // eslint-disable-next-line no-bitwise
-    return !!(this.compareDocumentPosition(arg) & 16);
-  };
-
   // Regular Expressions for parsing tags and attributes
   var SURROGATE_PAIR_REGEXP = /[\uD800-\uDBFF][\uDC00-\uDFFF]/g,
     // Match everything outside of normal chars and " (quote character)
@@ -392,12 +386,12 @@ function $SanitizeProvider() {
         if (node.nodeType === 1) {
           handler.end(node.nodeName.toLowerCase());
         }
-        nextNode = getNonDescendant('nextSibling', node);
+        nextNode = node.nextSibling;
         if (!nextNode) {
           while (nextNode == null) {
-            node = getNonDescendant('parentNode', node);
+            node = node.parentNode;
             if (node === inertBodyElement) break;
-            nextNode = getNonDescendant('nextSibling', node);
+            nextNode = node.nextSibling;
             if (node.nodeType === 1) {
               handler.end(node.nodeName.toLowerCase());
             }
@@ -529,17 +523,8 @@ function $SanitizeProvider() {
         stripCustomNsAttrs(nextNode);
       }
 
-      node = getNonDescendant('nextSibling', node);
+      node = node.nextSibling;
     }
-  }
-
-  function getNonDescendant(propName, node) {
-    // An element is clobbered if its `propName` property points to one of its descendants
-    var nextNode = node[propName];
-    if (nextNode && nodeContains.call(node, nextNode)) {
-      throw $sanitizeMinErr('elclob', 'Failed to sanitize html because the element is clobbered: {0}', node.outerHTML || node.outerText);
-    }
-    return nextNode;
   }
 }
 
@@ -552,9 +537,7 @@ function sanitizeText(chars) {
 
 
 // define ngSanitize module and register $sanitize service
-angular.module('ngSanitize', [])
-  .provider('$sanitize', $SanitizeProvider)
-  .info({ angularVersion: '1.6.3' });
+angular.module('ngSanitize', []).provider('$sanitize', $SanitizeProvider);
 
 /**
  * @ngdoc filter

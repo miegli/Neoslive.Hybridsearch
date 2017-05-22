@@ -89,15 +89,12 @@
                 var firebaseconfig = {
                     databaseURL: databaseURL
                 };
-                try {
-                    firebase.initializeApp(firebaseconfig);
-                    firebase.database().goOnline();
-                    if (debug == true) {
-                        firebase.database.enableLogging(true);
-                    }
-                } catch (e) {
-                    // firebase was initizalized before
+
+                firebase.initializeApp(firebaseconfig);
+                if (debug == true) {
+                    firebase.database.enableLogging(true);
                 }
+
 
 
             }
@@ -991,7 +988,6 @@
                             return false;
                         }
 
-
                         if (hybridsearch.$$conf.branchisloading === undefined) {
 
                             hybridsearch.$$conf.branchisloading = true;
@@ -1005,9 +1001,7 @@
                                 query.on("value", function (snapshot) {
                                     hybridsearch.setBranch(snapshot.val());
                                     isRunning = true;
-
                                 });
-
 
                             } else {
                                 isRunning = true;
@@ -1855,7 +1849,7 @@
                                 self.getResults().getApp().clearQuickNodes();
                             }
 
-                                    if (lunrSearch.getFields().length == 0 && self.getFilter().getFullSearchQuery() !== false) {
+                            if (lunrSearch.getFields().length == 0 && self.getFilter().getFullSearchQuery() !== false) {
 
                                 // search index is not created yet, so do it now
                                 angular.forEach(nodes, function (node) {
@@ -1873,9 +1867,7 @@
                             }
 
 
-
                             if (!self.getFilter().getFullSearchQuery()) {
-
 
 
                                 var preOrdered = [];
@@ -1904,7 +1896,6 @@
 
                                     });
                                 }
-
 
 
                                 angular.forEach(self.sortNodes(preOrdered), function (node) {
@@ -3188,13 +3179,13 @@
                         ref.socket = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + q);
                         ref.http = (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + ("/sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + q + ".json");
 
-                            ref.socket.once("value",function(data) {
-                               if (data.val()) {
-                                   angular.forEach(data.val(), function (v, k) {
-                                       instance.$$data.keywords.push({term: k, metaphone: q});
-                                   });
-                               }
-                            });
+                        ref.socket.once("value", function (data) {
+                            if (data.val()) {
+                                angular.forEach(data.val(), function (v, k) {
+                                    instance.$$data.keywords.push({term: k, metaphone: q});
+                                });
+                            }
+                        });
 
                         instance.$$data.keywords.push({term: q, metaphone: q});
                         instance.$$data.proceeded.push(1);
@@ -3284,7 +3275,6 @@
                                 });
 
 
-
                                 index[this.getFilter().getNodeType()] = queries;
 
 
@@ -3313,7 +3303,6 @@
 
 
                         index[keyword] = queries;
-
 
 
                         return queries;
@@ -3688,7 +3677,9 @@
                         self.$$app.setIsRunning();
                     }
 
-                    this.$$app.getResults().$$data.isrunningfirsttimestamp = Date.now();
+                   if (this.$$app.getResults().$$data.isrunningfirsttimestamp > 0) {
+                        return null;
+                   }
 
                     if (!self.$$app.getHybridsearch().getBranch()) {
                         var counter = 0;
@@ -3701,7 +3692,7 @@
                                 self.$$app.setSearchIndex();
                             }
 
-                        }, 5);
+                        }, 2);
 
                         self.$$app.getHybridsearch().$$conf.branchInitialized = true;
 
@@ -3717,6 +3708,7 @@
                         self.$$app.setHybridsearchInstanceNumber();
                     }
 
+                    this.$$app.getResults().$$data.isrunningfirsttimestamp = Date.now();
 
                 },
 
@@ -3895,7 +3887,7 @@
                                 execute(nodesArray);
                             }
 
-                        }, 5);
+                        }, 1);
                     } else {
                         execute(nodesArray);
                     }
