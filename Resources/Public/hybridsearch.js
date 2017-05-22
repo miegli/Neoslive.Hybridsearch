@@ -3210,36 +3210,12 @@
                             }).success(function (data) {
 
                                 if (data !== undefined) {
-
-                                    var ismatchexact = false;
                                     angular.forEach(data, function (v, k) {
-                                        if (ismatchexact === false && k == querysegment) {
-                                            ismatchexact = true;
-
-                                        }
+                                        instance.$$data.keywords.push({term: k, metaphone: q});
                                     });
-
-                                    angular.forEach(data, function (v, k) {
-                                        if (ismatchexact == false) {
-                                            if (querysegment.indexOf((k.substr(0, 2))) == 0) {
-                                                instance.$$data.keywords.push({term: k, metaphone: q});
-                                            }
-                                        } else {
-                                            if (querysegment == k) {
-                                                instance.$$data.keywords.push({term: k, metaphone: q});
-                                            }
-                                        }
-
-                                    });
-
-                                    // if (instance.$$data.keywords.length) {
-                                    //     self.search();
-                                    // }
-
                                 }
                                 instance.$$data.proceeded.push(1);
-
-
+                                
                             }).error(function (data) {
                                 // skip
                             }));
