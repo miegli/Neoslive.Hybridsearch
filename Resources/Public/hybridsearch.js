@@ -1855,14 +1855,7 @@
                                 self.getResults().getApp().clearQuickNodes();
                             }
 
-                            // searchCounterTimeout = setTimeout(function () {
-                            //     if (self.getResults().countAll() === 0) {
-                            //         self.getResults().getApp().setNotFound(true);
-                            //     }
-                            // }, this.isLoadedAll() ? 1 : 10);
-
-
-                            if (lunrSearch.getFields().length == 0 && self.getFilter().getFullSearchQuery() !== false) {
+                                    if (lunrSearch.getFields().length == 0 && self.getFilter().getFullSearchQuery() !== false) {
 
                                 // search index is not created yet, so do it now
                                 angular.forEach(nodes, function (node) {
@@ -1880,7 +1873,10 @@
                             }
 
 
+
                             if (!self.getFilter().getFullSearchQuery()) {
+
+
 
                                 var preOrdered = [];
                                 var unfilteredResult = [];
@@ -1908,6 +1904,7 @@
 
                                     });
                                 }
+
 
 
                                 angular.forEach(self.sortNodes(preOrdered), function (node) {
@@ -1977,8 +1974,11 @@
 
                                     } else {
 
-                                        var resultsSearch = [];
+                                        if (Object.keys(lunrSearch.index).length == 0) {
+                                            return self;
+                                        }
 
+                                        var resultsSearch = [];
 
                                         resultsSearch[0] = lunrSearch.search(self.getFilter().getQuery(), {
                                             fields: fields,
@@ -1987,14 +1987,15 @@
 
 
                                         if (resultsSearch[0].length == 0) {
-                                            resultsSearch[1] = lunrSearch.search(query, {
+                                            resultsSearch[1] = lunrSearch.search(self.getFilter().getQuery(), {
                                                 fields: fields,
-                                                bool: "AND"
+                                                bool: "AND",
+                                                expand: true
                                             });
                                         }
 
                                         if (resultsSearch[1] != undefined && resultsSearch[1].length == 0) {
-                                            resultsSearch[2] = lunrSearch.search(query, {
+                                            resultsSearch[2] = lunrSearch.search(self.getFilter().getQuery(), {
                                                 fields: fields,
                                                 bool: "OR"
                                             });
@@ -2002,24 +2003,24 @@
 
                                         if (resultsSearch[2] != undefined && resultsSearch[2].length == 0) {
 
-                                            resultsSearch[3] = lunrSearch.search(self.getFilter().getQuery() + ' ' + query, {
+                                            resultsSearch[3] = lunrSearch.search(self.getFilter().getQuery(), {
                                                 fields: fields,
-                                                bool: "AND",
+                                                bool: "OR",
                                                 expand: true
                                             });
                                         }
 
                                         if (resultsSearch[3] != undefined && resultsSearch[3].length == 0) {
 
-                                            resultsSearch[4] = lunrSearch.search(self.getFilter().getQuery(), {
+                                            resultsSearch[4] = lunrSearch.search(query, {
                                                 fields: fields,
-                                                bool: "AND",
-                                                expand: true
+                                                bool: "OR",
+                                                expand: false
                                             });
                                         }
 
                                         if (resultsSearch[4] != undefined && resultsSearch[4].length == 0) {
-                                            resultsSearch[5] = lunrSearch.search(self.getFilter().getQuery() + ' ' + query, {
+                                            resultsSearch[5] = lunrSearch.search(query, {
                                                 fields: fields,
                                                 bool: "OR",
                                                 expand: true
@@ -2171,8 +2172,9 @@
                                     lastSearchApplyTimeout = null;
                                 }
 
-                            }, 10);
-                        }, 50);
+                            }, 5);
+
+                        }, 5);
 
                     }
                     ,
@@ -2919,7 +2921,6 @@
 
                                                             if (ref.socket) {
 
-
                                                                 if (ref.isLoadingAllFromNodeType == undefined) {
 
 
@@ -3013,6 +3014,7 @@
 
 
                                                                     ref.socket.once("value", function (data) {
+
                                                                         if (data.val()) {
                                                                             execute(keyword, data.val(), ref);
                                                                             self.search();
@@ -3179,6 +3181,7 @@
                             q = querysegment.toLowerCase();
                         }
 
+
                         instance.$$data.running++;
 
                         var ref = {};
@@ -3258,6 +3261,7 @@
 
                             } else {
 
+
                                 angular.forEach(this.getFilter().getNodeType(), function (nodeType) {
 
                                     if (keyword.length) {
@@ -3267,7 +3271,6 @@
                                         });
 
                                     } else {
-
                                         queries.push(
                                             {
                                                 isLoadingAllFromNodeType: true,
@@ -3279,6 +3282,8 @@
 
 
                                 });
+
+
 
                                 index[this.getFilter().getNodeType()] = queries;
 
@@ -3308,6 +3313,8 @@
 
 
                         index[keyword] = queries;
+
+
 
                         return queries;
 
@@ -5852,13 +5859,14 @@
                 getFullSearchQuery: function () {
 
 
-                    if (this.getQuery() == '' && this.getAutocompletedKeywords() === undefined) {
+                    if (this.getQuery() == '') {
                         return false;
                     }
 
-                    var q = this.$$data.magickeywords + "  " + (this.getAutocompletedKeywords() == undefined ? '' : this.getAutocompletedKeywords()) + "  " + (this.getAdditionalKeywords() == undefined ? '' : this.getAdditionalKeywords());
+                    var q = this.getQuery();
+                    q = typeof q == 'string' ? q.trim() : q;
 
-                    return q.length - (q.match(/ /g) || []).length > 1 ? q : false;
+                    return q == undefined || q == 'undefined' ? false : q;
 
                 },
 
@@ -5897,6 +5905,7 @@
                     } else {
                         return self.getQuery().length ? self.getQuery() : false;
                     }
+
 
                     return uniquarray.join(" ");
 
