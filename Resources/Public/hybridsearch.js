@@ -3177,12 +3177,11 @@
 
                         // get search results
 
-                        // var a = querysegment.toLowerCase().replace(/[^\w()/.%\-&üöäÜÖÄ]/gi, '');
                         var q = metaphone(querysegment.toLowerCase()).toUpperCase();
                         if (q.length > 5) {
                             q = q.substr(0, q.length - 2);
                         }
-                        if (q.length == 0) {
+                        if (q.length == 0 || q == 0) {
                             q = querysegment.toLowerCase();
                         }
 
@@ -3191,12 +3190,6 @@
                         var ref = {};
                         ref.socket = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + q);
                         ref.http = (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + ("/sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + q + ".json");
-
-
-                        window.clearTimeout(getKeywordsTimeout);
-
-
-                        getKeywordsTimeout = window.setTimeout(function () {
 
 
                             self.addPendingRequest($http({
@@ -3215,12 +3208,12 @@
                                     });
                                 }
                                 instance.$$data.proceeded.push(1);
-                                
+
                             }).error(function (data) {
                                 // skip
                             }));
 
-                        }, 5);
+
 
                     }
 

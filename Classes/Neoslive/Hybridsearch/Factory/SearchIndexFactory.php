@@ -1348,8 +1348,9 @@ class SearchIndexFactory
             $metaphone = mb_substr($metaphone,0,mb_strlen($metaphone)-2);
         }
 
-        if (mb_strlen($metaphone) == 0) {
-            return $string;
+        if (mb_strlen($metaphone) == 0 || $metaphone == 0) {
+
+            return mb_strtolower($string);
         }
 
         return $metaphone;
