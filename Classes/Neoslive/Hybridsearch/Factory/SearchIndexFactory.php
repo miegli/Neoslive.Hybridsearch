@@ -1347,21 +1347,21 @@ class SearchIndexFactory
      */
     private function getMetaphone($string)
     {
+        $string = "unterschiedlichen";
+
         if (is_numeric($string)) {
             return $string;
         }
 
         $metaphone = mb_strtoupper(metaphone(mb_strtolower($string)));
 
-        if (strlen($metaphone) > 5) {
-            $metaphone = strlen($metaphone,0,strlen($metaphone)-2);
+        if (strlen($metaphone) > 7) {
+            $metaphone = substr($metaphone,0,strlen($metaphone)-2);
         }
-
 
         if (strlen($metaphone) == 0 || $metaphone === 0) {
             return mb_strtolower($string);
         }
-
 
         return $metaphone;
 
