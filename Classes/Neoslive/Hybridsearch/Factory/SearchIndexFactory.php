@@ -1347,7 +1347,7 @@ class SearchIndexFactory
      */
     private function getMetaphone($string)
     {
-       
+
 
         if (is_numeric($string)) {
             return $string;
@@ -1356,7 +1356,7 @@ class SearchIndexFactory
         $metaphone = mb_strtoupper(metaphone(mb_strtolower($string)));
 
         if (strlen($metaphone) > 7) {
-            $metaphone = substr($metaphone,0,strlen($metaphone)-2);
+            $metaphone = mb_substr($metaphone,0,strlen($metaphone)-2);
         }
 
         if (strlen($metaphone) == 0 || $metaphone === 0) {
