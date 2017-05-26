@@ -48,6 +48,7 @@ use Neos\Fusion\View\FusionView;
 use Neos\Flow\Core\Bootstrap;
 use Neoslive\Hybridsearch\Request\HttpRequestHandler;
 use \ForceUTF8\Encoding;
+use org\bovigo\vfs\vfsStreamWrapperAlreadyRegisteredTestCase;
 
 
 class SearchIndexFactory
@@ -1284,11 +1285,16 @@ class SearchIndexFactory
                     $text .= " " . $value;
                 }
 
+
             } else {
+
                 $text .= " " . (json_encode($value, JSON_UNESCAPED_UNICODE));
+
             }
 
         }
+
+
 
         $text = (Encoding::UTF8FixWin1252Chars(html_entity_decode($text)));
 
@@ -1478,7 +1484,9 @@ class SearchIndexFactory
 
             }
 
+
         }
+
 
         // render additional properties given by node configuration
         if ($node->getNodeType()->getConfiguration('hybridsearch')) {
@@ -1612,7 +1620,28 @@ class SearchIndexFactory
 
         $data->breadcrumb = $breadcrumb;
         $data->identifier = $node->getNodeData()->getIdentifier();
+
+
+        // force array
+        foreach ($properties as $key => $val) {
+
+            if (gettype($val) === 'string' && (substr($val,0,1) == '{' || substr($val,0,1) == '[') ) {
+                try {
+                    $valdecoded = \json_decode($val);
+                } catch (\Neos\Flow\Exception $exception) {
+                    $valdecoded = $val;
+                }
+
+               $properties->$key = $valdecoded;
+
+            }
+        }
+
+
+
         $data->properties = $properties;
+
+
 
 
         $data->grandParentNode = new \stdClass();
