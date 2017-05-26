@@ -1354,7 +1354,7 @@ class SearchIndexFactory
         $metaphone = mb_strtoupper(metaphone(mb_strtolower($string)));
 
         if (strlen($metaphone) > 5) {
-            $metaphone = mb_substr($metaphone,0,mb_strlen($metaphone)-2);
+            $metaphone = strlen($metaphone,0,strlen($metaphone)-2);
         }
 
 
