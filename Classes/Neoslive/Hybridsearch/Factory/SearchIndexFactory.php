@@ -1211,6 +1211,7 @@ class SearchIndexFactory
                     }
 
                 }
+
                 if (isset($this->index->$workspaceHash->$dimensionConfigurationHash->$k) === false) {
                     $this->index->$workspaceHash->$dimensionConfigurationHash->$k = new \stdClass();
                 }
@@ -1312,7 +1313,9 @@ class SearchIndexFactory
 
             if (strlen($w) > 1) {
                 $wm = $this->getMetaphone($w);
-                $wordsReduced[$wm][$w] = 1;
+                if (strlen($wm) > 0) {
+                    $wordsReduced[$wm][$w] = 1;
+                }
 
             }
         }
@@ -1350,14 +1353,15 @@ class SearchIndexFactory
 
         $metaphone = mb_strtoupper(metaphone(mb_strtolower($string)));
 
-        if (mb_strlen($metaphone) > 5) {
+        if (strlen($metaphone) > 5) {
             $metaphone = mb_substr($metaphone,0,mb_strlen($metaphone)-2);
         }
 
-        if (mb_strlen($metaphone) == 0 || $metaphone == 0) {
 
+        if (strlen($metaphone) == 0 || $metaphone === 0) {
             return mb_strtolower($string);
         }
+
 
         return $metaphone;
 
