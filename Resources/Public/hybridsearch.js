@@ -441,7 +441,6 @@
                                 if (typeof value === 'string' && ((value.substr(0, 2) === '["' && value.substr(-2, 2) === '"]') || (value.substr(0, 2) === '[{' && value.substr(-2, 2) === '}]') )) {
                                     try {
                                         var valueJson = JSON.parse(value);
-                                        console.log(key);
                                     } catch (e) {
                                         valueJson = value;
                                     }
@@ -5221,7 +5220,7 @@
                                 angular.forEach(propvalue, function (v, k) {
 
                                     if (v !== undefined) {
-                                        var k = Sha1.hash(v).toString(16);
+                                        var k = Sha1.hash(JSON.stringify(v));
 
                                         variants[k] = {
                                             id: k,
@@ -6052,7 +6051,7 @@ var XXH=function(t){function r(e){if(i[e])return i[e].exports;var h=i[e]={export
 
 var Sha1 = {
     'hash': function(data) {
-        return XXH.h32(data).toString(16);
+        return XXH.h32( data,0).toString(32);
     }
 }
 
