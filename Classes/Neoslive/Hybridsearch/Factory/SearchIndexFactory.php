@@ -1347,7 +1347,7 @@ class SearchIndexFactory
      */
     private function getMetaphone($string)
     {
-        $string = "unterschiedlichen";
+       
 
         if (is_numeric($string)) {
             return $string;
