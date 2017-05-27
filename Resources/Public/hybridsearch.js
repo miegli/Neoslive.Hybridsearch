@@ -3176,7 +3176,7 @@
                         // get search results
 
                         var q = metaphone(querysegment.toLowerCase()).toUpperCase();
-                        if (q.length > 5) {
+                        if (q.length > 7) {
                             q = q.substr(0, q.length - 2);
                         }
                         if (q.length == 0 || q == 0) {
