@@ -496,6 +496,8 @@ class SearchIndexFactory
 
                         }
 
+                        $this->output->progressFinish();
+
                     }
 
 
@@ -504,7 +506,7 @@ class SearchIndexFactory
 
             }
 
-            $this->output->progressFinish();
+
             $this->output->outputLine('static file cache created');
 
         } catch (\Neos\Flow\Exception $exception) {
