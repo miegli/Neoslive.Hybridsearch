@@ -1630,11 +1630,40 @@ class SearchIndexFactory
         foreach ($properties as $key => $val) {
 
             if (gettype($val) === 'string' && (substr($val,0,1) == '{' || substr($val,0,1) == '[') ) {
-                try {
+
                     $valdecoded = \json_decode($val);
-                } catch (\Neos\Flow\Exception $exception) {
-                    $valdecoded = $val;
-                }
+                    if ($valdecoded === null) {
+                        $valdecoded = $val;
+                    } else {
+
+
+                       $keys = array();
+                       if (gettype($valdecoded) == 'object') {
+                           $keys = $this->array_keys_multi(get_object_vars($valdecoded));
+                       }
+
+                       if (gettype($valdecoded) == 'array') {
+                           $keys = $this->array_keys_multi($valdecoded);
+                       }
+
+                       $valid = true;
+                       foreach ($keys as $k => $key) {
+                           if ($valid === true && mb_detect_encoding($key, 'UTF-8', true) == false) {
+                               $valid = false;
+                           }
+                           if ($valid === true && preg_match("/\W/",$key) > 0) {
+                               $valid = false;
+                           }
+
+
+                       }
+
+                       if ($valid == false) {
+                           $valdecoded = $val;
+                       }
+
+
+                    }
 
                $properties->$key = $valdecoded;
 
@@ -2488,6 +2517,26 @@ class SearchIndexFactory
         return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)) . @$sz[$factor];
     }
 
+    /**
+     * get all keys from array
+     * @param $array
+     * @return array
+     */
+    private
+    function array_keys_multi(array $array)
+    {
+        $keys = array();
+
+        foreach ($array as $key => $value) {
+            $keys[] = $key;
+
+            if (is_array($value)) {
+                $keys = array_merge($keys, $this->array_keys_multi($value));
+            }
+        }
+
+        return $keys;
+    }
 
     /**
      * get db identifier for current site
