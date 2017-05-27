@@ -59,6 +59,8 @@ class HybridSearchCommandController extends CommandController
     {
 
         $this->searchIndexFactory->createFullIndex($workspace, $nodetype, $verbose);
+        $this->searchIndexFactory->updateStaticCache();
+
     }
 
     /**

@@ -486,8 +486,7 @@ class SearchIndexFactory
                             }
 
                             if (is_dir($targetSubPath)) {
-                                $fp = fopen($targetSubPath . "/" . $nodetype . ".json", 'w+');
-                                stream_filter_append($fp, 'bzip2.compress', STREAM_FILTER_WRITE, array('blocks' => 9, 'work' => 0));
+                                $fp = fopen($targetSubPath . "/__" . $nodetype . ".json", 'w+');
                                 $this->fwrite_stream($fp, $this->firebase->get("sites/$sitekey/index/$workspacename/$branch/$dimension/__$nodetype"));
                                 fclose($fp);
                             }

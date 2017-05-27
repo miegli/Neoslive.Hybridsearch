@@ -2847,10 +2847,19 @@
 
                                                         if (ref.http) {
 
+
+                                                             var headers = {};
+
+                                                            if (self.getConfig('cache')) {
+                                                                headers = {'cache-control': 'private, max-age='+self.getConfig('cache') };
+                                                            };
+
+
                                                             self.addPendingRequest($http({
                                                                 method: 'get',
                                                                 url: ref.http,
                                                                 cache: true,
+                                                                headers: headers,
                                                                 timeout: canceller.promise,
                                                                 cancel: function (reason) {
                                                                     canceller.resolve(reason);
@@ -3217,6 +3226,7 @@
                         var queries = [];
 
 
+
                         // remove old bindings
                         angular.forEach(index, function (refs, keyw) {
                             if (self.getFilter().isInQuery(keyw) === false || keyword == keyw) {
@@ -3253,7 +3263,7 @@
                                         {
                                             isLoadingAllFromNodeType: true,
                                             socket: hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + this.getFilter().getNodeType()),
-                                            http: (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + this.getFilter().getNodeType() + ".json"
+                                            http: (self.getConfig('cache') ? '/_Hybridsearch' : (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL)) + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + this.getFilter().getNodeType() + ".json"
                                         }
                                     );
                                 }
@@ -3277,7 +3287,7 @@
                                             {
                                                 isLoadingAllFromNodeType: true,
                                                 socket: hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + nodeType),
-                                                http: (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + nodeType + ".json"
+                                                http: (self.getConfig('cache') ? '/_Hybridsearch' : (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL)) + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + nodeType + ".json"
                                             }
                                         );
                                     }
@@ -3314,6 +3324,7 @@
 
 
                         index[keyword] = queries;
+
 
 
                         return queries;
@@ -3769,6 +3780,16 @@
                  * @returns {HybridsearchObject}
                  */
                 disableRealtime: function () {
+                    this.$$app.setConfig('realtime', false);
+                    return this;
+                },
+
+                /**
+                 * Disable realtime search, use static data over cdn instead of
+                 * @returns {HybridsearchObject}
+                 */
+                enableCache: function (expires) {
+                    this.$$app.setConfig('cache', expires == undefined ? 3600 : expires);
                     this.$$app.setConfig('realtime', false);
                     return this;
                 },
