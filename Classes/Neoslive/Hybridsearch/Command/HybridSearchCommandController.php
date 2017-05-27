@@ -62,6 +62,20 @@ class HybridSearchCommandController extends CommandController
     }
 
     /**
+     * Create / update static cache given workspace name
+     *
+     * This command is used to create full search index.
+     *
+     * @return void
+     */
+    public function createCacheCommand()
+    {
+
+        $this->searchIndexFactory->updateStaticCache();
+
+    }
+
+    /**
      * Synchronize indexes
      *
      * This command updates index from all local changes

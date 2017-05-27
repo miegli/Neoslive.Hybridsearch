@@ -212,6 +212,11 @@ class SearchIndexFactory
      */
     protected $keywords;
 
+    /**
+     * @var \stdClass
+     */
+    protected $nodetypes;
+
 
     /**
      * @var integer
@@ -347,6 +352,7 @@ class SearchIndexFactory
         $this->allSiteKeys = array();
         $this->index = new \stdClass();
         $this->keywords = new \stdClass();
+        $this->nodetypes = new \stdClass();
         $this->branch = "master";
         $this->branchSwitch = "slave";
         $this->renderedcache = [];
@@ -422,6 +428,92 @@ class SearchIndexFactory
 
     }
 
+    /**
+     * Update/Create static cache
+     * @return void
+     */
+    public function updateStaticCache()
+    {
+
+        $this->output = new ConsoleOutput();
+
+        $this->output->outputLine('creating static cache');
+
+        $targetPath = $this->temporaryDirectory . "../../../../Web/_Hybridsearch";
+
+
+        if (!is_writable($targetPath)) {
+            try {
+                \Neos\Utility\Files::createDirectoryRecursively($targetPath);
+            } catch (\Neos\Flow\Utility\Exception $exception) {
+                throw new Exception('The directory "' . $targetPath . '" could not be created.', 1264426237);
+            }
+        }
+        if (!is_dir($targetPath) && !is_link($targetPath)) {
+            throw new Exception('The  directory "' . $targetPath . '" does not exist.', 1203965199);
+        }
+        if (!is_writable($targetPath)) {
+            throw new Exception('The directory "' . $targetPath . '" is not writable.', 1203965200);
+        }
+
+
+        $branch = $this->getBranch();
+
+        $allSiteKeys = json_decode($this->firebase->get('sites', array('shallow' => 'true')));
+
+        try {
+
+            foreach ($allSiteKeys as $sitekey => $c) {
+
+
+                foreach (json_decode($this->firebase->get("sites/$sitekey/nodetypes", array('shallow' => 'true'))) as $workspacename => $k) {
+
+                    foreach (json_decode($this->firebase->get("sites/$sitekey/nodetypes/$workspacename/$branch", array('shallow' => 'true'))) as $dimension => $d) {
+
+                        $nodetypes = json_decode($this->firebase->get("sites/$sitekey/nodetypes/$workspacename/$branch/$dimension", array('shallow' => 'true')));
+
+                        $this->output->progressStart(count(get_object_vars($nodetypes)));
+
+                        foreach ($nodetypes as $nodetype => $nodesCount) {
+
+                            // write cache
+                            $targetSubPath = $targetPath . "/sites/$sitekey/index/$workspacename/$branch/$dimension";
+
+                            try {
+                                \Neos\Utility\Files::createDirectoryRecursively($targetSubPath);
+                            } catch (\Neos\Flow\Utility\Exception $exception) {
+                                throw new Exception('The  directory "' . $targetSubPath . '" could not be created.', 1264426237);
+                            }
+
+                            if (is_dir($targetSubPath)) {
+                                $fp = fopen($targetSubPath . "/" . $nodetype . ".json", 'w+');
+                                stream_filter_append($fp, 'bzip2.compress', STREAM_FILTER_WRITE, array('blocks' => 9, 'work' => 0));
+                                $this->fwrite_stream($fp, $this->firebase->get("sites/$sitekey/index/$workspacename/$branch/$dimension/__$nodetype"));
+                                fclose($fp);
+                            }
+
+                            $this->output->progressAdvance(1);
+
+                        }
+
+                    }
+
+
+                }
+
+
+            }
+
+            $this->output->progressFinish();
+            $this->output->outputLine('static file cache created');
+
+        } catch (\Neos\Flow\Exception $exception) {
+            throw new \RuntimeException('unable to create static cache. please run hybridsearch:createfullindex first.', 1409734235);
+        }
+
+
+    }
+
 
     /**
      * Create full search index for given workspace
@@ -492,6 +584,14 @@ class SearchIndexFactory
             }
 
 
+            $nt = $this->getNodeTypeName($nodedata);
+            if (isset($this->nodetypes->$nt)) {
+                $this->nodetypes->$nt++;
+            } else {
+                $this->nodetypes->$nt = 1;
+            }
+
+
         }
         $this->output->progressFinish();
 
@@ -503,8 +603,6 @@ class SearchIndexFactory
         $this->output->outputLine('uploading indexed nodes');
 
         $this->proceedQueue();
-
-
 
 
         // remove old sites data
@@ -689,7 +787,6 @@ class SearchIndexFactory
         }
 
 
-
         $date = new \DateTime();
 
         if ($lastsync) {
@@ -816,8 +913,6 @@ class SearchIndexFactory
         }
 
 
-
-
         if (count($this->allSiteKeys) === 0) {
             $this->allSiteKeys = json_decode($this->firebase->get('sites', array('shallow' => 'true')));
         }
@@ -831,13 +926,12 @@ class SearchIndexFactory
 
 
             $dimensionHash = $this->getDimensionConfiugurationHash($dimensionConfiguration);
-            if ((isset($this->settings['Dimensions']) && array_key_exists($dimensionHash,$this->settings['Dimensions']) && $this->settings['Dimensions'][$dimensionHash] == false) || (isset($this->settings['Dimensions']) && array_key_exists($dimensionHash,$this->settings['Dimensions']) == false)) {
+            if ((isset($this->settings['Dimensions']) && array_key_exists($dimensionHash, $this->settings['Dimensions']) && $this->settings['Dimensions'][$dimensionHash] == false) || (isset($this->settings['Dimensions']) && array_key_exists($dimensionHash, $this->settings['Dimensions']) == false)) {
                 // skip dimension
             } else {
 
 
                 $context = $this->contentContextFactory->create(['targetDimension' => $targetDimension, 'dimensions' => $dimensionConfiguration, 'workspaceName' => $nodedata->getWorkspace()->getName()]);
-
 
 
                 $node = $context->getNodeByIdentifier($nodedata->getIdentifier());
@@ -907,7 +1001,7 @@ class SearchIndexFactory
                     // delete node index
 
                     foreach ($this->allSiteKeys as $siteKey => $siteVal) {
-                    $this->removeSingleIndex($nodedata->getIdentifier(), $this->getWorkspaceHash($workspace), $this->branch, $this->getDimensionConfiugurationHash($dimensionConfiguration), array(), $siteKey, $this->getNodeTypeName($nodedata));
+                        $this->removeSingleIndex($nodedata->getIdentifier(), $this->getWorkspaceHash($workspace), $this->branch, $this->getDimensionConfiugurationHash($dimensionConfiguration), array(), $siteKey, $this->getNodeTypeName($nodedata));
                     }
 
                 }
@@ -963,7 +1057,7 @@ class SearchIndexFactory
 
                 $this->site = $node->getContext()->getCurrentSite();
 
-                $this->firebase->set("/trash/" . $p[2] . "/" . $this->getWorkspaceHash($nodedata->getWorkspace()) . "/" . $this->branch . "/" . $this->getDimensionConfiugurationHash($node->getDimensions()) . "/" . $nodedata->getIdentifier(), time(),array('print' => 'silent'));
+                $this->firebase->set("/trash/" . $p[2] . "/" . $this->getWorkspaceHash($nodedata->getWorkspace()) . "/" . $this->branch . "/" . $this->getDimensionConfiugurationHash($node->getDimensions()) . "/" . $nodedata->getIdentifier(), time(), array('print' => 'silent'));
 
                 // remove parent nodes from index and set last modification time for reindexing
                 $counter = 0;
@@ -975,7 +1069,7 @@ class SearchIndexFactory
                     /* @var Node $parentNode */
                     $parentNode->getNodeData()->setLastPublicationDateTime($lastpublicationsdate);
                     $this->nodeDataRepository->update($parentNode->getNodeData());
-                    $this->firebase->set("/trash/" . $p[2] . "/" . $this->getWorkspaceHash($nodedata->getWorkspace()) . "/" . $this->branch . "/" . $this->getDimensionConfiugurationHash($node->getDimensions()) . "/" . $parentNode->getIdentifier(), time(),array('print' => 'silent'));
+                    $this->firebase->set("/trash/" . $p[2] . "/" . $this->getWorkspaceHash($nodedata->getWorkspace()) . "/" . $this->branch . "/" . $this->getDimensionConfiugurationHash($node->getDimensions()) . "/" . $parentNode->getIdentifier(), time(), array('print' => 'silent'));
                     $this->persistenceManager->persistAll();
                     $parentNode = $parentNode->getParent();
                     $counter++;
@@ -1003,7 +1097,7 @@ class SearchIndexFactory
             $flowQuery = new FlowQuery(array($node));
             if ($flowQuery->is($this->settings['Filter']['NodeTypeFilter']) === true) {
                 $this->site = $node->getContext()->getCurrentSite();
-                $this->firebase->set("/trash/" . $this->getSiteIdentifier() . "/" . $this->getWorkspaceHash($targetWorkspace) . "/" . $this->branch . "/" . $this->getDimensionConfiugurationHash($node->getDimensions()) . "/" . $node->getIdentifier(), time(),array('print' => 'silent'));
+                $this->firebase->set("/trash/" . $this->getSiteIdentifier() . "/" . $this->getWorkspaceHash($targetWorkspace) . "/" . $this->branch . "/" . $this->getDimensionConfiugurationHash($node->getDimensions()) . "/" . $node->getIdentifier(), time(), array('print' => 'silent'));
             }
         }
 
@@ -1086,7 +1180,6 @@ class SearchIndexFactory
         }
 
 
-
         $keywords = \json_decode($this->firebase->get("sites/" . $siteIdentifier . "/index/$workspaceHash/$branch/$dimensionConfigurationHash" . "/___keywords/" . urlencode($nodeIdentifier)));
 
 
@@ -1098,7 +1191,7 @@ class SearchIndexFactory
                 }
             }
 
-            $this->firebase->update("sites/$siteIdentifier/index/$workspaceHash/$branch/$dimensionConfigurationHash", $keywordsremove,array('print' => 'silent'));
+            $this->firebase->update("sites/$siteIdentifier/index/$workspaceHash/$branch/$dimensionConfigurationHash", $keywordsremove, array('print' => 'silent'));
 
             if (count($keywordsOfNode) === 0) {
                 $this->firebase->delete("sites/" . $siteIdentifier . "/index/$workspaceHash/$branch/$dimensionConfigurationHash" . "/___keywords/" . urlencode($nodeIdentifier), array('print' => 'silent'));
@@ -1108,10 +1201,8 @@ class SearchIndexFactory
         $this->firebase->delete("trash/$siteIdentifier/$workspaceHash/$branch/$dimensionConfigurationHash/$nodeIdentifier", array('print' => 'silent'));
 
         if ($removeNodeByNodeTypeName) {
-            $this->firebase->set("sites/$siteIdentifier/index/$workspaceHash/$branch/$dimensionConfigurationHash/__$removeNodeByNodeTypeName/$nodeIdentifier",'removed', array('print' => 'silent'));
+            $this->firebase->set("sites/$siteIdentifier/index/$workspaceHash/$branch/$dimensionConfigurationHash/__$removeNodeByNodeTypeName/$nodeIdentifier", 'removed', array('print' => 'silent'));
         }
-
-
 
 
     }
@@ -1172,7 +1263,6 @@ class SearchIndexFactory
             }
 
 
-
             $identifier = $indexData->identifier;
 
             $keywords = $this->generateSearchIndexFromProperties($indexData->properties, $indexData->nodeType);
@@ -1190,9 +1280,8 @@ class SearchIndexFactory
                 $k = strval($keyword);
 
 
-
                 if (substr($k, 0, 2) !== "__") {
-                    array_push($keywordsOfNode,$k);
+                    array_push($keywordsOfNode, $k);
                 }
 
                 if (substr($k, 0, 9) === "_nodetype") {
@@ -1202,7 +1291,7 @@ class SearchIndexFactory
                 if ($k) {
                     if (isset($this->keywords->$workspaceHash->$dimensionConfigurationHash[$k]) == false) {
                         $this->keywords->$workspaceHash->$dimensionConfigurationHash[$k] = array();
-                        }
+                    }
                     if (is_array($val) == false) {
                         $val = array($k);
                     }
@@ -1296,7 +1385,6 @@ class SearchIndexFactory
         }
 
 
-
         $text = (Encoding::UTF8FixWin1252Chars(html_entity_decode($text)));
 
         $text = preg_replace('~[^\p{L}\p{N}]++~u', " ", mb_strtolower($text));
@@ -1356,7 +1444,7 @@ class SearchIndexFactory
         $metaphone = mb_strtoupper(metaphone(mb_strtolower($string)));
 
         if (strlen($metaphone) > 7) {
-            $metaphone = mb_substr($metaphone,0,strlen($metaphone)-2);
+            $metaphone = mb_substr($metaphone, 0, strlen($metaphone) - 2);
         }
 
         if (strlen($metaphone) == 0 || $metaphone === 0) {
@@ -1629,52 +1717,49 @@ class SearchIndexFactory
         // force array
         foreach ($properties as $key => $val) {
 
-            if (gettype($val) === 'string' && (substr($val,0,1) == '{' || substr($val,0,1) == '[') ) {
+            if (gettype($val) === 'string' && (substr($val, 0, 1) == '{' || substr($val, 0, 1) == '[')) {
 
-                    $valdecoded = \json_decode($val);
-                    if ($valdecoded === null) {
-                        $valdecoded = $val;
-                    } else {
-
-
-                       $keys = array();
-                       if (gettype($valdecoded) == 'object') {
-                           $keys = $this->array_keys_multi(get_object_vars($valdecoded));
-                       }
-
-                       if (gettype($valdecoded) == 'array') {
-                           $keys = $this->array_keys_multi($valdecoded);
-                       }
-
-                       $valid = true;
-                       foreach ($keys as $k => $key) {
-                           if ($valid === true && mb_detect_encoding($key, 'UTF-8', true) == false) {
-                               $valid = false;
-                           }
-                           if ($valid === true && preg_match("/\W/",$key) > 0) {
-                               $valid = false;
-                           }
+                $valdecoded = \json_decode($val);
+                if ($valdecoded === null) {
+                    $valdecoded = $val;
+                } else {
 
 
-                       }
+                    $keys = array();
+                    if (gettype($valdecoded) == 'object') {
+                        $keys = $this->array_keys_multi(get_object_vars($valdecoded));
+                    }
 
-                       if ($valid == false) {
-                           $valdecoded = $val;
-                       }
+                    if (gettype($valdecoded) == 'array') {
+                        $keys = $this->array_keys_multi($valdecoded);
+                    }
+
+                    $valid = true;
+                    foreach ($keys as $k => $key) {
+                        if ($valid === true && mb_detect_encoding($key, 'UTF-8', true) == false) {
+                            $valid = false;
+                        }
+                        if ($valid === true && preg_match("/\W/", $key) > 0) {
+                            $valid = false;
+                        }
 
 
                     }
 
-               $properties->$key = $valdecoded;
+                    if ($valid == false) {
+                        $valdecoded = $val;
+                    }
+
+
+                }
+
+                $properties->$key = $valdecoded;
 
             }
         }
 
 
-
         $data->properties = $properties;
-
-
 
 
         $data->grandParentNode = new \stdClass();
@@ -1969,33 +2054,33 @@ class SearchIndexFactory
 
                     if ($content) {
 
-                        $this->output->progressAdvance(floor(filesize($file)/2));
+                        $this->output->progressAdvance(floor(filesize($file) / 2));
                         $out = "";
 
 
-                            switch ($content->method) {
-                                case 'update':
-                                    if (count($content->data)) {
-                                        $out = $this->firebase->update($content->path, $content->data, array('print' => 'silent'));
-                                    }
-                                    break;
+                        switch ($content->method) {
+                            case 'update':
+                                if (count($content->data)) {
+                                    $out = $this->firebase->update($content->path, $content->data, array('print' => 'silent'));
+                                }
+                                break;
 
-                                case 'delete':
-                                    $out = $this->firebase->delete($content->path, array('print' => 'silent'));
-                                    break;
+                            case 'delete':
+                                $out = $this->firebase->delete($content->path, array('print' => 'silent'));
+                                break;
 
-                                case 'set':
-                                    if (count($content->data)) {
-                                        $out = $this->firebase->set($content->path, $content->data, array('print' => 'silent'));
-                                    }
-                                    break;
-                            }
+                            case 'set':
+                                if (count($content->data)) {
+                                    $out = $this->firebase->set($content->path, $content->data, array('print' => 'silent'));
+                                }
+                                break;
+                        }
 
 
-                        $this->output->progressAdvance(floor(filesize($file)/2));
+                        $this->output->progressAdvance(floor(filesize($file) / 2));
 
                         if (strlen($out)) {
-                            \Neos\Flow\var_dump($out,'see log file '.$file . ".error.log");
+                            \Neos\Flow\var_dump($out, 'see log file ' . $file . ".error.log");
                             rename($file, $file . ".error.log");
                         } else {
                             unlink($file);
@@ -2116,14 +2201,22 @@ class SearchIndexFactory
         foreach ($this->index as $workspace => $workspaceData) {
             foreach ($workspaceData as $dimension => $dimensionData) {
                 $patch = array();
+
+                if ($this->creatingFullIndex) {
+                    $this->firebaseSet("sites/" . $this->getSiteIdentifier() . "/nodetypes/" . $workspace . "/" . $this->branch . "/" . $dimension, $this->nodetypes);
+                }
+
                 foreach ($dimensionData as $dimensionIndex => $dimensionIndexData) {
+
                     foreach ($dimensionIndexData as $dimensionIndexKey => $dimensionIndexDataAll) {
                         $patch[$dimension . "/" . $dimensionIndex . "/" . $dimensionIndexKey] = $dimensionIndexDataAll;
+
                     }
                 }
 
                 if ($this->creatingFullIndex) {
                     $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $this->branch, $patch);
+
                     if ($this->branchWasSet !== true) {
                         $this->setBranch($workspace, $this->branch);
                         $this->branchWasSet = true;
@@ -2131,7 +2224,7 @@ class SearchIndexFactory
 
                 } else {
                     if ($directpush) {
-                        $this->firebase->update("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $this->branch, $patch,array('print' => 'silent'));
+                        $this->firebase->update("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $this->branch, $patch, array('print' => 'silent'));
                     } else {
                         $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $this->branch, $patch);
                     }
@@ -2159,7 +2252,7 @@ class SearchIndexFactory
                 $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/keywords/", $patch);
             } else {
                 if ($directpush) {
-                    $this->firebase->update("sites/" . $this->getSiteIdentifier() . "/keywords/", $patch,array('print' => 'silent'));
+                    $this->firebase->update("sites/" . $this->getSiteIdentifier() . "/keywords/", $patch, array('print' => 'silent'));
                 } else {
                     $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/keywords/", $patch);
                 }
@@ -2237,7 +2330,7 @@ class SearchIndexFactory
             if ($workspaces) {
                 foreach ($workspaces as $workspace => $workspaceData) {
                     $this->firebase->delete("sites/" . $site . "/index/$workspace/" . $branch, array('print' => 'silent'));
-                    $this->firebase->delete("sites/" . $site . "/keywords/$workspace/" . $branch,array('print' => 'silent'));
+                    $this->firebase->delete("sites/" . $site . "/keywords/$workspace/" . $branch, array('print' => 'silent'));
                 }
             }
 
