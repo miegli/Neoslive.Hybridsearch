@@ -2802,7 +2802,7 @@
                                                         }
                                                         setIndexTimeout = window.setTimeout(function () {
                                                             self.search(nodes);
-                                                        }, 150);
+                                                        }, 5);
 
                                                         self.setIsLoadedAll(ref.socket.toString());
 
