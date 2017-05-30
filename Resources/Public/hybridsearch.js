@@ -345,6 +345,9 @@
 
                     var value = '';
 
+                    if (property == undefined) {
+                        return null;
+                    }
 
                     if (typeof property == 'function') {
                         return property(node);
@@ -372,6 +375,7 @@
                     if (property === 'lastmodified') {
                         return node.lastmodified;
                     }
+
 
 
                     // handles value as json parsable object if required
