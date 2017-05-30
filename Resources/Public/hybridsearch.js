@@ -245,6 +245,8 @@
                 window.HybridsearchGetPropertyFromObject = function (inputObject, property) {
 
 
+
+
                     if (property.indexOf("(") > 0) {
                         if (typeof inputObject['__proto__'][property.substr(0, property.indexOf("("))] == 'function') {
                             return eval("inputObject." + property);
@@ -343,7 +345,13 @@
                 window.HybridsearchGetPropertyFromNode = function (node, property) {
 
 
+
                     var value = '';
+
+
+                    if (typeof property == 'function') {
+                        return property(node);
+                    }
 
                     if (property == undefined) {
                         return null;
@@ -698,50 +706,8 @@
                      */
                     getProperty: function (property) {
 
-                        var value = '';
-                        var propertyfullname = property;
+                        return this.getPropertyFromNode(this, property);
 
-
-                        if (this.properties == undefined) {
-                            return value;
-                        }
-
-                        if (this.properties[property] !== undefined) {
-                            return this.properties[property];
-                        }
-
-                        if (property.indexOf(".") >= 0) {
-                            this.properties[propertyfullname] = this.getPropertyFromNode(this, property);
-                            return this.properties[propertyfullname];
-
-                        }
-
-
-                        angular.forEach(this.properties, function (val, key) {
-                            if (value === '' && key.substr(key.length - property.length, property.length) === property) {
-                                value = val !== undefined ? val : '';
-                                propertyfullname = key;
-                            }
-                        });
-
-                        if (typeof value === 'string' && ((value.substr(0, 2) === '["' && value.substr(-2, 2) === '"]') || (value.substr(0, 2) === '[{' && value.substr(-2, 2) === '}]') )) {
-                            try {
-                                var valueJson = JSON.parse(value);
-                            } catch (e) {
-                                valueJson = value;
-                            }
-                            if (valueJson) {
-
-                                this.properties[propertyfullname] = valueJson;
-                                return this.properties[propertyfullname];
-                            }
-                        }
-
-                        if (property == 'breadcrumb' && value == '') {
-                            return this.breadcrumb
-                        }
-
-                        return value;
 
                     },
 
@@ -2241,7 +2207,8 @@
                                 if (property === 'url') {
                                     var p = resultNode.uri !== undefined ? resultNode.uri.path : resultNode.getUrl();
                                 } else {
-                                    if (property.substr(0, 12) == 'documentNode') {
+
+                                    if (typeof property == 'string' && property.substr(0, 12) == 'documentNode') {
                                         var p = resultNode.getDocumentNode() ? resultNode.getDocumentNode().getProperty(property) : null;
                                     } else {
                                         var p = resultNode.getProperty(property);
