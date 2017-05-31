@@ -700,7 +700,6 @@
                         var value = '';
                         var propertyfullname = property;
 
-
                         if (this.properties == undefined) {
                             return value;
                         }
@@ -734,7 +733,6 @@
                                 valueJson = value;
                             }
                             if (valueJson) {
-
                                 this.properties[propertyfullname] = valueJson;
                                 return this.properties[propertyfullname];
                             }
@@ -1855,10 +1853,16 @@
                     createSearchIndexOnDemand: function () {
 
                         var self = this;
-
+                        var nodesToIndex = [];
                         angular.forEach(nodes, function (node) {
-                            self.addLocalIndex([{node: node}]);
+                            if (nodesIndexed[node.hash] == undefined) {
+                                nodesToIndex.push({node: node});
+                            }
                         });
+
+                        if (nodesToIndex.length) {
+                            self.addLocalIndex(nodesToIndex);
+                        }
 
                     },
 
@@ -3519,6 +3523,7 @@
 
                         var self = this;
                         var hasDistinct = self.getResults().hasDistincts();
+                        var boost = {};
 
                         if (isloadingall === undefined) {
                             isloadingall = false;
@@ -3532,15 +3537,19 @@
                                         nodes[value.node.identifier] = value.node;
                                         if (value.node != undefined && value.node.properties != undefined) {
 
-
-                                            // var doc = JSON.parse(JSON.stringify(value.node.properties));
-
                                             //angular.forEach(JSON.parse(JSON.stringify(value.node.properties)), function (propvalue, property) {
                                             angular.forEach(value.node.properties, function (propvalue, property) {
-                                                if (propvalue && propvalue.getProperty == undefined) {
-                                                    if (self.getBoost(property) > 0) {
 
-                                                        valueJson = false;
+                                                if (property.length > 1 && property !== 'lastmodified' && property !== 'sorting' && property !== 'uri' && propvalue && propvalue.getProperty == undefined) {
+
+                                                    if (boost[property] == undefined) {
+                                                        boost[property] = self.getBoost(property);
+                                                    }
+
+                                                    if (boost[property] > 0) {
+
+
+                                                        var valueJson = false;
 
                                                         if (typeof propvalue === 'object') {
                                                             valueJson = propvalue;
@@ -3555,10 +3564,16 @@
                                                         }
 
                                                         if (valueJson) {
+
                                                             var recstring = valueJson.getRecursiveStrings();
+
+
+
                                                             angular.forEach(recstring, function (o) {
                                                                 doc[property + '.' + o.key] = o.val.replace(/(<([^>]+)>)/ig, " ");
+
                                                             });
+
                                                         } else {
                                                             if (typeof propvalue === 'string') {
                                                                 doc[property] = propvalue.replace(/(<([^>]+)>)/ig, " ");
