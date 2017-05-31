@@ -247,7 +247,12 @@
 
                     if (property.indexOf("(") > 0) {
                         if (typeof inputObject['__proto__'][property.substr(0, property.indexOf("("))] == 'function') {
-                            return eval("inputObject." + property);
+                            try {
+                                var v = eval("inputObject." + property);
+                            } catch (e) {
+                                v = null;
+                            }
+                            return v;
                         }
                     }
 
