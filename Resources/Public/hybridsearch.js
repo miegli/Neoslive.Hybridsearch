@@ -2879,7 +2879,7 @@
                                             angular.forEach(refs, function (ref) {
 
 
-                                                    if (self.isLoadedAll(ref.socket.toString()) == false) {
+                                                    if (self.isLoadedAll(ref.socket.toString()) == false && self.isLoadedAll(JSON.stringify(self.getFilter().getNodeType())) == false) {
 
                                                         var canceller = $q.defer();
 
@@ -2919,12 +2919,17 @@
 
                                                                 nodesIndexed = {};
                                                                 var tmpNodes = [];
-                                                                var tmpNodesInterval = null;
                                                                 var tmpNodesCounter = 0;
 
                                                                 var reqNodesCount = data ? Object.keys(data).length : 0;
 
+
+
                                                                 if (reqNodesCount) {
+
+                                                                    if (self.getFilter().getNodeType()) {
+                                                                        self.setIsLoadedAll(JSON.stringify(self.getFilter().getNodeType()));
+                                                                    }
 
                                                                     angular.forEach(data, function (node, identifier) {
 
@@ -2956,7 +2961,6 @@
                                                                                         execute(keyword, tmpNodes, ref);
                                                                                         self.search();
                                                                                         self.setIsLoadedAll(ref.socket.toString());
-
                                                                                     }
                                                                                 });
                                                                             }
@@ -3254,16 +3258,23 @@
                         ref.socket = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + q);
                         ref.http = (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + ("/sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + q + ".json");
 
-                        ref.socket.once("value", function (data) {
-                            if (data.val()) {
-                                angular.forEach(data.val(), function (v, k) {
-                                    instance.$$data.keywords.push({term: k, metaphone: q});
+                        var connectedRef = hybridsearch.$firebase().database().ref(".info/connected");
+                        connectedRef.once("value", function(snap) {
+                            if (snap.val() === true) {
+                                ref.socket.once("value", function (data) {
+                                    if (data.val()) {
+                                        angular.forEach(data.val(), function (v, k) {
+                                            instance.$$data.keywords.push({term: k, metaphone: q});
+                                        });
+                                    }
                                 });
+                                instance.$$data.keywords.push({term: q, metaphone: q});
+                                instance.$$data.proceeded.push(1);
+                            } else {
+                                instance.$$data.keywords.push({term: q, metaphone: q});
+                                instance.$$data.proceeded.push(1);
                             }
                         });
-
-                        instance.$$data.keywords.push({term: q, metaphone: q});
-                        instance.$$data.proceeded.push(1);
 
                     }
 
