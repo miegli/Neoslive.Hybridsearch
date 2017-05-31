@@ -1877,6 +1877,8 @@
 
                         var self = this;
 
+
+
                         // set not found if search was timed out withou any results
                         if (searchCounterTimeout) {
                             clearTimeout(searchCounterTimeout);
@@ -1895,12 +1897,10 @@
                                 self.getResults().getApp().clearQuickNodes();
                             }
 
-                            if (lunrSearch.getFields().length == 0 && self.getFilter().getFullSearchQuery() !== false) {
-
+                            if (lunrSearch.getFields().length == 0 && Object.keys(nodes).length) {
+                            //if (lunrSearch.getFields().length == 0 && self.getFilter().getFullSearchQuery() !== false) {
                                 // search index is not created yet, so do it now
                                 self.createSearchIndexOnDemand();
-
-
                             }
 
                             items['_nodes'] = {};
