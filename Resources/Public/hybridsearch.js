@@ -377,7 +377,6 @@
                     }
 
 
-
                     // handles value as json parsable object if required
                     if (property.indexOf(".") >= 0) {
 
@@ -719,7 +718,7 @@
                         if (typeof property == 'function') {
                             return this.getPropertyFromNode(this, property);
                         }
-                        
+
 
                         angular.forEach(this.properties, function (val, key) {
                             if (value === '' && key.substr(key.length - property.length, property.length) === property) {
@@ -1853,6 +1852,22 @@
                      * @params {boolean} booleanmode
                      * @returns mixed
                      */
+                    createSearchIndexOnDemand: function () {
+
+                        var self = this;
+
+                        angular.forEach(nodes, function (node) {
+                            self.addLocalIndex([{node: node}]);
+                        });
+
+                    },
+
+                    /**
+                     * @private
+                     * @params nodesFromInput
+                     * @params {boolean} booleanmode
+                     * @returns mixed
+                     */
                     search: function (nodesFromInput, booleanmode) {
 
 
@@ -1879,9 +1894,8 @@
                             if (lunrSearch.getFields().length == 0 && self.getFilter().getFullSearchQuery() !== false) {
 
                                 // search index is not created yet, so do it now
-                                angular.forEach(nodes, function (node) {
-                                    self.addLocalIndex([{node: node}]);
-                                });
+                                self.createSearchIndexOnDemand();
+
 
                             }
 
@@ -2919,15 +2933,19 @@
                                                                             } else {
 
                                                                                 self.getIndexByNodeIdentifierAndNodeType(identifier, node.nodeType).once("value", function (data) {
-                                                                                    if (nodes[identifier] == undefined) {
-                                                                                        // add node
-                                                                                        tmpNodes.push(data.val());
-                                                                                        tmpNodesCounter++;
+                                                                                    if (data.val()) {
+                                                                                        if (nodes[identifier] == undefined) {
+                                                                                            // add node
+                                                                                            tmpNodes.push(data.val());
+                                                                                            tmpNodesCounter++;
+                                                                                        } else {
+                                                                                            // update node
+                                                                                            tmpNodesCounter++;
+                                                                                            nodes[identifier] = data.val().node;
+                                                                                            self.search();
+                                                                                        }
                                                                                     } else {
-                                                                                        // update node
                                                                                         tmpNodesCounter++;
-                                                                                        nodes[identifier] = data.val().node;
-                                                                                        self.search();
                                                                                     }
 
                                                                                     if (tmpNodesCounter == reqNodesCount) {
@@ -3501,19 +3519,17 @@
 
                         var self = this;
                         var hasDistinct = self.getResults().hasDistincts();
+
                         if (isloadingall === undefined) {
                             isloadingall = false;
                         }
 
                         angular.forEach(data, function (value, key) {
 
-                                if (value) {
+                                if (value && nodesIndexed[value.node.hash] == undefined) {
                                     var doc = {};
                                     if (hasDistinct == true || self.isFiltered(value.node) === false) {
-
                                         nodes[value.node.identifier] = value.node;
-
-
                                         if (value.node != undefined && value.node.properties != undefined) {
 
 
@@ -3580,8 +3596,6 @@
                                             }
 
                                         }
-
-
                                     }
 
                                 }
