@@ -3274,7 +3274,6 @@
 
 
                             } else {
-                                instance.$$data.keywords.push({term: q, metaphone: q});
                                 instance.$$data.proceeded.push(1);
                             }
                         });
