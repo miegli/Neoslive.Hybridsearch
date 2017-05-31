@@ -1503,6 +1503,8 @@ class SearchIndexFactory
         $properties = new \stdClass();
         foreach ($node->getProperties() as $key => $val) {
 
+
+
             if (gettype($val) === 'string' || gettype($val) === 'integer') {
                 $k = mb_strtolower(preg_replace("/[^A-z0-9]/", "-", $node->getNodeType()->getName() . ":" . $key));
                 $properties->$k = (($val));
@@ -1576,6 +1578,7 @@ class SearchIndexFactory
 
 
             }
+
 
 
         }
@@ -1716,6 +1719,8 @@ class SearchIndexFactory
 
 
         // force array
+
+
         foreach ($properties as $key => $val) {
 
             if (gettype($val) === 'string' && (substr($val, 0, 1) == '{' || substr($val, 0, 1) == '[')) {
@@ -1736,25 +1741,26 @@ class SearchIndexFactory
                     }
 
                     $valid = true;
-                    foreach ($keys as $k => $key) {
-                        if ($valid === true && mb_detect_encoding($key, 'UTF-8', true) == false) {
+                    foreach ($keys as $k => $key2) {
+                        if ($valid === true && mb_detect_encoding($key2, 'UTF-8', true) == false) {
                             $valid = false;
                         }
-                        if ($valid === true && preg_match("/\W/", $key) > 0) {
+                        if ($valid === true && preg_match("/\W/", $key2) > 0) {
                             $valid = false;
                         }
 
 
                     }
 
-                    if ($valid == false) {
-                        $valdecoded = $val;
+                    if ($valid == true) {
+                        $properties->$key = $valdecoded;
                     }
 
 
                 }
 
-                $properties->$key = $valdecoded;
+
+
 
             }
         }
