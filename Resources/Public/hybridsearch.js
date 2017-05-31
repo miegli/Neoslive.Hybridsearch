@@ -5319,25 +5319,31 @@
                         if (self.$$data.distinctsConfiguration[property]['affectedBySearchResult'] == false || node['_isfiltered'] == undefined || node['_isfiltered'][property] === false || node['_isfiltered'][property] === undefined) {
                             variantsByNodes[node.identifier] = {};
                             propvalue = self.getPropertyFromNode(node, property);
+
+
                             if (typeof propvalue == 'object') {
 
-                                angular.forEach(propvalue, function (v, k) {
-
-                                    if (v !== undefined) {
-                                        var k = Sha1.hash(JSON.stringify(v));
-
-                                        variants[k] = {
-                                            id: k,
-                                            property: property,
-                                            value: v,
-                                            count: variants[k] === undefined ? 1 : (!self.$$data.distinctsConfiguration[property].counterGroupedByNode || variantsByNodes[node.identifier][k] === undefined ? variants[k].count + 1 : variants[k].count)
-                                        };
-
-                                        variantsByNodes[node.identifier][k] = true;
+                                    // force array
+                                    if (propvalue.length === undefined) {
+                                        propvalue = [propvalue];
                                     }
+                                    angular.forEach(propvalue, function (v, k) {
+
+                                        if (v !== undefined) {
+                                            var k = Sha1.hash(JSON.stringify(v));
+
+                                            variants[k] = {
+                                                id: k,
+                                                property: property,
+                                                value: v,
+                                                count: variants[k] === undefined ? 1 : (!self.$$data.distinctsConfiguration[property].counterGroupedByNode || variantsByNodes[node.identifier][k] === undefined ? variants[k].count + 1 : variants[k].count)
+                                            };
+
+                                            variantsByNodes[node.identifier][k] = true;
+                                        }
+                                    });
 
 
-                                });
                             } else {
                                 if (propvalue !== undefined && propvalue.length) {
 
