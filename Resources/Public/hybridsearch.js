@@ -3258,6 +3258,8 @@
                         ref.socket = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + q);
                         ref.http = (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + ("/sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + q + ".json");
 
+                        instance.$$data.keywords.push({term: q, metaphone: q});
+
                         var connectedRef = hybridsearch.$firebase().database().ref(".info/connected");
                         connectedRef.once("value", function(snap) {
                             if (snap.val() === true) {
@@ -3266,10 +3268,11 @@
                                         angular.forEach(data.val(), function (v, k) {
                                             instance.$$data.keywords.push({term: k, metaphone: q});
                                         });
+                                        instance.$$data.proceeded.push(1);
                                     }
                                 });
-                                instance.$$data.keywords.push({term: q, metaphone: q});
-                                instance.$$data.proceeded.push(1);
+
+
                             } else {
                                 instance.$$data.keywords.push({term: q, metaphone: q});
                                 instance.$$data.proceeded.push(1);
