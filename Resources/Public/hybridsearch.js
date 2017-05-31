@@ -5324,7 +5324,7 @@
                             if (typeof propvalue == 'object') {
 
                                     // force array
-                                    if (propvalue.length === undefined) {
+                                    if (propvalue && propvalue.length === undefined) {
                                         propvalue = [propvalue];
                                     }
                                     angular.forEach(propvalue, function (v, k) {
