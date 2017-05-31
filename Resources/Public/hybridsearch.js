@@ -244,6 +244,9 @@
                  */
                 window.HybridsearchGetPropertyFromObject = function (inputObject, property) {
 
+                    if (inputObject == undefined) {
+                        return null;
+                    }
 
                     if (property.indexOf("(") > 0) {
                         if (typeof inputObject['__proto__'][property.substr(0, property.indexOf("("))] == 'function') {
@@ -271,6 +274,8 @@
                     }
 
                     var values = [];
+
+
 
                     if (inputObject[property] !== undefined) {
                         return inputObject[property];
