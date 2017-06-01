@@ -189,7 +189,8 @@
             var HybridsearchObject = function (hybridsearch) {
 
                 var hybridsearchInstanceNumber, pendingRequests, logStoreApplied, results, filter, index, lunrSearch,
-                    nodesIndexed, nodesLastCount, nodes, nodesLastHash, nodeTypeLabels, resultGroupedBy, resultCategorizedBy,
+                    nodesIndexed, nodesLastCount, nodes, nodesLastHash, nodeTypeLabels, resultGroupedBy,
+                    resultCategorizedBy,
                     resultOrderBy, propertiesBoost, ParentNodeTypeBoostFactor, isRunning, firstfilterhash,
                     searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier,
                     nodesByIdentifier, searchCounter, searchCounterTimeout, nodeTypeProperties, isloadedall,
@@ -275,7 +276,6 @@
                     }
 
                     var values = [];
-
 
 
                     if (inputObject[property] !== undefined) {
@@ -1882,7 +1882,6 @@
                         }
 
 
-
                         nodesLastCount = nodescount;
 
                     },
@@ -1897,7 +1896,6 @@
 
 
                         var self = this;
-
 
 
                         // set not found if search was timed out withou any results
@@ -2443,6 +2441,7 @@
 
                                 if (excludedProperty === undefined || (excludedProperty1 !== property && excludedProperty2 !== property)) {
 
+
                                     if (filter.nodeType !== undefined && (filter.nodeType != node.nodeType)) {
                                         propertyMatching++;
                                     } else {
@@ -2489,11 +2488,13 @@
 
                                         // filter is boolean
                                         if (filterApplied === false && typeof filter.value === 'boolean') {
+
                                             if (((filter.reverse === false && propertyValue == filter.value) || (filter.reverse === true && propertyValue != filter.value))) {
                                                 propertyMatching++;
                                             }
                                             filterApplied = true;
                                         }
+
 
                                         // filter is a number
                                         if (filterApplied === false && typeof filter.value === 'number') {
@@ -2525,11 +2526,15 @@
 
                                                 if (value) {
 
-
-                                                    if ((filter.reverse === false && (key == propertyValue) || self.inArray(key, propertyValue)) || (filter.reverse == true && key != propertyValue && self.inArray(key, propertyValue) === false)) {
-
+                                                    if (filter.reverse === false && propertyValue === value) {
                                                         isMatching++;
+                                                    } else {
+
+                                                        if ((filter.reverse === false && (key == propertyValue) || self.inArray(key, propertyValue)) || (filter.reverse == true && key != propertyValue && self.inArray(key, propertyValue) === false)) {
+                                                            isMatching++;
+                                                        }
                                                     }
+
                                                 } else {
                                                     if (filter.booleanmode === false) {
                                                         isMatching++;
@@ -2943,7 +2948,6 @@
                                                                 var reqNodesCount = data ? Object.keys(data).length : 0;
 
 
-
                                                                 if (reqNodesCount) {
 
                                                                     if (self.getFilter().getNodeType()) {
@@ -3280,7 +3284,7 @@
                         instance.$$data.keywords.push({term: q, metaphone: q});
 
                         var connectedRef = hybridsearch.$firebase().database().ref(".info/connected");
-                        connectedRef.once("value", function(snap) {
+                        connectedRef.once("value", function (snap) {
                             if (snap.val() === true) {
                                 ref.socket.once("value", function (data) {
                                     if (data.val()) {
@@ -3597,7 +3601,6 @@
                                                             var recstring = valueJson.getRecursiveStrings();
 
 
-
                                                             angular.forEach(recstring, function (o) {
                                                                 doc[property + '.' + o.key] = o.val.replace(/(<([^>]+)>)/ig, " ");
 
@@ -3653,8 +3656,7 @@
                 }
                 ;
 
-                this.$$conf = {
-                };
+                this.$$conf = {};
 
                 this.$$data = {
                     'filterWasChangedOnce': false
@@ -3944,7 +3946,7 @@
 
                     if (scope != undefined) {
                         self.$$app.getFilter().setScopeProperty(scope, value, 'propertyFilters');
-                        scope.$watch(value, function (v,o) {
+                        scope.$watch(value, function (v, o) {
                             if (self.$$data.filterWasChangedOnce == false && v && v !== o) {
                                 self.$$data.filterWasChangedOnce = true;
                             }
@@ -4174,7 +4176,7 @@
 
                     if (scope != undefined) {
                         self.$$app.getFilter().setScopeProperty(scope, nodePath, 'nodePath');
-                        scope.$watch(nodePath, function (filterNodeInput,filterNodeInputOld) {
+                        scope.$watch(nodePath, function (filterNodeInput, filterNodeInputOld) {
                             if (self.$$data.filterWasChangedOnce == false && filterNodeInput && filterNodeInput !== filterNodeInputOld) {
                                 self.$$data.filterWasChangedOnce = true;
                             }
@@ -5357,25 +5359,25 @@
 
                             if (typeof propvalue == 'object') {
 
-                                    // force array
-                                    if (propvalue && propvalue.length === undefined) {
-                                        propvalue = [propvalue];
+                                // force array
+                                if (propvalue && propvalue.length === undefined) {
+                                    propvalue = [propvalue];
+                                }
+                                angular.forEach(propvalue, function (v, k) {
+
+                                    if (v !== undefined) {
+                                        var k = Sha1.hash(JSON.stringify(v));
+
+                                        variants[k] = {
+                                            id: k,
+                                            property: property,
+                                            value: v,
+                                            count: variants[k] === undefined ? 1 : (!self.$$data.distinctsConfiguration[property].counterGroupedByNode || variantsByNodes[node.identifier][k] === undefined ? variants[k].count + 1 : variants[k].count)
+                                        };
+
+                                        variantsByNodes[node.identifier][k] = true;
                                     }
-                                    angular.forEach(propvalue, function (v, k) {
-
-                                        if (v !== undefined) {
-                                            var k = Sha1.hash(JSON.stringify(v));
-
-                                            variants[k] = {
-                                                id: k,
-                                                property: property,
-                                                value: v,
-                                                count: variants[k] === undefined ? 1 : (!self.$$data.distinctsConfiguration[property].counterGroupedByNode || variantsByNodes[node.identifier][k] === undefined ? variants[k].count + 1 : variants[k].count)
-                                            };
-
-                                            variantsByNodes[node.identifier][k] = true;
-                                        }
-                                    });
+                                });
 
 
                             } else {
