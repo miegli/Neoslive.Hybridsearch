@@ -1503,7 +1503,10 @@ class SearchIndexFactory
         $properties = new \stdClass();
         foreach ($node->getProperties() as $key => $val) {
 
-
+            if (gettype($val) === 'boolean') {
+                $k = mb_strtolower(preg_replace("/[^A-z0-9]/", "-", $node->getNodeType()->getName() . ":" . $key));
+                $properties->$k = (($val));
+            }
 
             if (gettype($val) === 'string' || gettype($val) === 'integer') {
                 $k = mb_strtolower(preg_replace("/[^A-z0-9]/", "-", $node->getNodeType()->getName() . ":" . $key));
