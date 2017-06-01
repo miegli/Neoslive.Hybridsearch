@@ -3647,9 +3647,19 @@
                 }
                 ;
 
+                this.$$conf = {
+                };
+
+                this.$$data = {
+                    'filterWasChangedOnce': false
+                };
 
                 Object.defineProperty(this, '$$conf', {
                     value: this.$$conf
+                });
+
+                Object.defineProperty(this, '$$data', {
+                    value: this.$$data
                 });
 
                 Object.defineProperty(this, '$$app', {
@@ -3862,6 +3872,14 @@
                  * Disable realtime search, use static data over cdn instead of
                  * @returns {HybridsearchObject}
                  */
+                hasFilterChanges: function () {
+                    return this.$$data.filterWasChangedOnce;
+                },
+
+                /**
+                 * Disable realtime search, use static data over cdn instead of
+                 * @returns {HybridsearchObject}
+                 */
                 disableRealtime: function () {
                     this.$$app.setConfig('realtime', false);
                     return this;
@@ -3920,7 +3938,10 @@
 
                     if (scope != undefined) {
                         self.$$app.getFilter().setScopeProperty(scope, value, 'propertyFilters');
-                        scope.$watch(value, function (v) {
+                        scope.$watch(value, function (v,o) {
+                            if (self.$$data.filterWasChangedOnce == false && v && v !== o) {
+                                self.$$data.filterWasChangedOnce = true;
+                            }
                             self.$$app.getFilter().addPropertyFilter(property, v, booleanmode, reverse, nodeType, fulltextmode);
                             self.$$app.setSearchIndex();
                         }, true);
@@ -4147,7 +4168,10 @@
 
                     if (scope != undefined) {
                         self.$$app.getFilter().setScopeProperty(scope, nodePath, 'nodePath');
-                        scope.$watch(nodePath, function (filterNodeInput) {
+                        scope.$watch(nodePath, function (filterNodeInput,filterNodeInputOld) {
+                            if (self.$$data.filterWasChangedOnce == false && filterNodeInput && filterNodeInput !== filterNodeInputOld) {
+                                self.$$data.filterWasChangedOnce = true;
+                            }
                             self.$$app.getFilter().setNodePath(filterNodeInput);
                             self.$$app.setSearchIndex();
                         }, true);
@@ -4178,6 +4202,10 @@
                         scope['__query'] = input;
 
                         scope.$watch(input, function (searchInput, searchInputLast) {
+
+                            if (self.$$data.filterWasChangedOnce == false && searchInput !== '' && searchInput !== searchInputLast) {
+                                self.$$data.filterWasChangedOnce = true;
+                            }
 
                             if (scope["_hybridsearchSetQeuryInterval"] !== undefined) {
                                 window.clearTimeout(scope["_hybridsearchSetQeuryInterval"]);
