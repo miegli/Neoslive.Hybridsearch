@@ -189,7 +189,7 @@
             var HybridsearchObject = function (hybridsearch) {
 
                 var hybridsearchInstanceNumber, pendingRequests, logStoreApplied, results, filter, index, lunrSearch,
-                    nodesIndexed, nodes, nodesLastHash, nodeTypeLabels, resultGroupedBy, resultCategorizedBy,
+                    nodesIndexed, nodesLastCount, nodes, nodesLastHash, nodeTypeLabels, resultGroupedBy, resultCategorizedBy,
                     resultOrderBy, propertiesBoost, ParentNodeTypeBoostFactor, isRunning, firstfilterhash,
                     searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier,
                     nodesByIdentifier, searchCounter, searchCounterTimeout, nodeTypeProperties, isloadedall,
@@ -206,6 +206,7 @@
                 }
                 isloadedall = {};
                 config = {};
+                nodesLastCount = 0;
                 isLoadedFromLocalStorage = false;
                 searchCounter = 0;
                 nodesLastHash = 0;
@@ -1864,6 +1865,12 @@
 
                         var self = this;
                         var nodesToIndex = [];
+                        var nodescount = Object.keys(nodes).length;
+
+                        if (nodescount == nodesLastCount) {
+                            return null;
+                        }
+
                         angular.forEach(nodes, function (node) {
                             if (nodesIndexed[node.hash] == undefined) {
                                 nodesToIndex.push({node: node});
@@ -1873,6 +1880,10 @@
                         if (nodesToIndex.length) {
                             self.addLocalIndex(nodesToIndex);
                         }
+
+
+
+                        nodesLastCount = nodescount;
 
                     },
 
@@ -1907,11 +1918,9 @@
                                 self.getResults().getApp().clearQuickNodes();
                             }
 
-                            if (lunrSearch.getFields().length == 0 && Object.keys(nodes).length) {
-                            //if (lunrSearch.getFields().length == 0 && self.getFilter().getFullSearchQuery() !== false) {
-                                // search index is not created yet, so do it now
-                                self.createSearchIndexOnDemand();
-                            }
+
+                            self.createSearchIndexOnDemand();
+
 
                             items['_nodes'] = {};
                             items['_nodesTurbo'] = {};
@@ -3548,9 +3557,6 @@
                         var hasDistinct = self.getResults().hasDistincts();
                         var boost = {};
 
-                        if (isloadingall === undefined) {
-                            isloadingall = false;
-                        }
 
                         angular.forEach(data, function (value, key) {
 
