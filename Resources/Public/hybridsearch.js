@@ -3039,6 +3039,8 @@
                                                                         var reqNodesCount = data.val() ? Object.keys(data.val()).length : 0;
                                                                         var nodeData = data.val();
 
+                                                                        console.log('request',reqNodesCount,ref.socket.path.toString());
+
                                                                         self.setIsNotLoadedAll(ref.socket.toString());
 
 
@@ -3084,6 +3086,7 @@
                                                                                                 }
 
                                                                                                 if (tmpNodesCount == reqNodesCount) {
+
                                                                                                     execute(keyword, tmpNodes, ref);
                                                                                                     self.search();
                                                                                                     self.setIsLoadedAll(ref.socket.toString());
@@ -3277,7 +3280,9 @@
                         if (q.length == 0 || q == 0) {
                             q = querysegment.toLowerCase();
                         }
-
+                        if (q.length < 3) {
+                            q = querysegment.toUpperCase().substr(0,2)+q;
+                        }
 
                         instance.$$data.running++;
 
