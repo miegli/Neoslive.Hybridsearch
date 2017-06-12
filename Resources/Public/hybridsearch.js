@@ -2035,8 +2035,21 @@
                                         }
 
                                         var resultsSearch = [];
+                                        var sq = query;
+                                        var qq = self.getFilter().getQuery();
+                                        var qqq = self.getFilter().getQuery().split(" ");
+                                        angular.forEach(qqq, function (i) {
+                                            if (qq.indexOf(i+" ") < 0) {
+                                                sq = sq.replace(" " + i, "");
+                                            } else {
+                                                angular.forEach(sq.split(" "), function (a) {
+                                                    if (a.indexOf(i) == 0) {
+                                                        sq = sq.replace(" " + a, " "+i);
+                                                    }
+                                                });
+                                            }
 
-
+                                        });
 
                                         resultsSearch[0] = lunrSearch.search(self.getFilter().getQuery(), {
                                             fields: fields,
@@ -2048,40 +2061,48 @@
                                             resultsSearch[1] = lunrSearch.search(self.getFilter().getQuery(), {
                                                 fields: fields,
                                                 bool: "AND",
-                                                expand: true
+                                                expand: false
                                             });
                                         }
 
                                         if (resultsSearch[1] != undefined && resultsSearch[1].length == 0) {
-                                            resultsSearch[2] = lunrSearch.search(self.getFilter().getQuery(), {
+
+                                            resultsSearch[2] = lunrSearch.search(sq, {
+                                                fields: fields,
+                                                bool: "AND",
+                                                expand: false
+                                            });
+
+                                        }
+
+
+                                        if (resultsSearch[2] != undefined && resultsSearch[2].length == 0) {
+                                            resultsSearch[3] = lunrSearch.search(self.getFilter().getQuery(), {
                                                 fields: fields,
                                                 bool: "OR"
                                             });
                                         }
 
-                                        if (resultsSearch[2] != undefined && resultsSearch[2].length == 0) {
+                                        if (resultsSearch[3] != undefined && resultsSearch[3].length == 0) {
 
-                                            resultsSearch[3] = lunrSearch.search(self.getFilter().getQuery(), {
+                                            resultsSearch[4] = lunrSearch.search(self.getFilter().getQuery(), {
                                                 fields: fields,
                                                 bool: "OR",
                                                 expand: true
                                             });
                                         }
 
-                                        if (resultsSearch[3] != undefined && resultsSearch[3].length == 0) {
-                                            var sq = query;
-                                             angular.forEach(self.getFilter().getQuery().split(" "), function(i) {
-                                                 sq = sq.replace(" "+i,"");
-                                             });
-                                            resultsSearch[4] = lunrSearch.search(sq, {
+                                        if (resultsSearch[4] != undefined && resultsSearch[4].length == 0) {
+
+                                            resultsSearch[5] = lunrSearch.search(sq, {
                                                 fields: fields,
                                                 bool: "OR",
                                                 expand: false
                                             });
                                         }
 
-                                        if (resultsSearch[4] != undefined && resultsSearch[4].length == 0) {
-                                            resultsSearch[5] = lunrSearch.search(query, {
+                                        if (resultsSearch[5] != undefined && resultsSearch[5].length == 0) {
+                                            resultsSearch[6] = lunrSearch.search(query, {
                                                 fields: fields,
                                                 bool: "OR",
                                                 expand: true
@@ -2954,6 +2975,8 @@
                                                                 var reqNodesCount = data ? Object.keys(data).length : 0;
 
 
+
+
                                                                 if (reqNodesCount) {
 
                                                                     if (self.getFilter().getNodeType()) {
@@ -3042,7 +3065,6 @@
                                                                         var reqNodesCount = data.val() ? Object.keys(data.val()).length : 0;
                                                                         var nodeData = data.val();
 
-
                                                                         self.setIsNotLoadedAll(ref.socket.toString());
 
 
@@ -3088,6 +3110,7 @@
                                                                                                 }
 
                                                                                                 if (tmpNodesCount == reqNodesCount) {
+
                                                                                                     execute(keyword, tmpNodes, ref);
                                                                                                     self.search();
                                                                                                     self.setIsLoadedAll(ref.socket.toString());
@@ -6085,8 +6108,11 @@
 
                     if (lastSearchInstance.$$data !== undefined) {
                         angular.forEach(lastSearchInstance.$$data.keywords, function (q) {
-                            uniquarray.push(q.term);
-                        });
+                                if (q.term !== q.metaphone) {
+                                    uniquarray.push(q.term);
+                                }
+                            }
+                        );
                     } else {
                         return self.getQuery().length ? self.getQuery() : false;
                     }
