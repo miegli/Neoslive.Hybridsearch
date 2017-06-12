@@ -1456,6 +1456,10 @@ class SearchIndexFactory
             $metaphone = mb_substr(mb_strtoupper($string),0,2) . $metaphone;
         }
 
+        if (strlen($metaphone) < 4) {
+            $metaphone = mb_substr(mb_strtoupper($string),0,1) . $metaphone;
+        }
+
         return $metaphone;
 
 

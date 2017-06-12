@@ -3283,6 +3283,9 @@
                         if (q.length < 3) {
                             q = querysegment.toUpperCase().substr(0,2)+q;
                         }
+                        if (q.length < 4) {
+                            q = querysegment.toUpperCase().substr(0,1)+q;
+                        }
 
                         instance.$$data.running++;
 
