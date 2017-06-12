@@ -102,7 +102,6 @@
                     firebase.database.enableLogging(true);
                 }
 
-
             }
 
             Hybridsearch.prototype = {
@@ -2037,6 +2036,8 @@
 
                                         var resultsSearch = [];
 
+
+
                                         resultsSearch[0] = lunrSearch.search(self.getFilter().getQuery(), {
                                             fields: fields,
                                             bool: "AND"
@@ -2068,8 +2069,11 @@
                                         }
 
                                         if (resultsSearch[3] != undefined && resultsSearch[3].length == 0) {
-
-                                            resultsSearch[4] = lunrSearch.search(query, {
+                                            var sq = query;
+                                             angular.forEach(self.getFilter().getQuery().split(" "), function(i) {
+                                                 sq = sq.replace(" "+i,"");
+                                             });
+                                            resultsSearch[4] = lunrSearch.search(sq, {
                                                 fields: fields,
                                                 bool: "OR",
                                                 expand: false
@@ -2635,7 +2639,6 @@
 
                         var self = this;
 
-
                         if (self.getHybridsearch().getBranch() === false) {
                             self.cancelAllPendingRequest();
                             return false;
@@ -3039,7 +3042,6 @@
                                                                         var reqNodesCount = data.val() ? Object.keys(data.val()).length : 0;
                                                                         var nodeData = data.val();
 
-                                                                        console.log('request', reqNodesCount, ref.socket.path.toString());
 
                                                                         self.setIsNotLoadedAll(ref.socket.toString());
 
