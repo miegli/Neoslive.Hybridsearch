@@ -534,6 +534,10 @@
                     self.groupedNodes = [];
                     self.grouped = false;
 
+                    if (self.properties == undefined) {
+                        self.properties = {};
+                    }
+
                     if (self.url !== undefined) {
                         self.properties.url = self.url;
                     }
