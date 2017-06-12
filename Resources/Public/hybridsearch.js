@@ -2039,12 +2039,12 @@
                                         var qq = self.getFilter().getQuery();
                                         var qqq = self.getFilter().getQuery().split(" ");
                                         angular.forEach(qqq, function (i) {
-                                            if (qq.indexOf(i+" ") < 0) {
+                                            if (qq.indexOf(i + " ") < 0) {
                                                 sq = sq.replace(" " + i, "");
                                             } else {
                                                 angular.forEach(sq.split(" "), function (a) {
                                                     if (a.indexOf(i) == 0) {
-                                                        sq = sq.replace(" " + a, " "+i);
+                                                        sq = sq.replace(" " + a, " " + i);
                                                     }
                                                 });
                                             }
@@ -2056,6 +2056,7 @@
                                             bool: "AND"
                                         });
 
+                                        //console.log(self.getFilter().getQuery(), resultsSearch[0].length);
 
                                         if (resultsSearch[0].length == 0) {
                                             resultsSearch[1] = lunrSearch.search(self.getFilter().getQuery(), {
@@ -2063,50 +2064,67 @@
                                                 bool: "AND",
                                                 expand: false
                                             });
+                                           // console.log(self.getFilter().getQuery(), resultsSearch[1].length);
                                         }
+
 
                                         if (resultsSearch[1] != undefined && resultsSearch[1].length == 0) {
 
-                                            resultsSearch[2] = lunrSearch.search(sq, {
+                                            resultsSearch[2] = lunrSearch.search(self.getFilter().getQuery(), {
                                                 fields: fields,
                                                 bool: "AND",
-                                                expand: false
+                                                expand: true
                                             });
-
+                                           // console.log(self.getFilter().getQuery(), resultsSearch[2].length);
                                         }
 
 
                                         if (resultsSearch[2] != undefined && resultsSearch[2].length == 0) {
-                                            resultsSearch[3] = lunrSearch.search(self.getFilter().getQuery(), {
+
+                                            resultsSearch[3] = lunrSearch.search(sq, {
+                                                fields: fields,
+                                                bool: "AND",
+                                                expand: false
+                                            });
+                                           // console.log(sq, resultsSearch[3].length);
+                                        }
+
+
+                                        if (resultsSearch[3] != undefined && resultsSearch[3].length == 0) {
+                                            resultsSearch[4] = lunrSearch.search(self.getFilter().getQuery(), {
                                                 fields: fields,
                                                 bool: "OR"
                                             });
-                                        }
-
-                                        if (resultsSearch[3] != undefined && resultsSearch[3].length == 0) {
-
-                                            resultsSearch[4] = lunrSearch.search(self.getFilter().getQuery(), {
-                                                fields: fields,
-                                                bool: "OR",
-                                                expand: true
-                                            });
+                                           // console.log(self.getFilter().getQuery(), resultsSearch[4].length);
                                         }
 
                                         if (resultsSearch[4] != undefined && resultsSearch[4].length == 0) {
 
-                                            resultsSearch[5] = lunrSearch.search(sq, {
-                                                fields: fields,
-                                                bool: "OR",
-                                                expand: false
-                                            });
-                                        }
-
-                                        if (resultsSearch[5] != undefined && resultsSearch[5].length == 0) {
-                                            resultsSearch[6] = lunrSearch.search(query, {
+                                            resultsSearch[5] = lunrSearch.search(self.getFilter().getQuery(), {
                                                 fields: fields,
                                                 bool: "OR",
                                                 expand: true
                                             });
+                                            //console.log(self.getFilter().getQuery(), resultsSearch[5].length);
+                                        }
+
+                                        if (resultsSearch[5] != undefined && resultsSearch[5].length == 0) {
+
+                                            resultsSearch[6] = lunrSearch.search(sq, {
+                                                fields: fields,
+                                                bool: "OR",
+                                                expand: false
+                                            });
+                                            //console.log(sq, resultsSearch[6].length);
+                                        }
+
+                                        if (resultsSearch[6] != undefined && resultsSearch[6].length == 0) {
+                                            resultsSearch[7] = lunrSearch.search(query, {
+                                                fields: fields,
+                                                bool: "OR",
+                                                expand: true
+                                            });
+                                            //console.log(query, resultsSearch[7].length);
                                         }
 
 
@@ -2975,61 +2993,68 @@
                                                                 var reqNodesCount = data ? Object.keys(data).length : 0;
 
 
-
-
                                                                 if (reqNodesCount) {
 
                                                                     if (self.getFilter().getNodeType()) {
                                                                         self.setIsLoadedAll(JSON.stringify(self.getFilter().getNodeType()));
                                                                     }
 
+
+                                                                    var groupedByNodeType = {};
                                                                     angular.forEach(data, function (node, identifier) {
+                                                                        if (groupedByNodeType[node.nodeType] == undefined) {
+                                                                            groupedByNodeType[node.nodeType] = {
+                                                                                'ref': self.getIndex(null, node.nodeType),
+                                                                                'nodes': {}
+                                                                            };
+
+                                                                        }
+                                                                        groupedByNodeType[node.nodeType]['nodes'][identifier] = null;
+
+                                                                    });
+
+                                                                    angular.forEach(groupedByNodeType, function (group, nodetype) {
 
 
-                                                                        if (node.node == undefined) {
 
-                                                                            if (self.getFilter().getNodeType() && (self.getFilter().getNodeType() !== node.nodeType && self.getFilter().getNodeType().indexOf(node.nodeType) < 0)) {
-                                                                                // skip filtered nodetype
-                                                                                tmpNodesCounter++;
-                                                                            } else {
-
-                                                                                self.getIndexByNodeIdentifierAndNodeType(identifier, node.nodeType).once("value", function (data) {
-                                                                                    if (data.val()) {
-                                                                                        if (nodes[identifier] == undefined) {
-                                                                                            // add node
-                                                                                            tmpNodes.push(data.val());
-                                                                                            tmpNodesCounter++;
-                                                                                        } else {
-                                                                                            // update node
-                                                                                            tmpNodesCounter++;
-                                                                                            nodes[identifier] = data.val().node;
-                                                                                            self.search();
-                                                                                        }
-                                                                                    } else {
-                                                                                        tmpNodesCounter++;
-                                                                                    }
-
-                                                                                    if (tmpNodesCounter == reqNodesCount) {
-                                                                                        execute(keyword, tmpNodes, ref);
-                                                                                        self.search();
-                                                                                        self.setIsLoadedAll(ref.socket.toString());
-                                                                                    }
-                                                                                });
-                                                                            }
+                                                                        // fetch all nodes content
+                                                                        if (self.getConfig('cache')) {
+                                                                            var req = {
+                                                                                method: 'get',
+                                                                                url: group.ref.http,
+                                                                                headers: {'cache-control': 'private, max-age=' + self.getConfig('cache')},
+                                                                                timeout: canceller.promise,
+                                                                                cancel: function (reason) {
+                                                                                    canceller.resolve(reason);
+                                                                                }
+                                                                            };
 
                                                                         } else {
-
-                                                                            nodes[identifier] = node;
-                                                                            tmpNodes.push(node);
-                                                                            tmpNodesCounter++;
-
-                                                                            if (tmpNodesCounter == reqNodesCount) {
-                                                                                execute(keyword, tmpNodes, ref);
-                                                                                self.search();
-                                                                                self.setIsLoadedAll(ref.socket.toString());
-
-                                                                            }
+                                                                            var req = {
+                                                                                method: 'get',
+                                                                                url: group.ref.http,
+                                                                                cache: true,
+                                                                                timeout: canceller.promise,
+                                                                                cancel: function (reason) {
+                                                                                    canceller.resolve(reason);
+                                                                                }
+                                                                            };
                                                                         }
+
+
+
+                                                                        self.addPendingRequest($http(req).success(function (data) {
+
+                                                                            angular.forEach(data, function (node, identifier) {
+
+                                                                                if (groupedByNodeType[nodetype]['nodes'][identifier] !== undefined) {
+                                                                                    groupedByNodeType[nodetype]['nodes'][identifier] = node;
+                                                                                }
+                                                                            });
+                                                                            execute(keyword, groupedByNodeType[nodetype]['nodes'], ref);
+                                                                            self.search();
+                                                                        }));
+
 
                                                                     });
 
@@ -3074,12 +3099,10 @@
 
                                                                                     if (nodes[identifier] == undefined) {
 
-
                                                                                         if (self.getFilter().getNodeType() && (self.getFilter().getNodeType() !== node.nodeType && self.getFilter().getNodeType().indexOf(node.nodeType) < 0)) {
                                                                                             // skip filtered nodetype
                                                                                             tmpNodesCount++;
                                                                                         } else {
-
 
                                                                                             self.getIndexByNodeIdentifierAndNodeType(identifier, node.nodeType).on("value", function (data) {
 
@@ -3114,7 +3137,6 @@
                                                                                                     execute(keyword, tmpNodes, ref);
                                                                                                     self.search();
                                                                                                     self.setIsLoadedAll(ref.socket.toString());
-
                                                                                                 }
 
                                                                                             });
@@ -3348,13 +3370,25 @@
                     /**
                      * @private
                      * @param string keyword
+                     * @param string nodeType
                      * @returns {firebaseObject}
                      */
-                    getIndex: function (keyword) {
+                    getIndex: function (keyword, nodeType) {
 
 
                         var self = this;
                         var queries = [];
+
+                        if (nodeType !== undefined) {
+
+                            var query = {
+                                isLoadingAllFromNodeType: true,
+                                socket: hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + nodeType),
+                                http: (self.getConfig('cache') ? '/_Hybridsearch' : (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL)) + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + nodeType + ".json"
+                            };
+                            return query;
+
+                        }
 
 
                         // remove old bindings
