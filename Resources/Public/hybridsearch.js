@@ -2804,7 +2804,6 @@
 
                                     var execute = function (keyword, data, ref) {
 
-
                                         if (ref) {
 
                                             if (self.isLoadedAll(ref.socket !== undefined ? ref.socket.toString() : null) === false) {
@@ -3036,10 +3035,11 @@
 
                                                                         var tmpNodes = [];
                                                                         var tmpNodesCount = 0;
+                                                                        var tmpSkippedNodesCount = 0;
                                                                         var reqNodesCount = data.val() ? Object.keys(data.val()).length : 0;
                                                                         var nodeData = data.val();
 
-                                                                        console.log('request',reqNodesCount,ref.socket.path.toString());
+                                                                        console.log('request', reqNodesCount, ref.socket.path.toString());
 
                                                                         self.setIsNotLoadedAll(ref.socket.toString());
 
@@ -3086,7 +3086,6 @@
                                                                                                 }
 
                                                                                                 if (tmpNodesCount == reqNodesCount) {
-
                                                                                                     execute(keyword, tmpNodes, ref);
                                                                                                     self.search();
                                                                                                     self.setIsLoadedAll(ref.socket.toString());
@@ -3100,7 +3099,11 @@
                                                                                     } else {
                                                                                         // skip node update
                                                                                         tmpNodesCount++;
+                                                                                        tmpSkippedNodesCount++;
                                                                                         tmpNodes[identifier] = nodes[identifier];
+                                                                                        if (tmpSkippedNodesCount == tmpNodesCount) {
+                                                                                            self.search();
+                                                                                        }
                                                                                     }
 
                                                                                 }
@@ -3281,10 +3284,10 @@
                             q = querysegment.toLowerCase();
                         }
                         if (q.length < 4) {
-                            q = querysegment.toUpperCase().substr(0,1)+q;
+                            q = querysegment.toUpperCase().substr(0, 1) + q;
                         }
                         if (q.length < 4) {
-                            q = querysegment.toUpperCase().substr(0,3)+q;
+                            q = querysegment.toUpperCase().substr(0, 3) + q;
                         }
 
                         instance.$$data.running++;

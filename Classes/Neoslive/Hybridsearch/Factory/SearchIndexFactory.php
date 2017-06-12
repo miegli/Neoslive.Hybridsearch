@@ -1409,7 +1409,6 @@ class SearchIndexFactory
             }
         }
 
-
         foreach ($wordsReduced as $w => $k) {
 
             if (strlen($w) > 1) {
@@ -1452,12 +1451,12 @@ class SearchIndexFactory
             return mb_strtolower($string);
         }
 
-        if (strlen($metaphone) < 3) {
-            $metaphone = mb_substr(mb_strtoupper($string),0,2) . $metaphone;
+        if (strlen($metaphone) < 4) {
+            $metaphone = mb_substr(mb_strtoupper($string),0,1) . $metaphone;
         }
 
         if (strlen($metaphone) < 4) {
-            $metaphone = mb_substr(mb_strtoupper($string),0,1) . $metaphone;
+            $metaphone = mb_substr(mb_strtoupper($string),0,3) . $metaphone;
         }
 
         return $metaphone;
