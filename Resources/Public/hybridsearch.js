@@ -3630,7 +3630,9 @@
 
                                 if (value && nodesIndexed[value.node.hash] == undefined) {
                                     var doc = {};
-                                    if (hasDistinct == true || self.isFiltered(value.node) === false) {
+
+                                    //if (hasDistinct == true || self.isFiltered(value.node) === false) {
+
                                         nodes[value.node.identifier] = value.node;
                                         if (value.node != undefined && value.node.properties != undefined) {
 
@@ -3707,7 +3709,7 @@
                                             }
 
                                         }
-                                    }
+                                   // }
 
                                 }
 
