@@ -1385,11 +1385,8 @@ class SearchIndexFactory
 
         }
 
-
         $text = (Encoding::UTF8FixWin1252Chars(html_entity_decode($text)));
-
         $text = preg_replace('~[^\p{L}\p{N}-]++~u', " ", mb_strtolower($text));
-
         $words = explode(" ", ($text));
 
         // reduce
