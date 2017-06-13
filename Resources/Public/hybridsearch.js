@@ -60,7 +60,7 @@
              * ));
              * @returns {Hybridsearch} used for HybridsearchObject constructor.
              */
-            function Hybridsearch(databaseURL, workspace, dimension, site, cdnDatabaseURL, debug) {
+            function Hybridsearch(databaseURL, workspace, dimension, site, cdnDatabaseURL, cdnStaticURL, debug) {
 
 
                 if (!(this instanceof Hybridsearch)) {
@@ -75,6 +75,7 @@
                     branch: '',
                     databaseURL: databaseURL,
                     cdnDatabaseURL: cdnDatabaseURL,
+                    cdnStaticURL: cdnStaticURL,
                     branchInitialized: false
                 };
 
@@ -3372,7 +3373,7 @@
                             var query = {
                                 isLoadingAllFromNodeType: true,
                                 socket: hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + nodeType),
-                                http: (self.getConfig('cache') ? '/_Hybridsearch' : (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL)) + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + nodeType + ".json"
+                                http: (self.getConfig('cache') ? (hybridsearch.$$conf.cdnStaticURL == undefined ? '/_Hybridsearch' : hybridsearch.$$conf.cdnStaticURL + '/_Hybridsearch') : (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL)) + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + nodeType + ".json"
                             };
                             return query;
 
@@ -3415,7 +3416,7 @@
                                         {
                                             isLoadingAllFromNodeType: true,
                                             socket: hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + this.getFilter().getNodeType()),
-                                            http: (self.getConfig('cache') ? '/_Hybridsearch' : (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL)) + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + this.getFilter().getNodeType() + ".json"
+                                            http: (self.getConfig('cache') ? (hybridsearch.$$conf.cdnStaticURL == undefined ? '/_Hybridsearch' : hybridsearch.$$conf.cdnStaticURL + '/_Hybridsearch') : (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL)) + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + this.getFilter().getNodeType() + ".json"
                                         }
                                     );
                                 }
