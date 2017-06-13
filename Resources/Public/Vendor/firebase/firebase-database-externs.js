@@ -1,5 +1,5 @@
-/*! @license Firebase v4.1.2
-Build: rev-4a4cc92
+/*! @license Firebase v3.9.0
+Build: rev-cc77c9e
 Terms: https://firebase.google.com/terms/
 
 ---
@@ -26,23 +26,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE. */
 
 /**
-* Copyright 2017 Google Inc.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*   http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
-/**
  * @fileoverview Firebase Database API.
- * Version: 4.1.2
+ * Version: 3.9.0
  *
  * Copyright 2017 Google Inc. All Rights Reserved.
  *
