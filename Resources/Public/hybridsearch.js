@@ -2056,7 +2056,7 @@
                                             bool: "AND"
                                         });
 
-                                        console.log(self.getFilter().getQuery(), resultsSearch[0].length);
+                                        //console.log(self.getFilter().getQuery(), resultsSearch[0].length);
 
                                         if (resultsSearch[0].length == 0) {
                                             resultsSearch[1] = lunrSearch.search(self.getFilter().getQuery(), {
@@ -2064,7 +2064,7 @@
                                                 bool: "AND",
                                                 expand: false
                                             });
-                                            console.log(self.getFilter().getQuery(), resultsSearch[1].length);
+                                           // console.log(self.getFilter().getQuery(), resultsSearch[1].length);
                                         }
 
 
@@ -2075,7 +2075,7 @@
                                                 bool: "AND",
                                                 expand: true
                                             });
-                                            console.log(self.getFilter().getQuery(), resultsSearch[2].length);
+                                           // console.log(self.getFilter().getQuery(), resultsSearch[2].length);
                                         }
 
 
@@ -2086,7 +2086,7 @@
                                                 bool: "AND",
                                                 expand: false
                                             });
-                                            console.log(sq, resultsSearch[3].length);
+                                            //console.log(sq, resultsSearch[3].length);
                                         }
 
 
@@ -2095,7 +2095,7 @@
                                                 fields: fields,
                                                 bool: "OR"
                                             });
-                                            console.log(self.getFilter().getQuery(), resultsSearch[4].length);
+                                            //console.log(self.getFilter().getQuery(), resultsSearch[4].length);
                                         }
 
                                         if (resultsSearch[4] != undefined && resultsSearch[4].length == 0) {
@@ -2105,7 +2105,7 @@
                                                 bool: "OR",
                                                 expand: true
                                             });
-                                            console.log(self.getFilter().getQuery(), resultsSearch[5].length);
+                                            //console.log(self.getFilter().getQuery(), resultsSearch[5].length);
                                         }
 
                                         if (resultsSearch[5] != undefined && resultsSearch[5].length == 0) {
@@ -2115,7 +2115,7 @@
                                                 bool: "OR",
                                                 expand: false
                                             });
-                                            console.log(sq, resultsSearch[6].length);
+                                            //console.log(sq, resultsSearch[6].length);
                                         }
 
                                         if (resultsSearch[6] != undefined && resultsSearch[6].length == 0) {
@@ -2124,7 +2124,7 @@
                                                 bool: "OR",
                                                 expand: true
                                             });
-                                            console.log(query, resultsSearch[7].length);
+                                           // console.log(query, resultsSearch[7].length);
                                         }
 
 
