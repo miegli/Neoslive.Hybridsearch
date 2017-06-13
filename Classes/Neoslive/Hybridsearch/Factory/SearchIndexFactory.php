@@ -1389,6 +1389,8 @@ class SearchIndexFactory
         $text = preg_replace('~[^\p{L}\p{N}-]++~u', " ", mb_strtolower($text));
         $words = explode(" ", ($text));
 
+
+
         // reduce
         $wordsReduced = array();
 
@@ -1447,11 +1449,11 @@ class SearchIndexFactory
         }
 
         if (strlen($metaphone) < 4) {
-            $metaphone = mb_substr(mb_strtoupper($string),0,1) . $metaphone;
+            $metaphone = Encoding::UTF8FixWin1252Chars(mb_substr(mb_strtoupper($string),0,1)) . $metaphone;
         }
 
         if (strlen($metaphone) < 4) {
-            $metaphone = mb_substr(mb_strtoupper($string),0,3) . $metaphone;
+            $metaphone = Encoding::UTF8FixWin1252Chars(mb_substr(mb_strtoupper($string),0,3)) . $metaphone;
         }
 
         return $metaphone;
