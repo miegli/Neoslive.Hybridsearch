@@ -19,10 +19,10 @@
 (function (exports) {
     "use strict";
 
-    angular.module("hybridsearch.common", ['firebase']);
-    angular.module("hybridsearch.results", ['firebase']);
-    angular.module("hybridsearch.filter", ['firebase']);
-    angular.module("hybridsearch", ['firebase']);
+    angular.module("hybridsearch.common", []);
+    angular.module("hybridsearch.results", []);
+    angular.module("hybridsearch.filter", []);
+    angular.module("hybridsearch", []);
 
     // Define the `hybridsearch` module under which all hybridsearch
     // services will live.
@@ -66,6 +66,7 @@
                 if (!(this instanceof Hybridsearch)) {
                     return new Hybridsearch();
                 }
+
 
 
                 this.$$conf = {
@@ -160,7 +161,7 @@
      * @module Angular main module
      * @returns {hybridsearch}
      */
-    angular.module('hybridsearch.common').factory('$hybridsearchObject', ['$firebaseObject', '$hybridsearchResultsObject', '$hybridsearchFilterObject', '$http', '$q', '$location', '$filter', '$sce', '$window',
+    angular.module('hybridsearch.common').factory('$hybridsearchObject', ['$hybridsearchResultsObject', '$hybridsearchFilterObject', '$http', '$q', '$location', '$filter', '$sce', '$window',
 
         /**
          * @private
@@ -169,7 +170,7 @@
          * @param $hybridsearchFilterObject
          * @returns {HybridsearchObject}
          */
-            function (firebaseObject, $hybridsearchResultsObject, $hybridsearchFilterObject, $http, $q, $location, $filter, $sce, $window) {
+            function ($hybridsearchResultsObject, $hybridsearchFilterObject, $http, $q, $location, $filter, $sce, $window) {
 
             /**
              * @example
