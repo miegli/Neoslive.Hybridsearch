@@ -2960,28 +2960,14 @@
                                                         if (ref.http) {
 
 
-                                                            if (self.getConfig('cache')) {
-                                                                var req = {
-                                                                    method: 'get',
-                                                                    url: ref.http,
-                                                                    headers: {'cache-control': 'private, max-age=' + self.getConfig('cache')},
-                                                                    timeout: canceller.promise,
-                                                                    cancel: function (reason) {
-                                                                        canceller.resolve(reason);
-                                                                    }
-                                                                };
-
-                                                            } else {
-                                                                var req = {
-                                                                    method: 'get',
-                                                                    url: ref.http,
-                                                                    cache: true,
-                                                                    timeout: canceller.promise,
-                                                                    cancel: function (reason) {
-                                                                        canceller.resolve(reason);
-                                                                    }
-                                                                };
-                                                            }
+                                                            var req = {
+                                                                method: 'get',
+                                                                url: ref.http,
+                                                                timeout: canceller.promise,
+                                                                cancel: function (reason) {
+                                                                    canceller.resolve(reason);
+                                                                }
+                                                            };
 
 
                                                             self.addPendingRequest($http(req).success(function (data) {
