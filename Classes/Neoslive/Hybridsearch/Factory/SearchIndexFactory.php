@@ -1449,11 +1449,11 @@ class SearchIndexFactory
         }
 
         if (strlen($metaphone) < 4) {
-            $metaphone = Encoding::UTF8FixWin1252Chars(mb_substr(mb_strtoupper($string),0,1)) . $metaphone;
+            $metaphone = preg_replace("/[^A-z]/","0",mb_substr(mb_strtoupper($string),0,1)) . $metaphone;
         }
 
         if (strlen($metaphone) < 4) {
-            $metaphone = Encoding::UTF8FixWin1252Chars(mb_substr(mb_strtoupper($string),0,3)) . $metaphone;
+            $metaphone =  preg_replace("/[^A-z]/","0",mb_substr(mb_strtoupper($string),0,3)) . $metaphone;
         }
 
         return $metaphone;
