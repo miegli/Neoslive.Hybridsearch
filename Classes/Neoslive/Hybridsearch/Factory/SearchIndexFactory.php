@@ -1457,7 +1457,7 @@ class SearchIndexFactory
         }
 
 
-        return mb_strtoupper(preg_replace("/[^A-z]/","0",$metaphone);
+        return mb_strtoupper(preg_replace("/[^A-z]/","0",$metaphone));
 
 
     }

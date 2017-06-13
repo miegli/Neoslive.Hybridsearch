@@ -3337,7 +3337,7 @@
                             q = querysegment.toUpperCase().substr(0, 3) + q;
                         }
                         q = q.replace(/[^A-z]/g,'0').toUpperCase();
-                        
+
 
                         instance.$$data.running++;
 
