@@ -1449,14 +1449,15 @@ class SearchIndexFactory
         }
 
         if (strlen($metaphone) < 4) {
-            $metaphone = mb_strtolower(preg_replace("/[^A-z]/","0",mb_substr(mb_strtoupper($string),0,1))) . $metaphone;
+            $metaphone = mb_substr($string,0,1) . $metaphone;
         }
 
         if (strlen($metaphone) < 4) {
-            $metaphone =  mb_strtolower(preg_replace("/[^A-z]/","0",mb_substr(mb_strtoupper($string),0,3))) . $metaphone;
+            $metaphone =  mb_substr($string,0,3) . $metaphone;
         }
 
-        return $metaphone;
+
+        return mb_strtoupper(preg_replace("/[^A-z]/","0",$metaphone);
 
 
     }

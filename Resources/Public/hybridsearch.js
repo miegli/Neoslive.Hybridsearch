@@ -3331,13 +3331,13 @@
                             q = querysegment.toLowerCase();
                         }
                         if (q.length < 4) {
-                            q = querysegment.toUpperCase().substr(0, 1).replace(/[^A-z]/g,'0') + q;
+                            q = querysegment.toUpperCase().substr(0, 1) + q;
                         }
                         if (q.length < 4) {
-                            q = querysegment.toUpperCase().substr(0, 3).replace(/[^A-z]/g,'0') + q;
+                            q = querysegment.toUpperCase().substr(0, 3) + q;
                         }
-
-
+                        q = q.replace(/[^A-z]/g,'0').toUpperCase();
+                        
 
                         instance.$$data.running++;
 
