@@ -789,7 +789,7 @@
                             return (absolute ? window.location.origin : '') + url;
                         } else {
                             // front end
-                            if (this.url.substr(0, 4) == 'http') {
+                            if (typeof this.url == 'string' && this.url.substr(0, 4) == 'http') {
                                 return this.url;
                             }
                             return (absolute ? window.location.origin : '') + this.url;
@@ -1360,6 +1360,15 @@
 
                             angular.forEach(config.fields, function (fieldconfig, field) {
                                 properties[field] = i[fieldconfig];
+
+                                if (typeof properties[field] == 'object' && properties[field].toString !== undefined) {
+                                    properties[field] = properties[field].toString();
+                                }
+
+                                if (typeof properties[field] == 'string' && properties[field].substr(4,1) == ' ' && properties[field].length < 64 && Date.parse(properties[field])) {
+                                    properties[field] = new Date(properties[field]);
+                                }
+
                             });
 
                             items[id] = {
