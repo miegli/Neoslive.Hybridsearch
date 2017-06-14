@@ -2284,10 +2284,10 @@
                                     lastSearchApplyTimeout = null;
                                 }
 
-                            }, 1);
+                            }, 25);
 
 
-                        }, 1);
+                        }, 10);
 
                     }
                     ,
@@ -2752,8 +2752,8 @@
                                         lastSearchInstance.execute(self, lastSearchInstance);
                                         self.search(nodes);
                                     }
-                                }, 1);
-                            }, 1);
+                                }, 5);
+                            }, 5);
 
 
                         } else {
@@ -2909,7 +2909,7 @@
                                                         }
                                                         setIndexTimeout = window.setTimeout(function () {
                                                             self.search(nodes);
-                                                        }, 1);
+                                                        }, 10);
 
                                                         self.setIsLoadedAll(ref.socket.toString());
 
@@ -4105,7 +4105,7 @@
                                 execute(nodesArray);
                             }
 
-                        }, 1);
+                        }, 5);
                     } else {
                         execute(nodesArray);
                     }
