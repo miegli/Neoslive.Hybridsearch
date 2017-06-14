@@ -764,9 +764,14 @@
 
                     /**
                      * Url if its a document node.
+                     * @param boolean absolute
                      * @returns {string}
                      */
-                    getUrl: function () {
+                    getUrl: function (absolute) {
+
+                        if (absolute == undefined) {
+                            absolute = false;
+                        }
 
                         if (this.url === undefined) {
                             return '';
@@ -781,9 +786,13 @@
                             if (url.substr(0, 4) == 'http') {
                                 return url.substr(url.substr(10).indexOf("/") + 10);
                             }
-                            return url;
+                            return (absolute ? window.location.origin : '') + url;
                         } else {
-                            return this.url;
+                            // front end
+                            if (this.url.substr(0, 4) == 'http') {
+                                return this.url;
+                            }
+                            return (absolute ? window.location.origin : '') + this.url;
                         }
 
 
