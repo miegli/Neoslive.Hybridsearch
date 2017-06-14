@@ -1584,7 +1584,7 @@
                                             setTimeout(function () {
                                                 self.getFilter().getScopeByIdentifier(identifier).$apply(function () {
                                                 });
-                                            }, 2);
+                                            }, 10);
                                         }
                                         break;
 
@@ -1602,7 +1602,7 @@
                                         setTimeout(function () {
                                             self.getFilter().getScopeByIdentifier(identifier).$apply(function () {
                                             });
-                                        }, 2);
+                                        }, 10);
                                 }
 
 
@@ -2284,9 +2284,10 @@
                                     lastSearchApplyTimeout = null;
                                 }
 
-                            }, 5);
+                            }, 1);
 
-                        }, 5);
+
+                        }, 1);
 
                     }
                     ,
@@ -2751,8 +2752,8 @@
                                         lastSearchInstance.execute(self, lastSearchInstance);
                                         self.search(nodes);
                                     }
-                                }, 2);
-                            }, 10);
+                                }, 1);
+                            }, 1);
 
 
                         } else {
@@ -2908,7 +2909,7 @@
                                                         }
                                                         setIndexTimeout = window.setTimeout(function () {
                                                             self.search(nodes);
-                                                        }, 5);
+                                                        }, 1);
 
                                                         self.setIsLoadedAll(ref.socket.toString());
 
@@ -4316,7 +4317,7 @@
                                 // }
 
 
-                            }, 5);
+                            }, 1);
 
 
                         });
