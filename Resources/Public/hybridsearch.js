@@ -68,7 +68,6 @@
                 }
 
 
-
                 this.$$conf = {
                     workspace: workspace,
                     dimension: dimension,
@@ -1365,7 +1364,7 @@
                                     properties[field] = properties[field].toString();
                                 }
 
-                                if (typeof properties[field] == 'string' && properties[field].substr(4,1) == ' ' && properties[field].length < 64 && Date.parse(properties[field])) {
+                                if (typeof properties[field] == 'string' && properties[field].length < 64 && properties[field].indexOf('date') >= 0 && Date.parse(properties[field])) {
                                     properties[field] = new Date(properties[field]);
                                 }
 
@@ -2084,7 +2083,7 @@
                                                 bool: "AND",
                                                 expand: false
                                             });
-                                           // console.log(self.getFilter().getQuery(), resultsSearch[1].length);
+                                            // console.log(self.getFilter().getQuery(), resultsSearch[1].length);
                                         }
 
 
@@ -2095,7 +2094,7 @@
                                                 bool: "AND",
                                                 expand: true
                                             });
-                                           // console.log(self.getFilter().getQuery(), resultsSearch[2].length);
+                                            // console.log(self.getFilter().getQuery(), resultsSearch[2].length);
                                         }
 
 
@@ -2144,7 +2143,7 @@
                                                 bool: "OR",
                                                 expand: true
                                             });
-                                           // console.log(query, resultsSearch[7].length);
+                                            // console.log(query, resultsSearch[7].length);
                                         }
 
 
@@ -2909,8 +2908,10 @@
                                                         }
 
                                                         angular.forEach(data, function (node, id) {
-                                                            nodes[node.node.identifier] = node.node;
-                                                            indexdata['__'].push(node);
+                                                            if (node != undefined) {
+                                                                nodes[node.node.identifier] = node.node;
+                                                                indexdata['__'].push(node);
+                                                            }
                                                         });
 
                                                         if (setIndexTimeout) {
@@ -2973,12 +2974,12 @@
 
                                                         var canceller = $q.defer();
 
-                                                        if (self.getConfig('realtime') === null && ref.socket !== undefined) {
-                                                            ref.http = null;
-                                                        }
+                                                        // if (self.getConfig('realtime') === null && ref.socket !== undefined) {
+                                                        //     ref.http = null;
+                                                        // }
 
 
-                                                        if (ref.http) {
+                                                        if ((self.getConfig('realtime') === null || self.getConfig('realtime') === false) && ref.socket !== undefined) {
 
 
                                                             var req = {
@@ -2990,9 +2991,14 @@
                                                                 }
                                                             };
 
+                                                            // self.addPendingRequest($http(req).success(function (data) {
+                                                            //    console.log(1);
+                                                            // }));
 
-                                                            self.addPendingRequest($http(req).success(function (data) {
+                                                            ref.socket.once("value", function (snapshot) {
 
+                                                                //  self.addPendingRequest($http(req).success(function (data) {
+                                                                var data = snapshot.val();
                                                                 nodesIndexed = {};
                                                                 var tmpNodes = [];
                                                                 var tmpNodesCounter = 0;
@@ -3049,7 +3055,6 @@
                                                                         }
 
 
-
                                                                         self.addPendingRequest($http(req).success(function (data) {
 
                                                                             angular.forEach(groupedByNodeType[nodetype].nodes, function (node, identifier) {
@@ -3067,7 +3072,9 @@
                                                                 }
 
 
-                                                            }));
+                                                            });
+
+                                                            //  }));
 
                                                         } else {
 
@@ -3340,7 +3347,7 @@
                         if (q.length < 4) {
                             q = querysegment.toUpperCase().substr(0, 3) + q;
                         }
-                        q = q.replace(/[^A-z]/g,'0').toUpperCase();
+                        q = q.replace(/[^A-z]/g, '0').toUpperCase();
 
 
                         instance.$$data.running++;
@@ -3649,83 +3656,83 @@
 
                                     //if (hasDistinct == true || self.isFiltered(value.node) === false) {
 
-                                        nodes[value.node.identifier] = value.node;
-                                        if (value.node != undefined && value.node.properties != undefined) {
+                                    nodes[value.node.identifier] = value.node;
+                                    if (value.node != undefined && value.node.properties != undefined) {
 
-                                            //angular.forEach(JSON.parse(JSON.stringify(value.node.properties)), function (propvalue, property) {
-                                            angular.forEach(value.node.properties, function (propvalue, property) {
+                                        //angular.forEach(JSON.parse(JSON.stringify(value.node.properties)), function (propvalue, property) {
+                                        angular.forEach(value.node.properties, function (propvalue, property) {
 
-                                                if (property.length > 1 && property !== 'lastmodified' && property !== 'sorting' && property !== 'uri' && propvalue && propvalue.getProperty == undefined) {
+                                            if (property.length > 1 && property !== 'lastmodified' && property !== 'sorting' && property !== 'uri' && propvalue && propvalue.getProperty == undefined) {
 
-                                                    if (boost[property] == undefined) {
-                                                        boost[property] = self.getBoost(property);
-                                                    }
+                                                if (boost[property] == undefined) {
+                                                    boost[property] = self.getBoost(property);
+                                                }
 
-                                                    if (boost[property] > 0) {
+                                                if (boost[property] > 0) {
 
 
-                                                        var valueJson = false;
+                                                    var valueJson = false;
 
-                                                        if (typeof propvalue === 'object') {
-                                                            valueJson = propvalue;
-                                                        } else {
-                                                            if (typeof propvalue === 'string' && ((propvalue.substr(0, 1) == '{') || ((propvalue.substr(0, 2) === '["' && propvalue.substr(-2, 2) === '"]')) || (propvalue.substr(0, 2) === '[{' && propvalue.substr(-2, 2) === '}]'))) {
-                                                                try {
-                                                                    var valueJson = JSON.parse(propvalue);
-                                                                } catch (e) {
-                                                                    valueJson = false;
-                                                                }
+                                                    if (typeof propvalue === 'object') {
+                                                        valueJson = propvalue;
+                                                    } else {
+                                                        if (typeof propvalue === 'string' && ((propvalue.substr(0, 1) == '{') || ((propvalue.substr(0, 2) === '["' && propvalue.substr(-2, 2) === '"]')) || (propvalue.substr(0, 2) === '[{' && propvalue.substr(-2, 2) === '}]'))) {
+                                                            try {
+                                                                var valueJson = JSON.parse(propvalue);
+                                                            } catch (e) {
+                                                                valueJson = false;
                                                             }
                                                         }
-
-                                                        if (valueJson) {
-
-                                                            var recstring = valueJson.getRecursiveStrings();
-
-
-                                                            angular.forEach(recstring, function (o) {
-                                                                doc[property + '.' + o.key] = o.val.replace(/(<([^>]+)>)/ig, " ");
-
-                                                            });
-
-                                                        } else {
-                                                            if (typeof propvalue === 'string') {
-                                                                doc[property] = propvalue.replace(/(<([^>]+)>)/ig, " ");
-                                                            }
-                                                        }
-
                                                     }
+
+                                                    if (valueJson) {
+
+                                                        var recstring = valueJson.getRecursiveStrings();
+
+
+                                                        angular.forEach(recstring, function (o) {
+                                                            doc[property + '.' + o.key] = o.val.replace(/(<([^>]+)>)/ig, " ");
+
+                                                        });
+
+                                                    } else {
+                                                        if (typeof propvalue === 'string') {
+                                                            doc[property] = propvalue.replace(/(<([^>]+)>)/ig, " ");
+                                                        }
+                                                    }
+
+                                                }
+                                            }
+                                        });
+
+                                        if (Object.keys(doc).length) {
+
+
+                                            if (doc.rawcontent == undefined && value.node.rawcontent !== undefined) {
+                                                doc.rawcontent = value.node.rawcontent;
+                                            }
+
+                                            if (value.node.breadcrumb !== undefined) {
+                                                doc.breadcrumb = value.node.breadcrumb.replace(/(<([^>]+)>)/ig, "");
+                                                doc.breadcrumb = doc.breadcrumb.substr(doc.breadcrumb.trim().lastIndexOf(" ")).toLowerCase();
+                                                doc.breadcrumb = doc.breadcrumb.replace(/[^A-zöäü^>]/ig, " ");
+                                            }
+
+                                            var eachObjecKeys = Object.keys(doc);
+                                            var lunrFields = lunrSearch.getFields();
+                                            angular.forEach(eachObjecKeys, function (key) {
+                                                if (lunrFields.indexOf(key) < 0) {
+                                                    lunrSearch.addField(key);
                                                 }
                                             });
 
-                                            if (Object.keys(doc).length) {
-
-
-                                                if (doc.rawcontent == undefined && value.node.rawcontent !== undefined) {
-                                                    doc.rawcontent = value.node.rawcontent;
-                                                }
-
-                                                if (value.node.breadcrumb !== undefined) {
-                                                    doc.breadcrumb = value.node.breadcrumb.replace(/(<([^>]+)>)/ig, "");
-                                                    doc.breadcrumb = doc.breadcrumb.substr(doc.breadcrumb.trim().lastIndexOf(" ")).toLowerCase();
-                                                    doc.breadcrumb = doc.breadcrumb.replace(/[^A-zöäü^>]/ig, " ");
-                                                }
-
-                                                var eachObjecKeys = Object.keys(doc);
-                                                var lunrFields = lunrSearch.getFields();
-                                                angular.forEach(eachObjecKeys, function (key) {
-                                                    if (lunrFields.indexOf(key) < 0) {
-                                                        lunrSearch.addField(key);
-                                                    }
-                                                });
-
-                                                doc.id = value.node.identifier;
-                                                lunrSearch.addDoc(doc);
-                                                nodesIndexed[value.node.hash] = true;
-                                            }
-
+                                            doc.id = value.node.identifier;
+                                            lunrSearch.addDoc(doc);
+                                            nodesIndexed[value.node.hash] = true;
                                         }
-                                   // }
+
+                                    }
+                                    // }
 
                                 }
 
