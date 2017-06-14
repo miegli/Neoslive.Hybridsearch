@@ -1592,7 +1592,7 @@
                                             setTimeout(function () {
                                                 self.getFilter().getScopeByIdentifier(identifier).$apply(function () {
                                                 });
-                                            }, 10);
+                                            }, 2);
                                         }
                                         break;
 
@@ -1610,7 +1610,7 @@
                                         setTimeout(function () {
                                             self.getFilter().getScopeByIdentifier(identifier).$apply(function () {
                                             });
-                                        }, 10);
+                                        }, 2);
                                 }
 
 
@@ -2292,10 +2292,10 @@
                                     lastSearchApplyTimeout = null;
                                 }
 
-                            }, 25);
+                            }, 5);
 
 
-                        }, 10);
+                        }, 5);
 
                     }
                     ,
@@ -2760,8 +2760,8 @@
                                         lastSearchInstance.execute(self, lastSearchInstance);
                                         self.search(nodes);
                                     }
-                                }, 5);
-                            }, 5);
+                                }, 10);
+                            }, 10);
 
 
                         } else {
@@ -2917,9 +2917,9 @@
                                                         if (setIndexTimeout) {
                                                             clearTimeout(setIndexTimeout);
                                                         }
-                                                        setIndexTimeout = window.setTimeout(function () {
+                                                       // setIndexTimeout = window.setTimeout(function () {
                                                             self.search(nodes);
-                                                        }, 10);
+                                                       // }, 1);
 
                                                         self.setIsLoadedAll(ref.socket.toString());
 
@@ -2974,12 +2974,12 @@
 
                                                         var canceller = $q.defer();
 
-                                                        // if (self.getConfig('realtime') === null && ref.socket !== undefined) {
-                                                        //     ref.http = null;
-                                                        // }
+                                                        if (self.getConfig('realtime') === null && ref.socket !== undefined) {
+                                                            ref.http = null;
+                                                        }
 
 
-                                                        if ((self.getConfig('realtime') === null || self.getConfig('realtime') === false) && ref.socket !== undefined) {
+                                                        if (ref.http && (self.getConfig('realtime') === null || self.getConfig('realtime') === false) && ref.socket !== undefined) {
 
 
                                                             var req = {
@@ -2995,10 +2995,8 @@
                                                             //    console.log(1);
                                                             // }));
 
-                                                            ref.socket.once("value", function (snapshot) {
+                                                                self.addPendingRequest($http(req).success(function (data) {
 
-                                                                //  self.addPendingRequest($http(req).success(function (data) {
-                                                                var data = snapshot.val();
                                                                 nodesIndexed = {};
                                                                 var tmpNodes = [];
                                                                 var tmpNodesCounter = 0;
@@ -3072,9 +3070,9 @@
                                                                 }
 
 
-                                                            });
 
-                                                            //  }));
+
+                                                              }));
 
                                                         } else {
 
@@ -3904,7 +3902,7 @@
                                 self.$$app.setSearchIndex();
                             }
 
-                        }, 2);
+                        }, 10);
 
                         self.$$app.getHybridsearch().$$conf.branchInitialized = true;
 
@@ -4332,7 +4330,7 @@
                                 // }
 
 
-                            }, 1);
+                            }, 10);
 
 
                         });
