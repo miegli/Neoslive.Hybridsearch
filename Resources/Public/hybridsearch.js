@@ -3220,7 +3220,6 @@
                                                         method: 'get',
                                                         url: ref.http.replace("$query", self.getFilter().getQuery()),
                                                         cache: true,
-                                                        headers: ref.headers === undefined ? {} : ref.headers,
                                                         timeout: canceller.promise,
                                                         cancel: function (reason) {
                                                             canceller.resolve(reason);
