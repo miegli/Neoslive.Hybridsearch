@@ -3042,11 +3042,9 @@
 
                                                                         self.addPendingRequest($http(req).success(function (data) {
 
-                                                                            angular.forEach(data, function (node, identifier) {
+                                                                            angular.forEach(groupedByNodeType[nodetype].nodes, function (node, identifier) {
+                                                                                groupedByNodeType[nodetype]['nodes'][identifier] = data[identifier];
 
-                                                                                if (groupedByNodeType[nodetype]['nodes'][identifier] !== undefined) {
-                                                                                    groupedByNodeType[nodetype]['nodes'][identifier] = node;
-                                                                                }
                                                                             });
                                                                             execute(keyword, groupedByNodeType[nodetype]['nodes'], ref);
                                                                             self.search();
