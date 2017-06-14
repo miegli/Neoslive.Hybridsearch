@@ -1364,7 +1364,7 @@
                                     properties[field] = properties[field].toString();
                                 }
 
-                                if (typeof properties[field] == 'string' && field.indexOf('date') >= 0 && properties[field].length < 64  && Date.parse(properties[field])) {
+                                if (typeof properties[field] == 'string' && field.toLowerCase().indexOf('date') >= 0 && properties[field].length < 64  && Date.parse(properties[field])) {
                                     properties[field] = new Date(properties[field]);
                                 }
 
