@@ -824,7 +824,7 @@
                             preview = this.getProperty(property);
                         }
 
-                        preview = preview.trim().replace(/<\/?[a-z][a-z0-9]*[^<>]*>/ig, "").replace(/\t/g, delimiter === undefined ? " ... " : delimiter);
+                        preview = preview.trim().replace(/<\/?[a-z][a-z0-9]*[^<>]*>/ig, " ").replace(/\t/g, delimiter === undefined ? " ... " : delimiter);
 
                         if (preview.length > maxlength && maxlength > 0) {
                             var point = preview.indexOf(".");
