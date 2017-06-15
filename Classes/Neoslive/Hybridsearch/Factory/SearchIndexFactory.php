@@ -1614,17 +1614,18 @@ class SearchIndexFactory
         $grandParentNode = $flowQuery->closest($grandParentNodeFilter)->get(0);
         $documentNode = $flowQuery->closest("[instanceof Neos.Neos:Document]")->get(0);
 
-
-        $prev = $flowQuery->prev()->get(0);
-        if ($prev) {
-            if (strlen($prev->getLabel()) < 64) {
-                $properties->_label = $prev->getLabel();
+        if (isset($properties->label) == false) {
+            $prev = $flowQuery->prev()->get(0);
+            if ($prev) {
+                if (strlen($prev->getLabel()) < 64) {
+                    $properties->label = $prev->getLabel();
+                }
             }
         }
 
-        if (isset($properties->_label) == false) {
+        if (isset($properties->label) == false) {
             if ($parentNode) {
-                $properties->_label = $parentNode->getLabel();
+                $properties->label = $parentNode->getLabel();
             }
         }
 
