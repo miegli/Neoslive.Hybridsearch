@@ -1618,7 +1618,9 @@ class SearchIndexFactory
                 $prev = $flowQuery->prev()->get(0);
                 if ($prev) {
                     if (strlen($prev->getLabel()) < 64) {
-                        $properties->label = $prev->getLabel();
+                        if ($prev->getNodeType()->getName() !== $node->getNodeType()->getName()) {
+                            $properties->label = $prev->getLabel();
+                        }
                     }
                 }
 
