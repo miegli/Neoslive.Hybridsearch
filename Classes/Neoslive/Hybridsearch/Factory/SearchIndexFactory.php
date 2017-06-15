@@ -1615,11 +1615,15 @@ class SearchIndexFactory
         $documentNode = $flowQuery->closest("[instanceof Neos.Neos:Document]")->get(0);
 
         if (isset($properties->label) == false) {
-            $prev = $flowQuery->prev();
-            if ($prev) {
-                if ($prev->get(0) && strlen($prev->get(0)->getLabel()) < 64) {
-                    $properties->label = $prev->get(0)->getLabel();
+            try {
+                $prev = $flowQuery->prev();
+                if ($prev) {
+                    if ($prev->get(0) && strlen($prev->get(0)->getLabel()) < 64) {
+                        $properties->label = $prev->get(0)->getLabel();
+                    }
                 }
+            } catch (\Neos\Eel\Exception $exception) {
+                //
             }
         }
 
