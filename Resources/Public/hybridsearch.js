@@ -5357,16 +5357,8 @@
                         if (this.$$data.distinctsConfiguration[groupedBy] == undefined) {
                             this.$$data.distinctsConfiguration[groupedBy] = {
                                 'limit': limit,
-                                'initiallimit': limit,
                                 'distinctsFromGetResults': true
                             }
-                        }
-
-                        this.$$data.distinctsConfiguration[groupedBy].limit = limit;
-
-                        if (this.$$data.distinctsConfiguration[groupedBy].limit !== this.$$data.distinctsConfiguration[groupedBy].initiallimit) {
-                            this.$$data.distinctsConfiguration[groupedBy].initiallimit = limit;
-                            this.updateNodesGroupedBy();
                         }
 
                         if (this.$$data._nodesGroupedBy[ghash] !== undefined) {
