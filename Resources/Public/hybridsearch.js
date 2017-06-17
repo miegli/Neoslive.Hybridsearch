@@ -364,6 +364,10 @@
                         return property(node);
                     }
 
+                    if (property === '_document') {
+                        return node.grandParentNode;
+                    }
+
                     if (property === '__index') {
                         return node['__index'];
                     }
@@ -553,6 +557,7 @@
                         self.properties.created = nodeData.created;
                     }
 
+                    self.groupedNodesByNodeType = {};
 
                 };
 
@@ -608,6 +613,37 @@
                     },
 
                     /**
+                     * @private
+                     * @param {HybridsearchResultsNode} node
+                     * @param {string} groupedBy
+                     * @returns {object}
+                     */
+                    addGroupedByNodeType: function (node, groupedBy) {
+
+
+                        if (this.groupedNodesByNodeType[groupedBy] == undefined) {
+                            this.groupedNodesByNodeType[groupedBy] = {};
+                        }
+
+                        if (this.groupedNodesByNodeType[groupedBy][node.nodeType] == undefined) {
+                            this.groupedNodesByNodeType[groupedBy][node.nodeType] = [];
+                        }
+
+                        this.groupedNodesByNodeType[groupedBy][node.nodeType].push(node);
+
+
+                    },
+
+                    /**
+                     * @private
+                     * @returns {object}
+                     */
+                    clearGroupedByNodeType: function () {
+
+                        this.groupedNodesByNodeType = {};
+                    },
+
+                    /**
                      * @public
                      * @returns {boolean}
                      */
@@ -621,6 +657,29 @@
                      */
                     setGrouped: function () {
                         this.grouped = true;
+                    },
+
+                    /**
+                     * @public
+                     * @param {string} groupedBy
+                     * @returns {array}
+                     */
+                    getGroupedByNodeType: function (groupedBy) {
+                        var ghash = Sha1.hash(groupedBy);
+                        return this.groupedNodesByNodeType[ghash];
+                    },
+
+                    /**
+                     * @public
+                     * @param {string} groupedBy
+                     * @returns {array}
+                     */
+                    countGroupedByNodeType: function (groupedBy) {
+                        var ghash = Sha1.hash(groupedBy);
+                        if (this.groupedNodesByNodeType[ghash] == undefined) {
+                            return 0;
+                        }
+                        return Object.keys(this.groupedNodesByNodeType[ghash]).length;
                     },
 
                     /**
@@ -752,6 +811,7 @@
                                 return this.properties[propertyfullname];
                             }
                         }
+
 
                         if (property == 'breadcrumb' && value == '') {
                             return this.breadcrumb
@@ -1364,7 +1424,7 @@
                                     properties[field] = properties[field].toString();
                                 }
 
-                                if (typeof properties[field] == 'string' && field.toLowerCase().indexOf('date') >= 0 && properties[field].length < 64  && Date.parse(properties[field])) {
+                                if (typeof properties[field] == 'string' && field.toLowerCase().indexOf('date') >= 0 && properties[field].length < 64 && Date.parse(properties[field])) {
                                     properties[field] = new Date(properties[field]);
                                 }
 
@@ -1862,7 +1922,6 @@
                             items['_nodesTurbo'] = {};
                             items['_nodesByType'] = {};
 
-
                             angular.forEach(storage.nodes, function (node) {
                                 self.addNodeToSearchResult(node.identifier, 1, storage, items);
                                 self.addLocalIndex([{node: node}]);
@@ -1941,10 +2000,10 @@
 
                             self.createSearchIndexOnDemand();
 
-
                             items['_nodes'] = {};
                             items['_nodesTurbo'] = {};
                             items['_nodesByType'] = {};
+                            items['_nodesGroupedBy'] = {};
 
                             if (nodesFromInput == undefined && self.getNodesAddedByIdentifier()) {
                                 nodesFromInput = self.getNodesAddedByIdentifier();
@@ -2283,6 +2342,7 @@
                                         unfilteredResultNodes.push(nodeObject);
                                     });
 
+
                                     results.updateDistincts(unfilteredResultNodes);
                                 }
 
@@ -2292,7 +2352,7 @@
                                     lastSearchApplyTimeout = null;
                                 }
 
-                            }, 5);
+                            }, 10);
 
 
                         }, 5);
@@ -2398,8 +2458,6 @@
                             } else {
                                 items['_nodes'][hash] = resultNode;
                             }
-
-
                             items['_nodesByType'][nodeTypeLabel][hash] = resultNode;
                         } else {
                             if (items['_nodes'][hash] !== undefined) {
@@ -2410,7 +2468,6 @@
                         }
 
                         // add item as grouped node
-
                         if (items['_nodes'][hash] !== undefined) {
                             items['_nodes'][hash].addGroupedNode(resultNode);
                         }
@@ -2917,9 +2974,9 @@
                                                         if (setIndexTimeout) {
                                                             clearTimeout(setIndexTimeout);
                                                         }
-                                                       // setIndexTimeout = window.setTimeout(function () {
-                                                            self.search(nodes);
-                                                       // }, 1);
+                                                        // setIndexTimeout = window.setTimeout(function () {
+                                                        self.search(nodes);
+                                                        // }, 1);
 
                                                         self.setIsLoadedAll(ref.socket.toString());
 
@@ -2995,7 +3052,7 @@
                                                             //    console.log(1);
                                                             // }));
 
-                                                                self.addPendingRequest($http(req).success(function (data) {
+                                                            self.addPendingRequest($http(req).success(function (data) {
 
                                                                 nodesIndexed = {};
                                                                 var tmpNodes = [];
@@ -3070,9 +3127,7 @@
                                                                 }
 
 
-
-
-                                                              }));
+                                                            }));
 
                                                         } else {
 
@@ -4878,7 +4933,9 @@
 
                         if (self.isStarted()) {
                             self.getApp().setNotFound(false);
+                            self.updateNodesGroupedBy();
                             this.executeCallbackMethod(self);
+
                         }
 
 
@@ -5072,6 +5129,7 @@
                 items['_nodes'] = {};
                 items['_nodesTurbo'] = {};
                 items['_nodesByType'] = {};
+                items['_nodesGroupedBy'] = {};
 
 
                 return this;
@@ -5285,10 +5343,41 @@
                 /**
                  * Get all nodes from current search result.
                  * @param {integer} limit max results
+                 * @param {string} groupedBy group/distinct by property
                  * @returns {array} collection of {HybridsearchResultsNode}
                  */
-                getNodes: function (limit) {
-                    return this.getData()._nodes === undefined ? null : (limit === undefined ? this.getData()._nodes : this.getData()._nodes.slice(0, limit) );
+                getNodes: function (limit, groupedBy) {
+
+                    if (groupedBy == undefined) {
+                        return this.getData()._nodes === undefined ? null : (limit === undefined ? this.getData()._nodes : this.getData()._nodes.slice(0, limit) );
+                    } else {
+
+                        var ghash = Sha1.hash(groupedBy);
+
+                        if (this.$$data.distinctsConfiguration[groupedBy] == undefined) {
+                            this.$$data.distinctsConfiguration[groupedBy] = {
+                                'limit': limit,
+                                'initiallimit': limit,
+                                'distinctsFromGetResults': true
+                            }
+                        }
+
+                        this.$$data.distinctsConfiguration[groupedBy].limit = limit;
+
+                        if (this.$$data.distinctsConfiguration[groupedBy].limit !== this.$$data.distinctsConfiguration[groupedBy].initiallimit) {
+                            this.$$data.distinctsConfiguration[groupedBy].initiallimit = limit;
+                            this.updateNodesGroupedBy();
+                        }
+
+                        if (this.$$data._nodesGroupedBy[ghash] !== undefined) {
+                            return this.$$data._nodesGroupedBy[ghash].slice(0, limit);
+                        } else {
+                            return [];
+                        }
+
+                    }
+
+
                 },
                 /**
                  * Get all nodes from current search result.
@@ -5330,6 +5419,70 @@
 
                     angular.forEach(this.$$data.distincts, function (val, key) {
                         self.getDistinct(key);
+                    });
+
+                    return this;
+
+                },
+
+                /**
+                 * update grouped nodes
+                 * @param {string} groupedBy
+                 * @param {integer} limit
+                 * @returns {HybridsearchResultsObject}
+                 */
+                updateNodesGroupedBy: function (groupedBy, limit) {
+
+                    var self = this;
+
+
+                    if (self.$$data._nodesGroupedBy == undefined) {
+                        self.$$data._nodesGroupedBy = {};
+                    }
+
+
+                    angular.forEach(self.$$data.distinctsConfiguration, function (distinct, property) {
+
+                        if (distinct.distinctsFromGetResults !== undefined) {
+                            if (groupedBy == undefined || groupedBy == property) {
+
+                                if (self.$$data.distincts !== undefined) {
+                                    delete self.$$data.distincts[property];
+                                }
+
+                                var ghash = Sha1.hash(property);
+                                var n = [];
+                                var d = self.getDistinct(property, false, true, false, self.$$data.distinctsConfiguration[property].limit, true);
+
+
+                                angular.forEach(d, function (group, hash) {
+
+                                    group.nodes[0].clearGroupedByNodeType();
+
+                                    if (group.nodes[1] !== undefined && group.nodes[1].nodeType == group.nodes[0].nodeType) {
+                                        // dont group nodes with same score
+                                        angular.forEach(group.nodes, function (node, h) {
+                                            n.push(node);
+                                        });
+                                    } else {
+
+                                      
+                                        angular.forEach(group.nodes, function (groupnode, h) {
+                                            if (h > 0) {
+                                                group.nodes[0].addGroupedByNodeType(groupnode, ghash);
+                                            }
+                                        });
+                                        n.push(group.nodes[0]);
+
+                                    }
+
+                                });
+
+                                self.$$data._nodesGroupedBy[ghash] = n;
+
+                            }
+                        }
+
                     });
 
                     return this;
@@ -5398,9 +5551,11 @@
                  * @param {boolean} affectedBySearchResult dont affect current search result to distinct
                  * @param {boolean} counterGroupedByNode count existences grouped by node
                  * @param {boolean} valuesOnly return only values
+                 * @param {integer} limit return only limit nodes
+                 * @param {boolean} distinctsFromGetResults
                  * @returns {array} collection of property values
                  */
-                getDistinct: function (property, affectedBySearchResult, counterGroupedByNode, valuesOnly) {
+                getDistinct: function (property, affectedBySearchResult, counterGroupedByNode, valuesOnly, limit, distinctsFromGetResults) {
 
 
                     var self = this, variants = {}, variantsByNodes = {}, propvalue = '', variantsfinal = [];
@@ -5410,7 +5565,9 @@
                         self.$$data.distinctsConfiguration[property] = {
                             counterGroupedByNode: counterGroupedByNode == undefined || counterGroupedByNode == null ? false : counterGroupedByNode,
                             valuesOnly: valuesOnly == undefined || valuesOnly == null ? false : valuesOnly,
-                            affectedBySearchResult: affectedBySearchResult == undefined || affectedBySearchResult == null ? true : affectedBySearchResult
+                            affectedBySearchResult: affectedBySearchResult == undefined || affectedBySearchResult == null ? true : affectedBySearchResult,
+                            limit: limit,
+                            distinctsFromGetResults: distinctsFromGetResults
                         };
                     }
 
@@ -5424,19 +5581,31 @@
 
 
                     if (Object.keys(self.$$data.distincts[property]).length) {
-                        if (self.$$data.distinctsConfiguration[property].valuesOnly === false) {
-                            return self.$$data.distincts[property];
-                        } else {
-                            var v = [];
-                            angular.forEach(self.$$data.distincts[property], function (i) {
-                                v.push(i.value);
-                            });
-                            return v;
+
+
+                        if (limit == undefined) {
+                            if (self.$$data.distinctsConfiguration[property].valuesOnly === false) {
+                                return self.$$data.distincts[property];
+                            } else {
+                                var v = [];
+                                angular.forEach(self.$$data.distincts[property], function (i) {
+                                    v.push(i.value);
+                                });
+                                return v;
+                            }
                         }
 
                     }
 
-                    var eachResultNodes = self.$$data.unfilteredResultNodes.length == 0 ? this.getNodes() : self.$$data.unfilteredResultNodes;
+
+                    if (self.$$data.distinctsConfiguration[property].distinctsFromGetResults) {
+                        var eachResultNodes = this.getNodes();
+                        var storeGroupedNodes = true;
+                    } else {
+                        var eachResultNodes = self.$$data.unfilteredResultNodes.length == 0 ? this.getNodes() : self.$$data.unfilteredResultNodes;
+                        var storeGroupedNodes = false;
+                    }
+
                     angular.forEach(eachResultNodes, function (node) {
 
                         if (self.$$data.distinctsConfiguration[property]['affectedBySearchResult'] == false || node['_isfiltered'] == undefined || node['_isfiltered'][property] === false || node['_isfiltered'][property] === undefined) {
@@ -5459,8 +5628,15 @@
                                             id: k,
                                             property: property,
                                             value: v,
+                                            nodes: variants[k] == undefined ? [] : variants[k].nodes,
+                                            maxScore: variants[k] === undefined ? node.getScore() : (variants[k].maxScore < node.getScore() ? node.getScore() : variants[k].maxScore),
                                             count: variants[k] === undefined ? 1 : (!self.$$data.distinctsConfiguration[property].counterGroupedByNode || variantsByNodes[node.identifier][k] === undefined ? variants[k].count + 1 : variants[k].count)
                                         };
+
+                                        if (storeGroupedNodes) {
+                                            variants[k].nodes.push(node);
+                                        }
+
 
                                         variantsByNodes[node.identifier][k] = true;
                                     }
@@ -5491,9 +5667,14 @@
                                                 id: k,
                                                 property: property,
                                                 value: valueJson,
+                                                nodes: variants[k] == undefined ? [] : variants[k].nodes,
+                                                maxScore: variants[k] === undefined ? node.getScore() : (variants[k].maxScore < node.getScore() ? node.getScore() : variants[k].maxScore),
                                                 count: variants[k] === undefined ? 1 : (!self.$$data.distinctsConfiguration[property].counterGroupedByNode || variantsByNodes[node.identifier][k] === undefined ? variants[k].count + 1 : variants[k].count)
                                             };
                                             variantsByNodes[node.identifier][k] = true;
+                                            if (storeGroupedNodes) {
+                                                variants[k].nodes.push(node);
+                                            }
 
 
                                         } else {
@@ -5505,9 +5686,14 @@
                                                     id: k,
                                                     property: property,
                                                     value: variant,
+                                                    nodes: variants[k] == undefined ? [] : variants[k].nodes,
+                                                    maxScore: variants[k] === undefined ? node.getScore() : (variants[k].maxScore < node.getScore() ? node.getScore() : variants[k].maxScore),
                                                     count: variants[k] === undefined ? 1 : (!self.$$data.distinctsConfiguration[property].counterGroupedByNode || variantsByNodes[node.identifier][k] === undefined ? variants[k].count + 1 : variants[k].count)
                                                 };
                                                 variantsByNodes[node.identifier][k] = true;
+                                                if (storeGroupedNodes) {
+                                                    variants[k].nodes.push(node);
+                                                }
                                             });
                                         }
 
@@ -5516,13 +5702,19 @@
 
                                         var k = Sha1.hash(JSON.stringify(propvalue));
 
+
                                         variants[k] = {
                                             id: k,
                                             property: property,
                                             value: propvalue,
+                                            nodes: variants[k] == undefined ? [] : variants[k].nodes,
+                                            maxScore: variants[k] === undefined ? node.getScore() : (variants[k].maxScore < node.getScore() ? node.getScore() : variants[k].maxScore),
                                             count: variants[k] === undefined ? 1 : (!self.$$data.distinctsConfiguration[property].counterGroupedByNode || variantsByNodes[node.identifier][k] === undefined ? variants[k].count + 1 : variants[k].count)
                                         };
                                         variantsByNodes[node.identifier][k] = true;
+                                        if (storeGroupedNodes) {
+                                            variants[k].nodes.push(node);
+                                        }
 
                                     }
 
