@@ -3017,7 +3017,7 @@
 
 
                                     clearTimeout(self.getIndexInterval());
-                                    
+
 
                                     angular.forEach(uniquarrayfinal, function (keyword) {
 
