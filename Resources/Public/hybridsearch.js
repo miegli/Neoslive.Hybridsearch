@@ -2891,6 +2891,8 @@
 
                                 if (lastSearchInstance.$$data.keywords.length) {
                                     var unique = {};
+
+
                                     angular.forEach(lastSearchInstance.$$data.keywords, function (v) {
                                         if (unique[v.metaphone] === undefined) {
                                             uniquarrayfinal.push(v.metaphone);
@@ -2915,6 +2917,7 @@
 
 
                                 if (self.isLoadedAll() === false) {
+
 
 
                                     if (uniquarrayfinal.length === 0 && self.getFilter().getQuery().length == 0) {
@@ -3015,8 +3018,12 @@
 
                                     clearTimeout(self.getIndexInterval());
 
-
-                                    // self.setIndexInterval(setTimeout(function () {
+                                    if (self.getFilter().getNodeType() === false) {
+                                        //console.log(lunrSearch.documentStore.length);
+                                        lunrSearch = elasticlunr(function () {
+                                            this.setRef('id');
+                                        });
+                                    }
 
                                     angular.forEach(uniquarrayfinal, function (keyword) {
 
@@ -3035,9 +3042,7 @@
                                                             ref.http = null;
                                                         }
 
-
                                                         if (ref.http && (self.getConfig('realtime') === null || self.getConfig('realtime') === false) && ref.socket !== undefined) {
-
 
                                                             var req = {
                                                                 method: 'get',
@@ -3111,7 +3116,6 @@
 
 
                                                                         self.addPendingRequest($http(req).success(function (data) {
-
                                                                             angular.forEach(groupedByNodeType[nodetype].nodes, function (node, identifier) {
                                                                                 groupedByNodeType[nodetype]['nodes'][identifier] = data[identifier];
 
@@ -3125,8 +3129,6 @@
 
 
                                                                 }
-
-
                                                             }));
 
                                                         } else {
@@ -3253,14 +3255,11 @@
 
                                                     }
                                                     else {
-
                                                         if (keyword) {
                                                             self.search();
                                                         } else {
                                                             self.search(nodes);
                                                         }
-
-
                                                     }
                                                 }
                                             );
@@ -3380,6 +3379,7 @@
                      */
                     getKeywords: function (querysegment, instance) {
 
+                        var self = this;
 
                         if (this.getFilter().isBlockedKeyword(querysegment)) {
                             return false;
@@ -3411,23 +3411,41 @@
 
                         instance.$$data.keywords.push({term: q, metaphone: q});
 
-                        var connectedRef = hybridsearch.$firebase().database().ref(".info/connected");
-                        connectedRef.once("value", function (snap) {
-                            if (snap.val() === true) {
+
+                        var canceller = $q.defer();
+                        var req = {
+                            method: 'get',
+                            url: ref.http,
+                            timeout: canceller.promise,
+                            cancel: function (reason) {
+                                canceller.resolve(reason);
+                            }
+                        };
+
+
+                        //var connectedRef = hybridsearch.$firebase().database().ref(".info/connected");
+                        //connectedRef.once("value", function (snap) {
+                        //    if (snap.val() === true) {
+
                                 ref.socket.once("value", function (data) {
                                     if (data.val()) {
                                         angular.forEach(data.val(), function (v, k) {
                                             instance.$$data.keywords.push({term: k, metaphone: q});
                                         });
                                         instance.$$data.proceeded.push(1);
+                                    } else {
+                                        instance.$$data.keywords.push({term: q, metaphone: q});
+                                        instance.$$data.proceeded.push(1);
                                     }
+
                                 });
 
-
-                            } else {
+                            //} else {
                                 instance.$$data.proceeded.push(1);
-                            }
-                        });
+                           // }
+                        //});
+
+
 
                     }
 
@@ -5351,7 +5369,6 @@
                     if (groupedBy == undefined) {
                         return this.getData()._nodes === undefined ? null : (limit === undefined ? this.getData()._nodes : this.getData()._nodes.slice(0, limit) );
                     } else {
-
                         var ghash = Sha1.hash(groupedBy);
 
                         if (this.$$data.distinctsConfiguration[groupedBy] == undefined) {
@@ -5458,7 +5475,7 @@
                                         });
                                     } else {
 
-                                      
+
                                         angular.forEach(group.nodes, function (groupnode, h) {
                                             if (h > 0) {
                                                 group.nodes[0].addGroupedByNodeType(groupnode, ghash);
