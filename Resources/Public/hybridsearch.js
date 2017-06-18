@@ -3017,13 +3017,7 @@
 
 
                                     clearTimeout(self.getIndexInterval());
-
-                                    if (self.getFilter().getNodeType() === false) {
-                                        //console.log(lunrSearch.documentStore.length);
-                                        lunrSearch = elasticlunr(function () {
-                                            this.setRef('id');
-                                        });
-                                    }
+                                    
 
                                     angular.forEach(uniquarrayfinal, function (keyword) {
 
