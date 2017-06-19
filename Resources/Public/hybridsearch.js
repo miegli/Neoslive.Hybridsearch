@@ -191,7 +191,7 @@
                 var hybridsearchInstanceNumber, pendingRequests, logStoreApplied, results, filter, index, lunrSearch,
                     nodesIndexed, nodesLastCount, nodes, nodesLastHash, nodeTypeLabels, resultGroupedBy,
                     resultCategorizedBy,
-                    resultOrderBy, propertiesBoost, ParentNodeTypeBoostFactor, isRunning, firstfilterhash,
+                    resultOrderBy, propertiesBoost, ParentNodeTypeBoostFactor, NodeUrlBoostFactor, isRunning, firstfilterhash,
                     searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier,
                     nodesByIdentifier, searchCounter, searchCounterTimeout, nodeTypeProperties, isloadedall,
                     externalSources, isLoadedFromLocalStorage, lastSearchHash, lastSearchApplyTimeout, config,
@@ -558,6 +558,7 @@
                     }
 
                     self.groupedNodesByNodeType = {};
+
 
                 };
 
@@ -1309,9 +1310,12 @@
                     /**
                      * @private
                      * @param property
+                     * @param nodetype
                      * @returns {number}
                      */
-                    getBoost: function (property) {
+                    getBoost: function (property,nodetype) {
+
+                        var p = property;
 
                         if (propertiesBoost !== undefined && propertiesBoost[property] == undefined && property.indexOf(".") > -1) {
                             property = property.substr(0, property.indexOf("."));
@@ -1320,7 +1324,17 @@
                             }
 
                         }
+
+                        if (nodetype !== undefined && nodetype.length > property.length) {
+                           property = nodetype+"-"+property;
+                        }
+
+
                         return propertiesBoost !== undefined && propertiesBoost[property] !== undefined ? propertiesBoost[property] : property == 'breadcrumb' ? 50 : property.substr(-28) == 'neoslivehybridsearchkeywords' ? 500 : 10;
+
+
+
+
                     },
 
                     /**
@@ -1482,6 +1496,29 @@
                         return 1;
 
                     },
+
+                    /**
+                     * @private
+                     * @param {node}
+                     * @returns {number}
+                     */
+                    getNodeUrlBoostFactor: function (node) {
+
+                        var b = 1;
+
+                        if (NodeUrlBoostFactor !== undefined) {
+
+                            angular.forEach(NodeUrlBoostFactor, function(boost,needed) {
+                                if (node.url.indexOf(needed) >= 0) {
+                                    b = boost;
+                                }
+                            });
+
+                        }
+
+                        return b;
+
+                    },
                     /**
                      * @private
                      * @param nodeType
@@ -1581,6 +1618,13 @@
                      */
                     setParentNodeTypeBoostFactor: function (boost) {
                         ParentNodeTypeBoostFactor = boost;
+                    },
+                    /**
+                     * @private
+                     * @param boost
+                     */
+                    setNodeUrlBoostFactor: function (boost) {
+                        NodeUrlBoostFactor = boost;
                     },
                     /**
                      * @private
@@ -2267,7 +2311,7 @@
                                     // filter out not relevant items and apply parent node type boost factor
 
                                     var preOrdered = $filter('orderBy')(preOrdered, function (item) {
-                                        item.score = item.score * self.getParentNodeTypeBoostFactor(nodes[item.ref]);
+                                        item.score = item.score * self.getParentNodeTypeBoostFactor(nodes[item.ref]) * self.getNodeUrlBoostFactor(nodes[item.ref]);
                                         return -1 * item.score;
                                     });
 
@@ -2396,6 +2440,8 @@
                         var hash = nodes[nodeId].hash;
                         var groupedBy = this.getGroupedBy(nodes[nodeId].nodeType);
                         var nodeTypeLabel = this.getCategorizedBy() == 'nodeType' ? this.getNodeTypeLabel(nodes[nodeId].nodeType) : resultNode.getProperty(this.getCategorizedBy());
+
+
 
 
                         if (groupedBy.length) {
@@ -3730,7 +3776,7 @@
                                             if (property.length > 1 && property !== 'lastmodified' && property !== 'sorting' && property !== 'uri' && propvalue && propvalue.getProperty == undefined) {
 
                                                 if (boost[property] == undefined) {
-                                                    boost[property] = self.getBoost(property);
+                                                    boost[property] = self.getBoost(property, value.node.nodeType);
                                                 }
 
                                                 if (boost[property] > 0) {
@@ -4504,6 +4550,21 @@
                 setParentNodeTypeBoostFactor: function (ParentNodeTypeBoostFactor) {
                     var self = this;
                     self.$$app.setParentNodeTypeBoostFactor(ParentNodeTypeBoostFactor);
+                    return this;
+                },
+
+                /**
+                 * Sets parent node type boost.
+                 * @param {object} NodeUrlBoostFactor
+                 * @example var NodeUrlBoostFactor = {
+                 *        'about-us': 0.5,
+                 *        'products': 1.5
+                 *    }
+                 * @returns {$hybridsearchResultsObject|*}
+                 */
+                setNodeUrlBoostFactor: function (NodeUrlBoostFactor) {
+                    var self = this;
+                    self.$$app.setNodeUrlBoostFactor(NodeUrlBoostFactor);
                     return this;
                 },
 
