@@ -1478,14 +1478,6 @@
 
                         if (node.parentNode != undefined && ParentNodeTypeBoostFactor !== undefined) {
 
-                            if (ParentNodeTypeBoostFactor[node.parentNode.nodeType] === undefined) {
-                                var filterReg = /[^0-9a-zA-ZöäüÖÄÜ]/g;
-                                var s = node.parentNode.nodeType.replace(filterReg, "-").toLowerCase();
-                                if (ParentNodeTypeBoostFactor[s] != undefined) {
-                                    ParentNodeTypeBoostFactor[node.parentNode.nodeType] = ParentNodeTypeBoostFactor[s];
-                                }
-                            }
-
                             if (ParentNodeTypeBoostFactor[node.parentNode.nodeType] != undefined) {
                                 return ParentNodeTypeBoostFactor[node.parentNode.nodeType];
                             }
