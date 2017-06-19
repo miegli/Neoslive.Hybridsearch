@@ -191,7 +191,8 @@
                 var hybridsearchInstanceNumber, pendingRequests, logStoreApplied, results, filter, index, lunrSearch,
                     nodesIndexed, nodesLastCount, nodes, nodesLastHash, nodeTypeLabels, resultGroupedBy,
                     resultCategorizedBy,
-                    resultOrderBy, propertiesBoost, ParentNodeTypeBoostFactor, NodeUrlBoostFactor, isRunning, firstfilterhash,
+                    resultOrderBy, propertiesBoost, ParentNodeTypeBoostFactor, NodeUrlBoostFactor, isRunning,
+                    firstfilterhash,
                     searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier,
                     nodesByIdentifier, searchCounter, searchCounterTimeout, nodeTypeProperties, isloadedall,
                     externalSources, isLoadedFromLocalStorage, lastSearchHash, lastSearchApplyTimeout, config,
@@ -1313,7 +1314,7 @@
                      * @param nodetype
                      * @returns {number}
                      */
-                    getBoost: function (property,nodetype) {
+                    getBoost: function (property, nodetype) {
 
                         var p = property;
 
@@ -1326,13 +1327,11 @@
                         }
 
                         if (nodetype !== undefined && nodetype.length > property.length) {
-                           property = nodetype+"-"+property;
+                            property = nodetype + "-" + property;
                         }
 
 
                         return propertiesBoost !== undefined && propertiesBoost[property] !== undefined ? propertiesBoost[property] : property == 'breadcrumb' ? 50 : property.substr(-28) == 'neoslivehybridsearchkeywords' ? 500 : 10;
-
-
 
 
                     },
@@ -1500,7 +1499,7 @@
 
                         if (NodeUrlBoostFactor !== undefined) {
 
-                            angular.forEach(NodeUrlBoostFactor, function(boost,needed) {
+                            angular.forEach(NodeUrlBoostFactor, function (boost, needed) {
                                 if (node.url.indexOf(needed) >= 0) {
                                     b = boost;
                                 }
@@ -1616,7 +1615,27 @@
                      * @param boost
                      */
                     setNodeUrlBoostFactor: function (boost) {
-                        NodeUrlBoostFactor = boost;
+
+                        var ordered = {};
+                        var orderedBoost = {};
+
+                        angular.forEach(boost, function (val, key) {
+                            if (ordered[key.length] == undefined) {
+                                ordered[key.length] = {}
+                            }
+                            ordered[key.length][key] = val;
+                        });
+
+                        var r = Object.keys(ordered).reverse();
+
+                        angular.forEach(r, function (v, k) {
+                            angular.forEach(ordered[v], function (val, key) {
+                                orderedBoost[key] = val;
+                            });
+                        });
+
+                        NodeUrlBoostFactor = orderedBoost;
+
                     },
                     /**
                      * @private
@@ -2434,8 +2453,6 @@
                         var nodeTypeLabel = this.getCategorizedBy() == 'nodeType' ? this.getNodeTypeLabel(nodes[nodeId].nodeType) : resultNode.getProperty(this.getCategorizedBy());
 
 
-
-
                         if (groupedBy.length) {
 
                             var groupedString = '';
@@ -2957,7 +2974,6 @@
                                 if (self.isLoadedAll() === false) {
 
 
-
                                     if (uniquarrayfinal.length === 0 && self.getFilter().getQuery().length == 0) {
                                         uniquarrayfinal = [null];
                                     }
@@ -3459,24 +3475,23 @@
                         //connectedRef.once("value", function (snap) {
                         //    if (snap.val() === true) {
 
-                                ref.socket.once("value", function (data) {
-                                    if (data.val()) {
-                                        angular.forEach(data.val(), function (v, k) {
-                                            instance.$$data.keywords.push({term: k, metaphone: q});
-                                        });
-                                        instance.$$data.proceeded.push(1);
-                                    } else {
-                                        instance.$$data.keywords.push({term: q, metaphone: q});
-                                        instance.$$data.proceeded.push(1);
-                                    }
-
+                        ref.socket.once("value", function (data) {
+                            if (data.val()) {
+                                angular.forEach(data.val(), function (v, k) {
+                                    instance.$$data.keywords.push({term: k, metaphone: q});
                                 });
-
-                            //} else {
                                 instance.$$data.proceeded.push(1);
-                           // }
-                        //});
+                            } else {
+                                instance.$$data.keywords.push({term: q, metaphone: q});
+                                instance.$$data.proceeded.push(1);
+                            }
 
+                        });
+
+                        //} else {
+                        instance.$$data.proceeded.push(1);
+                        // }
+                        //});
 
 
                     }
