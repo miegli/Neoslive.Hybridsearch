@@ -2362,10 +2362,10 @@
                                         var Ordered = preOrderedFilteredRelevance;
                                     }
 
-                                    var items = {};
-                                    items['_nodes'] = {};
-                                    items['_nodesTurbo'] = {};
-                                    items['_nodesByType'] = {};
+                                    // var items = {};
+                                    // items['_nodes'] = {};
+                                    // items['_nodesTurbo'] = {};
+                                    // items['_nodesByType'] = {};
 
                                     angular.forEach(Ordered, function (item) {
                                         self.addNodeToSearchResult(item.ref, item.score, nodesFound, items, nodeTypeMaxScore, nodeTypeMinScore, nodeTypeScoreCount);
