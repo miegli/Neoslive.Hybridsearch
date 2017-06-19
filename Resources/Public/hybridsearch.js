@@ -1330,7 +1330,6 @@
                             property = nodetype + "-" + property;
                         }
 
-
                         return propertiesBoost !== undefined && propertiesBoost[property] !== undefined ? propertiesBoost[property] : property == 'breadcrumb' ? 50 : property.substr(-28) == 'neoslivehybridsearchkeywords' ? 500 : 10;
 
 
@@ -2322,20 +2321,17 @@
                                     // filter out not relevant items and apply parent node type boost factor
 
                                     var preOrdered = $filter('orderBy')(preOrdered, function (item) {
-                                        item.score = item.score * self.getParentNodeTypeBoostFactor(nodes[item.ref]) * self.getNodeUrlBoostFactor(nodes[item.ref]);
+                                        item.score = Math.floor(item.score * self.getParentNodeTypeBoostFactor(nodes[item.ref]) * self.getNodeUrlBoostFactor(nodes[item.ref]));
                                         return -1 * item.score;
                                     });
 
 
                                     var preOrderedFilteredRelevance = preOrdered;
 
-
                                     if (self.hasOrderBy()) {
                                         var Ordered = $filter('orderBy')(preOrderedFilteredRelevance, function (item) {
 
                                             var orderBy = self.getOrderBy(nodes[item.ref].nodeType);
-
-
                                             if (orderBy.length) {
 
                                                 var ostring = '';
@@ -2354,7 +2350,6 @@
 
                                                 });
 
-
                                                 return ostring;
 
                                             } else {
@@ -2367,6 +2362,10 @@
                                         var Ordered = preOrderedFilteredRelevance;
                                     }
 
+                                    var items = {};
+                                    items['_nodes'] = {};
+                                    items['_nodesTurbo'] = {};
+                                    items['_nodesByType'] = {};
 
                                     angular.forEach(Ordered, function (item) {
                                         self.addNodeToSearchResult(item.ref, item.score, nodesFound, items, nodeTypeMaxScore, nodeTypeMinScore, nodeTypeScoreCount);
@@ -2407,7 +2406,7 @@
                                     lastSearchApplyTimeout = null;
                                 }
 
-                            }, 10);
+                            }, 5);
 
 
                         }, 5);
@@ -5429,7 +5428,7 @@
                 getNodes: function (limit, groupedBy) {
 
                     if (groupedBy == undefined) {
-                        return this.getData()._nodes === undefined ? null : (limit === undefined ? this.getData()._nodes : this.getData()._nodes.slice(0, limit) );
+                     //
                     } else {
                         var ghash = Sha1.hash(groupedBy);
 
@@ -5440,13 +5439,16 @@
                             }
                         }
 
-                        if (this.$$data._nodesGroupedBy[ghash] !== undefined) {
-                            return this.$$data._nodesGroupedBy[ghash].slice(0, limit);
-                        } else {
-                            return [];
-                        }
+                        // if (this.$$data._nodesGroupedBy[ghash] !== undefined) {
+                        //     return this.$$data._nodesGroupedBy[ghash].slice(0, limit);
+                        // } else {
+                        //     return [];
+                        // }
 
                     }
+
+
+                    return this.getData()._nodes === undefined ? null : (limit === undefined ? this.getData()._nodes : this.getData()._nodes.slice(0, limit) );
 
 
                 },
@@ -5523,6 +5525,7 @@
 
                                 var ghash = Sha1.hash(property);
                                 var n = [];
+
                                 var d = self.getDistinct(property, false, true, false, self.$$data.distinctsConfiguration[property].limit, true);
 
 
@@ -5531,7 +5534,7 @@
                                     group.nodes[0].clearGroupedByNodeType();
 
                                     if (group.nodes[1] !== undefined && group.nodes[1].nodeType == group.nodes[0].nodeType) {
-                                        // dont group nodes with same score
+                                        // dont group nodes with same node type
                                         angular.forEach(group.nodes, function (node, h) {
                                             n.push(node);
                                         });
@@ -5540,11 +5543,10 @@
 
                                         angular.forEach(group.nodes, function (groupnode, h) {
                                             if (h > 0) {
-                                                group.nodes[0].addGroupedByNodeType(groupnode, ghash);
+                                              group.nodes[0].addGroupedByNodeType(groupnode, ghash);
                                             }
                                         });
-                                        n.push(group.nodes[0]);
-
+                                         n.push(group.nodes[0]);
                                     }
 
                                 });
