@@ -1473,14 +1473,10 @@
                      */
                     getParentNodeTypeBoostFactor: function (node) {
 
-
                         if (node.parentNode != undefined && ParentNodeTypeBoostFactor !== undefined) {
-
                             if (ParentNodeTypeBoostFactor[node.parentNode.nodeType] != undefined) {
                                 return ParentNodeTypeBoostFactor[node.parentNode.nodeType];
                             }
-
-
                         }
 
                         return 1;
@@ -1499,8 +1495,10 @@
                         if (NodeUrlBoostFactor !== undefined) {
 
                             angular.forEach(NodeUrlBoostFactor, function (boost, needed) {
-                                if (node.url.indexOf(needed) >= 0) {
+
+                                if (b == 1 && node.url.indexOf(needed) >= 0) {
                                     b = boost;
+                                    return b;
                                 }
                             });
 
