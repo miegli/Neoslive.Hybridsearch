@@ -1560,6 +1560,7 @@
                             order.push(g);
                         }
 
+
                         return order;
 
                     },
@@ -1972,6 +1973,7 @@
 
                             var items = {};
                             items['_nodes'] = {};
+                            items['_nodesOrdered'] = [];
                             items['_nodesTurbo'] = {};
                             items['_nodesByType'] = {};
 
@@ -2053,6 +2055,7 @@
                             self.createSearchIndexOnDemand();
 
                             items['_nodes'] = {};
+                            items['_nodesOrdered'] = [];
                             items['_nodesTurbo'] = {};
                             items['_nodesByType'] = {};
                             items['_nodesGroupedBy'] = {};
@@ -2261,21 +2264,23 @@
                                         var result = resultsSearch[resultsSearch.length - 1];
 
 
-                                        var scoresum = 0;
-                                        if (result.length > 0) {
-                                            angular.forEach(result, function (item) {
-                                                    scoresum = scoresum + item.score;
-                                                }
-                                            );
-                                            if (scoresum / result.length < 10) {
-                                                result = lunrSearch.search(self.getFilter().getQuery() + ' ' + query, {
-                                                    fields: fields,
-                                                    bool: "OR",
-                                                    expand: true
-                                                });
-
-                                            }
-                                        }
+                                        //var scoresum = 0;
+                                        // if (result.length > 0) {
+                                        //
+                                        //     angular.forEach(result, function (item) {
+                                        //             scoresum = scoresum + item.score;
+                                        //         }
+                                        //     );
+                                        //     console.log(scoresum,scoresum / result.length);
+                                        //     if (scoresum / result.length < 10) {
+                                        //         result = lunrSearch.search(self.getFilter().getQuery() + ' ' + query, {
+                                        //             fields: fields,
+                                        //             bool: "OR",
+                                        //             expand: true
+                                        //         });
+                                        //
+                                        //     }
+                                        // }
 
 
                                         if (result.length > 0) {
@@ -2291,6 +2296,7 @@
 
 
                                             angular.forEach(result, function (item) {
+
                                                     if (nodes[item.ref] !== undefined) {
                                                         if (self.isNodesByIdentifier()) {
                                                             // post filter node
@@ -2302,7 +2308,7 @@
                                                             preOrdered.push(item);
                                                         }
 
-                                                        tmp[item.ref] = item.score;
+                                                        //tmp[item.ref] = item.score;
 
                                                     }
 
@@ -2315,8 +2321,7 @@
 
                                     }
 
-
-                                    // filter out not relevant items and apply parent node type boost factor
+                                    //
 
                                     var preOrdered = $filter('orderBy')(preOrdered, function (item) {
                                         item.score = Math.floor(item.score * self.getParentNodeTypeBoostFactor(nodes[item.ref]) * self.getNodeUrlBoostFactor(nodes[item.ref]));
@@ -2324,16 +2329,17 @@
                                     });
 
 
+
                                     var preOrderedFilteredRelevance = preOrdered;
 
                                     if (self.hasOrderBy()) {
+
                                         var Ordered = $filter('orderBy')(preOrderedFilteredRelevance, function (item) {
 
                                             var orderBy = self.getOrderBy(nodes[item.ref].nodeType);
                                             if (orderBy.length) {
 
                                                 var ostring = '';
-
                                                 angular.forEach(orderBy, function (property) {
 
                                                     if (property === 'score') {
@@ -2440,7 +2446,6 @@
                         var groupedBy = this.getGroupedBy(nodes[nodeId].nodeType);
                         var nodeTypeLabel = this.getCategorizedBy() == 'nodeType' ? this.getNodeTypeLabel(nodes[nodeId].nodeType) : resultNode.getProperty(this.getCategorizedBy());
 
-
                         if (groupedBy.length) {
 
                             var groupedString = '';
@@ -2455,7 +2460,6 @@
                                     } else {
                                         var p = resultNode.getProperty(property);
                                     }
-
                                 }
 
                                 if (typeof p === 'string' && p.trim() === '') {
@@ -2499,10 +2503,17 @@
                             if (nodes[nodeId]['turbonode'] === true) {
                                 items['_nodesTurbo'][hash] = resultNode;
                             } else {
+
+                                if (items['_nodes'][hash] == undefined) {
+                                    items['_nodesOrdered'].push({hash: hash});
+                                }
                                 items['_nodes'][hash] = resultNode;
+
+
                             }
                             items['_nodesByType'][nodeTypeLabel][hash] = resultNode;
                         } else {
+
                             if (items['_nodes'][hash] !== undefined) {
                                 items['_nodes'][hash].setGrouped();
                             }
@@ -4985,7 +4996,6 @@
                      */
                     setResults: function (results, nodes) {
 
-
                         if (self.$$data.isStartedFirstTime == false) {
                             this.setIsStartedFirstTime();
                         }
@@ -4994,27 +5004,35 @@
                             this.clearResults();
 
                         }
-
-
                         self.$$data.nodes = nodes;
 
                         angular.forEach(results, function (val, key) {
 
                             var sorteable = [];
-                            angular.forEach(val, function (v, k) {
 
+                            if (key !== '_nodes') {
 
-                                if (key === '_nodesByType') {
-                                    v.group = k;
-                                    sorteable.push(v);
+                                angular.forEach(val, function (v, k) {
+                                    if (key === '_nodesByType') {
+                                        v.group = k;
+                                        sorteable.push(v);
+                                    } else {
+                                        if (key === '_nodesOrdered') {
+                                            sorteable.push(results['_nodes'][v.hash]);
+                                        } else {
+                                            sorteable.push(v);
+                                        }
+                                    }
+                                });
+                                if (key == '_nodesOrdered') {
+                                    self.$$data.results['_nodes'] = sorteable;
                                 } else {
-                                    sorteable.push(v);
+                                    self.$$data.results[key] = sorteable;
                                 }
 
+                            }
 
-                            });
 
-                            self.$$data.results[key] = sorteable;
 
 
                         });
@@ -5217,6 +5235,7 @@
 
                 var items = {};
                 items['_nodes'] = {};
+                items['_nodesOrdered'] = [];
                 items['_nodesTurbo'] = {};
                 items['_nodesByType'] = {};
                 items['_nodesGroupedBy'] = {};
