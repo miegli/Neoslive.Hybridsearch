@@ -1695,7 +1695,7 @@
                                                 setTimeout(function () {
                                                     self.getFilter().getScopeByIdentifier(identifier).$apply(function () {
                                                     });
-                                                }, 2);
+                                                }, 1);
                                             }
                                         });
                                         break;
@@ -1706,7 +1706,7 @@
                                             setTimeout(function () {
                                                 self.getFilter().getScopeByIdentifier(identifier).$apply(function () {
                                                 });
-                                            }, 2);
+                                            }, 1);
                                         }
                                         break;
 
@@ -1724,7 +1724,7 @@
                                         setTimeout(function () {
                                             self.getFilter().getScopeByIdentifier(identifier).$apply(function () {
                                             });
-                                        }, 2);
+                                        }, 1);
                                 }
 
 
@@ -2404,7 +2404,7 @@
                             }
 
 
-                        }, 3);
+                        }, 8);
 
                     }
                     ,
@@ -4471,7 +4471,7 @@
                                 // }
 
 
-                            }, 10);
+                            }, 15);
 
 
                         });
