@@ -2238,7 +2238,6 @@ class SearchIndexFactory
     function save($directpush = false)
     {
 
-        \Neos\Flow\var_dump($this->keywords);exit;
 
         foreach ($this->index as $workspace => $workspaceData) {
             foreach ($workspaceData as $dimension => $dimensionData) {
