@@ -1433,6 +1433,7 @@ class SearchIndexFactory
     private function getMetaphone($string)
     {
 
+        $string = "Süess";
 
         if (is_numeric($string)) {
             return $string;
@@ -1440,24 +1441,31 @@ class SearchIndexFactory
 
         $metaphone = mb_strtoupper(metaphone(mb_strtolower($string)));
 
+
+
         if (strlen($metaphone) > 7) {
             $metaphone = mb_substr($metaphone, 0, strlen($metaphone) - 2);
         }
 
+
+
         if (strlen($metaphone) == 0 || $metaphone === 0) {
             return mb_strtolower($string);
         }
+
 
         if (strlen($metaphone) < 4) {
             $metaphone = mb_substr($string,0,1) . $metaphone;
         }
 
         if (strlen($metaphone) < 4) {
-            $metaphone =  mb_substr($string,0,3) . $metaphone;
+            $metaphone =  mb_substr(mb_strtoupper($string),0,3) . $metaphone;
         }
 
 
-        return mb_strtoupper(preg_replace("/[^A-z]/","0",$metaphone));
+        $metaphone = mb_strtoupper(utf8_encode(preg_replace('/[^\w]/i', '0', utf8_decode($metaphone))));
+
+        return $metaphone;
 
 
     }
@@ -2230,6 +2238,7 @@ class SearchIndexFactory
     function save($directpush = false)
     {
 
+        \Neos\Flow\var_dump($this->keywords);exit;
 
         foreach ($this->index as $workspace => $workspaceData) {
             foreach ($workspaceData as $dimension => $dimensionData) {

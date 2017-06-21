@@ -3454,9 +3454,12 @@
                             return false;
                         }
 
+
                         // get search results
 
+
                         var q = metaphone(querysegment.toLowerCase()).toUpperCase();
+
                         if (q.length > 7) {
                             q = q.substr(0, q.length - 2);
                         }
@@ -3469,8 +3472,7 @@
                         if (q.length < 4) {
                             q = querysegment.toUpperCase().substr(0, 3) + q;
                         }
-                        q = q.replace(/[^A-z]/g, '0').toUpperCase();
-
+                        q = q.replace(/[^A-z]/, '0').toUpperCase();
 
                         instance.$$data.running++;
 
@@ -3480,16 +3482,15 @@
 
                         instance.$$data.keywords.push({term: q, metaphone: q});
 
-
-                        var canceller = $q.defer();
-                        var req = {
-                            method: 'get',
-                            url: ref.http,
-                            timeout: canceller.promise,
-                            cancel: function (reason) {
-                                canceller.resolve(reason);
-                            }
-                        };
+                        // var canceller = $q.defer();
+                        // var req = {
+                        //     method: 'get',
+                        //     url: ref.http,
+                        //     timeout: canceller.promise,
+                        //     cancel: function (reason) {
+                        //         canceller.resolve(reason);
+                        //     }
+                        // };
 
 
                         //var connectedRef = hybridsearch.$firebase().database().ref(".info/connected");
