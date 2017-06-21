@@ -1433,7 +1433,6 @@ class SearchIndexFactory
     private function getMetaphone($string)
     {
 
-        $string = "Süess";
 
         if (is_numeric($string)) {
             return $string;
