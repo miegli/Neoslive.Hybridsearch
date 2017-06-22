@@ -1278,40 +1278,42 @@ class SearchIndexFactory
             $keywordsOfNode = array();
 
             foreach ($keywords as $keyword => $val) {
+
                 $k = strval($keyword);
 
+                if (mb_substr($k,0,3) !== 0) {
 
-                if (substr($k, 0, 2) !== "__") {
-                    array_push($keywordsOfNode, $k);
-                }
-
-                if (substr($k, 0, 9) === "_nodetype") {
-                    $k = "_" . $this->getNodeTypeName($node) . mb_substr($k, 9);
-                }
-
-                if ($k) {
-                    if (isset($this->keywords->$workspaceHash->$dimensionConfigurationHash[$k]) == false) {
-                        $this->keywords->$workspaceHash->$dimensionConfigurationHash[$k] = array();
-                    }
-                    if (is_array($val) == false) {
-                        $val = array($k);
-                    }
-                    foreach ($val as $kek => $vev) {
-                        $this->keywords->$workspaceHash->$dimensionConfigurationHash[$k][$kek] = $vev;
+                    if (substr($k, 0, 2) !== "__") {
+                        array_push($keywordsOfNode, $k);
                     }
 
-                }
+                    if (substr($k, 0, 9) === "_nodetype") {
+                        $k = "_" . $this->getNodeTypeName($node) . mb_substr($k, 9);
+                    }
 
-                if (isset($this->index->$workspaceHash->$dimensionConfigurationHash->$k) === false) {
-                    $this->index->$workspaceHash->$dimensionConfigurationHash->$k = new \stdClass();
-                }
+                    if ($k) {
+                        if (isset($this->keywords->$workspaceHash->$dimensionConfigurationHash[$k]) == false) {
+                            $this->keywords->$workspaceHash->$dimensionConfigurationHash[$k] = array();
+                        }
+                        if (is_array($val) == false) {
+                            $val = array($k);
+                        }
+                        foreach ($val as $kek => $vev) {
+                            $this->keywords->$workspaceHash->$dimensionConfigurationHash[$k][$kek] = $vev;
+                        }
 
-                if (substr($k, 0, 2) == '__') {
-                    $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier = array('node' => $indexData, 'nodeType' => $indexData->nodeType);
-                } else {
-                    $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier = array('node' => null, 'nodeType' => $indexData->nodeType);
-                }
+                    }
 
+                    if (isset($this->index->$workspaceHash->$dimensionConfigurationHash->$k) === false) {
+                        $this->index->$workspaceHash->$dimensionConfigurationHash->$k = new \stdClass();
+                    }
+
+                    if (substr($k, 0, 2) == '__') {
+                        $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier = array('node' => $indexData, 'nodeType' => $indexData->nodeType);
+                    } else {
+                        $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier = array('node' => null, 'nodeType' => $indexData->nodeType);
+                    }
+                }
 
             }
 
