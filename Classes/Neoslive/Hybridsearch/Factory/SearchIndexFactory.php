@@ -1281,7 +1281,7 @@ class SearchIndexFactory
 
                 $k = strval($keyword);
 
-                if (mb_substr($k,0,3) !== 0) {
+                if (mb_substr($k,0,3) !== "000") {
 
                     if (substr($k, 0, 2) !== "__") {
                         array_push($keywordsOfNode, $k);
