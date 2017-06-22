@@ -2190,7 +2190,7 @@
                                             bool: "AND"
                                         });
 
-                                        console.log(self.getFilter().getQuery(), resultsSearch[0].length);
+
 
                                         if (resultsSearch[0].length == 0) {
                                             resultsSearch[1] = lunrSearch.search(self.getFilter().getQuery(), {
@@ -2198,7 +2198,7 @@
                                                 bool: "AND",
                                                 expand: false
                                             });
-                                             console.log(self.getFilter().getQuery(), resultsSearch[1].length);
+
                                         }
 
 
@@ -2209,7 +2209,7 @@
                                                 bool: "AND",
                                                 expand: true
                                             });
-                                             console.log(self.getFilter().getQuery(), resultsSearch[2].length);
+
                                         }
 
 
@@ -2220,7 +2220,7 @@
                                                 bool: "AND",
                                                 expand: false
                                             });
-                                            console.log(sq, resultsSearch[3].length);
+
                                         }
 
 
@@ -2229,7 +2229,7 @@
                                                 fields: fields,
                                                 bool: "OR"
                                             });
-                                            console.log(self.getFilter().getQuery(), resultsSearch[4].length);
+
                                         }
 
                                         if (resultsSearch[4] != undefined && resultsSearch[4].length == 0) {
@@ -2239,7 +2239,7 @@
                                                 bool: "OR",
                                                 expand: true
                                             });
-                                            console.log(self.getFilter().getQuery(), resultsSearch[5].length);
+
                                         }
 
                                         if (resultsSearch[5] != undefined && resultsSearch[5].length == 0) {
@@ -2249,7 +2249,7 @@
                                                 bool: "OR",
                                                 expand: false
                                             });
-                                            console.log(sq, resultsSearch[6].length);
+
                                         }
 
                                         if (resultsSearch[6] != undefined && resultsSearch[6].length == 0) {
@@ -2258,7 +2258,7 @@
                                                 bool: "OR",
                                                 expand: true
                                             });
-                                             console.log(query, resultsSearch[7].length);
+
                                         }
 
                                         if (resultsSearch[7] != undefined && resultsSearch[7].length == 0) {
@@ -2267,7 +2267,7 @@
                                                 bool: "OR",
                                                 expand: true
                                             });
-                                             console.log(query, resultsSearch[7].length);
+
                                         }
 
 
@@ -3445,8 +3445,34 @@
 
                         return this;
 
-                    }
+                    },
 
+                    /**
+                     * @private
+                     * @param string query
+                     * @returns {string}
+                     */
+                    getMetaphone: function (querysegment) {
+
+                        // get search results
+                        var q = metaphone(querysegment.toLowerCase()).toUpperCase();
+
+                        if (q.length > 7) {
+                            q = q.substr(0, q.length - 2);
+                        }
+                        if (q.length == 0 || q == 0) {
+                            q = querysegment.toLowerCase();
+                        }
+                        if (q.length < 4) {
+                            q = querysegment.toUpperCase().substr(0, 1) + q;
+                        }
+                        if (q.length < 4) {
+                            q = querysegment.toUpperCase().substr(0, 3) + q;
+                        }
+                        q = q.replace(/[^A-z]/, '0').toUpperCase();
+
+                        return q;
+                    }
                     ,
                     /**
                      * @private
@@ -3465,28 +3491,8 @@
                             return false;
                         }
 
-
-                        // get search results
-
-
-                        var q = metaphone(querysegment.toLowerCase()).toUpperCase();
-
-
-                        if (q.length > 7) {
-                            q = q.substr(0, q.length - 2);
-                        }
-                        if (q.length == 0 || q == 0) {
-                            q = querysegment.toLowerCase();
-                        }
-                        if (q.length < 4) {
-                            q = querysegment.toUpperCase().substr(0, 1) + q;
-                        }
-                        if (q.length < 4) {
-                            q = querysegment.toUpperCase().substr(0, 3) + q;
-                        }
-                        q = q.replace(/[^A-z]/, '0').toUpperCase();
-
-                        var qfallback = q.substr(0, 2);
+                        var q = self.getMetaphone(querysegment);
+                        var qfallback = "000"+self.getMetaphone(querysegment.substr(0, 3));
 
                         instance.$$data.running++;
 
@@ -3495,6 +3501,12 @@
                         ref.http = (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + ("/sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + q + ".json");
 
                         instance.$$data.keywords.push({term: q, metaphone: q});
+
+                        ref.socketAutocomplete = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + qfallback);
+                        ref.socketAutocomplete.once("value", function (data) {
+                            self.setAutocomplete(data.val(), querysegment);
+                        });
+
 
                         ref.socket.once("value", function (data) {
                             if (data.val()) {
@@ -3505,18 +3517,7 @@
                                 });
                                 instance.$$data.proceeded.push(1);
                             } else {
-                                ref.socketFallback = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + qfallback);
-                                ref.socketFallback.once("value", function (data) {
-                                    self.setAutocomplete(data.val(), querysegment);
-                                    if (data.val()) {
-                                        angular.forEach(data.val(), function (v, k) {
-                                            instance.$$data.keywords.push({term: k, metaphone: q});
-                                        });
-                                        instance.$$data.proceeded.push(1);
-                                    } else {
-                                        instance.$$data.proceeded.push(1);
-                                    }
-                                });
+                                instance.$$data.proceeded.push(1);
                             }
 
                         });
@@ -4461,7 +4462,7 @@
                                 self.$$data.filterWasChangedOnce = true;
                             }
 
-                            if (scope["_hybridsearchSetQeuryInterval"] !== undefined) {
+                            if (scope["_hybridsearchSetQuryInterval"] !== undefined) {
                                 window.clearTimeout(scope["_hybridsearchSetQeuryInterval"]);
                             }
 
@@ -4978,6 +4979,7 @@
                     quicknodes: [],
                     isrunningfirsttimestamp: 0,
                     autocomplete: [],
+                    autocompleteKeys: {},
                     distinctsConfiguration: {},
                     unfilteredResultNodes: [],
                     identifier: generateUUID()
@@ -5069,6 +5071,7 @@
                             self.getApp().setNotFound(false);
                             self.updateNodesGroupedBy();
                             this.executeCallbackMethod(self);
+                            self.updateAutocomplete();
 
                         }
 
@@ -5549,13 +5552,42 @@
                  * @returns {HybridsearchResultsObject}
                  */
                 updateAutocomplete: function (autocomplete, querysegment) {
+
                     var self = this;
-                    self.$$data.autocomplete = [];
-                    angular.forEach(autocomplete, function (k, a) {
-                        if (a.indexOf(querysegment) == 0) {
-                            self.$$data.autocomplete.push(a);
+
+                    if (autocomplete == undefined) {
+                        autocomplete = {};
+                    }
+
+                    if (querysegment == undefined) {
+                        querysegment = '';
+                    }
+
+                    var query = self.getApp().getScope()['__query'] ? self.getApp().getScope()[self.getApp().getScope()['__query']] : querysegment;
+
+                    angular.forEach(Object.keys(autocomplete), function (a) {
+                        a = a.replace(/-/g," ").trim();
+                        if (self.$$data.autocompleteKeys[a] == undefined) {
+                            self.$$data.autocompleteKeys[a] = true;
                         }
                     });
+
+                    self.$$data.autocomplete = [];
+                    var autocompleteTemp = {};
+
+                    var counter = 0;
+                    angular.forEach(Object.keys(self.$$data.autocompleteKeys).sort(), function (a) {
+                        if (query.toLowerCase() !== a.toLowerCase() && a.indexOf(query) >= 0 && autocompleteTemp[a.substr(0,a.length - 1)] == undefined && autocompleteTemp[a.substr(0,a.length - 2)] == undefined && autocompleteTemp[a] == undefined) {
+                            self.$$data.autocomplete.push(a);
+                            autocompleteTemp[a.substr(0,a.length - 1)] = true;
+                            autocompleteTemp[a.substr(0,a.length - 2)] = true;
+                            autocompleteTemp[a] = true;
+                        }
+                        counter++;
+                    });
+
+                    self.$$data.autocomplete.sort();
+
                     this.getApp().applyScope();
                     return this;
                 },
