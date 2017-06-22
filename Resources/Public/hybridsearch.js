@@ -2261,6 +2261,15 @@
                                             // console.log(query, resultsSearch[7].length);
                                         }
 
+                                        if (resultsSearch[7] != undefined && resultsSearch[7].length == 0) {
+                                            resultsSearch[8] = lunrSearch.search(self.getFilter().getQuery() + " " + query, {
+                                                fields: fields,
+                                                bool: "OR",
+                                                expand: true
+                                            });
+                                            // console.log(query, resultsSearch[7].length);
+                                        }
+
 
                                         var result = resultsSearch[resultsSearch.length - 1];
 
@@ -2979,7 +2988,6 @@
                                     var execute = function (keyword, data, ref) {
 
 
-
                                         if (ref) {
 
                                             if (self.isLoadedAll(ref.socket !== undefined ? ref.socket.toString() : null) === false) {
@@ -3478,7 +3486,7 @@
                         }
                         q = q.replace(/[^A-z]/, '0').toUpperCase();
 
-                        var qfallback = q.substr(0,2);
+                        var qfallback = q.substr(0, 2);
 
                         instance.$$data.running++;
 
@@ -3490,7 +3498,7 @@
 
                         ref.socket.once("value", function (data) {
                             if (data.val()) {
-                                self.setAutocomplete(data.val(),querysegment);
+                                self.setAutocomplete(data.val(), querysegment);
                                 angular.forEach(data.val(), function (v, k) {
                                     instance.$$data.keywords.push({term: k, metaphone: q});
 
@@ -3499,7 +3507,15 @@
                             } else {
                                 ref.socketFallback = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + qfallback);
                                 ref.socketFallback.once("value", function (data) {
-                                    self.setAutocomplete(data.val(),querysegment);
+                                    self.setAutocomplete(data.val(), querysegment);
+                                    if (data.val()) {
+                                        angular.forEach(data.val(), function (v, k) {
+                                            instance.$$data.keywords.push({term: k, metaphone: q});
+                                        });
+                                        instance.$$data.proceeded.push(1);
+                                    } else {
+                                        instance.$$data.proceeded.push(1);
+                                    }
                                 });
                             }
 
@@ -3728,8 +3744,8 @@
                      * @param string
                      * @returns void
                      */
-                    setAutocomplete: function (a,querysegment) {
-                            this.getResults().updateAutocomplete(a,querysegment);
+                    setAutocomplete: function (a, querysegment) {
+                        this.getResults().updateAutocomplete(a, querysegment);
                     }
                     ,
                     /**
@@ -5532,10 +5548,10 @@
                  * @param  {string}
                  * @returns {HybridsearchResultsObject}
                  */
-                updateAutocomplete: function (autocomplete,querysegment) {
+                updateAutocomplete: function (autocomplete, querysegment) {
                     var self = this;
                     self.$$data.autocomplete = [];
-                    angular.forEach(autocomplete,function(k,a) {
+                    angular.forEach(autocomplete, function (k, a) {
                         if (a.indexOf(querysegment) == 0) {
                             self.$$data.autocomplete.push(a);
                         }
