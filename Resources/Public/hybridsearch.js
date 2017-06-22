@@ -3107,10 +3107,6 @@
                                                                 }
                                                             };
 
-                                                            // self.addPendingRequest($http(req).success(function (data) {
-                                                            //    console.log(1);
-                                                            // }));
-
                                                             self.addPendingRequest($http(req).success(function (data) {
 
                                                                 nodesIndexed = {};
@@ -5584,6 +5580,17 @@
                             autocompleteTemp[a] = true;
                         }
                         counter++;
+                    });
+
+
+                    angular.forEach(self.getNodes(20), function(node) {
+
+                        var a = node.getProperty('_nodeLabel');
+                        var i = a.toLowerCase().indexOf(query.toLowerCase());
+                        if (query.toLowerCase() !== a.substr(i).toLowerCase() && autocompleteTemp[a.substr(i)] == undefined && a.length < 50 && i >= -1 && i < 25) {
+                            self.$$data.autocomplete.push(a.substr(i));
+                        }
+                        autocompleteTemp[a.substr(i)] = true;
                     });
 
                     self.$$data.autocomplete.sort();
