@@ -1401,8 +1401,12 @@ class SearchIndexFactory
                 $wm = $this->getMetaphone($w);
                 if (strlen($wm) > 0) {
                     $wordsReduced[$wm][$w] = 1;
-                    $wordsReduced[mb_substr($wm,0,2)][$w] = 1;
+                    $wm = $this->getMetaphone(mb_substr($w,0,3));
+                    if (strlen($wm) > 0) {
+                        $wordsReduced["000".$wm][$w] = 1;
+                    }
                 }
+
 
             }
         }
