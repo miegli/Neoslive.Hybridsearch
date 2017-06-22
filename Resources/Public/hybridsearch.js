@@ -5583,12 +5583,17 @@
                     });
 
 
+
+
                     angular.forEach(self.getNodes(20), function(node) {
 
                         var a = node.getProperty('_nodeLabel');
                         if (a.length < 50) {
                             var i = a.toLowerCase().indexOf(query.toLowerCase());
                             var b = a.substr(i).toLowerCase();
+                            if (b == query.toLowerCase() && i >= 0) {
+                                b = a.substr(0,i+query.length).toLowerCase();
+                            }
                             if (b.length > query.length && query.toLowerCase() !== b && autocompleteTemp[b] == undefined && i >= -1 && i < 25) {
                                 self.$$data.autocomplete.push(b);
                                 autocompleteTemp[b] = true;
