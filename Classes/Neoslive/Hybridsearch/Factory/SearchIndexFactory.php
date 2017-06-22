@@ -1645,6 +1645,7 @@ class SearchIndexFactory
             }
         }
 
+        $properties->_nodeLabel = $node->getLabel();
 
         if ($grandParentNode === NULL) {
             $grandParentNode = $documentNode;
