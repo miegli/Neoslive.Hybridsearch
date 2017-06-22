@@ -206,6 +206,7 @@
                 } else {
                     window.hybridsearchInstances++;
                 }
+
                 staticCachedNodes = {};
                 isloadedall = {};
                 config = {};
@@ -2329,7 +2330,6 @@
                                     });
 
 
-
                                     var preOrderedFilteredRelevance = preOrdered;
 
                                     if (self.hasOrderBy()) {
@@ -2939,7 +2939,6 @@
 
                                 clearInterval(self.getIndexInterval());
 
-
                                 var uniquarrayfinal = [];
                                 var uniquarrayfinalTerms = {};
 
@@ -2978,6 +2977,8 @@
                                     }
 
                                     var execute = function (keyword, data, ref) {
+
+
 
                                         if (ref) {
 
@@ -3450,6 +3451,8 @@
 
                         var self = this;
 
+                        instance.$$data.autocomplete = [];
+
                         if (this.getFilter().isBlockedKeyword(querysegment)) {
                             return false;
                         }
@@ -3459,6 +3462,7 @@
 
 
                         var q = metaphone(querysegment.toLowerCase()).toUpperCase();
+
 
                         if (q.length > 7) {
                             q = q.substr(0, q.length - 2);
@@ -3474,6 +3478,8 @@
                         }
                         q = q.replace(/[^A-z]/, '0').toUpperCase();
 
+                        var qfallback = q.substr(0,2);
+
                         instance.$$data.running++;
 
                         var ref = {};
@@ -3482,39 +3488,24 @@
 
                         instance.$$data.keywords.push({term: q, metaphone: q});
 
-                        // var canceller = $q.defer();
-                        // var req = {
-                        //     method: 'get',
-                        //     url: ref.http,
-                        //     timeout: canceller.promise,
-                        //     cancel: function (reason) {
-                        //         canceller.resolve(reason);
-                        //     }
-                        // };
-
-
-                        //var connectedRef = hybridsearch.$firebase().database().ref(".info/connected");
-                        //connectedRef.once("value", function (snap) {
-                        //    if (snap.val() === true) {
-
                         ref.socket.once("value", function (data) {
                             if (data.val()) {
+                                self.setAutocomplete(data.val(),querysegment);
                                 angular.forEach(data.val(), function (v, k) {
                                     instance.$$data.keywords.push({term: k, metaphone: q});
+
                                 });
                                 instance.$$data.proceeded.push(1);
                             } else {
-                                instance.$$data.keywords.push({term: q, metaphone: q});
-                                instance.$$data.proceeded.push(1);
+                                ref.socketFallback = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + qfallback);
+                                ref.socketFallback.once("value", function (data) {
+                                    self.setAutocomplete(data.val(),querysegment);
+                                });
                             }
 
                         });
 
-                        //} else {
                         instance.$$data.proceeded.push(1);
-                        // }
-                        //});
-
 
                     }
 
@@ -3730,6 +3721,17 @@
 
                     }
                     ,
+
+                    /**
+                     * @private
+                     * @param string
+                     * @param string
+                     * @returns void
+                     */
+                    setAutocomplete: function (a,querysegment) {
+                            this.getResults().updateAutocomplete(a,querysegment);
+                    }
+                    ,
                     /**
                      * @private
                      * @param object data
@@ -3739,7 +3741,6 @@
 
 
                         var self = this, keywords = [];
-
 
                         angular.forEach(data, function (val, keyword) {
                             keyword = keyword.indexOf("://") ? keyword.substr(keyword.indexOf("://") + 3) : keyword;
@@ -4821,6 +4822,15 @@
                 },
 
                 /**
+                 * Get all nodes for this group from current search result.
+                 * @param {integer} limit max results
+                 * @returns {array} collection of {HybridsearchResultsNode}
+                 */
+                getTest: function (limit) {
+                    console.log(this);
+                },
+
+                /**
                  * Get all nodes grouped by given facet.
                  * @param {categorizedBy} string
                  * @returns {array} collection of {HybridsearchResultsDataObject}
@@ -4951,6 +4961,7 @@
                     isStartedFirstTime: false,
                     quicknodes: [],
                     isrunningfirsttimestamp: 0,
+                    autocomplete: [],
                     distinctsConfiguration: {},
                     unfilteredResultNodes: [],
                     identifier: generateUUID()
@@ -5032,8 +5043,6 @@
                                 }
 
                             }
-
-
 
 
                         });
@@ -5507,6 +5516,32 @@
                  */
                 getNodesByNodeTypeLabel: function (nodeTypeLabel) {
                     return this.getData()._nodesByType[nodeTypeLabel] === undefined ? null : this.getData()._nodesByType[nodeTypeLabel];
+                },
+
+                /**
+                 * get auto complete
+                 * @returns {array}
+                 */
+                getAutocomplete: function () {
+                    return this.$$data.autocomplete;
+                },
+
+                /**
+                 * update auto complete
+                 * @param  {array}
+                 * @param  {string}
+                 * @returns {HybridsearchResultsObject}
+                 */
+                updateAutocomplete: function (autocomplete,querysegment) {
+                    var self = this;
+                    self.$$data.autocomplete = [];
+                    angular.forEach(autocomplete,function(k,a) {
+                        if (a.indexOf(querysegment) == 0) {
+                            self.$$data.autocomplete.push(a);
+                        }
+                    });
+                    this.getApp().applyScope();
+                    return this;
                 },
 
                 /**

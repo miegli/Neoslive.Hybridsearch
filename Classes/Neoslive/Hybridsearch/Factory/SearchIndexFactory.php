@@ -509,7 +509,7 @@ class SearchIndexFactory
             $this->output->outputLine('static file cache created');
 
         } catch (\Neos\Flow\Exception $exception) {
-            throw new \RuntimeException('unable to create static cache. please run hybridsearch:createfullindex first.', 1409734235);
+            $this->output->outputLine('unable to create static cache.');
         }
 
 
@@ -1401,6 +1401,7 @@ class SearchIndexFactory
                 $wm = $this->getMetaphone($w);
                 if (strlen($wm) > 0) {
                     $wordsReduced[$wm][$w] = 1;
+                    $wordsReduced[mb_substr($wm,0,2)][$w] = 1;
                 }
 
             }
