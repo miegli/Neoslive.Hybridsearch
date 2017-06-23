@@ -2023,6 +2023,7 @@
 
                     },
 
+
                     /**
                      * @private
                      * @params nodesFromInput
@@ -2182,7 +2183,6 @@
                                             }
 
                                         });
-
 
 
                                         resultsSearch[0] = lunrSearch.search(customquery == undefined ? self.getFilter().getQuery() : customquery, {
@@ -2408,7 +2408,7 @@
 
                             if (wasloadedfromInput == false) {
 
-                                results.getApp().setResults(items, nodes, self, customquery == undefined ? false : true);
+                                results.getApp().setResults(items, nodes, self, customquery == undefined ? false : true, self);
                                 lastSearchApplyTimeout = null;
                             }
 
@@ -5020,9 +5020,11 @@
                      * @param results
                      * @param nodes
                      * @param obj
+                     * @param caller
                      * @param boolean skipAutocompleteUpdate
+
                      */
-                    setResults: function (results, nodes, object, skipAutocompleteUpdate) {
+                    setResults: function (results, nodes, object, skipAutocompleteUpdate, caller) {
 
                         if (self.$$data.isStartedFirstTime == false) {
                             this.setIsStartedFirstTime();
@@ -5070,7 +5072,7 @@
                             self.updateNodesGroupedBy();
                             this.executeCallbackMethod(self);
                             if (skipAutocompleteUpdate !== true) {
-                                self.updateAutocomplete();
+                                self.updateAutocomplete(null, null, caller);
                             }
                         }
 
@@ -5552,79 +5554,81 @@
 
                 /**
                  * update auto complete
-                 * @param  {array}
-                 * @param  {string}
+                 * @param {array}
+                 * @param {string}
+                 * @param caller
                  * @returns {HybridsearchResultsObject}
                  */
-                updateAutocomplete: function (autocomplete, querysegment) {
+                updateAutocomplete: function (autocomplete, querysegment, caller) {
 
                     var self = this;
 
-                    if (autocomplete == undefined) {
+                    if (!autocomplete) {
                         autocomplete = {};
                     }
 
-                    if (querysegment == undefined) {
+                    if (!querysegment) {
                         querysegment = '';
                     }
 
                     var query = self.getApp().getScope()['__query'] ? self.getApp().getScope()[self.getApp().getScope()['__query']] : querysegment;
 
-
-
-                        angular.forEach(Object.keys(autocomplete), function (a) {
-                            a = a.replace(/-/g, " ").trim();
-                            if (self.$$data.autocompleteKeys[a] == undefined) {
-                                self.$$data.autocompleteKeys[a] = true;
-                            }
-                        });
-
-                        self.$$data.autocomplete = [];
-                        var autocompleteTemp = {};
-
-                        var counter = 0;
-                        angular.forEach(Object.keys(self.$$data.autocompleteKeys).sort(), function (a) {
-                            if (query.toLowerCase() !== a.toLowerCase() && a.indexOf(query) == 0 && autocompleteTemp[a.substr(0, a.length - 1)] == undefined && autocompleteTemp[a.substr(0, a.length - 2)] == undefined && autocompleteTemp[a] == undefined) {
-                                self.$$data.autocomplete.push(a);
-                                autocompleteTemp[a.substr(0, a.length - 1)] = true;
-                                autocompleteTemp[a.substr(0, a.length - 2)] = true;
-                                autocompleteTemp[a] = true;
-                            }
-                            counter++;
-                        });
-
-                        var foundinproperty = null;
-                        angular.forEach(self.getNodes(20), function (node) {
-                            if (foundinproperty === null) {
-                                angular.forEach(node.getProperties(), function (value, property) {
-                                    if (foundinproperty === null && query && typeof value == 'string' && value.toLowerCase().substr(0, query.length) == query) {
-                                        if (value.toLowerCase() !== query.toLowerCase() && value.indexOf(".") == -1 && value.indexOf(",") == -1) {
-                                            foundinproperty = property;
-                                        }
-                                    }
-                                });
-                            }
-                        });
-                        if (foundinproperty === null) {
-                            foundinproperty = '_nodeLabel';
+                    angular.forEach(Object.keys(autocomplete), function (a) {
+                        a = a.replace(/-/g, " ").trim();
+                        if (self.$$data.autocompleteKeys[a] == undefined) {
+                            self.$$data.autocompleteKeys[a] = true;
                         }
+                    });
+
+                    self.$$data.autocomplete = [];
+                    var autocompleteTemp = {};
+
+                    var counter = 0;
+                    angular.forEach(Object.keys(self.$$data.autocompleteKeys).sort(), function (a) {
+                        if (query.toLowerCase() !== a.toLowerCase() && a.indexOf(query) == 0 && autocompleteTemp[a.substr(0, a.length - 1)] == undefined && autocompleteTemp[a.substr(0, a.length - 2)] == undefined && autocompleteTemp[a] == undefined) {
+                            self.$$data.autocomplete.push(a);
+                            autocompleteTemp[a.substr(0, a.length - 1)] = true;
+                            autocompleteTemp[a.substr(0, a.length - 2)] = true;
+                            autocompleteTemp[a] = true;
+                        }
+                        counter++;
+                    });
+
+                    var foundinproperty = null;
+                    angular.forEach(self.getNodes(20), function (node) {
+                        if (foundinproperty === null) {
+                            angular.forEach(node.getProperties(), function (value, property) {
+                                if (foundinproperty === null && query && typeof value == 'string' && value.toLowerCase().substr(0, query.length) == query) {
+                                    if (value.toLowerCase() !== query.toLowerCase() && value.indexOf(".") == -1 && value.indexOf(",") == -1) {
+                                        foundinproperty = property;
+                                    }
+                                }
+                            });
+                        }
+                    });
+
+                    if (foundinproperty === null) {
+                        foundinproperty = '_nodeLabel';
+                    }
 
 
-                        angular.forEach(self.getNodes(20), function (node) {
-                            var a = node.getProperty(foundinproperty);
-                            if (a.length < 50) {
-                                var i = a.toLowerCase().indexOf(query.toLowerCase());
-                                var b = a.substr(i).toLowerCase();
-                                if (b == query.toLowerCase() && i >= 0) {
-                                    b = a.substr(0, i + query.length).toLowerCase();
-                                }
-                                if (b.length > query.length && query.toLowerCase() !== b && autocompleteTemp[b] == undefined && i >= -1 && i < 25) {
-                                    self.$$data.autocomplete.push(b);
-                                    autocompleteTemp[b] = true;
-                                }
+                    angular.forEach(self.getNodes(20), function (node) {
+
+                        var a = node.getProperty(foundinproperty);
+
+                        if (a.length < 50 && (caller == undefined || caller.isFiltered(node) == false)) {
+                            var i = a.toLowerCase().indexOf(query.toLowerCase());
+                            var b = a.substr(i).toLowerCase();
+                            if (b == query.toLowerCase() && i >= 0) {
+                                b = a.substr(0, i + query.length).toLowerCase();
                             }
-                        });
-
+                            if (b.length > query.length && query.toLowerCase() !== b && autocompleteTemp[b] == undefined && i >= -1 && i < 25) {
+                                self.$$data.autocomplete.push(b);
+                                autocompleteTemp[b] = true;
+                            }
+                        }
+                    });
+                    
                     self.$$data.autocomplete.sort();
 
                     this.getApp().applyScope();
