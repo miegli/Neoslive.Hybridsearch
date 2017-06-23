@@ -2027,9 +2027,10 @@
                      * @private
                      * @params nodesFromInput
                      * @params {boolean} booleanmode
+                     * @params {string} customquery
                      * @returns mixed
                      */
-                    search: function (nodesFromInput, booleanmode) {
+                    search: function (nodesFromInput, booleanmode, customquery) {
 
 
                         var self = this;
@@ -2108,7 +2109,6 @@
 
                                 var query = filter.getFinalSearchQuery(lastSearchInstance);
 
-
                                 var preOrdered = [];
                                 var unfilteredResult = [];
 
@@ -2185,7 +2185,9 @@
 
                                         });
 
-                                        resultsSearch[0] = lunrSearch.search(self.getFilter().getQuery(), {
+
+
+                                        resultsSearch[0] = lunrSearch.search(customquery == undefined ? self.getFilter().getQuery() : customquery, {
                                             fields: fields,
                                             bool: "AND"
                                         });
@@ -2407,7 +2409,8 @@
 
 
                             if (wasloadedfromInput == false) {
-                                results.getApp().setResults(items, nodes, self);
+
+                                results.getApp().setResults(items, nodes, self, customquery == undefined ? false : true);
                                 lastSearchApplyTimeout = null;
                             }
 
@@ -5018,8 +5021,10 @@
                      * @private
                      * @param results
                      * @param nodes
+                     * @param obj
+                     * @param boolean skipAutocompleteUpdate
                      */
-                    setResults: function (results, nodes) {
+                    setResults: function (results, nodes, object, skipAutocompleteUpdate) {
 
                         if (self.$$data.isStartedFirstTime == false) {
                             this.setIsStartedFirstTime();
@@ -5066,10 +5071,10 @@
                             self.getApp().setNotFound(false);
                             self.updateNodesGroupedBy();
                             this.executeCallbackMethod(self);
-                            self.updateAutocomplete();
-
+                            if (skipAutocompleteUpdate !== true) {
+                                self.updateAutocomplete();
+                            }
                         }
-
 
                         return self;
 
