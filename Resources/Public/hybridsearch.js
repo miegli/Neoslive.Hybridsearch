@@ -5628,7 +5628,7 @@
                             }
                         }
                     });
-                    
+
                     self.$$data.autocomplete.sort();
 
                     this.getApp().applyScope();
