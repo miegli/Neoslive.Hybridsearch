@@ -2860,27 +2860,22 @@
 
                             var keywords = self.getFilter().getQueryKeywords();
 
-
                             // fetch index from given keywords
                             var searchIndex = new this.SearchIndexInstance(self, keywords);
 
 
-                            window.clearTimeout(getIndexTimeout);
+                            lastSearchInstance = searchIndex.getIndex();
 
-                            getIndexTimeout = window.setTimeout(function () {
-                                lastSearchInstance = searchIndex.getIndex();
+                            var counter = 0;
 
+                            searchInstancesInterval = setInterval(function () {
+                                counter++;
+                                if (lastSearchInstance.$$data.canceled === true || counter > 55000 || lastSearchInstance.$$data.proceeded.length >= lastSearchInstance.$$data.running) {
+                                    clearInterval(searchInstancesInterval);
 
-                                var counter = 0;
-
-                                searchInstancesInterval = setInterval(function () {
-                                    counter++;
-                                    if (lastSearchInstance.$$data.canceled === true || counter > 55000 || lastSearchInstance.$$data.proceeded.length >= lastSearchInstance.$$data.running) {
-                                        clearInterval(searchInstancesInterval);
-                                        lastSearchInstance.execute(self, lastSearchInstance);
-                                        self.search(nodes);
-                                    }
-                                }, 10);
+                                    lastSearchInstance.execute(self, lastSearchInstance);
+                                    self.search(nodes);
+                                }
                             }, 10);
 
 
@@ -2923,6 +2918,7 @@
 
                             var instance = this;
 
+
                             if (Object.keys(keywords).length > 0) {
                                 angular.forEach(keywords, function (keyword) {
                                     self.getKeywords(keyword, instance);
@@ -2953,7 +2949,6 @@
 
                                 if (lastSearchInstance.$$data.keywords.length) {
                                     var unique = {};
-
 
                                     angular.forEach(lastSearchInstance.$$data.keywords, function (v) {
                                         if (unique[v.metaphone] === undefined) {
@@ -3466,6 +3461,8 @@
                             q = querysegment.toUpperCase().substr(0, 3) + q;
                         }
                         q = q.replace(/[^A-z]/, '0').toUpperCase();
+
+
 
                         return q;
                     }
@@ -4458,35 +4455,26 @@
                                 self.$$data.filterWasChangedOnce = true;
                             }
 
-                            if (scope["_hybridsearchSetQuryInterval"] !== undefined) {
-                                window.clearTimeout(scope["_hybridsearchSetQeuryInterval"]);
+
+                            //  if (searchInput !== searchInputLast) {
+                            self.$$app.getFilter().setQuery(scope[input]);
+
+                            if (scope[input] !== '' && self.$$app.isRunning() === false) {
+                                self.run();
+                            }
+                            if (searchInput !== undefined) {
+                                if (searchInput.length === 0) {
+
+                                    self.$$app.getFilter().resetQuery();
+                                    self.$$app.setNodesLastHash(1);
+                                    self.$$app.clearLocationHash();
+                                }
+
+                                self.$$app.setSearchIndex();
+
                             }
 
-                            scope["_hybridsearchSetQeuryInterval"] = window.setTimeout(function () {
-
-                                //  if (searchInput !== searchInputLast) {
-
-                                self.$$app.getFilter().setQuery(scope[input]);
-
-                                if (scope[input] !== '' && self.$$app.isRunning() === false) {
-                                    self.run();
-                                }
-                                if (searchInput !== undefined) {
-                                    if (searchInput.length === 0) {
-
-                                        self.$$app.getFilter().resetQuery();
-                                        self.$$app.setNodesLastHash(1);
-                                        self.$$app.clearLocationHash();
-                                    }
-
-                                    self.$$app.setSearchIndex();
-
-                                }
-
-                                // }
-
-
-                            }, 15);
+                            // }
 
 
                         });
@@ -6650,10 +6638,7 @@
                         return keywords;
                     }
 
-
                     var s = this.$$data.query.replace(filterReg, " ");
-
-
                     var t = s.replace(/([0-9-])( )/i, '$1').replace(/([0-9]{2})/gi, ' $1 ');
 
                     s = s + " " + t;

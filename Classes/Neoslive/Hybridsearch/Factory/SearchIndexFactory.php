@@ -1470,6 +1470,7 @@ class SearchIndexFactory
 
         $metaphone = mb_strtoupper(utf8_encode(preg_replace('/[^\w]/i', '0', utf8_decode($metaphone))));
 
+
         return $metaphone;
 
 
