@@ -2863,20 +2863,22 @@
                             // fetch index from given keywords
                             var searchIndex = new this.SearchIndexInstance(self, keywords);
 
+                            window.clearTimeout(getIndexTimeout);
 
-                            lastSearchInstance = searchIndex.getIndex();
+                            getIndexTimeout = window.setTimeout(function () {
+                                lastSearchInstance = searchIndex.getIndex();
 
-                            var counter = 0;
+                                var counter = 0;
 
-                            searchInstancesInterval = setInterval(function () {
-                                counter++;
-                                if (lastSearchInstance.$$data.canceled === true || counter > 55000 || lastSearchInstance.$$data.proceeded.length >= lastSearchInstance.$$data.running) {
-                                    clearInterval(searchInstancesInterval);
-
-                                    lastSearchInstance.execute(self, lastSearchInstance);
-                                    self.search(nodes);
-                                }
-                            }, 10);
+                                searchInstancesInterval = setInterval(function () {
+                                    counter++;
+                                    if (lastSearchInstance.$$data.canceled === true || counter > 55000 || lastSearchInstance.$$data.proceeded.length >= lastSearchInstance.$$data.running) {
+                                        clearInterval(searchInstancesInterval);
+                                        lastSearchInstance.execute(self, lastSearchInstance);
+                                        self.search(nodes);
+                                    }
+                                }, 10);
+                            }, 5);
 
 
                         } else {
