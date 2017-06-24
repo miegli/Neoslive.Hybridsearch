@@ -3454,14 +3454,15 @@
                             q = q.substr(0, q.length - 2);
                         }
                         if (q.length == 0 || q == 0) {
-                            q = querysegment.toLowerCase();
+                            return querysegment.toLowerCase();
                         }
                         if (q.length < 4) {
-                            q = querysegment.toUpperCase().substr(0, 1) + q;
+                            q = querysegment.substr(0, 1) + q;
                         }
                         if (q.length < 4) {
                             q = querysegment.toUpperCase().substr(0, 3) + q;
                         }
+
                         q = q.replace(/[^A-z]/, '0').toUpperCase();
 
 
