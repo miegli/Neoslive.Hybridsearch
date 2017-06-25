@@ -2190,7 +2190,7 @@
                                             expand: true
                                         });
 
-                                                                        
+
                                         if (resultsSearch[0].length == 0) {
                                             resultsSearch[1] = lunrSearch.search(self.getFilter().getQuery(), {
                                                 fields: fields,
@@ -3111,6 +3111,7 @@
 
                                                                 var reqNodesCount = data ? Object.keys(data).length : 0;
 
+                                                                console.log(reqNodesCount, ref.http);
 
                                                                 if (reqNodesCount) {
 
@@ -3465,7 +3466,6 @@
                         q = q.replace(/[^A-z]/, '0').toUpperCase();
 
 
-
                         return q;
                     }
                     ,
@@ -3800,7 +3800,7 @@
                         var self = this;
                         var hasDistinct = self.getResults().hasDistincts();
                         var boost = {};
-
+                        var length = data.length;
 
                         angular.forEach(data, function (value, key) {
 
@@ -3811,55 +3811,62 @@
 
                                     nodes[value.node.identifier] = value.node;
                                     if (value.node != undefined && value.node.properties != undefined) {
-
                                         //angular.forEach(JSON.parse(JSON.stringify(value.node.properties)), function (propvalue, property) {
-                                        angular.forEach(value.node.properties, function (propvalue, property) {
+                                        if (length > 250) {
+                                            var propvalue = value.node.properties['_nodeLabel'];
+                                            if (propvalue !== undefined) {
+                                                doc['_nodeLabel'] = propvalue.substr(0, 128);
+                                            }
+                                        } else {
+                                            angular.forEach(value.node.properties, function (propvalue, property) {
 
-                                            if (property.length > 1 && property !== 'lastmodified' && property !== 'sorting' && property !== 'uri' && propvalue && propvalue.getProperty == undefined) {
+                                                if (property.length > 1 && property !== 'lastmodified' && property !== 'sorting' && property !== 'uri' && propvalue && propvalue.getProperty == undefined) {
 
-                                                if (boost[property] == undefined) {
-                                                    boost[property] = self.getBoost(property, value.node.nodeType);
-                                                }
+                                                    if (boost[property] == undefined) {
+                                                        boost[property] = self.getBoost(property, value.node.nodeType);
+                                                    }
 
-                                                if (boost[property] > 0) {
+                                                    if (boost[property] > 0) {
 
 
-                                                    var valueJson = false;
+                                                        var valueJson = false;
 
-                                                    if (typeof propvalue === 'object') {
-                                                        valueJson = propvalue;
-                                                    } else {
-                                                        if (typeof propvalue === 'string' && ((propvalue.substr(0, 1) == '{') || ((propvalue.substr(0, 2) === '["' && propvalue.substr(-2, 2) === '"]')) || (propvalue.substr(0, 2) === '[{' && propvalue.substr(-2, 2) === '}]'))) {
-                                                            try {
-                                                                var valueJson = JSON.parse(propvalue);
-                                                            } catch (e) {
-                                                                valueJson = false;
+                                                        if (typeof propvalue === 'object') {
+                                                            valueJson = propvalue;
+                                                        } else {
+                                                            if (typeof propvalue === 'string' && ((propvalue.substr(0, 1) == '{') || ((propvalue.substr(0, 2) === '["' && propvalue.substr(-2, 2) === '"]')) || (propvalue.substr(0, 2) === '[{' && propvalue.substr(-2, 2) === '}]'))) {
+                                                                try {
+                                                                    var valueJson = JSON.parse(propvalue);
+                                                                } catch (e) {
+                                                                    valueJson = false;
+                                                                }
                                                             }
                                                         }
-                                                    }
 
-                                                    if (valueJson) {
+                                                        if (valueJson) {
 
-                                                        var recstring = valueJson.getRecursiveStrings();
+                                                            var recstring = valueJson.getRecursiveStrings();
 
 
-                                                        angular.forEach(recstring, function (o) {
-                                                            doc[property + '.' + o.key] = o.val.replace(/(<([^>]+)>)/ig, " ");
+                                                            angular.forEach(recstring, function (o) {
+                                                                doc[property + '.' + o.key] = o.val.replace(/(<([^>]+)>)/ig, " ");
 
-                                                        });
+                                                            });
 
-                                                    } else {
-                                                        if (typeof propvalue === 'string') {
-                                                            doc[property] = propvalue.replace(/(<([^>]+)>)/ig, " ");
+                                                        } else {
+                                                            if (typeof propvalue === 'string') {
+                                                                doc[property] = propvalue.replace(/(<([^>]+)>)/ig, " ").substr(0, 1024);
+                                                            }
                                                         }
-                                                    }
 
+                                                    }
                                                 }
-                                            }
-                                        });
+                                            });
+
+                                        }
+
 
                                         if (Object.keys(doc).length) {
-
 
                                             if (doc.rawcontent == undefined && value.node.rawcontent !== undefined) {
                                                 doc.rawcontent = value.node.rawcontent;
