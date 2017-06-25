@@ -2142,7 +2142,7 @@
                                     // execute query search
                                     angular.forEach(lunrSearch.getFields(), function (v, k) {
                                         if (self.getBoost(v) >= 0) {
-                                            fields[v] = {boost: self.getBoost(v), expand: false}
+                                            fields[v] = {boost: self.getBoost(v)}
                                         }
                                     });
 
@@ -2184,13 +2184,13 @@
 
                                         });
 
-
                                         resultsSearch[0] = lunrSearch.search(customquery == undefined ? self.getFilter().getQuery() : customquery, {
                                             fields: fields,
-                                            bool: "AND"
+                                            bool: "AND",
+                                            expand: true
                                         });
 
-
+                                                                        
                                         if (resultsSearch[0].length == 0) {
                                             resultsSearch[1] = lunrSearch.search(self.getFilter().getQuery(), {
                                                 fields: fields,
@@ -2199,7 +2199,6 @@
                                             });
 
                                         }
-
 
                                         if (resultsSearch[1] != undefined && resultsSearch[1].length == 0) {
 
