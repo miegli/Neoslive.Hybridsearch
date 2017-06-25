@@ -3111,8 +3111,6 @@
 
                                                                 var reqNodesCount = data ? Object.keys(data).length : 0;
 
-                                                                console.log(reqNodesCount, ref.http);
-
                                                                 if (reqNodesCount) {
 
                                                                     if (self.getFilter().getNodeType()) {
