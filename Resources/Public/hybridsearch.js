@@ -3886,7 +3886,9 @@
 
                                             doc.id = value.node.identifier;
                                             lunrSearch.addDoc(doc);
-                                            nodesIndexed[value.node.hash] = true;
+                                            if (length < 250) {
+                                                nodesIndexed[value.node.hash] = true;
+                                            }
                                         }
 
                                     }
