@@ -1318,7 +1318,9 @@
                      */
                     getBoost: function (property, nodetype) {
 
-                        var p = property;
+                        if (property == '_index') {
+                            return 0.05;
+                        }
 
                         if (propertiesBoost !== undefined && propertiesBoost[property] == undefined && property.indexOf(".") > -1) {
                             property = property.substr(0, property.indexOf("."));
@@ -2001,8 +2003,15 @@
                     createSearchIndexOnDemand: function () {
 
                         var self = this;
+
+                        if (self.getFilter().getNodeType() === false) {
+                            // skipp
+                            return null;
+                        }
+
                         var nodesToIndex = [];
                         var nodescount = Object.keys(nodes).length;
+
 
                         if (nodescount == nodesLastCount) {
                             return null;
@@ -2187,7 +2196,7 @@
                                         resultsSearch[0] = lunrSearch.search(customquery == undefined ? self.getFilter().getQuery() : customquery, {
                                             fields: fields,
                                             bool: "AND",
-                                            expand: true
+                                            expand: false
                                         });
 
 
@@ -2412,7 +2421,7 @@
                             }
 
 
-                        }, 8);
+                        }, 5);
 
                     }
                     ,
@@ -3062,6 +3071,7 @@
                                                                 indexdata[keyword].push(node);
                                                             }
                                                         });
+
                                                         self.updateLocalIndex(indexdata, lastSearchInstance);
                                                         indexcounter++;
                                                     }
@@ -3758,7 +3768,6 @@
                                 keywords.push(k.term);
                             });
                             self.addLocalIndex(val, keyword, keywords, isloadingall);
-
                             keywords = [];
                         });
 
@@ -3796,108 +3805,132 @@
                     addLocalIndex: function (data, keyword, keywords, isloadingall) {
 
                         var self = this;
-                        var hasDistinct = self.getResults().hasDistincts();
+                        //var hasDistinct = self.getResults().hasDistincts();
                         var boost = {};
                         var length = data.length;
 
-                        angular.forEach(data, function (value, key) {
 
-                                if (value && nodesIndexed[value.node.hash] == undefined) {
-                                    var doc = {};
+                                if (keyword !== undefined && keywords == undefined) {
+                                    // skip
+                                    return null;
+                                }
+                            angular.forEach(data, function (value, key) {
 
-                                    //if (hasDistinct == true || self.isFiltered(value.node) === false) {
+                                    if (value && nodesIndexed[value.node.hash] == undefined) {
+                                        var doc = {};
 
-                                    nodes[value.node.identifier] = value.node;
-                                    if (value.node != undefined && value.node.properties != undefined) {
-                                        //angular.forEach(JSON.parse(JSON.stringify(value.node.properties)), function (propvalue, property) {
-                                        if (length > 250) {
-                                            var propvalue = value.node.properties['_nodeLabel'];
-                                            if (propvalue !== undefined) {
-                                                doc['_nodeLabel'] = propvalue.substr(0, 128);
-                                            }
-                                        } else {
-                                            angular.forEach(value.node.properties, function (propvalue, property) {
+                                        //if (hasDistinct == true || self.isFiltered(value.node) === false) {
 
-                                                if (property.length > 1 && property !== 'lastmodified' && property !== 'sorting' && property !== 'uri' && propvalue && propvalue.getProperty == undefined) {
+                                        nodes[value.node.identifier] = value.node;
 
-                                                    if (boost[property] == undefined) {
-                                                        boost[property] = self.getBoost(property, value.node.nodeType);
+                                        if (value.node != undefined && value.node.properties != undefined) {
+                                            //angular.forEach(JSON.parse(JSON.stringify(value.node.properties)), function (propvalue, property) {
+
+                                            if (length > 50 && keyword !== undefined) {
+
+                                                if (value.node.properties['_nodeLabel'] == undefined) {
+                                                    value.node.properties['_nodeLabel'] = '';
+                                                }
+                                                if (value.node.properties['__google'] == undefined) {
+                                                    value.node.properties['__google'] = '';
+                                                }
+                                                if (value.node.properties[value.nodeType+'-neoslivehybridsearchkeywords'] == undefined) {
+                                                    value.node.properties[value.nodeType+'-neoslivehybridsearchkeywords'] = '';
+                                                }
+
+                                                var p = value.node.properties[value.nodeType+'-neoslivehybridsearchkeywords']+ " " + value.node.properties['_nodeLabel']+" "+value.node.properties['__google'];
+                                                var s = JSON.stringify(value.node.properties).replace(/(<([^>]+)>)/ig, " ").toLowerCase();
+                                                angular.forEach(keywords,function(k) {
+                                                    var i = s.indexOf(k.toLowerCase());
+                                                    if (i >= 0) {
+                                                        p =  p + " " + s.substr(i - 16, i + 16);
                                                     }
+                                                });
 
-                                                    if (boost[property] > 0) {
+                                                doc['_index'] = p;
+
+                                            } else {
+                                                angular.forEach(value.node.properties, function (propvalue, property) {
+
+                                                    if (property.length > 1 && property !== 'lastmodified' && property !== 'sorting' && property !== 'uri' && propvalue && propvalue.getProperty == undefined) {
+
+                                                        if (boost[property] == undefined) {
+                                                            boost[property] = self.getBoost(property, value.node.nodeType);
+                                                        }
+
+                                                        if (boost[property] > 0) {
 
 
-                                                        var valueJson = false;
+                                                            var valueJson = false;
 
-                                                        if (typeof propvalue === 'object') {
-                                                            valueJson = propvalue;
-                                                        } else {
-                                                            if (typeof propvalue === 'string' && ((propvalue.substr(0, 1) == '{') || ((propvalue.substr(0, 2) === '["' && propvalue.substr(-2, 2) === '"]')) || (propvalue.substr(0, 2) === '[{' && propvalue.substr(-2, 2) === '}]'))) {
-                                                                try {
-                                                                    var valueJson = JSON.parse(propvalue);
-                                                                } catch (e) {
-                                                                    valueJson = false;
+                                                            if (typeof propvalue === 'object') {
+                                                                valueJson = propvalue;
+                                                            } else {
+                                                                if (typeof propvalue === 'string' && ((propvalue.substr(0, 1) == '{') || ((propvalue.substr(0, 2) === '["' && propvalue.substr(-2, 2) === '"]')) || (propvalue.substr(0, 2) === '[{' && propvalue.substr(-2, 2) === '}]'))) {
+                                                                    try {
+                                                                        var valueJson = JSON.parse(propvalue);
+                                                                    } catch (e) {
+                                                                        valueJson = false;
+                                                                    }
                                                                 }
                                                             }
-                                                        }
 
-                                                        if (valueJson) {
+                                                            if (valueJson) {
 
-                                                            var recstring = valueJson.getRecursiveStrings();
+                                                                var recstring = valueJson.getRecursiveStrings();
 
 
-                                                            angular.forEach(recstring, function (o) {
-                                                                doc[property + '.' + o.key] = o.val.replace(/(<([^>]+)>)/ig, " ");
+                                                                angular.forEach(recstring, function (o) {
+                                                                    doc[property + '.' + o.key] = o.val.replace(/(<([^>]+)>)/ig, " ");
 
-                                                            });
+                                                                });
 
-                                                        } else {
-                                                            if (typeof propvalue === 'string') {
-                                                                doc[property] = propvalue.replace(/(<([^>]+)>)/ig, " ").substr(0, 1024);
+                                                            } else {
+                                                                if (typeof propvalue === 'string') {
+                                                                    doc[property] = propvalue.replace(/(<([^>]+)>)/ig, " ").substr(0, 1024);
+                                                                }
                                                             }
+
                                                         }
-
                                                     }
-                                                }
-                                            });
-
-                                        }
-
-
-                                        if (Object.keys(doc).length) {
-
-                                            if (doc.rawcontent == undefined && value.node.rawcontent !== undefined) {
-                                                doc.rawcontent = value.node.rawcontent;
+                                                });
                                             }
 
-                                            if (value.node.breadcrumb !== undefined) {
-                                                doc.breadcrumb = value.node.breadcrumb.replace(/(<([^>]+)>)/ig, "");
-                                                doc.breadcrumb = doc.breadcrumb.substr(doc.breadcrumb.trim().lastIndexOf(" ")).toLowerCase();
-                                                doc.breadcrumb = doc.breadcrumb.replace(/[^A-zöäü^>]/ig, " ");
-                                            }
 
-                                            var eachObjecKeys = Object.keys(doc);
-                                            var lunrFields = lunrSearch.getFields();
-                                            angular.forEach(eachObjecKeys, function (key) {
-                                                if (lunrFields.indexOf(key) < 0) {
-                                                    lunrSearch.addField(key);
+                                            if (Object.keys(doc).length) {
+
+                                                if (doc.rawcontent == undefined && value.node.rawcontent !== undefined) {
+                                                    doc.rawcontent = value.node.rawcontent;
                                                 }
-                                            });
 
-                                            doc.id = value.node.identifier;
-                                            lunrSearch.addDoc(doc);
-                                            if (length < 250) {
+                                                if (value.node.breadcrumb !== undefined) {
+                                                    doc.breadcrumb = value.node.breadcrumb.replace(/(<([^>]+)>)/ig, "");
+                                                    doc.breadcrumb = doc.breadcrumb.substr(doc.breadcrumb.trim().lastIndexOf(" ")).toLowerCase();
+                                                    doc.breadcrumb = doc.breadcrumb.replace(/[^A-zöäü^>]/ig, " ");
+                                                }
+
+                                                var eachObjecKeys = Object.keys(doc);
+                                                var lunrFields = lunrSearch.getFields();
+                                                angular.forEach(eachObjecKeys, function (key) {
+                                                    if (lunrFields.indexOf(key) < 0) {
+                                                        lunrSearch.addField(key);
+                                                    }
+                                                });
+
+                                                doc.id = value.node.identifier;
+                                                lunrSearch.addDoc(doc);
                                                 nodesIndexed[value.node.hash] = true;
+
                                             }
+
                                         }
+                                        // }
 
                                     }
-                                    // }
 
                                 }
+                            );
 
-                            }
-                        );
 
 
                     }
@@ -4243,12 +4276,14 @@
                                     if (self.$$app.getConfig('realtime') == null) {
                                         self.$$app.getIndexByNodeIdentifierAndNodeType(identifier, data.val().nodeType).on("value", function (data) {
                                             self.$$app.addNodeByIdentifier(data.val(), self.addedNodesByIdentifierIndex[data.val().node.identifier]);
+
                                             self.$$app.addLocalIndex([data.val()]);
                                             self.$$app.search();
                                         });
                                     } else {
                                         self.$$app.getIndexByNodeIdentifierAndNodeType(identifier, data.val().nodeType).once("value", function (data) {
                                             self.$$app.addNodeByIdentifier(data.val(), self.addedNodesByIdentifierIndex[data.val().node.identifier]);
+
                                             self.$$app.addLocalIndex([data.val()]);
                                             self.$$app.search();
                                         });
@@ -4318,6 +4353,7 @@
                                 angular.forEach(datanodes, function (node) {
                                     addnodes.push(node);
                                 });
+
                                 self.$$app.addLocalIndex(addnodes);
 
                                 if (timer !== false) {
