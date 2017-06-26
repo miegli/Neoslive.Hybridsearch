@@ -3109,7 +3109,7 @@
                                                                 }
                                                             };
 
-                                                            
+
                                                             self.addPendingRequest($http(req).success(function (data) {
 
                                                                 nodesIndexed = {};
@@ -5894,8 +5894,14 @@
                                 }
                                 angular.forEach(propvalue, function (v, k) {
 
-                                    if (v !== undefined) {
-                                        var k = Sha1.hash(JSON.stringify(v));
+                                    if (v !== undefined && v !== null) {
+
+                                        var hashs = {};
+                                        var hashk = Object.keys(v).sort();
+                                        angular.forEach(hashk,function(a) {
+                                            hashs[a] = v[a];
+                                        });
+                                        var k = Sha1.hash(JSON.stringify(hashs));
 
                                         variants[k] = {
                                             id: k,
