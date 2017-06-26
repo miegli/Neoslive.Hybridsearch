@@ -3808,6 +3808,7 @@
                         //var hasDistinct = self.getResults().hasDistincts();
                         var boost = {};
                         var length = data.length;
+                        var cachedindex = true;
 
 
                         if (keyword !== undefined && keywords == undefined) {
@@ -3818,6 +3819,7 @@
 
                                 if (value && nodesIndexed[value.node.hash] == undefined) {
                                     var doc = {};
+                                    cachedindex = false;
 
                                     //if (hasDistinct == true || self.isFiltered(value.node) === false) {
 
@@ -3827,8 +3829,6 @@
                                         //angular.forEach(JSON.parse(JSON.stringify(value.node.properties)), function (propvalue, property) {
 
                                         if (length > 50 && keyword !== undefined) {
-
-
 
                                             if (value.node.properties['_nodeLabel'] == undefined) {
                                                 value.node.properties['_nodeLabel'] = '';
@@ -3860,6 +3860,7 @@
                                             }
                                             doc['_index'] = p;
                                         } else {
+
                                             angular.forEach(value.node.properties, function (propvalue, property) {
                                                 if (self.getBoost(property) > 0) {
                                                     if (property.length > 1 && property !== 'lastmodified' && property !== 'sorting' && property !== 'uri' && propvalue && propvalue.getProperty == undefined) {
@@ -3929,7 +3930,9 @@
 
                                             doc.id = value.node.identifier;
                                             lunrSearch.addDoc(doc);
-                                            nodesIndexed[value.node.hash] = true;
+                                            if (cachedindex) {
+                                                nodesIndexed[value.node.hash] = true;
+                                            }
 
                                         }
 
