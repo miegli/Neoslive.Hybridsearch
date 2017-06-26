@@ -2608,7 +2608,7 @@
                         }
 
 
-                        if (this.getFilter().getNodePath().length > 0 && node.uri !== undefined && node.uri.path.substr(0, this.getFilter().getNodePath().length) != this.getFilter().getNodePath()) {
+                        if (this.getFilter().getNodePath().length > 0 && node.uri !== undefined && (node.uri.path && node.uri.path.substr(0, this.getFilter().getNodePath().length) != this.getFilter().getNodePath())) {
                             return true;
                         }
 
