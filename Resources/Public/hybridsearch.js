@@ -3109,7 +3109,7 @@
                                                                 }
                                                             };
 
-                                                            console.log(req);
+
                                                             self.addPendingRequest($http(req).success(function (data) {
 
                                                                 nodesIndexed = {};
