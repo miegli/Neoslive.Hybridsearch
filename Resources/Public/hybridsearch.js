@@ -3828,6 +3828,8 @@
 
                                         if (length > 50 && keyword !== undefined) {
 
+
+
                                             if (value.node.properties['_nodeLabel'] == undefined) {
                                                 value.node.properties['_nodeLabel'] = '';
                                             }
@@ -3841,17 +3843,21 @@
                                             var p = value.node.properties[value.nodeType + '-neoslivehybridsearchkeywords'] + " " + value.node.properties['_nodeLabel'] + " " + value.node.properties['__google'];
                                             var s = "";
 
-                                            angular.forEach(value.node.properties, function (propvalue, property) {
-                                                if (self.getBoost(property) > 0 && typeof propvalue == 'string') {
-                                                    s = s+" "+propvalue.toLowerCase()
-                                                }
-                                            });
-                                            angular.forEach(keywords, function (k) {
-                                                var i = s.indexOf(k.toLowerCase());
-                                                if (i >= 0) {
-                                                    p = p + " " + s.substr(i - 16, i + 16);
-                                                }
-                                            });
+                                            if (keyword.length > 4) {
+                                                angular.forEach(value.node.properties, function (propvalue, property) {
+                                                    if (self.getBoost(property) > 0 && typeof propvalue == 'string') {
+                                                        s = s + " " + propvalue.toLowerCase()
+                                                    }
+                                                });
+                                                angular.forEach(keywords, function (k) {
+                                                    if (k.length > 3) {
+                                                        var i = s.indexOf(k.toLowerCase());
+                                                        if (i >= 0) {
+                                                            p = p + " " + s.substr(i - 16, i + 16);
+                                                        }
+                                                    }
+                                                });
+                                            }
                                             doc['_index'] = p;
                                         } else {
                                             angular.forEach(value.node.properties, function (propvalue, property) {
