@@ -2868,26 +2868,23 @@
 
                             var keywords = self.getFilter().getQueryKeywords();
 
-                            // fetch index from given keywords
-                            var searchIndex = new this.SearchIndexInstance(self, keywords);
 
-                            window.clearTimeout(getIndexTimeout);
+                                // fetch index from given keywords
+                                var searchIndex = new this.SearchIndexInstance(self, keywords);
+                                window.clearTimeout(getIndexTimeout);
+                                getIndexTimeout = window.setTimeout(function () {
+                                    lastSearchInstance = searchIndex.getIndex();
+                                    var counter = 0;
 
-                            getIndexTimeout = window.setTimeout(function () {
-                                lastSearchInstance = searchIndex.getIndex();
-
-                                var counter = 0;
-
-                                searchInstancesInterval = setInterval(function () {
-                                    counter++;
-                                    if (lastSearchInstance.$$data.canceled === true || counter > 55000 || lastSearchInstance.$$data.proceeded.length >= lastSearchInstance.$$data.running) {
-                                        clearInterval(searchInstancesInterval);
-                                        lastSearchInstance.execute(self, lastSearchInstance);
-                                        self.search(nodes);
-                                    }
-                                }, 10);
-                            }, 5);
-
+                                    searchInstancesInterval = setInterval(function () {
+                                        counter++;
+                                        if (lastSearchInstance.$$data.canceled === true || counter > 55000 || lastSearchInstance.$$data.proceeded.length >= lastSearchInstance.$$data.running) {
+                                            clearInterval(searchInstancesInterval);
+                                            lastSearchInstance.execute(self, lastSearchInstance);
+                                            self.search(nodes);
+                                        }
+                                    }, 2);
+                                }, 2);
 
                         } else {
                             if (self.isRunning()) {
@@ -3085,7 +3082,6 @@
 
                                     clearTimeout(self.getIndexInterval());
 
-
                                     angular.forEach(uniquarrayfinal, function (keyword) {
 
                                         var refs = self.getIndex(keyword);
@@ -3113,6 +3109,7 @@
                                                                 }
                                                             };
 
+                                                            console.log(req);
                                                             self.addPendingRequest($http(req).success(function (data) {
 
                                                                 nodesIndexed = {};
@@ -3127,83 +3124,87 @@
                                                                         self.setIsLoadedAll(JSON.stringify(self.getFilter().getNodeType()));
                                                                     }
 
-
-                                                                    var groupedByNodeType = {};
-                                                                    angular.forEach(data, function (node, identifier) {
-                                                                        if (groupedByNodeType[node.nodeType] == undefined) {
-                                                                            groupedByNodeType[node.nodeType] = {
-                                                                                'ref': self.getIndex(null, node.nodeType),
-                                                                                'nodes': {}
-                                                                            };
-
-                                                                        }
-                                                                        groupedByNodeType[node.nodeType]['nodes'][identifier] = null;
-
-                                                                    });
-
-                                                                    var requestCount = Object.keys(groupedByNodeType).length;
-                                                                    var requestCountDone = 0;
-                                                                    var groupedByNodeTypeNodes = [];
-                                                                    var isstaticcached = true;
-
-                                                                    angular.forEach(groupedByNodeType, function (group, nodetype) {
-                                                                        if (staticCachedNodes[nodetype] == undefined) {
-                                                                            isstaticcached = false;
-                                                                        }
-                                                                    });
-
-
-                                                                    if (isstaticcached == false) {
-                                                                        angular.forEach(groupedByNodeType, function (group, nodetype) {
-
-                                                                            // fetch all nodes content
-                                                                            if (self.getConfig('cache')) {
-                                                                                var req = {
-                                                                                    method: 'get',
-                                                                                    url: group.ref.http,
-                                                                                    headers: {'cache-control': 'private, max-age=' + self.getConfig('cache')},
-                                                                                    timeout: canceller.promise,
-                                                                                    cancel: function (reason) {
-                                                                                        canceller.resolve(reason);
-                                                                                    }
+                                                                    if (ref.isLoadingAllFromNodeType == undefined || ref.isLoadingAllFromNodeType == false) {
+                                                                        var groupedByNodeType = {};
+                                                                        angular.forEach(data, function (node, identifier) {
+                                                                            if (groupedByNodeType[node.nodeType] == undefined) {
+                                                                                groupedByNodeType[node.nodeType] = {
+                                                                                    'ref': self.getIndex(null, node.nodeType),
+                                                                                    'nodes': {}
                                                                                 };
 
-                                                                            } else {
-                                                                                var req = {
-                                                                                    method: 'get',
-                                                                                    url: group.ref.http,
-                                                                                    cache: true,
-                                                                                    timeout: canceller.promise,
-                                                                                    cancel: function (reason) {
-                                                                                        canceller.resolve(reason);
-                                                                                    }
-                                                                                };
                                                                             }
-
-                                                                            self.addPendingRequest($http(req).success(function (data) {
-                                                                                angular.forEach(groupedByNodeType[nodetype].nodes, function (node, identifier) {
-                                                                                    groupedByNodeTypeNodes.push(data[identifier]);
-                                                                                });
-                                                                                requestCountDone++;
-                                                                                if (staticCachedNodes[nodetype] == undefined) {
-                                                                                    staticCachedNodes[nodetype] = data;
-                                                                                }
-                                                                                //execute(keyword, groupedByNodeType[nodetype]['nodes'], ref);
-                                                                                if (requestCountDone == requestCount) {
-                                                                                    execute(keyword, groupedByNodeTypeNodes, ref);
-                                                                                }
-                                                                            }));
-
+                                                                            groupedByNodeType[node.nodeType]['nodes'][identifier] = null;
 
                                                                         });
 
-                                                                    } else {
+                                                                        var requestCount = Object.keys(groupedByNodeType).length;
+                                                                        var requestCountDone = 0;
+                                                                        var groupedByNodeTypeNodes = [];
+                                                                        var isstaticcached = true;
+
                                                                         angular.forEach(groupedByNodeType, function (group, nodetype) {
-                                                                            angular.forEach(groupedByNodeType[nodetype].nodes, function (node, identifier) {
-                                                                                groupedByNodeTypeNodes.push(staticCachedNodes[nodetype][identifier]);
-                                                                            });
+                                                                            if (staticCachedNodes[nodetype] == undefined) {
+                                                                                isstaticcached = false;
+                                                                            }
                                                                         });
-                                                                        execute(keyword, groupedByNodeTypeNodes, ref);
+
+
+                                                                        if (isstaticcached == false) {
+                                                                            angular.forEach(groupedByNodeType, function (group, nodetype) {
+
+                                                                                // fetch all nodes content
+                                                                                if (self.getConfig('cache')) {
+                                                                                    var req = {
+                                                                                        method: 'get',
+                                                                                        url: group.ref.http,
+                                                                                        headers: {'cache-control': 'private, max-age=' + self.getConfig('cache')},
+                                                                                        timeout: canceller.promise,
+                                                                                        cancel: function (reason) {
+                                                                                            canceller.resolve(reason);
+                                                                                        }
+                                                                                    };
+
+                                                                                } else {
+                                                                                    var req = {
+                                                                                        method: 'get',
+                                                                                        url: group.ref.http,
+                                                                                        cache: true,
+                                                                                        timeout: canceller.promise,
+                                                                                        cancel: function (reason) {
+                                                                                            canceller.resolve(reason);
+                                                                                        }
+                                                                                    };
+                                                                                }
+
+                                                                                self.addPendingRequest($http(req).success(function (data) {
+                                                                                    angular.forEach(groupedByNodeType[nodetype].nodes, function (node, identifier) {
+                                                                                        groupedByNodeTypeNodes.push(data[identifier]);
+                                                                                    });
+                                                                                    requestCountDone++;
+                                                                                    if (staticCachedNodes[nodetype] == undefined) {
+                                                                                        staticCachedNodes[nodetype] = data;
+                                                                                    }
+                                                                                    //execute(keyword, groupedByNodeType[nodetype]['nodes'], ref);
+                                                                                    if (requestCountDone == requestCount) {
+                                                                                        execute(keyword, groupedByNodeTypeNodes, ref);
+                                                                                    }
+                                                                                }));
+
+
+                                                                            });
+
+                                                                        } else {
+                                                                            angular.forEach(groupedByNodeType, function (group, nodetype) {
+                                                                                angular.forEach(groupedByNodeType[nodetype].nodes, function (node, identifier) {
+                                                                                    groupedByNodeTypeNodes.push(staticCachedNodes[nodetype][identifier]);
+                                                                                });
+                                                                            });
+                                                                            execute(keyword, groupedByNodeTypeNodes, ref);
+                                                                        }
+                                                                    } else {
+                                                                        // load all nodes from node type
+                                                                        execute(keyword, data, ref);
                                                                     }
 
 
@@ -3350,11 +3351,9 @@
                                     ;
 //}, 5));
 
-
                                     var musthavelength = uniquarrayfinal.length;
 
                                     if (lastSearchInstance.$$data.keywords.length) {
-
                                         if (self.getExternalSources()) {
 
                                             // // add external sources
@@ -3380,10 +3379,7 @@
                                             });
 
                                         }
-
-
                                     }
-
 
                                 } else {
                                     //  results.$$app.clearResults();
