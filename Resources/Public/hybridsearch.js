@@ -5657,7 +5657,9 @@
                             var b = a.substr(i).toLowerCase();
                             if (b == query.toLowerCase() && i >= 0) {
                                 b = a.substr(0, i + query.length).toLowerCase();
+                                b = b.trim();
                             }
+                            b = b.trim();
                             if (b.length > query.length && query.toLowerCase() !== b && autocompleteTemp[b] == undefined && i >= -1 && i < 25) {
                                 self.$$data.autocomplete.push(b);
                                 autocompleteTemp[b] = true;
