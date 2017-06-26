@@ -3810,48 +3810,52 @@
                         var length = data.length;
 
 
-                                if (keyword !== undefined && keywords == undefined) {
-                                    // skip
-                                    return null;
-                                }
-                            angular.forEach(data, function (value, key) {
+                        if (keyword !== undefined && keywords == undefined) {
+                            // skip
+                            return null;
+                        }
+                        angular.forEach(data, function (value, key) {
 
-                                    if (value && nodesIndexed[value.node.hash] == undefined) {
-                                        var doc = {};
+                                if (value && nodesIndexed[value.node.hash] == undefined) {
+                                    var doc = {};
 
-                                        //if (hasDistinct == true || self.isFiltered(value.node) === false) {
+                                    //if (hasDistinct == true || self.isFiltered(value.node) === false) {
 
-                                        nodes[value.node.identifier] = value.node;
+                                    nodes[value.node.identifier] = value.node;
 
-                                        if (value.node != undefined && value.node.properties != undefined) {
-                                            //angular.forEach(JSON.parse(JSON.stringify(value.node.properties)), function (propvalue, property) {
+                                    if (value.node != undefined && value.node.properties != undefined) {
+                                        //angular.forEach(JSON.parse(JSON.stringify(value.node.properties)), function (propvalue, property) {
 
-                                            if (length > 50 && keyword !== undefined) {
+                                        if (length > 50 && keyword !== undefined) {
 
-                                                if (value.node.properties['_nodeLabel'] == undefined) {
-                                                    value.node.properties['_nodeLabel'] = '';
+                                            if (value.node.properties['_nodeLabel'] == undefined) {
+                                                value.node.properties['_nodeLabel'] = '';
+                                            }
+                                            if (value.node.properties['__google'] == undefined) {
+                                                value.node.properties['__google'] = '';
+                                            }
+                                            if (value.node.properties[value.nodeType + '-neoslivehybridsearchkeywords'] == undefined) {
+                                                value.node.properties[value.nodeType + '-neoslivehybridsearchkeywords'] = '';
+                                            }
+
+                                            var p = value.node.properties[value.nodeType + '-neoslivehybridsearchkeywords'] + " " + value.node.properties['_nodeLabel'] + " " + value.node.properties['__google'];
+                                            var s = "";
+
+                                            angular.forEach(value.node.properties, function (propvalue, property) {
+                                                if (self.getBoost(property) > 0 && typeof propvalue == 'string') {
+                                                    s = s+" "+propvalue.toLowerCase()
                                                 }
-                                                if (value.node.properties['__google'] == undefined) {
-                                                    value.node.properties['__google'] = '';
+                                            });
+                                            angular.forEach(keywords, function (k) {
+                                                var i = s.indexOf(k.toLowerCase());
+                                                if (i >= 0) {
+                                                    p = p + " " + s.substr(i - 16, i + 16);
                                                 }
-                                                if (value.node.properties[value.nodeType+'-neoslivehybridsearchkeywords'] == undefined) {
-                                                    value.node.properties[value.nodeType+'-neoslivehybridsearchkeywords'] = '';
-                                                }
-
-                                                var p = value.node.properties[value.nodeType+'-neoslivehybridsearchkeywords']+ " " + value.node.properties['_nodeLabel']+" "+value.node.properties['__google'];
-                                                var s = JSON.stringify(value.node.properties).replace(/(<([^>]+)>)/ig, " ").toLowerCase();
-                                                angular.forEach(keywords,function(k) {
-                                                    var i = s.indexOf(k.toLowerCase());
-                                                    if (i >= 0) {
-                                                        p =  p + " " + s.substr(i - 16, i + 16);
-                                                    }
-                                                });
-
-                                                doc['_index'] = p;
-
-                                            } else {
-                                                angular.forEach(value.node.properties, function (propvalue, property) {
-
+                                            });
+                                            doc['_index'] = p;
+                                        } else {
+                                            angular.forEach(value.node.properties, function (propvalue, property) {
+                                                if (self.getBoost(property) > 0) {
                                                     if (property.length > 1 && property !== 'lastmodified' && property !== 'sorting' && property !== 'uri' && propvalue && propvalue.getProperty == undefined) {
 
                                                         if (boost[property] == undefined) {
@@ -3893,44 +3897,43 @@
 
                                                         }
                                                     }
-                                                });
+                                                }
+                                            });
+                                        }
+
+                                        if (Object.keys(doc).length) {
+
+                                            if (doc.rawcontent == undefined && value.node.rawcontent !== undefined) {
+                                                doc.rawcontent = value.node.rawcontent;
                                             }
 
-
-                                            if (Object.keys(doc).length) {
-
-                                                if (doc.rawcontent == undefined && value.node.rawcontent !== undefined) {
-                                                    doc.rawcontent = value.node.rawcontent;
-                                                }
-
-                                                if (value.node.breadcrumb !== undefined) {
-                                                    doc.breadcrumb = value.node.breadcrumb.replace(/(<([^>]+)>)/ig, "");
-                                                    doc.breadcrumb = doc.breadcrumb.substr(doc.breadcrumb.trim().lastIndexOf(" ")).toLowerCase();
-                                                    doc.breadcrumb = doc.breadcrumb.replace(/[^A-zöäü^>]/ig, " ");
-                                                }
-
-                                                var eachObjecKeys = Object.keys(doc);
-                                                var lunrFields = lunrSearch.getFields();
-                                                angular.forEach(eachObjecKeys, function (key) {
-                                                    if (lunrFields.indexOf(key) < 0) {
-                                                        lunrSearch.addField(key);
-                                                    }
-                                                });
-
-                                                doc.id = value.node.identifier;
-                                                lunrSearch.addDoc(doc);
-                                                nodesIndexed[value.node.hash] = true;
-
+                                            if (value.node.breadcrumb !== undefined) {
+                                                doc.breadcrumb = value.node.breadcrumb.replace(/(<([^>]+)>)/ig, "");
+                                                doc.breadcrumb = doc.breadcrumb.substr(doc.breadcrumb.trim().lastIndexOf(" ")).toLowerCase();
+                                                doc.breadcrumb = doc.breadcrumb.replace(/[^A-zöäü^>]/ig, " ");
                                             }
+
+                                            var eachObjecKeys = Object.keys(doc);
+                                            var lunrFields = lunrSearch.getFields();
+                                            angular.forEach(eachObjecKeys, function (key) {
+                                                if (lunrFields.indexOf(key) < 0) {
+                                                    lunrSearch.addField(key);
+                                                }
+                                            });
+
+                                            doc.id = value.node.identifier;
+                                            lunrSearch.addDoc(doc);
+                                            nodesIndexed[value.node.hash] = true;
 
                                         }
-                                        // }
 
                                     }
+                                    // }
 
                                 }
-                            );
 
+                            }
+                        );
 
 
                     }
