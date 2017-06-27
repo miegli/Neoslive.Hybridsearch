@@ -3836,7 +3836,8 @@
                                     if (value.node != undefined && value.node.properties != undefined) {
                                         //angular.forEach(JSON.parse(JSON.stringify(value.node.properties)), function (propvalue, property) {
 
-                                        if (length > 50 && keyword !== undefined) {
+                                        if (length > 100 && keyword !== undefined) {
+                                            // index fast way
 
                                             if (value.node.properties['_nodeLabel'] != undefined) {
                                                 doc['_nodeLabel'] = value.node.properties['_nodeLabel'] = '';
@@ -3852,14 +3853,22 @@
                                             var s = " ";
 
                                             angular.forEach(value.node.properties, function (propvalue, property) {
-                                                if (self.getBoost(property) > 0) {
-                                                    if (typeof propvalue == 'string') {
-                                                        s = s + " " + propvalue.toLowerCase().replace(/"/gi, " ")
+                                                var boost = self.getBoost(property);
+                                                if (boost > 0) {
+                                                    if (boost > 10) {
+                                                        if (typeof propvalue == 'string') {
+                                                            doc[property] = s + " " + propvalue.toLowerCase().replace(/"/gi, " ")
+                                                        } else {
+                                                            doc[property] = JSON.stringify(propvalue).toLowerCase().replace(/"/gi, " ");
+                                                        }
                                                     } else {
-                                                        s = s + " " + JSON.stringify(propvalue).toLowerCase().replace(/"/gi, " ");
-                                                        cachedindex = true;
+                                                        if (typeof propvalue == 'string') {
+                                                            s = s + " " + propvalue.toLowerCase().replace(/"/gi, " ")
+                                                        } else {
+                                                            s = s + " " + JSON.stringify(propvalue).toLowerCase().replace(/"/gi, " ");
+                                                            cachedindex = true;
+                                                        }
                                                     }
-
                                                 }
                                             });
 
@@ -3878,6 +3887,7 @@
                                             doc['_index'] = p;
                                         } else {
 
+                                            // index full slow way
                                             angular.forEach(value.node.properties, function (propvalue, property) {
                                                 if (self.getBoost(property) > 0) {
                                                     if (property.length > 1 && property !== 'lastmodified' && property !== 'sorting' && property !== 'uri' && propvalue && propvalue.getProperty == undefined) {
