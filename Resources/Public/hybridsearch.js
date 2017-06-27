@@ -5680,7 +5680,7 @@
                     });
 
                     var foundinproperty = null;
-                    angular.forEach(self.getNodes(1), function (node) {
+                    angular.forEach(self.getNodes(16), function (node) {
                         if (foundinproperty === null) {
                             angular.forEach(node.getProperties(), function (value, property) {
                                 if (foundinproperty === null && query && typeof value == 'string' && value.toLowerCase().substr(0, query.length) == query) {
