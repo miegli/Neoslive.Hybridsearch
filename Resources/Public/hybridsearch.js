@@ -3838,13 +3838,13 @@
 
                                         if (length > 50 && keyword !== undefined) {
 
-                                            if (value.node.properties['_nodeLabel'] == undefined) {
+                                            if (value.node.properties['_nodeLabel'] != undefined) {
                                                 doc['_nodeLabel'] = value.node.properties['_nodeLabel'] = '';
                                             }
-                                            if (value.node.properties['__google'] == undefined) {
+                                            if (value.node.properties['__google'] != undefined) {
                                                 doc['__google'] = value.node.properties['__google'];
                                             }
-                                            if (value.node.properties[value.nodeType + '-neoslivehybridsearchkeywords'] == undefined) {
+                                            if (value.node.properties[value.nodeType + '-neoslivehybridsearchkeywords'] != undefined) {
                                                 doc[value.nodeType + '-neoslivehybridsearchkeywords'] = value.node.properties[value.nodeType + '-neoslivehybridsearchkeywords'];
                                             }
 
