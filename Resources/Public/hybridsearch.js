@@ -3836,11 +3836,11 @@
                                     if (value.node != undefined && value.node.properties != undefined) {
                                         //angular.forEach(JSON.parse(JSON.stringify(value.node.properties)), function (propvalue, property) {
 
-                                        if (length > 100 && keyword !== undefined) {
+                                        if (length > 50 && keyword !== undefined) {
                                             // index fast way
 
                                             if (value.node.properties['_nodeLabel'] != undefined) {
-                                                doc['_nodeLabel'] = value.node.properties['_nodeLabel'] = '';
+                                                doc['_nodeLabel'] = value.node.properties['_nodeLabel'];
                                             }
                                             if (value.node.properties['__google'] != undefined) {
                                                 doc['__google'] = value.node.properties['__google'];
