@@ -1444,7 +1444,7 @@ class SearchIndexFactory
             return $string;
         }
 
-        $metaphone = mb_strtoupper(metaphone(mb_strtolower($string)));
+        return mb_strtoupper(metaphone(mb_strtolower($string),6));
 
 
 

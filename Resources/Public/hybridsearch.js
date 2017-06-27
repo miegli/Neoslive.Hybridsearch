@@ -2869,22 +2869,22 @@
                             var keywords = self.getFilter().getQueryKeywords();
 
 
-                                // fetch index from given keywords
-                                var searchIndex = new this.SearchIndexInstance(self, keywords);
-                                window.clearTimeout(getIndexTimeout);
-                                getIndexTimeout = window.setTimeout(function () {
-                                    lastSearchInstance = searchIndex.getIndex();
-                                    var counter = 0;
+                            // fetch index from given keywords
+                            var searchIndex = new this.SearchIndexInstance(self, keywords);
+                            window.clearTimeout(getIndexTimeout);
+                            getIndexTimeout = window.setTimeout(function () {
+                                lastSearchInstance = searchIndex.getIndex();
+                                var counter = 0;
 
-                                    searchInstancesInterval = setInterval(function () {
-                                        counter++;
-                                        if (lastSearchInstance.$$data.canceled === true || counter > 55000 || lastSearchInstance.$$data.proceeded.length >= lastSearchInstance.$$data.running) {
-                                            clearInterval(searchInstancesInterval);
-                                            lastSearchInstance.execute(self, lastSearchInstance);
-                                            self.search(nodes);
-                                        }
-                                    }, 2);
+                                searchInstancesInterval = setInterval(function () {
+                                    counter++;
+                                    if (lastSearchInstance.$$data.canceled === true || counter > 55000 || lastSearchInstance.$$data.proceeded.length >= lastSearchInstance.$$data.running) {
+                                        clearInterval(searchInstancesInterval);
+                                        lastSearchInstance.execute(self, lastSearchInstance);
+                                        self.search(nodes);
+                                    }
                                 }, 2);
+                            }, 2);
 
                         } else {
                             if (self.isRunning()) {
@@ -3452,7 +3452,8 @@
                     getMetaphone: function (querysegment) {
 
                         // get search results
-                        var q = metaphone(querysegment.toLowerCase()).toUpperCase();
+
+                        return metaphone(querysegment.toLowerCase(), 6).toUpperCase();
 
                         if (q.length > 7) {
                             q = q.substr(0, q.length - 2);
@@ -3805,6 +3806,16 @@
                         var boost = {};
                         var length = data.length;
                         var cachedindex = true;
+                        var keywordsreduced = [];
+
+                        if (keywords !== undefined) {
+                            var q = " " + self.getFilter().getQuery() + " ";
+                            angular.forEach(keywords, function (k) {
+                                if (q.indexOf(k) >= 0) {
+                                    keywordsreduced.push(k);
+                                }
+                            });
+                        }
 
 
                         if (keyword !== undefined && keywords == undefined) {
@@ -3837,23 +3848,27 @@
                                             }
 
                                             var p = value.node.properties[value.nodeType + '-neoslivehybridsearchkeywords'] + " " + value.node.properties['_nodeLabel'] + " " + value.node.properties['__google'];
-                                            var s = "";
+                                            var s = " ";
 
-                                            if (keyword.length > 4) {
-                                                angular.forEach(value.node.properties, function (propvalue, property) {
-                                                    if (self.getBoost(property) > 0 && typeof propvalue == 'string') {
-                                                        s = s + " " + propvalue.toLowerCase()
+
+                                            angular.forEach(value.node.properties, function (propvalue, property) {
+                                                if (self.getBoost(property) > 0 && typeof propvalue == 'string') {
+                                                    s = s + " " + propvalue.toLowerCase()
+                                                }
+                                            });
+
+                                            s = s + " ";
+
+                                            angular.forEach(keywordsreduced, function (k) {
+                                                if (k.length > 2) {
+                                                    var i = s.indexOf(" " + k.toLowerCase() + " ");
+                                                    if (i >= 0) {
+                                                        p = p + " " + s.substr(i - k.length * 2, i + k.length * 2);
                                                     }
-                                                });
-                                                angular.forEach(keywords, function (k) {
-                                                    if (k.length > 3) {
-                                                        var i = s.indexOf(k.toLowerCase());
-                                                        if (i >= 0) {
-                                                            p = p + " " + s.substr(i - 16, i + 16);
-                                                        }
-                                                    }
-                                                });
-                                            }
+                                                }
+                                            });
+
+
                                             doc['_index'] = p;
                                         } else {
 
@@ -5898,7 +5913,7 @@
 
                                         var hashs = {};
                                         var hashk = Object.keys(v).sort();
-                                        angular.forEach(hashk,function(a) {
+                                        angular.forEach(hashk, function (a) {
                                             hashs[a] = v[a];
                                         });
                                         var k = Sha1.hash(JSON.stringify(hashs));
@@ -6135,7 +6150,7 @@
         function () {
 
 
-            var filterReg = /[^0-9a-zA-ZöäüÖÄÜ]/g;
+            var filterReg = /[-]/g;
 
 
             /**
@@ -6700,10 +6715,8 @@
                     }
 
                     var s = this.$$data.query.replace(filterReg, " ");
-                    var t = s.replace(/([0-9-])( )/i, '$1').replace(/([0-9]{2})/gi, ' $1 ');
 
-                    s = s + " " + t;
-                    s = s.toLowerCase();
+                    keywords[this.$$data.query] = true;
 
                     angular.forEach(s.split(" "), function (term) {
                         term = term.replace(filterReg, "");
@@ -6716,6 +6729,7 @@
                             finalkeywords.push(t);
                         }
                     });
+
 
                     return finalkeywords;
 
