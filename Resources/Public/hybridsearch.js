@@ -3826,6 +3826,7 @@
 
                                 if (value && nodesIndexed[value.node.hash] == undefined) {
                                     var doc = {};
+
                                     cachedindex = false;
 
                                     //if (hasDistinct == true || self.isFiltered(value.node) === false) {
@@ -3850,10 +3851,15 @@
                                             var p = value.node.properties[value.nodeType + '-neoslivehybridsearchkeywords'] + " " + value.node.properties['_nodeLabel'] + " " + value.node.properties['__google'];
                                             var s = " ";
 
-
                                             angular.forEach(value.node.properties, function (propvalue, property) {
-                                                if (self.getBoost(property) > 0 && typeof propvalue == 'string') {
-                                                    s = s + " " + propvalue.toLowerCase()
+                                                if (self.getBoost(property) > 0) {
+                                                    if (typeof propvalue == 'string') {
+                                                        s = s + " " + propvalue.toLowerCase().replace(/"/gi, " ")
+                                                    } else {
+                                                        s = s + " " + JSON.stringify(propvalue).toLowerCase().replace(/"/gi, " ");
+                                                        cachedindex = true;
+                                                    }
+
                                                 }
                                             });
 
