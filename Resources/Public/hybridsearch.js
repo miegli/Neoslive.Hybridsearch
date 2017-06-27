@@ -3839,16 +3839,16 @@
                                         if (length > 50 && keyword !== undefined) {
 
                                             if (value.node.properties['_nodeLabel'] == undefined) {
-                                                value.node.properties['_nodeLabel'] = '';
+                                                doc['_nodeLabel'] = value.node.properties['_nodeLabel'] = '';
                                             }
                                             if (value.node.properties['__google'] == undefined) {
-                                                value.node.properties['__google'] = '';
+                                                doc['__google'] = value.node.properties['__google'];
                                             }
                                             if (value.node.properties[value.nodeType + '-neoslivehybridsearchkeywords'] == undefined) {
-                                                value.node.properties[value.nodeType + '-neoslivehybridsearchkeywords'] = '';
+                                                doc[value.nodeType + '-neoslivehybridsearchkeywords'] = value.node.properties[value.nodeType + '-neoslivehybridsearchkeywords'];
                                             }
 
-                                            var p = value.node.properties[value.nodeType + '-neoslivehybridsearchkeywords'] + " " + value.node.properties['_nodeLabel'] + " " + value.node.properties['__google'];
+                                            var p = " "
                                             var s = " ";
 
                                             angular.forEach(value.node.properties, function (propvalue, property) {
