@@ -3822,6 +3822,9 @@
                             // skip
                             return null;
                         }
+
+
+
                         angular.forEach(data, function (value, key) {
 
                                 if (value && nodesIndexed[value.node.hash] == undefined) {
@@ -3839,43 +3842,50 @@
                                         if (length > 50 && keyword !== undefined) {
                                             // index fast way
 
+                                            if (length < 500) {
 
-                                            var p = " "
-                                            var s = " ";
+                                                var p = " "
+                                                var s = " ";
 
-                                            angular.forEach(value.node.properties, function (propvalue, property) {
-                                                var boost = self.getBoost(property);
-                                                if (boost > 0) {
-                                                    if (boost > 10) {
-                                                        if (typeof propvalue == 'string') {
-                                                            doc[property] = s + " " + propvalue.toLowerCase().replace(/"/gi, " ")
+                                                angular.forEach(value.node.properties, function (propvalue, property) {
+                                                    var boost = self.getBoost(property);
+                                                    if (boost > 0) {
+                                                        if (boost > 10) {
+                                                            if (typeof propvalue == 'string') {
+                                                                doc[property] = s + " " + propvalue.toLowerCase().replace(/"/gi, " ")
+                                                            } else {
+                                                                doc[property] = JSON.stringify(propvalue).toLowerCase().replace(/"/gi, " ");
+                                                            }
                                                         } else {
-                                                            doc[property] = JSON.stringify(propvalue).toLowerCase().replace(/"/gi, " ");
-                                                        }
-                                                    } else {
-                                                        if (typeof propvalue == 'string') {
-                                                            s = s + " " + propvalue.toLowerCase().replace(/"/gi, " ")
-                                                        } else {
-                                                            s = s + " " + JSON.stringify(propvalue).toLowerCase().replace(/"/gi, " ");
-                                                            cachedindex = true;
+                                                            if (length < 100) {
+                                                                if (typeof propvalue == 'string') {
+                                                                    s = s + " " + propvalue.toLowerCase().replace(/"/gi, " ")
+                                                                } else {
+                                                                    s = s + " " + JSON.stringify(propvalue).toLowerCase().replace(/"/gi, " ");
+                                                                    cachedindex = true;
+                                                                }
+                                                            }
                                                         }
                                                     }
-                                                }
-                                            });
+                                                });
 
-                                            s = s + " ";
+                                                s = s + " ";
 
-                                            angular.forEach(keywordsreduced, function (k) {
-                                                if (k.length > 2) {
-                                                    var i = s.indexOf(" " + k.toLowerCase() + " ");
-                                                    if (i >= 0) {
-                                                        p = p + " " + s.substr(i - k.length * 2, i + k.length * 2);
+                                                angular.forEach(keywordsreduced, function (k) {
+                                                    if (k.length > 2) {
+                                                        var i = s.indexOf(" " + k.toLowerCase() + " ");
+                                                        if (i >= 0) {
+                                                            p = p + " " + s.substr(i - k.length * 2, i + k.length * 2);
+                                                        }
                                                     }
-                                                }
-                                            });
+                                                });
 
 
-                                            doc['_index'] = p;
+                                                doc['_index'] = p;
+
+                                            }
+
+
                                         } else {
 
                                             // index full slow way
