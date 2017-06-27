@@ -3842,7 +3842,7 @@
                                         if (length > 50 && keyword !== undefined) {
                                             // index fast way
 
-                                            if (length < 500) {
+                                            if (length < 250) {
 
                                                 var p = " "
                                                 var s = " ";
@@ -3883,6 +3883,11 @@
 
                                                 doc['_index'] = p;
 
+                                            } else {
+
+                                                if (value.node.properties['_nodeLabel'] != undefined) {
+                                                    doc['_nodeLabel'] = value.node.properties['_nodeLabel'];
+                                                }
                                             }
 
 
@@ -3948,10 +3953,6 @@
                                                 doc.breadcrumb = doc.breadcrumb.replace(/[^A-zöäü^>]/ig, " ");
                                             }
 
-
-                                            if (value.node.properties['_nodeLabel'] != undefined) {
-                                                doc['_nodeLabel'] = value.node.properties['_nodeLabel'];
-                                            }
                                             if (value.node.properties['__google'] != undefined) {
                                                 doc['__google'] = value.node.properties['__google'];
                                             }
