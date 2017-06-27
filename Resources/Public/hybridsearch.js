@@ -1334,7 +1334,7 @@
                             property = nodetype + "-" + property;
                         }
 
-                        return propertiesBoost !== undefined && propertiesBoost[property] !== undefined ? propertiesBoost[property] : property == 'breadcrumb' ? 50 : property.substr(-28) == 'neoslivehybridsearchkeywords' ? 500 : 10;
+                        return propertiesBoost !== undefined && propertiesBoost[property] !== undefined ? propertiesBoost[property] : property == 'breadcrumb' ? 250 : property.substr(-28) == 'neoslivehybridsearchkeywords' ? 500 : 10;
 
 
                     },
@@ -3839,15 +3839,6 @@
                                         if (length > 50 && keyword !== undefined) {
                                             // index fast way
 
-                                            if (value.node.properties['_nodeLabel'] != undefined) {
-                                                doc['_nodeLabel'] = value.node.properties['_nodeLabel'];
-                                            }
-                                            if (value.node.properties['__google'] != undefined) {
-                                                doc['__google'] = value.node.properties['__google'];
-                                            }
-                                            if (value.node.properties[value.nodeType + '-neoslivehybridsearchkeywords'] != undefined) {
-                                                doc[value.nodeType + '-neoslivehybridsearchkeywords'] = value.node.properties[value.nodeType + '-neoslivehybridsearchkeywords'];
-                                            }
 
                                             var p = " "
                                             var s = " ";
@@ -3945,6 +3936,17 @@
                                                 doc.breadcrumb = value.node.breadcrumb.replace(/(<([^>]+)>)/ig, "");
                                                 doc.breadcrumb = doc.breadcrumb.substr(doc.breadcrumb.trim().lastIndexOf(" ")).toLowerCase();
                                                 doc.breadcrumb = doc.breadcrumb.replace(/[^A-zöäü^>]/ig, " ");
+                                            }
+
+
+                                            if (value.node.properties['_nodeLabel'] != undefined) {
+                                                doc['_nodeLabel'] = value.node.properties['_nodeLabel'];
+                                            }
+                                            if (value.node.properties['__google'] != undefined) {
+                                                doc['__google'] = value.node.properties['__google'];
+                                            }
+                                            if (value.node.properties[value.nodeType + '-neoslivehybridsearchkeywords'] != undefined) {
+                                                doc[value.nodeType + '-neoslivehybridsearchkeywords'] = value.node.properties[value.nodeType + '-neoslivehybridsearchkeywords'];
                                             }
 
                                             var eachObjecKeys = Object.keys(doc);
