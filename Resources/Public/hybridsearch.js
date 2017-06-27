@@ -3824,13 +3824,14 @@
                         }
 
 
-
+                        cachedindex = false;
+                        
                         angular.forEach(data, function (value, key) {
 
                                 if (value && nodesIndexed[value.node.hash] == undefined) {
                                     var doc = {};
 
-                                    cachedindex = false;
+
 
                                     //if (hasDistinct == true || self.isFiltered(value.node) === false) {
 
@@ -3847,6 +3848,7 @@
                                                 var p = " "
                                                 var s = " ";
 
+
                                                 angular.forEach(value.node.properties, function (propvalue, property) {
                                                     var boost = self.getBoost(property);
                                                     if (boost > 0) {
@@ -3862,7 +3864,6 @@
                                                                     s = s + " " + propvalue.toLowerCase().replace(/"/gi, " ")
                                                                 } else {
                                                                     s = s + " " + JSON.stringify(propvalue).toLowerCase().replace(/"/gi, " ");
-                                                                    cachedindex = true;
                                                                 }
                                                             }
                                                         }
