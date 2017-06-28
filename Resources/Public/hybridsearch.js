@@ -5576,15 +5576,15 @@
                     var ns = [];
 
                     if (groupedBy != undefined) {
-                        var grouped = this.getDistinct(groupedBy);
-                             angular.forEach(grouped,function(group) {
-                            ns.push(group.node);
-                        });
+                        var ghash = Sha1.hash(groupedBy);
+                        if (this.$$data.distinctsConfiguration[groupedBy] == undefined) {
+                            this.$$data.distinctsConfiguration[groupedBy] = {
+                                'limit': limit,
+                                'distinctsFromGetResults': true
+                            }
+                        }
                     }
 
-                    if (groupedBy == undefined && filter == undefined) {
-                        ns = this.getData()._nodes;
-                    }
 
                     if (filter !== undefined) {
 
@@ -5594,6 +5594,8 @@
                             }
                         });
 
+                    } else {
+                        ns = this.getData()._nodes;
                     }
 
                     return ns === undefined ? null : (limit === undefined ? ns : ns.slice(0, limit) );
