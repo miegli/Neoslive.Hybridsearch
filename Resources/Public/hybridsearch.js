@@ -3825,7 +3825,8 @@
 
 
                         cachedindex = false;
-                        
+
+
                         angular.forEach(data, function (value, key) {
 
                                 if (value && nodesIndexed[value.node.hash] == undefined) {
@@ -5570,30 +5571,32 @@
                  * @param {string} groupedBy group/distinct by property
                  * @returns {array} collection of {HybridsearchResultsNode}
                  */
-                getNodes: function (limit, groupedBy) {
+                getNodes: function (limit, filter, groupedBy) {
 
-                    if (groupedBy == undefined) {
-                        //
-                    } else {
-                        var ghash = Sha1.hash(groupedBy);
+                    var ns = [];
 
-                        if (this.$$data.distinctsConfiguration[groupedBy] == undefined) {
-                            this.$$data.distinctsConfiguration[groupedBy] = {
-                                'limit': limit,
-                                'distinctsFromGetResults': true
+                    if (groupedBy != undefined) {
+                        var grouped = this.getDistinct(groupedBy);
+                             angular.forEach(grouped,function(group) {
+                            ns.push(group.node);
+                        });
+                    }
+
+                    if (groupedBy == undefined && filter == undefined) {
+                        ns = this.getData()._nodes;
+                    }
+
+                    if (filter !== undefined) {
+
+                        angular.forEach(this.getData()._nodes, function(node) {
+                            if (filter(node)) {
+                                ns.push(node);
                             }
-                        }
-
-                        // if (this.$$data._nodesGroupedBy[ghash] !== undefined) {
-                        //     return this.$$data._nodesGroupedBy[ghash].slice(0, limit);
-                        // } else {
-                        //     return [];
-                        // }
+                        });
 
                     }
 
-
-                    return this.getData()._nodes === undefined ? null : (limit === undefined ? this.getData()._nodes : this.getData()._nodes.slice(0, limit) );
+                    return ns === undefined ? null : (limit === undefined ? ns : ns.slice(0, limit) );
 
 
                 },
@@ -5933,6 +5936,7 @@
 
                             if (typeof propvalue == 'object') {
 
+
                                 // force array
                                 if (propvalue && propvalue.length === undefined) {
                                     propvalue = [propvalue];
@@ -5952,10 +5956,13 @@
                                             id: k,
                                             property: property,
                                             value: v,
+                                            node: node,
                                             nodes: variants[k] == undefined ? [] : variants[k].nodes,
                                             maxScore: variants[k] === undefined ? node.getScore() : (variants[k].maxScore < node.getScore() ? node.getScore() : variants[k].maxScore),
                                             count: variants[k] === undefined ? 1 : (!self.$$data.distinctsConfiguration[property].counterGroupedByNode || variantsByNodes[node.identifier][k] === undefined ? variants[k].count + 1 : variants[k].count)
                                         };
+
+                                        variants[k].node.score = variants[k].maxScore;
 
                                         if (storeGroupedNodes) {
                                             variants[k].nodes.push(node);
