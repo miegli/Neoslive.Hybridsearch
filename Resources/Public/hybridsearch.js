@@ -2954,6 +2954,7 @@
                                 var uniquarrayfinal = [];
                                 var uniquarrayfinalTerms = {};
 
+
                                 if (lastSearchInstance.$$data.keywords.length) {
                                     var unique = {};
 
@@ -2978,6 +2979,7 @@
                                 var executedRef = {};
 
                                 var cleanedup = false;
+
 
 
                                 if (self.isLoadedAll() === false) {
@@ -3082,6 +3084,9 @@
 
                                     clearTimeout(self.getIndexInterval());
 
+
+
+
                                     angular.forEach(uniquarrayfinal, function (keyword) {
 
                                         var refs = self.getIndex(keyword);
@@ -3090,11 +3095,14 @@
                                         if (refs !== null && refs.length) {
                                             angular.forEach(refs, function (ref) {
 
+
+
                                                     if (self.isLoadedAll(ref.socket.toString()) == false && self.isLoadedAll(JSON.stringify(self.getFilter().getNodeType())) == false) {
 
                                                         var canceller = $q.defer();
 
                                                         if (self.getConfig('realtime') === null && ref.socket !== undefined) {
+                                                            staticCachedNodes = {};
                                                             ref.http = null;
                                                         }
 
