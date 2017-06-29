@@ -3871,6 +3871,7 @@
 
                                                 angular.forEach(value.node.properties, function (propvalue, property) {
                                                     var boost = self.getBoost(property);
+
                                                     if (boost > 0) {
                                                         if (boost >= 10) {
                                                             if (typeof propvalue == 'string') {
@@ -3894,6 +3895,7 @@
 
                                                 angular.forEach(keywordsreduced, function (k) {
                                                     if (k.length > 2) {
+
                                                         var i = s.indexOf(" " + k.toLowerCase() + " ");
                                                         if (i >= 0) {
                                                             p = p + " " + s.substr(i - k.length * 2, i + k.length * 2);
@@ -3906,8 +3908,9 @@
 
                                             } else {
 
+
                                                 if (value.node.properties['_nodeLabel'] != undefined) {
-                                                    doc['_nodeLabel'] = value.node.properties['_nodeLabel'];
+                                                    doc['_nodeLabel'] = value.node.properties['_nodeLabel'].toLowerCase();
                                                 }
                                             }
 
@@ -3916,6 +3919,8 @@
 
                                             // index full slow way
                                             angular.forEach(value.node.properties, function (propvalue, property) {
+
+
                                                 if (self.getBoost(property) > 0) {
                                                     if (property.length > 1 && property !== 'lastmodified' && property !== 'sorting' && property !== 'uri' && propvalue && propvalue.getProperty == undefined) {
 
@@ -5702,7 +5707,10 @@
                         querysegment = '';
                     }
 
+
+
                     var query = self.getApp().getScope()['__query'] ? self.getApp().getScope()[self.getApp().getScope()['__query']] : querysegment;
+                    query = query.toLowerCase();
 
                     angular.forEach(Object.keys(autocomplete), function (a) {
                         a = a.replace(/-/g, " ").trim();
@@ -5716,7 +5724,7 @@
 
                     var counter = 0;
                     angular.forEach(Object.keys(self.$$data.autocompleteKeys).sort(), function (a) {
-                        if (query.toLowerCase() !== a.toLowerCase() && a.indexOf(query) == 0 && autocompleteTemp[a.substr(0, a.length - 1)] == undefined && autocompleteTemp[a.substr(0, a.length - 2)] == undefined && autocompleteTemp[a] == undefined) {
+                        if (query !== a.toLowerCase() && a.indexOf(query) == 0 && autocompleteTemp[a.substr(0, a.length - 1)] == undefined && autocompleteTemp[a.substr(0, a.length - 2)] == undefined && autocompleteTemp[a] == undefined) {
                             self.$$data.autocomplete.push(a);
                             autocompleteTemp[a.substr(0, a.length - 1)] = true;
                             autocompleteTemp[a.substr(0, a.length - 2)] = true;
@@ -5730,7 +5738,7 @@
                         if (foundinproperty === null) {
                             angular.forEach(node.getProperties(), function (value, property) {
                                 if (foundinproperty === null && query && typeof value == 'string' && value.toLowerCase().substr(0, query.length) == query) {
-                                    if (value.toLowerCase() !== query.toLowerCase() && value.indexOf(".") == -1 && value.indexOf(",") == -1) {
+                                    if (value.toLowerCase() !== query && value.indexOf(".") == -1 && value.indexOf(",") == -1) {
                                         foundinproperty = property;
                                     }
                                 }
@@ -5747,22 +5755,27 @@
 
                         var a = node.getProperty(foundinproperty);
 
+                        if (typeof a == 'string' && a != '') {
 
+                            if (a.length < 50 && (caller == undefined || caller.isFiltered(node) == false)) {
 
-                        if (a.length < 50 && (caller == undefined || caller.isFiltered(node) == false)) {
-                            var i = a.toLowerCase().indexOf(query.toLowerCase());
-                            var b = a.substr(i).toLowerCase();
+                                var i = a.toLowerCase().indexOf(query);
+                                var b = a.substr(i).toLowerCase();
 
-                            if (b == query.toLowerCase() && i >= 0) {
-                                b = a.substr(0, i + query.length).toLowerCase();
+                                if (b == query && i >= 0) {
+                                    b = a.substr(0, i + query.length).toLowerCase();
+                                    b = b.trim();
+
+                                }
                                 b = b.trim();
+                                if (b.length > query.length && query !== b && autocompleteTemp[b] == undefined && i >= -1 && i < 64) {
+                                    self.$$data.autocomplete.push(b);
+                                    autocompleteTemp[b] = true;
+                                }
                             }
-                            b = b.trim();
-                            if (b.length > query.length && query.toLowerCase() !== b && autocompleteTemp[b] == undefined && i >= -1 && i < 64) {
-                                self.$$data.autocomplete.push(b);
-                                autocompleteTemp[b] = true;
-                            }
+
                         }
+
                     });
 
                     self.$$data.autocomplete.sort();
