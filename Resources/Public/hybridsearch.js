@@ -2412,6 +2412,8 @@
 
 
                             if (hasDistinct && unfilteredResult.length) {
+
+
                                 var unfilteredResultNodes = [];
                                 var nodeObject = null;
                                 angular.forEach(unfilteredResult, function (node) {
@@ -2656,8 +2658,9 @@
                                     } else {
 
                                         var filterApplied = false, filterobject = {};
-
                                         var propertyValue = self.getPropertyFromNode(node, property);
+
+
 
 
                                         // filter is fulltext mode
@@ -5310,6 +5313,7 @@
 
                         var self = this;
                         if (self.getScope() !== undefined) {
+
                             setTimeout(function () {
                                 self.getScope().$apply(function () {
                                 });
@@ -5919,15 +5923,18 @@
                     var self = this, variants = {}, variantsByNodes = {}, propvalue = '', variantsfinal = [];
 
 
+
                     if (self.$$data.distinctsConfiguration[property] == undefined) {
                         self.$$data.distinctsConfiguration[property] = {
                             counterGroupedByNode: counterGroupedByNode == undefined || counterGroupedByNode == null ? false : counterGroupedByNode,
                             valuesOnly: valuesOnly == undefined || valuesOnly == null ? false : valuesOnly,
                             affectedBySearchResult: affectedBySearchResult == undefined || affectedBySearchResult == null ? true : affectedBySearchResult,
+                            affectedBySearchResultWasApplied: false,
                             limit: limit,
                             distinctsFromGetResults: distinctsFromGetResults
                         };
                     }
+
 
                     if (self.$$data.distincts == undefined) {
                         self.$$data.distincts = {};
@@ -5936,6 +5943,8 @@
                     if (self.$$data.distincts[property] == undefined) {
                         self.$$data.distincts[property] = {};
                     }
+
+
 
 
                     if (Object.keys(self.$$data.distincts[property]).length) {
@@ -5964,13 +5973,19 @@
                         var storeGroupedNodes = false;
                     }
 
+
+
+                    if (self.$$data.distinctsConfiguration[property]['affectedBySearchResultWasApplied'] === true) {
+                        console.log('skip',property);
+                        return this;
+                    }
+
+
                     angular.forEach(eachResultNodes, function (node) {
 
                         if (self.$$data.distinctsConfiguration[property]['affectedBySearchResult'] == false || node['_isfiltered'] == undefined || node['_isfiltered'][property] === false || node['_isfiltered'][property] === undefined) {
                             variantsByNodes[node.identifier] = {};
                             propvalue = self.getPropertyFromNode(node, property);
-
-
                             if (typeof propvalue == 'object') {
 
 
@@ -6094,6 +6109,7 @@
                     });
 
 
+
                     angular.forEach(variants, function (v, k) {
 
 
@@ -6129,6 +6145,11 @@
 
 
                     self.$$data.distincts[property] = variants;
+
+
+                    if (self.$$data.distinctsConfiguration[property]['affectedBySearchResult'] === false && Object.keys(self.$$data.distincts[property]).length) {
+                        self.$$data.distinctsConfiguration[property]['affectedBySearchResultWasApplied'] = true;
+                    }
 
 
                     if (valuesOnly === undefined || valuesOnly === false) {
