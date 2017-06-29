@@ -1378,7 +1378,7 @@
                             property = nodetype + "-" + property;
                         }
 
-                        return propertiesBoost !== undefined && propertiesBoost[property] !== undefined ? propertiesBoost[property] : property == 'breadcrumb' ? 5 : property.substr(-28) == 'neoslivehybridsearchkeywords' ? 500 : 10;
+                        return propertiesBoost !== undefined && propertiesBoost[property] !== undefined ? propertiesBoost[property] : property == 'breadcrumb' ? 25 : property.substr(-28) == 'neoslivehybridsearchkeywords' ? 500 : 10;
 
 
                     },
