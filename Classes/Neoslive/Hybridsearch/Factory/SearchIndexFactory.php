@@ -941,66 +941,21 @@ class SearchIndexFactory
 
                     if (isset($this->settings['Filter']['NodeTypeFilter'])) {
 
-                        $flowQuery = $noparentcheck ? null : new FlowQuery(array($node));
+                        $flowQuery = new FlowQuery(array($node));
 
-                        if ($noparentcheck === true || $flowQuery->is($this->settings['Filter']['NodeTypeFilter'])) {
-
-                            if ($node->isHidden() || $node->isRemoved()) {
-                                $this->removeSingleIndex($node->getIdentifier(), $this->getWorkspaceHash($workspace), $this->branch, $this->getDimensionConfiugurationHash($dimensionConfiguration), array(), null, $this->getNodeTypeName($node));
-                            } else {
-
-                                if ($noparentcheck === false) {
-
-                                    $parent = $flowQuery->closest($this->settings['Filter']['GrantParentNodeTypeFilter'])->get(0);
-                                    if ($parent) {
-
-                                        $flowQueryParent = new FlowQuery(array($parent));
-                                        $parentNode = $flowQueryParent->closest($this->settings['Filter']['NodeTypeFilter'])->get(0);
-                                        if ($parentNode) {
-                                            $this->generateSingleIndex($parentNode, $workspace, $this->getDimensionConfiugurationHash($parentNode->getContext()->getDimensions()));
-                                        }
-
-                                    }
-
-                                }
-
-
-                                $this->generateSingleIndex($node, $workspace, $this->getDimensionConfiugurationHash($node->getContext()->getDimensions()));
-                                $counter++;
-                            }
-
+                        if ($node->isHidden() || $node->isRemoved() || $flowQuery->context(array('invisibleContentShown' => true))->parents('[instanceof Neos.Neos:Node][_hidden=TRUE]')->count() !== 0 || $flowQuery->context(array('invisibleContentShown' => true))->parents('[instanceof Neos.Neos:Node][_visible=FALSE]')->count() !== 0) {
+                            $this->removeSingleIndex($node->getIdentifier(), $this->getWorkspaceHash($workspace), $this->branch, $this->getDimensionConfiugurationHash($dimensionConfiguration), array(), null, $this->getNodeTypeName($node));
                         } else {
-
-                            $nextnode = $flowQuery->closest($this->settings['Filter']['NodeTypeFilter'])->get(0);
-                            if ($nextnode) {
-
-                                $this->generateSingleIndex($nextnode, $workspace, $this->getDimensionConfiugurationHash($nextnode->getContext()->getDimensions()));
-
-                                $flowQueryNext = new FlowQuery(array($nextnode));
-                                $parent = $flowQueryNext->closest($this->settings['Filter']['GrantParentNodeTypeFilter'])->get(0);
-
-                                if ($parent) {
-
-                                    $flowQueryParent = new FlowQuery(array($parent));
-                                    $parentNode = $flowQueryParent->closest($this->settings['Filter']['NodeTypeFilter'])->get(0);
-                                    if ($parentNode) {
-                                        $this->generateSingleIndex($parentNode, $workspace, $this->getDimensionConfiugurationHash($parentNode->getContext()->getDimensions()));
-                                    }
-
-
-                                }
-
-
-                            }
-
+                            $this->generateSingleIndex($node, $workspace, $this->getDimensionConfiugurationHash($node->getContext()->getDimensions()));
+                            $counter++;
                         }
+
 
                     }
 
 
                 } else {
                     // delete node index
-
                     foreach ($this->allSiteKeys as $siteKey => $siteVal) {
                         $this->removeSingleIndex($nodedata->getIdentifier(), $this->getWorkspaceHash($workspace), $this->branch, $this->getDimensionConfiugurationHash($dimensionConfiguration), array(), $siteKey, $this->getNodeTypeName($nodedata));
                     }
@@ -1282,36 +1237,36 @@ class SearchIndexFactory
                 $k = strval($keyword);
 
 
-                    if (substr($k, 0, 2) !== "__") {
-                        array_push($keywordsOfNode, $k);
+                if (substr($k, 0, 2) !== "__") {
+                    array_push($keywordsOfNode, $k);
+                }
+
+                if (substr($k, 0, 9) === "_nodetype") {
+                    $k = "_" . $this->getNodeTypeName($node) . mb_substr($k, 9);
+                }
+
+                if ($k) {
+                    if (isset($this->keywords->$workspaceHash->$dimensionConfigurationHash[$k]) == false) {
+                        $this->keywords->$workspaceHash->$dimensionConfigurationHash[$k] = array();
+                    }
+                    if (is_array($val) == false) {
+                        $val = array($k);
+                    }
+                    foreach ($val as $kek => $vev) {
+                        $this->keywords->$workspaceHash->$dimensionConfigurationHash[$k][$kek] = $vev;
                     }
 
-                    if (substr($k, 0, 9) === "_nodetype") {
-                        $k = "_" . $this->getNodeTypeName($node) . mb_substr($k, 9);
-                    }
+                }
 
-                    if ($k) {
-                        if (isset($this->keywords->$workspaceHash->$dimensionConfigurationHash[$k]) == false) {
-                            $this->keywords->$workspaceHash->$dimensionConfigurationHash[$k] = array();
-                        }
-                        if (is_array($val) == false) {
-                            $val = array($k);
-                        }
-                        foreach ($val as $kek => $vev) {
-                            $this->keywords->$workspaceHash->$dimensionConfigurationHash[$k][$kek] = $vev;
-                        }
+                if (isset($this->index->$workspaceHash->$dimensionConfigurationHash->$k) === false) {
+                    $this->index->$workspaceHash->$dimensionConfigurationHash->$k = new \stdClass();
+                }
 
-                    }
-
-                    if (isset($this->index->$workspaceHash->$dimensionConfigurationHash->$k) === false) {
-                        $this->index->$workspaceHash->$dimensionConfigurationHash->$k = new \stdClass();
-                    }
-
-                    if (substr($k, 0, 2) == '__') {
-                        $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier = array('node' => $indexData, 'nodeType' => $indexData->nodeType);
-                    } else {
-                        $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier = array('node' => null, 'nodeType' => $indexData->nodeType);
-                    }
+                if (substr($k, 0, 2) == '__') {
+                    $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier = array('node' => $indexData, 'nodeType' => $indexData->nodeType);
+                } else {
+                    $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier = array('node' => null, 'nodeType' => $indexData->nodeType);
+                }
 
 
             }
@@ -1391,7 +1346,6 @@ class SearchIndexFactory
         $words = explode(" ", ($text));
 
 
-
         // reduce
         $wordsReduced = array();
 
@@ -1402,9 +1356,9 @@ class SearchIndexFactory
                 $wm = $this->getMetaphone($w);
                 if (strlen($wm) > 0) {
                     $wordsReduced[$wm][$w] = 1;
-                    $wm = $this->getMetaphone(mb_substr($w,0,3));
+                    $wm = $this->getMetaphone(mb_substr($w, 0, 3));
                     if (strlen($wm) > 0) {
-                        $wordsReduced["000".$wm][$w] = 1;
+                        $wordsReduced["000" . $wm][$w] = 1;
                     }
                 }
 
@@ -1444,14 +1398,12 @@ class SearchIndexFactory
             return $string;
         }
 
-        return mb_strtoupper(metaphone(mb_strtolower($string),6));
-
+        return mb_strtoupper(metaphone(mb_strtolower($string), 6));
 
 
         if (strlen($metaphone) > 7) {
             $metaphone = mb_substr($metaphone, 0, strlen($metaphone) - 2);
         }
-
 
 
         if (strlen($metaphone) == 0 || $metaphone === 0) {
@@ -1460,11 +1412,11 @@ class SearchIndexFactory
 
 
         if (strlen($metaphone) < 4) {
-            $metaphone = mb_substr($string,0,1) . $metaphone;
+            $metaphone = mb_substr($string, 0, 1) . $metaphone;
         }
 
         if (strlen($metaphone) < 4) {
-            $metaphone =  mb_substr(mb_strtoupper($string),0,3) . $metaphone;
+            $metaphone = mb_substr(mb_strtoupper($string), 0, 3) . $metaphone;
         }
 
 
@@ -1602,7 +1554,6 @@ class SearchIndexFactory
             }
 
 
-
         }
 
 
@@ -1629,14 +1580,14 @@ class SearchIndexFactory
         $documentNode = $flowQuery->closest("[instanceof Neos.Neos:Document]")->get(0);
 
         if (isset($properties->label) == false && $node->getParent()) {
-                $prev = $flowQuery->prev()->get(0);
-                if ($prev) {
-                    if (strlen($prev->getLabel()) < 64) {
-                        if ($prev->getNodeType()->getName() !== $node->getNodeType()->getName()) {
-                            $properties->label = $prev->getLabel();
-                        }
+            $prev = $flowQuery->prev()->get(0);
+            if ($prev) {
+                if (strlen($prev->getLabel()) < 64) {
+                    if ($prev->getNodeType()->getName() !== $node->getNodeType()->getName()) {
+                        $properties->label = $prev->getLabel();
                     }
                 }
+            }
 
         }
 
@@ -1799,8 +1750,6 @@ class SearchIndexFactory
 
 
                 }
-
-
 
 
             }
