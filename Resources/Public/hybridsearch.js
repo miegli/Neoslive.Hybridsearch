@@ -1126,7 +1126,7 @@
                                 query.on("value", function (snapshot) {
 
                                     var branch = snapshot.val();
-                                    hybridsearch.setBranch(branch);
+
 
                                      /**
                                      * watch last sync
@@ -1134,6 +1134,7 @@
                                     var q = hybridsearch.$firebase().database().ref("lastsync" + "/" + hybridsearch.$$conf.workspace + "/" + branch);
                                     q.on("value", function (snapshot) {
                                         hybridsearch.setLastSync(snapshot.val());
+                                        hybridsearch.setBranch(branch);
                                         isRunning = true;
                                     });
 
