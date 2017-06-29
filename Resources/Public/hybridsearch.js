@@ -212,7 +212,7 @@
                 var hybridsearchInstanceNumber, pendingRequests, logStoreApplied, results, filter, index, lunrSearch,
                     nodesIndexed, nodesLastCount, nodes, nodesLastHash, nodeTypeLabels, emojis, resultGroupedBy,
                     resultCategorizedBy,
-                    resultOrderBy, propertiesBoost, ParentNodeTypeBoostFactor, NodeUrlBoostFactor, isRunning,
+                    resultOrderBy, propertiesBoost, NodeTypeBoostFactor, ParentNodeTypeBoostFactor, NodeUrlBoostFactor, isRunning,
                     firstfilterhash,
                     searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier,
                     nodesByIdentifier, searchCounter, searchCounterTimeout, nodeTypeProperties, isloadedall,
@@ -1543,6 +1543,25 @@
                      * @param {node}
                      * @returns {number}
                      */
+                    getNodeTypeBoostFactor: function (node) {
+
+                        console.log(node,NodeTypeBoostFactor);
+                        if (node.nodeType != undefined && NodeTypeBoostFactor !== undefined) {
+                            if (NodeTypeBoostFactor[node.nodeType] != undefined) {
+                                return NodeTypeBoostFactor[node.nodeType];
+                            }
+                        }
+
+
+                        return 1;
+
+                    },
+
+                    /**
+                     * @private
+                     * @param {node}
+                     * @returns {number}
+                     */
                     getNodeUrlBoostFactor: function (node) {
 
                         var b = 1;
@@ -1676,6 +1695,17 @@
                      */
                     setParentNodeTypeBoostFactor: function (boost) {
                         ParentNodeTypeBoostFactor = boost;
+                    },
+                    /**
+                     * @private
+                     * @param boost
+                     */
+                    setNodeTypeBoostFactor: function (boost) {
+
+                        angular.forEach(boost, function(k,b) {
+                            boost[b.replace(/[:\.]/g, '-').toLowerCase()] = k;
+                        });
+                        NodeTypeBoostFactor = boost;
                     },
                     /**
                      * @private
@@ -2406,7 +2436,7 @@
                                     //
 
                                     var preOrdered = $filter('orderBy')(preOrdered, function (item) {
-                                        item.score = Math.floor(item.score * self.getParentNodeTypeBoostFactor(nodes[item.ref]) * self.getNodeUrlBoostFactor(nodes[item.ref]));
+                                        item.score = Math.floor(item.score * self.getParentNodeTypeBoostFactor(nodes[item.ref]) * self.getNodeTypeBoostFactor(nodes[item.ref]) * self.getNodeUrlBoostFactor(nodes[item.ref]));
                                         return -1 * item.score;
                                     });
 
@@ -4764,6 +4794,19 @@
                 setParentNodeTypeBoostFactor: function (ParentNodeTypeBoostFactor) {
                     var self = this;
                     self.$$app.setParentNodeTypeBoostFactor(ParentNodeTypeBoostFactor);
+                    return this;
+                },
+                /**
+                 * Sets  node type boost.
+                 * @param {object} NodeTypeBoostFactor
+                 * @example var NodeTypeBoostFactor = {
+                 *        'corporate-contact': 1.5
+                 *    }
+                 * @returns {$hybridsearchResultsObject|*}
+                 */
+                setNodeTypeBoostFactor: function (NodeTypeBoostFactor) {
+                    var self = this;
+                    self.$$app.setNodeTypeBoostFactor(NodeTypeBoostFactor);
                     return this;
                 },
 
