@@ -1124,17 +1124,21 @@
                                  */
                                 var query = hybridsearch.$firebase().database().ref("branches/" + hybridsearch.$$conf.workspace);
                                 query.on("value", function (snapshot) {
-                                    hybridsearch.setBranch(snapshot.val());
-                                    var branch = snapshot.val();
-                                    isRunning = true;
 
-                                    /**
+                                    var branch = snapshot.val();
+                                    hybridsearch.setBranch(branch);
+
+                                     /**
                                      * watch last sync
                                      */
                                     var q = hybridsearch.$firebase().database().ref("lastsync" + "/" + hybridsearch.$$conf.workspace + "/" + branch);
                                     q.on("value", function (snapshot) {
                                         hybridsearch.setLastSync(snapshot.val());
+                                        isRunning = true;
                                     });
+
+
+
                                 });
 
 
