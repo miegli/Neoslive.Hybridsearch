@@ -132,6 +132,15 @@
                  * @private
                  * @returns Firebase App
                  */
+                setLastSync: function (lastsync) {
+                    this.$$conf.lastsync = lastsync;
+
+                },
+
+                /**
+                 * @private
+                 * @returns Firebase App
+                 */
                 getBranch: function () {
 
                     if (this.$$conf.branch === undefined || this.$$conf.branch == null) {
@@ -139,6 +148,18 @@
                         return 'master';
                     }
                     return this.$$conf.branch.length > 1 ? this.$$conf.branch : false;
+                },
+
+                /**
+                 * @private
+                 * @returns Firebase App
+                 */
+                getLastSync: function () {
+
+                    if (this.$$conf.lastsync === undefined || this.$$conf.lastsync == null) {
+                        this.$$conf.lastsync = 0;
+                    }
+                    return this.$$conf.lastsync;
                 }
 
 
@@ -1104,8 +1125,21 @@
                                 var query = hybridsearch.$firebase().database().ref("branches/" + hybridsearch.$$conf.workspace);
                                 query.on("value", function (snapshot) {
                                     hybridsearch.setBranch(snapshot.val());
+                                    var branch = snapshot.val();
                                     isRunning = true;
+
+                                    /**
+                                     * watch last sync
+                                     */
+                                    var q = hybridsearch.$firebase().database().ref("lastsync" + "/" + hybridsearch.$$conf.workspace + "/" + branch);
+                                    q.on("value", function (snapshot) {
+                                        hybridsearch.setLastSync(snapshot.val());
+                                    });
                                 });
+
+
+
+
 
                             } else {
                                 isRunning = true;
@@ -3557,7 +3591,7 @@
                             var query = {
                                 isLoadingAllFromNodeType: true,
                                 socket: hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + nodeType),
-                                http: (self.getConfig('cache') ? (hybridsearch.$$conf.cdnStaticURL == undefined ? '/_Hybridsearch' : hybridsearch.$$conf.cdnStaticURL + '/_Hybridsearch') : (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL)) + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + nodeType + ".json"
+                                http: (self.getConfig('cache') ? (hybridsearch.$$conf.cdnStaticURL == undefined ? '/_Hybridsearch' : hybridsearch.$$conf.cdnStaticURL + '/_Hybridsearch') : (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL)) + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + nodeType + ".json" + (self.getConfig('cache') ? "?ls=" + hybridsearch.getLastSync() : "")
                             };
                             return query;
 
@@ -3600,7 +3634,7 @@
                                         {
                                             isLoadingAllFromNodeType: true,
                                             socket: hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + this.getFilter().getNodeType()),
-                                            http: (self.getConfig('cache') ? (hybridsearch.$$conf.cdnStaticURL == undefined ? '/_Hybridsearch' : hybridsearch.$$conf.cdnStaticURL + '/_Hybridsearch') : (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL)) + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + this.getFilter().getNodeType() + ".json"
+                                            http: (self.getConfig('cache') ? (hybridsearch.$$conf.cdnStaticURL == undefined ? '/_Hybridsearch' : hybridsearch.$$conf.cdnStaticURL + '/_Hybridsearch') : (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL)) + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + this.getFilter().getNodeType() + ".json" + (self.getConfig('cache') ? "?ls=" + hybridsearch.getLastSync() : "")
                                         }
                                     );
                                 }
@@ -3624,7 +3658,7 @@
                                             {
                                                 isLoadingAllFromNodeType: true,
                                                 socket: hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + nodeType),
-                                                http: (self.getConfig('cache') ? '/_Hybridsearch' : (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL)) + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + nodeType + ".json"
+                                                http: (self.getConfig('cache') ? '/_Hybridsearch' : (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL)) + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + nodeType + ".json" + (self.getConfig('cache') ? "?ls=" + hybridsearch.getLastSync() : "")
                                             }
                                         );
                                     }
@@ -4250,7 +4284,7 @@
                  * @returns {HybridsearchObject}
                  */
                 enableCache: function (expires) {
-                    this.$$app.setConfig('cache', expires == undefined ? 3600 : expires);
+                    this.$$app.setConfig('cache', expires == undefined ? 3600000 : expires);
                     this.$$app.setConfig('realtime', false);
                     return this;
                 },
@@ -5994,7 +6028,6 @@
 
 
                     if (self.$$data.distinctsConfiguration[property]['affectedBySearchResultWasApplied'] === true) {
-                        console.log('skip', property);
                         return this;
                     }
 
