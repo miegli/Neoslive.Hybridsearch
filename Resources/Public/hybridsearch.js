@@ -1361,6 +1361,11 @@
                             return 0.05;
                         }
 
+                        if (property == '_nodeLabel') {
+                            return 1;
+                        }
+
+
                         if (propertiesBoost !== undefined && propertiesBoost[property] == undefined && property.indexOf(".") > -1) {
                             property = property.substr(0, property.indexOf("."));
                             if (property == '') {
@@ -1373,7 +1378,7 @@
                             property = nodetype + "-" + property;
                         }
 
-                        return propertiesBoost !== undefined && propertiesBoost[property] !== undefined ? propertiesBoost[property] : property == 'breadcrumb' ? 250 : property.substr(-28) == 'neoslivehybridsearchkeywords' ? 500 : 10;
+                        return propertiesBoost !== undefined && propertiesBoost[property] !== undefined ? propertiesBoost[property] : property == 'breadcrumb' ? 5 : property.substr(-28) == 'neoslivehybridsearchkeywords' ? 500 : 10;
 
 
                     },
@@ -1519,6 +1524,12 @@
                         if (node.parentNode != undefined && ParentNodeTypeBoostFactor !== undefined) {
                             if (ParentNodeTypeBoostFactor[node.parentNode.nodeType] != undefined) {
                                 return ParentNodeTypeBoostFactor[node.parentNode.nodeType];
+                            }
+                        }
+
+                        if (node.grandParentNode != undefined && ParentNodeTypeBoostFactor !== undefined) {
+                            if (ParentNodeTypeBoostFactor[node.grandParentNode.nodeType] != undefined) {
+                                return ParentNodeTypeBoostFactor[node.grandParentNode.nodeType];
                             }
                         }
 
