@@ -474,8 +474,8 @@ class SearchIndexFactory
 
                         $this->output->progressStart(count(get_object_vars($nodetypes)));
 
-                        $this->firebase->update("lastsync/$workspacename/$branch",time());
-                        
+                        $this->firebase->set("lastsync/$workspacename/$branch",time());
+
                         foreach ($nodetypes as $nodetype => $nodesCount) {
 
                             // write cache
