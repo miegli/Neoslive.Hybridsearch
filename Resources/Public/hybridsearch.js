@@ -5747,15 +5747,18 @@
 
                         var a = node.getProperty(foundinproperty);
 
+
+
                         if (a.length < 50 && (caller == undefined || caller.isFiltered(node) == false)) {
                             var i = a.toLowerCase().indexOf(query.toLowerCase());
                             var b = a.substr(i).toLowerCase();
+
                             if (b == query.toLowerCase() && i >= 0) {
                                 b = a.substr(0, i + query.length).toLowerCase();
                                 b = b.trim();
                             }
                             b = b.trim();
-                            if (b.length > query.length && query.toLowerCase() !== b && autocompleteTemp[b] == undefined && i >= -1 && i < 25) {
+                            if (b.length > query.length && query.toLowerCase() !== b && autocompleteTemp[b] == undefined && i >= -1 && i < 64) {
                                 self.$$data.autocomplete.push(b);
                                 autocompleteTemp[b] = true;
                             }
