@@ -1365,20 +1365,21 @@
                             return 1;
                         }
 
-
                         if (propertiesBoost !== undefined && propertiesBoost[property] == undefined && property.indexOf(".") > -1) {
                             property = property.substr(0, property.indexOf("."));
+
                             if (property == '') {
                                 return 1;
                             }
 
                         }
 
+
                         if (nodetype !== undefined && nodetype.length > property.length) {
                             property = nodetype + "-" + property;
                         }
 
-                        return propertiesBoost !== undefined && propertiesBoost[property] !== undefined ? propertiesBoost[property] : property == 'breadcrumb' ? 25 : property.substr(-28) == 'neoslivehybridsearchkeywords' ? 500 : 10;
+                        return propertiesBoost !== undefined && propertiesBoost[property] !== undefined ? propertiesBoost[property] : property == 'breadcrumb' ? 1 : property.substr(-28) == 'neoslivehybridsearchkeywords' ? 500 : 10;
 
 
                     },
@@ -3912,10 +3913,12 @@
 
 
                                                 angular.forEach(value.node.properties, function (propvalue, property) {
-                                                    var boost = self.getBoost(property);
+
+                                                    var boost = self.getBoost(property,value.node.nodeType);
 
                                                     if (boost > 0) {
                                                         if (boost >= 10) {
+
                                                             if (typeof propvalue == 'string') {
                                                                 doc[property] = s + " " + propvalue.toLowerCase().replace(/"/gi, " ")
                                                             } else {
@@ -3963,7 +3966,7 @@
                                             angular.forEach(value.node.properties, function (propvalue, property) {
 
 
-                                                if (self.getBoost(property) > 0) {
+                                                if (self.getBoost(property,value.node.nodeType) > 0) {
                                                     if (property.length > 1 && property !== 'lastmodified' && property !== 'sorting' && property !== 'uri' && propvalue && propvalue.getProperty == undefined) {
 
                                                         if (boost[property] == undefined) {
