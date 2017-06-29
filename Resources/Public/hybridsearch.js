@@ -3868,10 +3868,11 @@
                                                 var s = " ";
 
 
+
                                                 angular.forEach(value.node.properties, function (propvalue, property) {
                                                     var boost = self.getBoost(property);
                                                     if (boost > 0) {
-                                                        if (boost > 10) {
+                                                        if (boost >= 10) {
                                                             if (typeof propvalue == 'string') {
                                                                 doc[property] = s + " " + propvalue.toLowerCase().replace(/"/gi, " ")
                                                             } else {
