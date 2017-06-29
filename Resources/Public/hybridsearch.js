@@ -5663,6 +5663,7 @@
                  * @returns {array}
                  */
                 getAutocomplete: function () {
+                    this.$$data.hasautocomplete = true;
                     return this.$$data.autocomplete;
                 },
                 /**
@@ -5683,6 +5684,10 @@
                 updateAutocomplete: function (autocomplete, querysegment, caller) {
 
                     var self = this;
+
+                    if (self.$$data.hasautocomplete === undefined || self.$$data.hasautocomplete == false) {
+                        return null;
+                    }
 
                     if (!autocomplete) {
                         autocomplete = {};
