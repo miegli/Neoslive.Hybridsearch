@@ -3953,7 +3953,6 @@
                                             } else {
                                                 angular.forEach(value.node.properties, function (propvalue, property) {
                                                     var boost = self.getBoost(property, value.node.nodeType);
-                                                    if (boost > 0) {
                                                         if (boost > 10) {
                                                             if (typeof propvalue == 'string') {
                                                                 if (propvalue.indexOf(query) == 0) {
@@ -3961,7 +3960,6 @@
                                                                 }
                                                             }
                                                         }
-                                                    }
                                                 });
                                             }
 
