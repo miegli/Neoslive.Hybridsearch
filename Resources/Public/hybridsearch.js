@@ -3918,7 +3918,6 @@
                             return null;
                         }
 
-
                         angular.forEach(data, function (value, key) {
 
                                 cachedindex = false;
@@ -3926,15 +3925,12 @@
                                 if (value && nodesIndexed[value.node.hash] == undefined) {
                                     var doc = {};
 
-
-                                    //if (hasDistinct == true || self.isFiltered(value.node) === false) {
-
                                     nodes[value.node.identifier] = value.node;
 
                                     if (value.node != undefined && value.node.properties != undefined) {
                                         //angular.forEach(JSON.parse(JSON.stringify(value.node.properties)), function (propvalue, property) {
 
-                                        if (length > 50 && keyword !== undefined) {
+                                        if (length > 50) {
                                             // index fast way
 
                                             if (length < 250) {
@@ -3980,15 +3976,9 @@
                                             cachedindex = true;
                                             angular.forEach(value.node.properties, function (propvalue, property) {
 
-
                                                 if (self.getBoost(property, value.node.nodeType) > 0) {
+
                                                     if (property.length > 1 && property !== 'lastmodified' && property !== 'sorting' && property !== 'uri' && propvalue && propvalue.getProperty == undefined) {
-
-                                                        if (boost[property] == undefined) {
-                                                            boost[property] = self.getBoost(property, value.node.nodeType);
-                                                        }
-
-                                                        if (boost[property] > 0) {
 
 
                                                             var valueJson = false;
@@ -4019,17 +4009,13 @@
                                                                 }
                                                             }
 
-                                                        }
+
                                                     }
                                                 }
                                             });
                                         }
 
                                         if (Object.keys(doc).length) {
-
-                                            if (doc.rawcontent == undefined && value.node.rawcontent !== undefined) {
-                                                doc.rawcontent = value.node.rawcontent;
-                                            }
 
                                             if (value.node.breadcrumb !== undefined) {
                                                 doc.breadcrumb = value.node.breadcrumb.replace(/(<([^>]+)>)/ig, "");
@@ -4039,6 +4025,7 @@
                                             if (value.node.properties['__google'] != undefined) {
                                                 doc['__google'] = value.node.properties['__google'];
                                             }
+
                                             if (value.node.properties[value.nodeType + '-neoslivehybridsearchkeywords'] != undefined) {
                                                 doc[value.nodeType + '-neoslivehybridsearchkeywords'] = value.node.properties[value.nodeType + '-neoslivehybridsearchkeywords'];
                                             }
