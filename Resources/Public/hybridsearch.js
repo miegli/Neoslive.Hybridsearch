@@ -3956,7 +3956,7 @@
                                                         if (boost > 10) {
                                                             if (typeof propvalue == 'string') {
                                                                 if (propvalue.indexOf(query) == 0) {
-                                                                    doc[property] = propvalue;
+                                                                    doc[property] = propvalue.substr(0, 512);
                                                                 }
                                                             }
                                                         }
