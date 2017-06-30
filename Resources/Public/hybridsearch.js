@@ -2498,20 +2498,26 @@
 
                             if (hasDistinct && unfilteredResult.length) {
 
-
                                 var unfilteredResultNodes = [];
                                 var nodeObject = null;
+
                                 angular.forEach(unfilteredResult, function (node) {
                                     nodeObject = new HybridsearchResultsNode(node, 1);
                                     nodeObject['_isfiltered'] = {};
+                                    var hasdistinctfilters = false;
                                     angular.forEach(self.getResults().$$data.distincts, function (distinct, property) {
-                                        nodeObject['_isfiltered'][property] = self.isFiltered(nodeObject, property);
+                                        if (self.getResults().$$data.distinctsConfiguration[property].affectedBySearchResult == true) {
+                                            nodeObject['_isfiltered'][property] = self.isFiltered(nodeObject, property);
+                                            hasdistinctfilters = true;
+                                        }
                                     });
-                                    unfilteredResultNodes.push(nodeObject);
+                                    if (hasdistinctfilters) {
+                                        unfilteredResultNodes.push(nodeObject);
+                                    }
                                 });
 
-
                                 results.updateDistincts(unfilteredResultNodes);
+
                             }
 
 
@@ -5894,12 +5900,17 @@
                 updateDistincts: function (unfilteredResultNodes) {
 
                     var self = this;
-                    this.clearDistincts();
 
-                    this.$$data.unfilteredResultNodes = unfilteredResultNodes;
+                    this.$$data.unfilteredResultNodes = unfilteredResultNodes == undefined ? {} : unfilteredResultNodes;
 
                     angular.forEach(this.$$data.distincts, function (val, key) {
-                        self.getDistinct(key);
+                        if (self.$$data.distinctsConfiguration[key].affectedBySearchResult) {
+                            if (self.$$data.distincts[key] !== undefined) {
+                                delete self.$$data.distincts[key];
+                            }
+                            self.getDistinct(key);
+                        }
+
                     });
 
                     return this;
@@ -5969,24 +5980,7 @@
                     return this;
 
                 },
-                /**
-                 * clear distincts
-                 * @returns {void}
-                 */
-                clearDistincts: function () {
 
-                    var self = this;
-
-                    angular.forEach(self.$$data.distincts, function (distinct, property) {
-                        if (self.$$data.distinctsConfiguration[property].affectedBySearchResult) {
-                            delete self.$$data.distincts[property];
-                        }
-
-                    });
-
-                    self.getApp().applyScope();
-
-                },
                 /**
                  * @private
                  * check if any distincts are ative
@@ -6041,13 +6035,16 @@
 
                     var self = this, variants = {}, variantsByNodes = {}, propvalue = '', variantsfinal = [];
 
+                    if (property == undefined) {
+                        return [];
+                    }
 
                     if (self.$$data.distinctsConfiguration[property] == undefined) {
                         self.$$data.distinctsConfiguration[property] = {
                             counterGroupedByNode: counterGroupedByNode == undefined || counterGroupedByNode == null ? false : counterGroupedByNode,
                             valuesOnly: valuesOnly == undefined || valuesOnly == null ? false : valuesOnly,
                             affectedBySearchResult: affectedBySearchResult == undefined || affectedBySearchResult == null ? true : affectedBySearchResult,
-                            affectedBySearchResultWasApplied: false,
+                            affectedBySearchResultWasApplied: 0,
                             limit: limit,
                             distinctsFromGetResults: distinctsFromGetResults
                         };
@@ -6063,9 +6060,13 @@
                     }
 
 
+                   if ((affectedBySearchResult == undefined || affectedBySearchResult == false) && self.$$data.isStartedFirstTime == false) {
+                        return this;
+                   }
+
+
+
                     if (Object.keys(self.$$data.distincts[property]).length) {
-
-
                         if (limit == undefined) {
                             if (self.$$data.distinctsConfiguration[property].valuesOnly === false) {
                                 return self.$$data.distincts[property];
@@ -6081,7 +6082,12 @@
                     }
 
 
-                    if (self.$$data.distinctsConfiguration[property].distinctsFromGetResults) {
+                    if (self.$$data.distinctsConfiguration[property]['affectedBySearchResultWasApplied'] == true) {
+                        return this;
+                    }
+
+
+                    if (self.$$data.distinctsConfiguration[property].distinctsFromGetResults !== undefined) {
                         var eachResultNodes = this.getNodes();
                         var storeGroupedNodes = true;
                     } else {
@@ -6089,10 +6095,6 @@
                         var storeGroupedNodes = false;
                     }
 
-
-                    if (self.$$data.distinctsConfiguration[property]['affectedBySearchResultWasApplied'] === true) {
-                        return this;
-                    }
 
 
                     angular.forEach(eachResultNodes, function (node) {
