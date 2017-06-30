@@ -3213,7 +3213,7 @@
                                                             var req = {
                                                                 method: 'get',
                                                                 url: ref.http,
-                                                                headers: {'IF-Match': hybridsearch.getLastSync(), 'cache-control': 'public, immutable, max-age=' + self.getConfig('cache')},
+                                                                headers: {'If-None-Match': hybridsearch.getLastSync(), 'cache-control': 'public, immutable, max-age=' + self.getConfig('cache')},
                                                                 timeout: canceller.promise,
                                                                 cancel: function (reason) {
                                                                     canceller.resolve(reason);
@@ -3269,7 +3269,7 @@
                                                                                     var req = {
                                                                                         method: 'get',
                                                                                         url: group.ref.http,
-                                                                                        headers: {'IF-Match': hybridsearch.getLastSync(), 'cache-control': 'public, immutable, max-age=' + self.getConfig('cache')},
+                                                                                        headers: {'If-None-Match': hybridsearch.getLastSync(), 'cache-control': 'public, immutable, max-age=' + self.getConfig('cache')},
                                                                                         timeout: canceller.promise,
                                                                                         cancel: function (reason) {
                                                                                             canceller.resolve(reason);
@@ -3475,7 +3475,7 @@
                                                     self.addPendingRequest($http({
                                                         method: 'get',
                                                         url: ref.http.replace("$query", self.getFilter().getQuery()),
-                                                        headers: {'IF-Match': hybridsearch.getLastSync(), 'cache-control': 'public, immutable, max-age=' + self.getConfig('cache')},
+                                                        headers: {'If-None-Match': hybridsearch.getLastSync(), 'cache-control': 'public, immutable, max-age=' + self.getConfig('cache')},
                                                         timeout: canceller.promise,
                                                         cancel: function (reason) {
                                                             canceller.resolve(reason);
