@@ -3268,7 +3268,7 @@
                                                                                     var req = {
                                                                                         method: 'get',
                                                                                         url: group.ref.http,
-                                                                                        headers: {'Expires': 'Wed, 21 Oct 2100 07:28:00 GMT', 'cache-control': 'public, immutable, expires=' + self.getConfig('cache')},
+                                                                                        headers: {'cache-control': 'public, immutable, expires=' + self.getConfig('cache')},
                                                                                         timeout: canceller.promise,
                                                                                         cancel: function (reason) {
                                                                                             canceller.resolve(reason);
