@@ -212,7 +212,8 @@
                 var hybridsearchInstanceNumber, pendingRequests, logStoreApplied, results, filter, index, lunrSearch,
                     nodesIndexed, nodesLastCount, nodes, nodesLastHash, nodeTypeLabels, emojis, resultGroupedBy,
                     resultCategorizedBy,
-                    resultOrderBy, propertiesBoost, NodeTypeBoostFactor, ParentNodeTypeBoostFactor, NodeUrlBoostFactor, isRunning,
+                    resultOrderBy, propertiesBoost, NodeTypeBoostFactor, ParentNodeTypeBoostFactor, NodeUrlBoostFactor,
+                    isRunning,
                     firstfilterhash,
                     searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier,
                     nodesByIdentifier, searchCounter, searchCounterTimeout, nodeTypeProperties, isloadedall,
@@ -1128,7 +1129,7 @@
                                     var branch = snapshot.val();
 
 
-                                     /**
+                                    /**
                                      * watch last sync
                                      */
                                     var q = hybridsearch.$firebase().database().ref("lastsync" + "/" + hybridsearch.$$conf.workspace + "/" + branch);
@@ -1139,11 +1140,7 @@
                                     });
 
 
-
                                 });
-
-
-
 
 
                             } else {
@@ -1365,6 +1362,10 @@
                             return 1;
                         }
 
+                        if (propertiesBoost[property] !== undefined) {
+                            return propertiesBoost[property];
+                        }
+
                         if (propertiesBoost !== undefined && propertiesBoost[property] == undefined && property.indexOf(".") > -1) {
                             property = property.substr(0, property.indexOf("."));
 
@@ -1379,7 +1380,10 @@
                             property = nodetype + "-" + property;
                         }
 
-                        return propertiesBoost !== undefined && propertiesBoost[property] !== undefined ? propertiesBoost[property] : property == 'breadcrumb' ? 50 : property.substr(-28) == 'neoslivehybridsearchkeywords' ? 500 : 10;
+                        var pb = propertiesBoost !== undefined && propertiesBoost[property] !== undefined ? propertiesBoost[property] : property == 'breadcrumb' ? 50 : property.substr(-28) == 'neoslivehybridsearchkeywords' ? 500 : 10;
+                        propertiesBoost[property] = pb;
+
+                        return pb;
 
 
                     },
@@ -1701,7 +1705,7 @@
                      */
                     setNodeTypeBoostFactor: function (boost) {
 
-                        angular.forEach(boost, function(k,b) {
+                        angular.forEach(boost, function (k, b) {
                             boost[b.replace(/[:\.]/g, '-').toLowerCase()] = k;
                         });
                         NodeTypeBoostFactor = boost;
@@ -3560,8 +3564,9 @@
                     getMetaphone: function (querysegment) {
 
                         querysegment = this.getEmoijQuery(querysegment);
+                        var m = metaphone(querysegment.toLowerCase(), 6).toUpperCase();
 
-                        return metaphone(querysegment.toLowerCase(), 6).toUpperCase();
+                        return m.length > 0 ? m : querysegment;
 
                     }
 
@@ -3898,16 +3903,7 @@
                         var boost = {};
                         var length = data.length;
                         var cachedindex = true;
-                        var keywordsreduced = [];
-
-                        if (keywords !== undefined) {
-                            var q = " " + self.getFilter().getQuery() + " ";
-                            angular.forEach(keywords, function (k) {
-                                if (q.indexOf(k) >= 0) {
-                                    keywordsreduced.push(k);
-                                }
-                            });
-                        }
+                        var query = self.getFilter().getQuery();
 
 
                         if (keyword !== undefined && keywords == undefined) {
@@ -3916,10 +3912,9 @@
                         }
 
 
-                        cachedindex = false;
-
-
                         angular.forEach(data, function (value, key) {
+
+                                cachedindex = false;
 
                                 if (value && nodesIndexed[value.node.hash] == undefined) {
                                     var doc = {};
@@ -3934,16 +3929,17 @@
 
                                         if (length > 50 && keyword !== undefined) {
                                             // index fast way
+
                                             if (length < 250) {
                                                 angular.forEach(value.node.properties, function (propvalue, property) {
-                                                    var boost = self.getBoost(property,value.node.nodeType);
+                                                    var boost = self.getBoost(property, value.node.nodeType);
                                                     if (boost > 0) {
                                                         if (boost >= 10) {
                                                             if (typeof propvalue == 'object') {
                                                                 doc[property] = JSON.stringify(propvalue).toLowerCase().replace(/"/gi, " ");
                                                             } else {
                                                                 if (typeof propvalue == 'string') {
-                                                                    doc[property] = propvalue.toLowerCase().replace(/"/gi, " ").substr(0,512);
+                                                                    doc[property] = propvalue.toLowerCase().replace(/"/gi, " ").substr(0, 512);
                                                                 } else {
                                                                     doc[property] = propvalue;
                                                                 }
@@ -3952,18 +3948,33 @@
                                                     }
                                                 });
                                             } else {
-                                                if (value.node.properties['_nodeLabel'] != undefined) {
-                                                    doc['_nodeLabel'] = value.node.properties['_nodeLabel'].toLowerCase();
-                                                }
+                                                angular.forEach(value.node.properties, function (propvalue, property) {
+                                                    var boost = self.getBoost(property, value.node.nodeType);
+                                                    if (boost > 0) {
+                                                        if (boost > 10) {
+                                                            if (typeof propvalue == 'string') {
+                                                                if (propvalue.indexOf(query) == 0) {
+                                                                    doc[property] = propvalue;
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                });
                                             }
+
+                                            if (value.node.properties['_nodeLabel'] != undefined) {
+                                                doc['_nodeLabel'] = value.node.properties['_nodeLabel'];
+                                            }
+
 
                                         } else {
 
                                             // index full slow way
+                                            cachedindex = true;
                                             angular.forEach(value.node.properties, function (propvalue, property) {
 
 
-                                                if (self.getBoost(property,value.node.nodeType) > 0) {
+                                                if (self.getBoost(property, value.node.nodeType) > 0) {
                                                     if (property.length > 1 && property !== 'lastmodified' && property !== 'sorting' && property !== 'uri' && propvalue && propvalue.getProperty == undefined) {
 
                                                         if (boost[property] == undefined) {
@@ -3990,8 +4001,6 @@
                                                             if (valueJson) {
 
                                                                 var recstring = valueJson.getRecursiveStrings();
-
-
                                                                 angular.forEach(recstring, function (o) {
                                                                     doc[property + '.' + o.key] = o.val.replace(/(<([^>]+)>)/ig, " ");
 
@@ -5778,11 +5787,15 @@
 
 
                     var foundinproperty = null;
+                    var foundinpropertyLength = 0;
                     angular.forEach(self.getNodes(16), function (node) {
                         if (foundinproperty === null) {
                             angular.forEach(node.getProperties(), function (value, property) {
-                                if (foundinproperty === null && query && typeof value == 'string' && value.toLowerCase().substr(0, query.length + 1) == query + " ") {
-                                    foundinproperty = property;
+                                if (query && typeof value == 'string' && value.toLowerCase().substr(0, query.length + 1) == query + " ") {
+                                    if (foundinpropertyLength == 0 || value.length < foundinpropertyLength) {
+                                        foundinproperty = property;
+                                    }
+                                    foundinpropertyLength = value.length;
                                 }
                             });
                         }
@@ -5794,11 +5807,8 @@
 
 
                     angular.forEach(self.getNodes(16), function (node) {
-
                         var a = node.getProperty(foundinproperty);
-
                         if (typeof a == 'string' && a != '') {
-
                             if (a.length < 50 && (caller == undefined || caller.isFiltered(node) == false)) {
 
                                 var i = a.toLowerCase().indexOf(query);
@@ -5833,10 +5843,11 @@
                     var autocompleteTempPostProcessed = [];
                     autocompleteTemp = {};
 
+
                     if (self.$$data.autocomplete.length > 32) {
                         angular.forEach(self.$$data.autocomplete, function (a) {
                             if (autocompleteTemp[a] == undefined) {
-                                var m = metaphone(a.substr(0,a.length - 3));
+                                var m = metaphone(a.substr(0, a.length - 3));
                                 if (autocompleteTemp[m] == undefined) {
                                     autocompleteTempPostProcessed.push(a);
                                 }
@@ -5850,8 +5861,8 @@
 
                         angular.forEach(self.$$data.autocomplete, function (a) {
                             if (autocompleteTemp[a] == undefined) {
-                                var m1 = a.substr(0,a.length - 1);
-                                var m2 = a.substr(0,a.length - 2);
+                                var m1 = a.substr(0, a.length - 1);
+                                var m2 = a.substr(0, a.length - 2);
                                 if (autocompleteTemp[m1] == undefined) {
                                     autocompleteTempPostProcessed.push(a);
                                     autocompleteTemp[m1] = true;
@@ -5860,7 +5871,7 @@
 
                             }
                             autocompleteTemp[a] = true
-                           ;
+                            ;
                         });
                         self.$$data.autocomplete = autocompleteTempPostProcessed;
                     }
