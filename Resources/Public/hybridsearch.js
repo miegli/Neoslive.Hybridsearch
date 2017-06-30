@@ -3213,6 +3213,7 @@
                                                             var req = {
                                                                 method: 'get',
                                                                 url: ref.http,
+                                                                headers: {'cache-control': 'public, no-check, immutable, max-age=' + self.getConfig('cache')},
                                                                 timeout: canceller.promise,
                                                                 cancel: function (reason) {
                                                                     canceller.resolve(reason);
@@ -3268,6 +3269,7 @@
                                                                                     var req = {
                                                                                         method: 'get',
                                                                                         url: group.ref.http,
+                                                                                        cache: true,
                                                                                         headers: {'cache-control': 'public, no-check, immutable, max-age=' + self.getConfig('cache')},
                                                                                         timeout: canceller.promise,
                                                                                         cancel: function (reason) {
@@ -3475,6 +3477,7 @@
                                                     self.addPendingRequest($http({
                                                         method: 'get',
                                                         url: ref.http.replace("$query", self.getFilter().getQuery()),
+                                                        headers: {'cache-control': 'public, no-check, immutable, max-age=' + self.getConfig('cache')},
                                                         cache: true,
                                                         timeout: canceller.promise,
                                                         cancel: function (reason) {
