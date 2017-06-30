@@ -3268,7 +3268,7 @@
                                                                                     var req = {
                                                                                         method: 'get',
                                                                                         url: group.ref.http,
-                                                                                        headers: {'cache-control': 'public, no-check, immutable. max-age=' + self.getConfig('cache')},
+                                                                                        headers: {'cache-control': 'public, no-check, immutable, max-age=' + self.getConfig('cache')},
                                                                                         timeout: canceller.promise,
                                                                                         cancel: function (reason) {
                                                                                             canceller.resolve(reason);
