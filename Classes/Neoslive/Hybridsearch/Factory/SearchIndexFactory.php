@@ -465,7 +465,6 @@ class SearchIndexFactory
 
             foreach ($allSiteKeys as $sitekey => $c) {
 
-
                 foreach (json_decode($this->firebase->get("sites/$sitekey/nodetypes", array('shallow' => 'true'))) as $workspacename => $k) {
 
                     foreach (json_decode($this->firebase->get("sites/$sitekey/nodetypes/$workspacename/$branch", array('shallow' => 'true'))) as $dimension => $d) {
@@ -511,6 +510,7 @@ class SearchIndexFactory
             $this->output->outputLine('static file cache created');
 
         } catch (\Neos\Flow\Exception $exception) {
+            \Neos\Flow\var_dump($exception);
             $this->output->outputLine('unable to create static cache.');
         }
 

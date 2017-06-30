@@ -5861,12 +5861,18 @@
 
                         angular.forEach(self.$$data.autocomplete, function (a) {
                             if (autocompleteTemp[a] == undefined) {
-                                var m1 = a.substr(0, a.length - 1);
-                                var m2 = a.substr(0, a.length - 2);
-                                if (autocompleteTemp[m1] == undefined) {
+
+                                if (a.substr(0,1).isNaN == true) {
+                                    var m1 = a.substr(0, a.length - 1);
+                                    var m2 = a.substr(0, a.length - 2);
+                                    if (autocompleteTemp[m1] == undefined) {
+                                        autocompleteTempPostProcessed.push(a);
+                                        autocompleteTemp[m1] = true;
+                                        autocompleteTemp[m2] = true;
+                                    }
+                                } else {
                                     autocompleteTempPostProcessed.push(a);
-                                    autocompleteTemp[m1] = true;
-                                    autocompleteTemp[m2] = true;
+                                    autocompleteTemp[a] = true;
                                 }
 
                             }
