@@ -3213,7 +3213,6 @@
                                                             var req = {
                                                                 method: 'get',
                                                                 url: ref.http,
-                                                                headers: {'If-None-Match': hybridsearch.getLastSync(), 'cache-control': 'public, immutable, max-age=' + self.getConfig('cache')},
                                                                 timeout: canceller.promise,
                                                                 cancel: function (reason) {
                                                                     canceller.resolve(reason);
@@ -3269,7 +3268,7 @@
                                                                                     var req = {
                                                                                         method: 'get',
                                                                                         url: group.ref.http,
-                                                                                        headers: {'If-None-Match': hybridsearch.getLastSync(), 'cache-control': 'public, immutable, max-age=' + self.getConfig('cache')},
+                                                                                        headers: {'Expires': 'Wed, 21 Oct 2100 07:28:00 GMT', 'cache-control': 'public, immutable, expires=' + self.getConfig('cache')},
                                                                                         timeout: canceller.promise,
                                                                                         cancel: function (reason) {
                                                                                             canceller.resolve(reason);
@@ -3475,7 +3474,6 @@
                                                     self.addPendingRequest($http({
                                                         method: 'get',
                                                         url: ref.http.replace("$query", self.getFilter().getQuery()),
-                                                        headers: {'If-None-Match': hybridsearch.getLastSync(), 'cache-control': 'public, immutable, max-age=' + self.getConfig('cache')},
                                                         timeout: canceller.promise,
                                                         cancel: function (reason) {
                                                             canceller.resolve(reason);
