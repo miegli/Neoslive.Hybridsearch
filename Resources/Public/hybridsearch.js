@@ -1545,7 +1545,6 @@
                      */
                     getNodeTypeBoostFactor: function (node) {
 
-                        console.log(node,NodeTypeBoostFactor);
                         if (node.nodeType != undefined && NodeTypeBoostFactor !== undefined) {
                             if (NodeTypeBoostFactor[node.nodeType] != undefined) {
                                 return NodeTypeBoostFactor[node.nodeType];
@@ -3935,60 +3934,28 @@
 
                                         if (length > 50 && keyword !== undefined) {
                                             // index fast way
-
                                             if (length < 250) {
-
-                                                var p = " "
-                                                var s = " ";
-
-
                                                 angular.forEach(value.node.properties, function (propvalue, property) {
-
                                                     var boost = self.getBoost(property,value.node.nodeType);
-
                                                     if (boost > 0) {
                                                         if (boost >= 10) {
-
-                                                            if (typeof propvalue == 'string') {
-                                                                doc[property] = s + " " + propvalue.toLowerCase().replace(/"/gi, " ")
-                                                            } else {
+                                                            if (typeof propvalue == 'object') {
                                                                 doc[property] = JSON.stringify(propvalue).toLowerCase().replace(/"/gi, " ");
-                                                            }
-                                                        } else {
-                                                            if (length < 100) {
+                                                            } else {
                                                                 if (typeof propvalue == 'string') {
-                                                                    s = s + " " + propvalue.toLowerCase().replace(/"/gi, " ")
+                                                                    doc[property] = propvalue.toLowerCase().replace(/"/gi, " ").substr(0,512);
                                                                 } else {
-                                                                    s = s + " " + JSON.stringify(propvalue).toLowerCase().replace(/"/gi, " ");
+                                                                    doc[property] = propvalue;
                                                                 }
                                                             }
                                                         }
                                                     }
                                                 });
-
-                                                s = s + " ";
-
-                                                angular.forEach(keywordsreduced, function (k) {
-                                                    if (k.length > 2) {
-
-                                                        var i = s.indexOf(" " + k.toLowerCase() + " ");
-                                                        if (i >= 0) {
-                                                            p = p + " " + s.substr(i - k.length * 2, i + k.length * 2);
-                                                        }
-                                                    }
-                                                });
-
-
-                                                doc['_index'] = p;
-
                                             } else {
-
-
                                                 if (value.node.properties['_nodeLabel'] != undefined) {
                                                     doc['_nodeLabel'] = value.node.properties['_nodeLabel'].toLowerCase();
                                                 }
                                             }
-
 
                                         } else {
 
