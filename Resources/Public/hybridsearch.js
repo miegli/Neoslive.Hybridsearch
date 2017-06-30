@@ -4028,7 +4028,6 @@
                                             if (value.node.breadcrumb !== undefined) {
                                                 doc.breadcrumb = value.node.breadcrumb.replace(/(<([^>]+)>)/ig, "");
                                                 doc.breadcrumb = doc.breadcrumb.substr(doc.breadcrumb.trim().lastIndexOf(" ")).toLowerCase();
-                                                doc.breadcrumb = doc.breadcrumb.replace(/[^A-zöäü^>]/ig, " ");
                                             }
 
                                             if (value.node.properties['__google'] != undefined) {
