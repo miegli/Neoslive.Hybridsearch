@@ -6112,11 +6112,16 @@
                                     if (v !== undefined && v !== null) {
 
                                         var hashs = {};
-                                        var hashk = Object.keys(v).sort();
-                                        angular.forEach(hashk, function (a) {
-                                            hashs[a] = v[a];
-                                        });
-                                        var k = Sha1.hash(JSON.stringify(hashs));
+                                        if (typeof v == 'object')
+                                        {
+                                            var hashk = Object.keys(v).sort();
+                                            angular.forEach(hashk, function (a) {
+                                                hashs[a] = v[a];
+                                            });
+                                            var k = Sha1.hash(JSON.stringify(hashs));
+                                        } else {
+                                            k = v;
+                                        }
 
                                         variants[k] = {
                                             id: k,
