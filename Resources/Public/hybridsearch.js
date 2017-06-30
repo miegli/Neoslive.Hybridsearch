@@ -229,6 +229,7 @@
                     window.hybridsearchInstances++;
                 }
                 emojis = {};
+                propertiesBoost = {};
                 staticCachedNodes = {};
                 isloadedall = {};
                 config = {};
