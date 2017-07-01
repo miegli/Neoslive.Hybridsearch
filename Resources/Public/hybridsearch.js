@@ -3007,7 +3007,7 @@
                                     var index = client.initIndex(hybridconfig.site + '-' + hybridconfig.workspace + '-' + hybridconfig.dimension);
 
                                     index.search(self.getFilter().getQuery(), {
-                                        hitsPerPage: 1000,
+                                        hitsPerPage: 9999999,
                                         minWordSizeForApprox1: 4,
                                         minWordSizefor2Typos: 4,
                                         removeWordsIfNoResults: 'allOptional',
