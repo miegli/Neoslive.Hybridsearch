@@ -2439,8 +2439,15 @@
 
                                     //
 
+                                    console.log(preOrdered.length);
+
                                     var preOrdered = $filter('orderBy')(preOrdered, function (item) {
                                         item.score = Math.floor(item.score * self.getParentNodeTypeBoostFactor(nodes[item.ref]) * self.getNodeTypeBoostFactor(nodes[item.ref]) * self.getNodeUrlBoostFactor(nodes[item.ref]));
+
+                                        if (nodes[item.ref]['__algoliaranking'] !== undefined) {
+                                            item.score = item.score - (2*nodes[item.ref]['__algoliaranking']);
+                                        }
+
                                         return -1 * item.score;
                                     });
 
@@ -3095,10 +3102,7 @@
                                     }
 
                                     var execute = function (keyword, data, ref) {
-
-
                                         if (ref) {
-
                                             if (self.isLoadedAll(ref.socket !== undefined ? ref.socket.toString() : null) === false) {
 
 
@@ -3190,275 +3194,305 @@
                                     clearTimeout(self.getIndexInterval());
 
 
-                                    angular.forEach(uniquarrayfinal, function (keyword) {
+                                    if (self.getConfig('algolia')) {
 
-                                        var refs = self.getIndex(keyword);
+                                        setIndexTimeout = window.setTimeout(function () {
 
+                                            var config = self.getConfig('algolia');
+                                            var hybridconfig = self.getHybridsearch().$$conf;
+                                            var client = algoliasearch(config.applicationID, config.apiKey);
+                                            var index = client.initIndex(hybridconfig.site + '-' + hybridconfig.workspace + '-' + hybridconfig.dimension);
 
-                                        if (refs !== null && refs.length) {
-                                            angular.forEach(refs, function (ref) {
+                                            console.log(self.getFilter().getQuery(),self.getFilter().getFullSearchQuery());
 
+                                            index.search(self.getFilter().getQuery(), {
+                                                hitsPerPage: 1000,
+                                                minWordSizeForApprox1: 4,
+                                                removeWordsIfNoResults: 'allOptional',
+                                                typoTolerance: 'strict'
+                                            }, function searchDone(err, content) {
+                                                if (err) {
+                                                    return;
+                                                }
+                                                self.clearLocalIndex();
+                                                self.addLocalIndex(content.hits);
+                                                self.search();
+                                            });
 
-                                                    if (self.isLoadedAll(ref.socket.toString()) == false && self.isLoadedAll(JSON.stringify(self.getFilter().getNodeType())) == false) {
-
-                                                        var canceller = $q.defer();
-
-                                                        if (self.getConfig('realtime') === null && ref.socket !== undefined) {
-                                                            staticCachedNodes = {};
-                                                            ref.http = null;
-                                                        }
-
-                                                        if (ref.http && (self.getConfig('realtime') === null || self.getConfig('realtime') === false) && ref.socket !== undefined) {
-
-                                                            var req = {
-                                                                method: 'get',
-                                                                url: ref.http,
-                                                                timeout: canceller.promise,
-                                                                cancel: function (reason) {
-                                                                    canceller.resolve(reason);
-                                                                }
-                                                            };
+                                        }, 5);
 
 
-                                                            self.addPendingRequest($http(req).success(function (data) {
+                                    } else {
+                                        angular.forEach(uniquarrayfinal, function (keyword) {
 
-                                                                nodesIndexed = {};
-                                                                var tmpNodes = [];
-                                                                var tmpNodesCounter = 0;
+                                            var refs = self.getIndex(keyword);
 
-                                                                var reqNodesCount = data ? Object.keys(data).length : 0;
 
-                                                                if (reqNodesCount) {
+                                            if (refs !== null && refs.length) {
+                                                angular.forEach(refs, function (ref) {
 
-                                                                    if (self.getFilter().getNodeType()) {
-                                                                        self.setIsLoadedAll(JSON.stringify(self.getFilter().getNodeType()));
+
+                                                        if (self.isLoadedAll(ref.socket.toString()) == false && self.isLoadedAll(JSON.stringify(self.getFilter().getNodeType())) == false) {
+
+                                                            var canceller = $q.defer();
+
+                                                            if (self.getConfig('realtime') === null && ref.socket !== undefined) {
+                                                                staticCachedNodes = {};
+                                                                ref.http = null;
+                                                            }
+
+                                                            if (ref.http && (self.getConfig('realtime') === null || self.getConfig('realtime') === false) && ref.socket !== undefined) {
+
+                                                                var req = {
+                                                                    method: 'get',
+                                                                    url: ref.http,
+                                                                    timeout: canceller.promise,
+                                                                    cancel: function (reason) {
+                                                                        canceller.resolve(reason);
                                                                     }
-
-                                                                    if (ref.isLoadingAllFromNodeType == undefined || ref.isLoadingAllFromNodeType == false) {
-                                                                        var groupedByNodeType = {};
-                                                                        angular.forEach(data, function (node, identifier) {
-                                                                            if (groupedByNodeType[node.nodeType] == undefined) {
-                                                                                groupedByNodeType[node.nodeType] = {
-                                                                                    'ref': self.getIndex(null, node.nodeType),
-                                                                                    'nodes': {}
-                                                                                };
-
-                                                                            }
-                                                                            groupedByNodeType[node.nodeType]['nodes'][identifier] = null;
-
-                                                                        });
-
-                                                                        var requestCount = Object.keys(groupedByNodeType).length;
-                                                                        var requestCountDone = 0;
-                                                                        var groupedByNodeTypeNodes = [];
-                                                                        var isstaticcached = true;
-
-                                                                        angular.forEach(groupedByNodeType, function (group, nodetype) {
-                                                                            if (staticCachedNodes[nodetype] == undefined) {
-                                                                                isstaticcached = false;
-                                                                            }
-                                                                        });
+                                                                };
 
 
-                                                                        if (isstaticcached == false) {
-                                                                            angular.forEach(groupedByNodeType, function (group, nodetype) {
+                                                                self.addPendingRequest($http(req).success(function (data) {
 
-                                                                                // fetch all nodes content
-                                                                                if (self.getConfig('cache')) {
-                                                                                    var req = {
-                                                                                        method: 'get',
-                                                                                        url: group.ref.http,
-                                                                                        headers: {'cache-control': 'public, immutable, max-age=' + self.getConfig('cache')},
-                                                                                        timeout: canceller.promise,
-                                                                                        cancel: function (reason) {
-                                                                                            canceller.resolve(reason);
-                                                                                        }
+                                                                    nodesIndexed = {};
+                                                                    var tmpNodes = [];
+                                                                    var tmpNodesCounter = 0;
+
+                                                                    var reqNodesCount = data ? Object.keys(data).length : 0;
+
+                                                                    if (reqNodesCount) {
+
+                                                                        if (self.getFilter().getNodeType()) {
+                                                                            self.setIsLoadedAll(JSON.stringify(self.getFilter().getNodeType()));
+                                                                        }
+
+                                                                        if (ref.isLoadingAllFromNodeType == undefined || ref.isLoadingAllFromNodeType == false) {
+                                                                            var groupedByNodeType = {};
+                                                                            angular.forEach(data, function (node, identifier) {
+                                                                                if (groupedByNodeType[node.nodeType] == undefined) {
+                                                                                    groupedByNodeType[node.nodeType] = {
+                                                                                        'ref': self.getIndex(null, node.nodeType),
+                                                                                        'nodes': {}
                                                                                     };
 
-                                                                                } else {
-                                                                                    var req = {
-                                                                                        method: 'get',
-                                                                                        url: group.ref.http,
-                                                                                        timeout: canceller.promise,
-                                                                                        cancel: function (reason) {
-                                                                                            canceller.resolve(reason);
-                                                                                        }
-                                                                                    };
                                                                                 }
-
-                                                                                self.addPendingRequest($http(req).success(function (data) {
-                                                                                    angular.forEach(groupedByNodeType[nodetype].nodes, function (node, identifier) {
-                                                                                        groupedByNodeTypeNodes.push(data[identifier]);
-                                                                                    });
-                                                                                    requestCountDone++;
-                                                                                    if (staticCachedNodes[nodetype] == undefined) {
-                                                                                        staticCachedNodes[nodetype] = data;
-                                                                                    }
-                                                                                    //execute(keyword, groupedByNodeType[nodetype]['nodes'], ref);
-                                                                                    if (requestCountDone == requestCount) {
-                                                                                        execute(keyword, groupedByNodeTypeNodes, ref);
-                                                                                    }
-                                                                                }));
-
+                                                                                groupedByNodeType[node.nodeType]['nodes'][identifier] = null;
 
                                                                             });
 
-                                                                        } else {
+                                                                            var requestCount = Object.keys(groupedByNodeType).length;
+                                                                            var requestCountDone = 0;
+                                                                            var groupedByNodeTypeNodes = [];
+                                                                            var isstaticcached = true;
+
                                                                             angular.forEach(groupedByNodeType, function (group, nodetype) {
-                                                                                angular.forEach(groupedByNodeType[nodetype].nodes, function (node, identifier) {
-                                                                                    groupedByNodeTypeNodes.push(staticCachedNodes[nodetype][identifier]);
-                                                                                });
+                                                                                if (staticCachedNodes[nodetype] == undefined) {
+                                                                                    isstaticcached = false;
+                                                                                }
                                                                             });
-                                                                            execute(keyword, groupedByNodeTypeNodes, ref);
-                                                                        }
-                                                                    } else {
-                                                                        // load all nodes from node type
-                                                                        execute(keyword, data, ref);
-                                                                    }
 
 
-                                                                }
-                                                            }));
+                                                                            if (isstaticcached == false) {
+                                                                                angular.forEach(groupedByNodeType, function (group, nodetype) {
 
-                                                        } else {
-
-                                                            if (ref.socket) {
-
-                                                                if (ref.isLoadingAllFromNodeType == undefined) {
-
-
-                                                                    ref.socket.on("child_removed", function (data) {
-                                                                        // node was removed
-                                                                        if (nodes[data.key] !== undefined) {
-                                                                            nodes[data.key].removed = true;
-                                                                        }
-                                                                        self.search();
-                                                                    });
-
-
-                                                                    ref.socket.on("value", function (data) {
-
-                                                                        nodesIndexed = {};
-
-                                                                        var tmpNodes = [];
-                                                                        var tmpNodesCount = 0;
-                                                                        var tmpSkippedNodesCount = 0;
-                                                                        var reqNodesCount = data.val() ? Object.keys(data.val()).length : 0;
-                                                                        var nodeData = data.val();
-
-                                                                        self.setIsNotLoadedAll(ref.socket.toString());
-
-
-                                                                        if (reqNodesCount) {
-
-                                                                            angular.forEach(nodeData, function (node, identifier) {
-
-                                                                                    if (nodes[identifier] == undefined) {
-
-                                                                                        if (self.getFilter().getNodeType() && (self.getFilter().getNodeType() !== node.nodeType && self.getFilter().getNodeType().indexOf(node.nodeType) < 0)) {
-                                                                                            // skip filtered nodetype
-                                                                                            tmpNodesCount++;
-                                                                                        } else {
-
-                                                                                            self.getIndexByNodeIdentifierAndNodeType(identifier, node.nodeType).on("value", function (data) {
-
-                                                                                                if (nodes[identifier] == undefined) {
-                                                                                                    // add node
-                                                                                                    tmpNodes.push(data.val());
-                                                                                                    tmpNodesCount++;
-                                                                                                } else {
-
-                                                                                                    // update node
-                                                                                                    tmpNodesCount++;
-
-                                                                                                    if (data.val()) {
-                                                                                                        if (data.val().node === undefined) {
-                                                                                                            // node was removed
-                                                                                                            if (nodes[identifier] !== undefined) {
-                                                                                                                nodes[identifier].removed = true;
-                                                                                                            }
-                                                                                                        } else {
-                                                                                                            if (nodes[identifier] == undefined || (nodes[identifier].removed == undefined)) {
-                                                                                                                nodes[identifier] = data.val().node;
-                                                                                                            }
-                                                                                                        }
-
-                                                                                                        self.search();
-                                                                                                    }
-
-                                                                                                }
-
-                                                                                                if (tmpNodesCount == reqNodesCount) {
-
-                                                                                                    execute(keyword, tmpNodes, ref);
-                                                                                                    self.search();
-                                                                                                    self.setIsLoadedAll(ref.socket.toString());
-                                                                                                }
-
-                                                                                            });
-
-                                                                                        }
+                                                                                    // fetch all nodes content
+                                                                                    if (self.getConfig('cache')) {
+                                                                                        var req = {
+                                                                                            method: 'get',
+                                                                                            url: group.ref.http,
+                                                                                            headers: {'cache-control': 'public, immutable, max-age=' + self.getConfig('cache')},
+                                                                                            timeout: canceller.promise,
+                                                                                            cancel: function (reason) {
+                                                                                                canceller.resolve(reason);
+                                                                                            }
+                                                                                        };
 
                                                                                     } else {
-                                                                                        // skip node update
-                                                                                        tmpNodesCount++;
-                                                                                        tmpSkippedNodesCount++;
-                                                                                        tmpNodes[identifier] = nodes[identifier];
-                                                                                        if (tmpSkippedNodesCount == tmpNodesCount) {
-                                                                                            self.search();
-                                                                                        }
+                                                                                        var req = {
+                                                                                            method: 'get',
+                                                                                            url: group.ref.http,
+                                                                                            timeout: canceller.promise,
+                                                                                            cancel: function (reason) {
+                                                                                                canceller.resolve(reason);
+                                                                                            }
+                                                                                        };
                                                                                     }
 
-                                                                                }
-                                                                            );
+                                                                                    self.addPendingRequest($http(req).success(function (data) {
+                                                                                        angular.forEach(groupedByNodeType[nodetype].nodes, function (node, identifier) {
+                                                                                            groupedByNodeTypeNodes.push(data[identifier]);
+                                                                                        });
+                                                                                        requestCountDone++;
+                                                                                        if (staticCachedNodes[nodetype] == undefined) {
+                                                                                            staticCachedNodes[nodetype] = data;
+                                                                                        }
+                                                                                        //execute(keyword, groupedByNodeType[nodetype]['nodes'], ref);
+                                                                                        if (requestCountDone == requestCount) {
+                                                                                            execute(keyword, groupedByNodeTypeNodes, ref);
+                                                                                        }
+                                                                                    }));
+
+
+                                                                                });
+
+                                                                            } else {
+                                                                                angular.forEach(groupedByNodeType, function (group, nodetype) {
+                                                                                    angular.forEach(groupedByNodeType[nodetype].nodes, function (node, identifier) {
+                                                                                        groupedByNodeTypeNodes.push(staticCachedNodes[nodetype][identifier]);
+                                                                                    });
+                                                                                });
+                                                                                execute(keyword, groupedByNodeTypeNodes, ref);
+                                                                            }
+                                                                        } else {
+                                                                            // load all nodes from node type
+                                                                            execute(keyword, data, ref);
                                                                         }
 
-                                                                    });
+
+                                                                    }
+                                                                }));
+
+                                                            } else {
+
+                                                                if (ref.socket) {
+
+                                                                    if (ref.isLoadingAllFromNodeType == undefined) {
 
 
-                                                                } else {
-
-
-                                                                    ref.socket.once("value", function (data) {
-
-                                                                        if (data.val()) {
-                                                                            execute(keyword, data.val(), ref);
+                                                                        ref.socket.on("child_removed", function (data) {
+                                                                            // node was removed
+                                                                            if (nodes[data.key] !== undefined) {
+                                                                                nodes[data.key].removed = true;
+                                                                            }
                                                                             self.search();
-                                                                        }
-                                                                        angular.forEach(data.val(), function (node, identifier) {
-                                                                            self.getIndexByNodeIdentifierAndNodeType(identifier, node.nodeType).on("child_changed", function (data) {
-                                                                                nodes[identifier] = data.val();
-                                                                                self.search();
-                                                                            });
                                                                         });
 
 
-                                                                    });
+                                                                        ref.socket.on("value", function (data) {
+
+                                                                            nodesIndexed = {};
+
+                                                                            var tmpNodes = [];
+                                                                            var tmpNodesCount = 0;
+                                                                            var tmpSkippedNodesCount = 0;
+                                                                            var reqNodesCount = data.val() ? Object.keys(data.val()).length : 0;
+                                                                            var nodeData = data.val();
+
+                                                                            self.setIsNotLoadedAll(ref.socket.toString());
+
+
+                                                                            if (reqNodesCount) {
+
+                                                                                angular.forEach(nodeData, function (node, identifier) {
+
+                                                                                        if (nodes[identifier] == undefined) {
+
+                                                                                            if (self.getFilter().getNodeType() && (self.getFilter().getNodeType() !== node.nodeType && self.getFilter().getNodeType().indexOf(node.nodeType) < 0)) {
+                                                                                                // skip filtered nodetype
+                                                                                                tmpNodesCount++;
+                                                                                            } else {
+
+                                                                                                self.getIndexByNodeIdentifierAndNodeType(identifier, node.nodeType).on("value", function (data) {
+
+                                                                                                    if (nodes[identifier] == undefined) {
+                                                                                                        // add node
+                                                                                                        tmpNodes.push(data.val());
+                                                                                                        tmpNodesCount++;
+                                                                                                    } else {
+
+                                                                                                        // update node
+                                                                                                        tmpNodesCount++;
+
+                                                                                                        if (data.val()) {
+                                                                                                            if (data.val().node === undefined) {
+                                                                                                                // node was removed
+                                                                                                                if (nodes[identifier] !== undefined) {
+                                                                                                                    nodes[identifier].removed = true;
+                                                                                                                }
+                                                                                                            } else {
+                                                                                                                if (nodes[identifier] == undefined || (nodes[identifier].removed == undefined)) {
+                                                                                                                    nodes[identifier] = data.val().node;
+                                                                                                                }
+                                                                                                            }
+
+                                                                                                            self.search();
+                                                                                                        }
+
+                                                                                                    }
+
+                                                                                                    if (tmpNodesCount == reqNodesCount) {
+
+                                                                                                        execute(keyword, tmpNodes, ref);
+                                                                                                        self.search();
+                                                                                                        self.setIsLoadedAll(ref.socket.toString());
+                                                                                                    }
+
+                                                                                                });
+
+                                                                                            }
+
+                                                                                        } else {
+                                                                                            // skip node update
+                                                                                            tmpNodesCount++;
+                                                                                            tmpSkippedNodesCount++;
+                                                                                            tmpNodes[identifier] = nodes[identifier];
+                                                                                            if (tmpSkippedNodesCount == tmpNodesCount) {
+                                                                                                self.search();
+                                                                                            }
+                                                                                        }
+
+                                                                                    }
+                                                                                );
+                                                                            }
+
+                                                                        });
+
+
+                                                                    } else {
+
+
+                                                                        ref.socket.once("value", function (data) {
+
+                                                                            if (data.val()) {
+                                                                                execute(keyword, data.val(), ref);
+                                                                                self.search();
+                                                                            }
+                                                                            angular.forEach(data.val(), function (node, identifier) {
+                                                                                self.getIndexByNodeIdentifierAndNodeType(identifier, node.nodeType).on("child_changed", function (data) {
+                                                                                    nodes[identifier] = data.val();
+                                                                                    self.search();
+                                                                                });
+                                                                            });
+
+
+                                                                        });
+
+
+                                                                    }
 
 
                                                                 }
+                                                            }
 
-
+                                                        }
+                                                        else {
+                                                            if (keyword) {
+                                                                self.search();
+                                                            } else {
+                                                                self.search(nodes);
                                                             }
                                                         }
-
                                                     }
-                                                    else {
-                                                        if (keyword) {
-                                                            self.search();
-                                                        } else {
-                                                            self.search(nodes);
-                                                        }
-                                                    }
-                                                }
-                                            );
+                                                );
 
-                                        }
+                                            }
 
 
-                                    })
-                                    ;
-//}, 5));
+                                        });
+
+                                    }
+
 
                                     var musthavelength = uniquarrayfinal.length;
 
@@ -3615,7 +3649,6 @@
                                 self.setAutocomplete(data.val(), querysegment);
                                 angular.forEach(data.val(), function (v, k) {
                                     instance.$$data.keywords.push({term: k, metaphone: q});
-
                                 });
                                 instance.$$data.proceeded.push(1);
                             } else {
@@ -3885,7 +3918,6 @@
 
                         var keyword = false;
                         angular.forEach(values, function (key, doc) {
-
                             if (lunrSearch.documentStore.hasDoc(doc)) {
                                 lunrSearch.documentStore.removeDoc(doc);
                             }
@@ -3893,6 +3925,19 @@
                         });
 
 
+                    },
+
+
+                    /**
+                     * @private
+                     * @param string keyword
+                     * @returns mixed
+                     */
+                    clearLocalIndex: function () {
+                        lunrSearch = null;
+                        lunrSearch = elasticlunr(function () {
+                            this.setRef('id');
+                        });
                     }
                     ,
                     /**
@@ -3920,13 +3965,17 @@
 
                                 cachedindex = false;
 
-                                if (value && nodesIndexed[value.node.hash] == undefined) {
+                                if (value && (nodesIndexed[value.node.hash] == undefined || value.objectID !== undefined)) {
                                     var doc = {};
 
                                     nodes[value.node.identifier] = value.node;
 
                                     if (value.node != undefined && value.node.properties != undefined) {
                                         //angular.forEach(JSON.parse(JSON.stringify(value.node.properties)), function (propvalue, property) {
+                                        if (value.objectID) {
+                                            // algolia mode
+                                            nodes[value.node.identifier]['__algoliaranking'] = key;
+                                        }
 
                                         if (length > 50) {
                                             // index fast way
@@ -3951,13 +4000,13 @@
                                             } else {
                                                 angular.forEach(value.node.properties, function (propvalue, property) {
                                                     var boost = self.getBoost(property, value.node.nodeType);
-                                                        if (boost > 10) {
-                                                            if (typeof propvalue == 'string') {
-                                                                if (propvalue.indexOf(query) == 0) {
-                                                                    doc[property] = propvalue.substr(0, 1024);
-                                                                }
+                                                    if (boost > 10) {
+                                                        if (typeof propvalue == 'string') {
+                                                            if (propvalue.indexOf(query) == 0) {
+                                                                doc[property] = propvalue.substr(0, 1024);
                                                             }
                                                         }
+                                                    }
                                                 });
                                             }
 
@@ -3977,39 +4026,41 @@
                                                     if (property.length > 1 && property !== 'lastmodified' && property !== 'sorting' && property !== 'uri' && propvalue && propvalue.getProperty == undefined) {
 
 
-                                                            var valueJson = false;
+                                                        var valueJson = false;
 
-                                                            if (typeof propvalue === 'object') {
-                                                                valueJson = propvalue;
-                                                            } else {
-                                                                if (typeof propvalue === 'string' && ((propvalue.substr(0, 1) == '{') || ((propvalue.substr(0, 2) === '["' && propvalue.substr(-2, 2) === '"]')) || (propvalue.substr(0, 2) === '[{' && propvalue.substr(-2, 2) === '}]'))) {
-                                                                    try {
-                                                                        var valueJson = JSON.parse(propvalue);
-                                                                    } catch (e) {
-                                                                        valueJson = false;
-                                                                    }
+                                                        if (typeof propvalue === 'object') {
+                                                            valueJson = propvalue;
+                                                        } else {
+                                                            if (typeof propvalue === 'string' && ((propvalue.substr(0, 1) == '{') || ((propvalue.substr(0, 2) === '["' && propvalue.substr(-2, 2) === '"]')) || (propvalue.substr(0, 2) === '[{' && propvalue.substr(-2, 2) === '}]'))) {
+                                                                try {
+                                                                    var valueJson = JSON.parse(propvalue);
+                                                                } catch (e) {
+                                                                    valueJson = false;
                                                                 }
                                                             }
+                                                        }
 
-                                                            if (valueJson) {
+                                                        if (valueJson) {
 
-                                                                var recstring = valueJson.getRecursiveStrings();
-                                                                angular.forEach(recstring, function (o) {
-                                                                    doc[property + '.' + o.key] = o.val.replace(/(<([^>]+)>)/ig, " ");
+                                                            var recstring = valueJson.getRecursiveStrings();
+                                                            angular.forEach(recstring, function (o) {
+                                                                doc[property + '.' + o.key] = o.val.replace(/(<([^>]+)>)/ig, " ");
 
-                                                                });
+                                                            });
 
-                                                            } else {
-                                                                if (typeof propvalue === 'string') {
-                                                                    doc[property] = propvalue.replace(/(<([^>]+)>)/ig, " ").substr(0, 1024);
-                                                                }
+                                                        } else {
+                                                            if (typeof propvalue === 'string') {
+                                                                doc[property] = propvalue.replace(/(<([^>]+)>)/ig, " ").substr(0, 1024);
                                                             }
+                                                        }
 
 
                                                     }
                                                 }
                                             });
                                         }
+
+
 
                                         if (Object.keys(doc).length) {
 
@@ -4036,6 +4087,8 @@
 
                                             doc.id = value.node.identifier;
                                             lunrSearch.addDoc(doc);
+
+
                                             if (cachedindex) {
                                                 nodesIndexed[value.node.hash] = true;
                                             }
@@ -4299,6 +4352,17 @@
                  */
                 enableCache: function (expires) {
                     this.$$app.setConfig('cache', expires == undefined ? 3600000 : expires);
+                    this.$$app.setConfig('realtime', false);
+                    return this;
+                },
+
+                /**
+                 * Disable realtime search, use algolia search engine
+                 * @returns {HybridsearchObject}
+                 */
+                enableAlgolia: function (applicationID, apiKey) {
+                    this.$$app.setConfig('algolia', {'applicationID': applicationID, 'apiKey': apiKey});
+                    this.$$app.setConfig('cache', 3600000);
                     this.$$app.setConfig('realtime', false);
                     return this;
                 },
@@ -5851,7 +5915,7 @@
                         angular.forEach(self.$$data.autocomplete, function (a) {
                             if (autocompleteTemp[a] == undefined) {
 
-                                if (a.substr(0,1).isNaN == true) {
+                                if (a.substr(0, 1).isNaN == true) {
                                     var m1 = a.substr(0, a.length - 1);
                                     var m2 = a.substr(0, a.length - 2);
                                     if (autocompleteTemp[m1] == undefined) {
@@ -6043,10 +6107,9 @@
                     }
 
 
-                   if ((affectedBySearchResult == undefined || affectedBySearchResult == false) && self.$$data.isStartedFirstTime == false) {
+                    if ((affectedBySearchResult == undefined || affectedBySearchResult == false) && self.$$data.isStartedFirstTime == false) {
                         return this;
-                   }
-
+                    }
 
 
                     if (Object.keys(self.$$data.distincts[property]).length) {
@@ -6079,7 +6142,6 @@
                     }
 
 
-
                     angular.forEach(eachResultNodes, function (node) {
 
                         if (self.$$data.distinctsConfiguration[property]['affectedBySearchResult'] == false || node['_isfiltered'] == undefined || node['_isfiltered'][property] === false || node['_isfiltered'][property] === undefined) {
@@ -6097,8 +6159,7 @@
                                     if (v !== undefined && v !== null) {
 
                                         var hashs = {};
-                                        if (typeof v == 'object')
-                                        {
+                                        if (typeof v == 'object') {
                                             var hashk = Object.keys(v).sort();
                                             angular.forEach(hashk, function (a) {
                                                 hashs[a] = v[a];

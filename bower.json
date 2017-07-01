@@ -3,6 +3,7 @@
   "dependencies": {
     "firebase": "*",
     "angular-sanitize": "1.6.0",
-    "elasticlunr.js": "*"
+    "elasticlunr.js": "*",
+    "algoliasearch": "*"
   }
 }
