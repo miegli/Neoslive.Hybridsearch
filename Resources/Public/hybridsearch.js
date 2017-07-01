@@ -2441,6 +2441,9 @@
                                         item.score = Math.floor(item.score * self.getParentNodeTypeBoostFactor(nodes[item.ref]) * self.getNodeTypeBoostFactor(nodes[item.ref]) * self.getNodeUrlBoostFactor(nodes[item.ref]));
                                         if (nodes[item.ref]['__algoliaranking'] !== undefined) {
                                             item.score = item.score - (2 * nodes[item.ref]['__algoliaranking']);
+                                            if (item.score < 1) {
+                                                item.score = 1;
+                                            }
                                         }
                                         return -1 * item.score;
                                     });
@@ -3017,7 +3020,6 @@
                                         if (err) {
                                             return;
                                         }
-
                                         self.addLocalIndex(content.hits);
                                         self.search();
                                     });
