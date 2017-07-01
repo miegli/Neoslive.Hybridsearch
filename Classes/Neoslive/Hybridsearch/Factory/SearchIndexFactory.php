@@ -528,6 +528,9 @@ class SearchIndexFactory
     {
 
 
+        $this->output = new ConsoleOutput();
+
+
         if (isset($this->settings['Algolia']) && isset($this->settings['Algolia']['ApiKey']) && isset($this->settings['Algolia']['ApplicationID'])) {
 
             $client = new \AlgoliaSearch\Client($this->settings['Algolia']['ApplicationID'], $this->settings['Algolia']['ApiKey']);
@@ -550,10 +553,19 @@ class SearchIndexFactory
 
                                 $this->output->progressStart(count(get_object_vars($nodetypes)));
 
+
+                                $index = $client->initIndex($sitekey . "-" . $workspacename . "-" . $dimension);
+                                $index->clearIndex();
+
                                 foreach ($nodetypes as $nodetype => $nodesCount) {
 
+                                    $nodes = json_decode($this->firebase->get("sites/$sitekey/index/$workspacename/$branch/$dimension/__$nodetype"),true);
 
-                                    //$this->firebase->get("sites/$sitekey/index/$workspacename/$branch/$dimension/__$nodetype")
+                                    if ($nodes) {
+                                        foreach ($nodes as $identifier => $node) {
+                                            $index->addObject($node);
+                                        }
+                                    }
 
                                     $this->output->progressAdvance(1);
 
