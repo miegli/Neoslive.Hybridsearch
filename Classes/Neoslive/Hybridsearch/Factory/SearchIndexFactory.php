@@ -559,7 +559,7 @@ class SearchIndexFactory
 
                                 foreach ($nodetypes as $nodetype => $nodesCount) {
 
-                                    $nodes = json_decode($this->firebase->get("sites/$sitekey/index/$workspacename/$branch/$dimension/__$nodetype"),true);
+                                    $nodes = json_decode($this->firebase->get("sites/$sitekey/index/$workspacename/$branch/$dimension/__$nodetype"), true);
 
                                     if ($nodes) {
                                         foreach ($nodes as $identifier => $node) {
@@ -700,6 +700,13 @@ class SearchIndexFactory
         $this->updateFireBaseRules();
 
         $this->unlockReltimeIndexer();
+
+
+        $this->updateStaticCache();
+
+        if (isset($this->settings['Algolia']) && isset($this->settings['Algolia']['ApiKey']) && isset($this->settings['Algolia']['ApplicationID'])) {
+            $this->createIndexAlgolia($workspacename);
+        }
 
 
         return true;
