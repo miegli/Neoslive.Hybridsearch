@@ -3011,11 +3011,7 @@
                                     self.clearLocalIndex();
 
                                     index.search(self.getFilter().getQuery(), {
-                                        hitsPerPage: 9999999,
-                                        minWordSizeForApprox1: 4,
-                                        minWordSizefor2Typos: 4,
-                                        removeWordsIfNoResults: 'allOptional',
-                                        typoTolerance: 'strict'
+                                        hitsPerPage: 250
                                     }, function searchDone(err, content) {
                                         if (err) {
                                             return;
