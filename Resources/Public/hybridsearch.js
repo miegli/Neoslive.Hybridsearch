@@ -2999,12 +2999,13 @@
                                 window.clearTimeout(getIndexTimeout);
 
                                 // algolia mode
-                                getIndexTimeout = window.setTimeout(function () {
 
                                     var config = self.getConfig('algolia');
                                     var hybridconfig = self.getHybridsearch().$$conf;
                                     var client = algoliasearch(config.applicationID, config.apiKey);
                                     var index = client.initIndex(hybridconfig.site + '-' + hybridconfig.workspace + '-' + hybridconfig.dimension);
+
+                                    self.clearLocalIndex();
 
                                     index.search(self.getFilter().getQuery(), {
                                         hitsPerPage: 9999999,
@@ -3016,11 +3017,11 @@
                                         if (err) {
                                             return;
                                         }
-                                        self.clearLocalIndex();
+
                                         self.addLocalIndex(content.hits);
                                         self.search();
                                     });
-                                }, 10);
+
 
 
                             }
