@@ -78,6 +78,20 @@ class HybridSearchCommandController extends CommandController
     }
 
     /**
+     * Create / update algolia search index
+     *
+     * This command is used to create full search index for algolia.
+     * @param string $workspace
+     * @return void
+     */
+    public function createIndexAlgoliaCommand($workspace = 'live')
+    {
+
+        $this->searchIndexFactory->createIndexAlgolia($workspace);
+
+    }
+
+    /**
      * Synchronize indexes
      *
      * This command updates index from all local changes

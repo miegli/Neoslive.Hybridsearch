@@ -5,7 +5,8 @@
         "typo3/flow": "*",
         "ktamas77/firebase-php": "*",
         "neitanod/forceutf8": "*",
-        "google/apiclient": "*"
+        "google/apiclient": "*",
+        "algolia/algoliasearch-client-php": "*"
     },
     "name": "neoslive/hybridsearch",
     "autoload": {

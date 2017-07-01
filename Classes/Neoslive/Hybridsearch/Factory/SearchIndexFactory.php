@@ -39,6 +39,7 @@ use Neos\ContentRepository\Domain\Repository\WorkspaceRepository;
 use Neos\ContentRepository\Domain\Service\ContentDimensionCombinator;
 use Neos\Eel\FlowQuery\FlowQuery;
 use Firebase\FirebaseLib;
+use AlgoliaSearch\AlgoliaSearch;
 use Neos\Flow\Utility\Algorithms;
 use Neos\Flow\Core\Booting\Scripts;
 use Neos\Neos\Service\LinkingService;
@@ -473,7 +474,7 @@ class SearchIndexFactory
 
                         $this->output->progressStart(count(get_object_vars($nodetypes)));
 
-                        $this->firebase->set("lastsync/$workspacename/$branch",time());
+                        $this->firebase->set("lastsync/$workspacename/$branch", time());
 
                         foreach ($nodetypes as $nodetype => $nodesCount) {
 
@@ -512,6 +513,73 @@ class SearchIndexFactory
         } catch (\Neos\Flow\Exception $exception) {
             \Neos\Flow\var_dump($exception);
             $this->output->outputLine('unable to create static cache.');
+        }
+
+
+    }
+
+
+    /**
+     * Create algolia search index for given workspace
+     * @param string $workspacename
+     * @return void
+     */
+    public function createIndexAlgolia($workspacename = 'live')
+    {
+
+
+        if (isset($this->settings['Algolia']) && isset($this->settings['Algolia']['ApiKey']) && isset($this->settings['Algolia']['ApplicationID'])) {
+
+            $client = new \AlgoliaSearch\Client($this->settings['Algolia']['ApplicationID'], $this->settings['Algolia']['ApiKey']);
+
+            if ($client) {
+
+                $branch = $this->getBranch();
+
+                $allSiteKeys = json_decode($this->firebase->get('sites', array('shallow' => 'true')));
+
+                try {
+
+                    foreach ($allSiteKeys as $sitekey => $c) {
+
+                        foreach (json_decode($this->firebase->get("sites/$sitekey/nodetypes", array('shallow' => 'true'))) as $workspacename => $k) {
+
+                            foreach (json_decode($this->firebase->get("sites/$sitekey/nodetypes/$workspacename/$branch", array('shallow' => 'true'))) as $dimension => $d) {
+
+                                $nodetypes = json_decode($this->firebase->get("sites/$sitekey/nodetypes/$workspacename/$branch/$dimension", array('shallow' => 'true')));
+
+                                $this->output->progressStart(count(get_object_vars($nodetypes)));
+
+                                foreach ($nodetypes as $nodetype => $nodesCount) {
+
+
+                                    //$this->firebase->get("sites/$sitekey/index/$workspacename/$branch/$dimension/__$nodetype")
+
+                                    $this->output->progressAdvance(1);
+
+                                }
+
+                                $this->output->progressFinish();
+
+                            }
+
+
+                        }
+
+
+                    }
+
+
+                    $this->output->outputLine('algolia index created');
+
+                } catch (\Neos\Flow\Exception $exception) {
+                    \Neos\Flow\var_dump($exception);
+                }
+
+            }
+
+        } else {
+            $this->output->outputLine('Please set Algolia.ApiKey and Algolia.ApplicationID first.');
         }
 
 
