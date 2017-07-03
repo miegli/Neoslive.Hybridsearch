@@ -1576,13 +1576,29 @@
 
                                 if (b == 1 && node.url.indexOf(needed) >= 0) {
                                     b = boost;
-                                    return b;
                                 }
                             });
 
                         }
 
-                        return b;
+
+                        if (typeof b == 'object') {
+
+                            if (b[node.nodeType] !== undefined) {
+                                return b[node.nodeType];
+                            }
+
+                            if (b['*'] !== undefined) {
+                                return b['*'];
+                            }
+
+                            return 1;
+
+
+                        } else {
+                            return b;
+                        }
+
 
                     },
                     /**
@@ -3003,23 +3019,22 @@
 
                                 // algolia mode
 
-                                    var config = self.getConfig('algolia');
-                                    var hybridconfig = self.getHybridsearch().$$conf;
-                                    var client = algoliasearch(config.applicationID, config.apiKey);
-                                    var index = client.initIndex(hybridconfig.site + '-' + hybridconfig.workspace + '-' + hybridconfig.dimension);
+                                var config = self.getConfig('algolia');
+                                var hybridconfig = self.getHybridsearch().$$conf;
+                                var client = algoliasearch(config.applicationID, config.apiKey);
+                                var index = client.initIndex(hybridconfig.site + '-' + hybridconfig.workspace + '-' + hybridconfig.dimension);
 
-                                    self.clearLocalIndex();
+                                self.clearLocalIndex();
 
-                                    index.search(self.getFilter().getQuery(), {
-                                        hitsPerPage: 250
-                                    }, function searchDone(err, content) {
-                                        if (err) {
-                                            return;
-                                        }
-                                        self.addLocalIndex(content.hits);
-                                        self.search();
-                                    });
-
+                                index.search(self.getFilter().getQuery(), {
+                                    hitsPerPage: 250
+                                }, function searchDone(err, content) {
+                                    if (err) {
+                                        return;
+                                    }
+                                    self.addLocalIndex(content.hits);
+                                    self.search();
+                                });
 
 
                             }
