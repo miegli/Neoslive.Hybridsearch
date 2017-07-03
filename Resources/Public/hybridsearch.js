@@ -3599,7 +3599,7 @@
                         querysegment = this.getEmoijQuery(querysegment);
                         var m = metaphone(querysegment.toLowerCase(), 6).toUpperCase();
 
-                        return m.length > 0 ? m : querysegment;
+                        return m.length > 0 ? m : null;
 
                     }
 
@@ -3622,6 +3622,9 @@
                         }
 
                         var q = self.getMetaphone(querysegment);
+                        if (!q) {
+                            return self;
+                        }
                         var qfallback = "000" + self.getMetaphone(querysegment.substr(0, 3));
 
                         instance.$$data.running++;
