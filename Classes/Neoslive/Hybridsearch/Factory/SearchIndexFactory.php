@@ -1469,6 +1469,8 @@ class SearchIndexFactory
         $properties = null;
         unset($properties);
 
+
+
         return $keywords;
 
     }
@@ -1974,10 +1976,11 @@ class SearchIndexFactory
     {
 
 
+
         if ($chunkcounter < 100 && count($data) > 2 && strlen(json_encode($data)) > 10000000) {
             $chunkcounter++;
-            $this->addToQueue($path, array_slice($data, 0, floor(count($data) / 2)), $method, $chunkcounter);
-            $this->addToQueue($path, array_slice($data, ceil(count($data) / 2)), $method, $chunkcounter);
+            $this->addToQueue($path, array_slice($data, 0, abs(count($data) / 2)), $method, $chunkcounter);
+            $this->addToQueue($path, array_slice($data, abs(count($data) / 2)), $method, $chunkcounter);
             unset($data);
             return true;
         } else {
@@ -1998,11 +2001,6 @@ class SearchIndexFactory
                 if (json_last_error() === JSON_ERROR_UTF8) {
                     $filename = $this->temporaryDirectory . "/error_" . time() . $this->queuecounter . "_" . Algorithms::generateUUID() . ".json";
                     echo "\nwarning utf-8 malformed string. skipped $path. see log file $filename";
-
-//                    ob_start();
-//                    var_dump($data);
-//                    $data = ob_get_contents();
-//                    ob_end_clean();
                     $fp = fopen($filename, 'w+');
                     $this->fwrite_stream($fp, serialize($data));
                     fclose($fp);
@@ -2297,7 +2295,6 @@ class SearchIndexFactory
 
                     foreach ($dimensionIndexData as $dimensionIndexKey => $dimensionIndexDataAll) {
                         $patch[$dimension . "/" . $dimensionIndex . "/" . $dimensionIndexKey] = $dimensionIndexDataAll;
-
                     }
                 }
 
