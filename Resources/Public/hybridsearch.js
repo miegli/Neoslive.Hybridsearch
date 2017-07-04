@@ -6065,17 +6065,30 @@
                  * Check if given value string is in distinct result
                  * @param {string} property
                  * @param {value} string search for
+                 * @param {object} postprocessor applying property
                  * @returns {boolean} true if value is part of distinct property values
                  */
-                isInDistinct: function (property, value) {
+                isInDistinct: function (property, value, postprocessor) {
 
                     var found = false;
                     var foreachDistinct = this.getDistinct(property);
                     angular.forEach(foreachDistinct, function (o) {
-                        if (o.value == value) {
-                            found = true;
-                            return found;
+
+
+                        if (postprocessor == undefined) {
+                            if (o.value == value) {
+                                found = true;
+                                return found;
+                            }
+                        } else {
+                            var p = postprocessor(o.value);
+                            if (p == value) {
+                                found = true;
+                                return found;
+                            }
                         }
+
+
                     });
 
                     return found;
