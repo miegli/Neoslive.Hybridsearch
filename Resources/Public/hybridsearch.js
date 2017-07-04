@@ -2308,6 +2308,9 @@
 
                                         });
 
+
+
+
                                         resultsSearch[0] = lunrSearch.search(customquery == undefined ? self.getFilter().getQuery() : customquery, {
                                             fields: fields,
                                             bool: "AND",
@@ -2321,8 +2324,8 @@
                                                 bool: "AND",
                                                 expand: false
                                             });
-
                                         }
+
 
                                         if (resultsSearch[1] != undefined && resultsSearch[1].length == 0) {
 
@@ -2331,7 +2334,6 @@
                                                 bool: "AND",
                                                 expand: true
                                             });
-
                                         }
 
 
@@ -2342,7 +2344,6 @@
                                                 bool: "AND",
                                                 expand: false
                                             });
-
                                         }
 
 
@@ -2352,7 +2353,9 @@
                                                 bool: "OR"
                                             });
 
+
                                         }
+
 
                                         if (resultsSearch[4] != undefined && resultsSearch[4].length == 0) {
 
@@ -2361,8 +2364,8 @@
                                                 bool: "OR",
                                                 expand: true
                                             });
-
                                         }
+
 
                                         if (resultsSearch[5] != undefined && resultsSearch[5].length == 0) {
 
@@ -2371,8 +2374,8 @@
                                                 bool: "OR",
                                                 expand: false
                                             });
-
                                         }
+
 
                                         if (resultsSearch[6] != undefined && resultsSearch[6].length == 0) {
                                             resultsSearch[7] = lunrSearch.search(query, {
@@ -2380,8 +2383,8 @@
                                                 bool: "OR",
                                                 expand: true
                                             });
-
                                         }
+
 
                                         if (resultsSearch[7] != undefined && resultsSearch[7].length == 0) {
                                             resultsSearch[8] = lunrSearch.search(self.getFilter().getQuery() + " " + query, {
@@ -2396,23 +2399,23 @@
                                         var result = resultsSearch[resultsSearch.length - 1];
 
 
-                                        //var scoresum = 0;
-                                        // if (result.length > 0) {
-                                        //
-                                        //     angular.forEach(result, function (item) {
-                                        //             scoresum = scoresum + item.score;
-                                        //         }
-                                        //     );
-                                        //     console.log(scoresum,scoresum / result.length);
-                                        //     if (scoresum / result.length < 10) {
-                                        //         result = lunrSearch.search(self.getFilter().getQuery() + ' ' + query, {
-                                        //             fields: fields,
-                                        //             bool: "OR",
-                                        //             expand: true
-                                        //         });
-                                        //
-                                        //     }
-                                        // }
+                                        // check if result has filtered results
+                                        if (result.length) {
+                                            var filteredNodes = 0;
+                                            angular.forEach(result, function (item) {
+                                                if (self.isFiltered(nodes[item.ref]) === true) {
+                                                    filteredNodes++;
+                                                }
+                                            });
+                                            if (result.length - filteredNodes === 0) {
+                                                result = lunrSearch.search(self.getFilter().getQuery(), {
+                                                    fields: fields,
+                                                    bool: "OR",
+                                                    expand: true
+                                                });
+                                            }
+
+                                        }
 
 
                                         if (result.length > 0) {
@@ -2428,6 +2431,7 @@
 
 
                                             angular.forEach(result, function (item) {
+
 
                                                     if (nodes[item.ref] !== undefined) {
                                                         if (self.isNodesByIdentifier()) {
@@ -2446,6 +2450,7 @@
 
                                                 }
                                             );
+
 
 
                                         }
