@@ -50,6 +50,7 @@ use Neos\Flow\Core\Bootstrap;
 use Neoslive\Hybridsearch\Request\HttpRequestHandler;
 use \ForceUTF8\Encoding;
 use org\bovigo\vfs\vfsStreamWrapperAlreadyRegisteredTestCase;
+use Ramsey\Uuid\Uuid;
 
 
 class SearchIndexFactory
@@ -74,6 +75,7 @@ class SearchIndexFactory
      * @Flow\Inject
      */
     protected $persistenceManager;
+
     /**
      * @var ConfigurationManager
      * @Flow\Inject
@@ -1525,7 +1527,7 @@ class SearchIndexFactory
      * @param Node $node
      * @return string
      */
-    public  function getNodeTypeName($node)
+    public function getNodeTypeName($node)
     {
         return mb_strtolower(preg_replace("/[^A-z0-9]/", "-", $node->getNodeType()->getName()));
     }
@@ -1986,7 +1988,7 @@ class SearchIndexFactory
         } else {
 
 
-            $filename = $this->temporaryDirectory . "/queued_" . time() . $this->queuecounter . "_" . Algorithms::generateUUID() . ".json";
+            $filename = $this->temporaryDirectory . "/queued_" . time() . $this->queuecounter . "_" . Uuid::uuid1() . ".json";
 
 
             $content = json_encode(
@@ -1999,7 +2001,7 @@ class SearchIndexFactory
 
             if (is_string($content) === false) {
                 if (json_last_error() === JSON_ERROR_UTF8) {
-                    $filename = $this->temporaryDirectory . "/error_" . time() . $this->queuecounter . "_" . Algorithms::generateUUID() . ".json";
+                    $filename = $this->temporaryDirectory . "/error_" . time() . $this->queuecounter . "_" . Uuid::uuid1() . ".json";
                     echo "\nwarning utf-8 malformed string. skipped $path. see log file $filename";
                     $fp = fopen($filename, 'w+');
                     $this->fwrite_stream($fp, serialize($data));
