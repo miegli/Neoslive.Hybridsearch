@@ -4,7 +4,6 @@
     "firebase": "*",
     "angular-sanitize": "1.6.0",
     "elasticlunr.js": "*",
-    "algoliasearch": "*",
-    "ramsey/uuid": "^3.0.0"
+    "algoliasearch": "*"
   }
 }

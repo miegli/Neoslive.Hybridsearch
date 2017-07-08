@@ -5,7 +5,8 @@
         "ktamas77/firebase-php": "*",
         "neitanod/forceutf8": "*",
         "google/apiclient": "*",
-        "algolia/algoliasearch-client-php": "*"
+        "algolia/algoliasearch-client-php": "*",
+        "ramsey/uuid": "^3.0.0"
     },
     "name": "neoslive/hybridsearch",
     "autoload": {
