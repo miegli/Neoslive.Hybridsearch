@@ -740,7 +740,7 @@ class SearchIndexFactory
     /**
      * Removes trashes nods
      */
-    private function removeTrashedNodes()
+    public  function removeTrashedNodes()
     {
 
 
@@ -937,7 +937,7 @@ class SearchIndexFactory
      * @param string $workspaceName
      * @param string nodeTypeName
      */
-    private function syncByNodeType($workspaceName = 'live', $nodeTypeName = null)
+    public  function syncByNodeType($workspaceName = 'live', $nodeTypeName = null)
     {
 
 
@@ -969,7 +969,7 @@ class SearchIndexFactory
      * @param string $workspaceName
      * @param string $nodeIdentifier
      */
-    private function syncByNodeIdentifier($workspaceName = 'live', $nodeIdentifier)
+    public  function syncByNodeIdentifier($workspaceName = 'live', $nodeIdentifier)
     {
 
 
@@ -1158,7 +1158,7 @@ class SearchIndexFactory
      * @param string $nodeTypeFilter If specified, only nodes with that node type are considered
      * @return void
      */
-    private function generateIndex($node, $workspace, $dimensionConfiguration, $nodeTypeFilter = '')
+    public  function generateIndex($node, $workspace, $dimensionConfiguration, $nodeTypeFilter = '')
     {
 
 
@@ -1212,7 +1212,7 @@ class SearchIndexFactory
      * @param mixed $removeNodeByNodeTypeName
      * @return void
      */
-    private function removeSingleIndex($nodeIdentifier, $workspaceHash, $branch, $dimensionConfigurationHash, $keywordsOfNode = array(), $siteIdentifier = null, $removeNodeByNodeTypeName = null)
+    public  function removeSingleIndex($nodeIdentifier, $workspaceHash, $branch, $dimensionConfigurationHash, $keywordsOfNode = array(), $siteIdentifier = null, $removeNodeByNodeTypeName = null)
     {
 
         if ($this->creatingFullIndex) {
@@ -1260,7 +1260,7 @@ class SearchIndexFactory
      * @param string $dimensionConfigurationHash
      * @return void
      */
-    private function generateSingleIndex($node, $workspace, $dimensionConfigurationHash)
+    public  function generateSingleIndex($node, $workspace, $dimensionConfigurationHash)
     {
 
         $this->indexcounter++;
@@ -1481,7 +1481,7 @@ class SearchIndexFactory
      * @param string $string
      * @return string
      */
-    private function getMetaphone($string)
+    public  function getMetaphone($string)
     {
 
 
@@ -1525,7 +1525,7 @@ class SearchIndexFactory
      * @param Node $node
      * @return string
      */
-    private function getNodeTypeName($node)
+    public  function getNodeTypeName($node)
     {
         return mb_strtolower(preg_replace("/[^A-z0-9]/", "-", $node->getNodeType()->getName()));
     }
@@ -1537,7 +1537,7 @@ class SearchIndexFactory
      * @param string $parentNodeFilter
      * @return \stdClass
      */
-    private function convertNodeToSearchIndexResult($node, $grandParentNodeFilter = '', $parentNodeFilter = '', $depth = 0)
+    public  function convertNodeToSearchIndexResult($node, $grandParentNodeFilter = '', $parentNodeFilter = '', $depth = 0)
     {
 
 
@@ -1898,7 +1898,7 @@ class SearchIndexFactory
      * @param array $dimensionConfiguration
      * @return string
      */
-    private
+    public 
     function getDimensionConfiugurationHash($dimensionConfiguration)
     {
 
@@ -1912,7 +1912,7 @@ class SearchIndexFactory
      * @param Workspace $workspace
      * @return string
      */
-    private
+    public 
     function getWorkspaceHash($workspace)
     {
 
@@ -2034,7 +2034,7 @@ class SearchIndexFactory
      * @param $string
      * @return int
      */
-    private function fwrite_stream($fp, $string)
+    public  function fwrite_stream($fp, $string)
     {
         for ($written = 0; $written < strlen($string); $written += $fwrite) {
             $fwrite = fwrite($fp, substr($string, $written));
@@ -2460,7 +2460,7 @@ class SearchIndexFactory
      * @param html to raw text
      * @return string
      */
-    private
+    public 
     function rawcontent($text)
     {
         return preg_replace("[^A-z]", "  ", preg_replace("/[ ]{2,}/", " ", preg_replace("/\r|\n/", " ", strip_tags($text))));
@@ -2539,7 +2539,7 @@ class SearchIndexFactory
      * @param string page|breadcrumb
      * @return string
      */
-    private
+    public 
     function getRenderedNode($node, $typoscriptPath = 'page')
     {
 
@@ -2609,7 +2609,7 @@ class SearchIndexFactory
      * @return FusionView
      * @throws Exception
      */
-    private
+    public 
     function getView()
     {
 
@@ -2666,7 +2666,7 @@ class SearchIndexFactory
      * Return all allowed dimension combinations
      * @return array
      */
-    private
+    public 
     function getAllDimensionCombinations()
     {
 
@@ -2686,7 +2686,7 @@ class SearchIndexFactory
      * @param int $decimals
      * @return string
      */
-    private
+    public 
     function human_filesize($bytes, $decimals = 2)
     {
         $sz = 'BKMGTP';
@@ -2699,7 +2699,7 @@ class SearchIndexFactory
      * @param $array
      * @return array
      */
-    private
+    public 
     function array_keys_multi(array $array)
     {
         $keys = array();
@@ -2719,7 +2719,7 @@ class SearchIndexFactory
      * get db identifier for current site
      * @return string
      */
-    private
+    public 
     function getSiteIdentifier()
     {
 
