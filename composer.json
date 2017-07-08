@@ -6,7 +6,8 @@
         "neitanod/forceutf8": "*",
         "google/apiclient": "*",
         "algolia/algoliasearch-client-php": "*",
-        "ramsey/uuid": "^3.0.0"
+        "ramsey/uuid": "^3.0.0",
+        "symfony/console": "*"
     },
     "name": "neoslive/hybridsearch",
     "autoload": {
