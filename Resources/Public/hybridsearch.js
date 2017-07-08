@@ -39,9 +39,9 @@
      * @module Angular main module
      * @returns {hybridsearch}
      */
-    angular.module('hybridsearch').factory('$hybridsearch', ['$hybridsearchObject', '$cookies',
+    angular.module('hybridsearch').factory('$hybridsearch', ['$hybridsearchObject',
 
-        function ($hybridsearchObject, $cookies) {
+        function ($hybridsearchObject) {
 
             /**
              * @class Hybridsearch
