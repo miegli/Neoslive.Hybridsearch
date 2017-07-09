@@ -344,7 +344,7 @@ class SearchIndexFactory
 
         if (!is_writable($temporaryDirectory)) {
             try {
-                \Neos\Utility\Files::createDirectoryRecursively($temporaryDirectory);
+                mkdir($temporaryDirectory, 0755, true);
             } catch (\Neos\Flow\Utility\Exception $exception) {
                 throw new Exception('The temporary directory "' . $temporaryDirectory . '" could not be created.', 1264426237);
             }
@@ -455,7 +455,7 @@ class SearchIndexFactory
 
         if (!is_writable($targetPath)) {
             try {
-                \Neos\Utility\Files::createDirectoryRecursively($targetPath);
+                mkdir($targetPath, 0755, true);
             } catch (\Neos\Flow\Utility\Exception $exception) {
                 throw new Exception('The directory "' . $targetPath . '" could not be created.', 1264426237);
             }
@@ -492,7 +492,7 @@ class SearchIndexFactory
                             $targetSubPath = $targetPath . "/sites/$sitekey/index/$workspacename/$branch/$dimension";
 
                             try {
-                                \Neos\Utility\Files::createDirectoryRecursively($targetSubPath);
+                                mkdir($targetSubPath, 0755, true);
                             } catch (\Neos\Flow\Utility\Exception $exception) {
                                 throw new Exception('The  directory "' . $targetSubPath . '" could not be created.', 1264426237);
                             }
@@ -538,10 +538,7 @@ class SearchIndexFactory
     {
 
 
-        if (isset($this->output) == false) {
-            $this->output = new ConsoleOutput();
-        }
-
+        $this->output = new ConsoleOutput();
 
 
         if (isset($this->settings['Algolia']) && isset($this->settings['Algolia']['ApiKey']) && isset($this->settings['Algolia']['ApplicationID'])) {
@@ -621,10 +618,7 @@ class SearchIndexFactory
     public function createFullIndex($workspacename = 'live', $nodetype = null, $verbose = false)
     {
 
-        if (isset($this->output) == false) {
-            $this->output = new ConsoleOutput();
-        }
-
+        $this->output = new ConsoleOutput();
 
 
         $sites = array();
@@ -842,10 +836,7 @@ class SearchIndexFactory
     public function sync($workspaceName = 'live', $nodeTypeName = null, $timestamp = null, $nodeIdentifier = null, $nodesSerialized = null)
     {
 
-        if (isset($this->output) == false) {
-            $this->output = new ConsoleOutput();
-        }
-
+        $this->output = new ConsoleOutput();
 
         if ($this->isLockReltimeIndexer()) {
             return false;
