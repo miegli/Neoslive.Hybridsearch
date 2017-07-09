@@ -344,7 +344,9 @@ class SearchIndexFactory
 
         if (!is_writable($temporaryDirectory)) {
             try {
-                mkdir($temporaryDirectory, 0755, true);
+                if (!is_dir($temporaryDirectory)) {
+                    mkdir($temporaryDirectory, 0755, true);
+                }
             } catch (\Neos\Flow\Utility\Exception $exception) {
                 throw new Exception('The temporary directory "' . $temporaryDirectory . '" could not be created.', 1264426237);
             }
@@ -455,7 +457,9 @@ class SearchIndexFactory
 
         if (!is_writable($targetPath)) {
             try {
-                mkdir($targetPath, 0755, true);
+                if (!is_dir($targetPath)) {
+                    mkdir($targetPath, 0755, true);
+                }
             } catch (\Neos\Flow\Utility\Exception $exception) {
                 throw new Exception('The directory "' . $targetPath . '" could not be created.', 1264426237);
             }
@@ -492,7 +496,9 @@ class SearchIndexFactory
                             $targetSubPath = $targetPath . "/sites/$sitekey/index/$workspacename/$branch/$dimension";
 
                             try {
-                                mkdir($targetSubPath, 0755, true);
+                                if (!is_dir($targetSubPath)) {
+                                    mkdir($targetSubPath, 0755, true);
+                                }
                             } catch (\Neos\Flow\Utility\Exception $exception) {
                                 throw new Exception('The  directory "' . $targetSubPath . '" could not be created.', 1264426237);
                             }
