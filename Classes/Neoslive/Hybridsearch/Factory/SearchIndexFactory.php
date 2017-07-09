@@ -251,6 +251,12 @@ class SearchIndexFactory
      */
     protected $temporaryDirectory;
 
+
+    /**
+     * @var string
+     */
+    protected $staticCacheDirectory;
+
     /**
      * @var string
      */
@@ -351,6 +357,7 @@ class SearchIndexFactory
         }
 
         $this->temporaryDirectory = $temporaryDirectory;
+        $this->staticCacheDirectory = $this->temporaryDirectory. "../../../../Web/_Hybridsearch";
         $this->queuecounter = 100000000;
         $this->allSiteKeys = array();
         $this->index = new \stdClass();
@@ -439,11 +446,9 @@ class SearchIndexFactory
     {
 
         $this->output = new ConsoleOutput();
-
         $this->output->outputLine('creating static cache');
 
-        $targetPath = $this->temporaryDirectory . "../../../../Web/_Hybridsearch";
-
+        $targetPath = $this->staticCacheDirectory;
 
         if (!is_writable($targetPath)) {
             try {
@@ -1900,7 +1905,7 @@ class SearchIndexFactory
      * @param array $dimensionConfiguration
      * @return string
      */
-    public 
+    public
     function getDimensionConfiugurationHash($dimensionConfiguration)
     {
 
@@ -1914,7 +1919,7 @@ class SearchIndexFactory
      * @param Workspace $workspace
      * @return string
      */
-    public 
+    public
     function getWorkspaceHash($workspace)
     {
 
@@ -2107,6 +2112,7 @@ class SearchIndexFactory
             $files = array();
 
             $fp = opendir($this->temporaryDirectory);
+
 
             $filesize = 0;
 
@@ -2462,7 +2468,7 @@ class SearchIndexFactory
      * @param html to raw text
      * @return string
      */
-    public 
+    public
     function rawcontent($text)
     {
         return preg_replace("[^A-z]", "  ", preg_replace("/[ ]{2,}/", " ", preg_replace("/\r|\n/", " ", strip_tags($text))));
@@ -2541,7 +2547,7 @@ class SearchIndexFactory
      * @param string page|breadcrumb
      * @return string
      */
-    public 
+    public
     function getRenderedNode($node, $typoscriptPath = 'page')
     {
 
@@ -2611,7 +2617,7 @@ class SearchIndexFactory
      * @return FusionView
      * @throws Exception
      */
-    public 
+    public
     function getView()
     {
 
@@ -2668,7 +2674,7 @@ class SearchIndexFactory
      * Return all allowed dimension combinations
      * @return array
      */
-    public 
+    public
     function getAllDimensionCombinations()
     {
 
@@ -2688,7 +2694,7 @@ class SearchIndexFactory
      * @param int $decimals
      * @return string
      */
-    public 
+    public
     function human_filesize($bytes, $decimals = 2)
     {
         $sz = 'BKMGTP';
@@ -2701,7 +2707,7 @@ class SearchIndexFactory
      * @param $array
      * @return array
      */
-    public 
+    public
     function array_keys_multi(array $array)
     {
         $keys = array();
@@ -2721,7 +2727,7 @@ class SearchIndexFactory
      * get db identifier for current site
      * @return string
      */
-    public 
+    public
     function getSiteIdentifier()
     {
 
