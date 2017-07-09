@@ -5085,6 +5085,15 @@
                 },
 
                 /**
+                 * Get properties of group.
+                 * @returns array
+                 */
+                getProperties: function () {
+                    return this._nodes[0].getProperties();
+
+                },
+
+                /**
                  * Get all nodes for this group from current search result.
                  * @param {integer} limit max results
                  * @returns {array} collection of {HybridsearchResultsNode}
