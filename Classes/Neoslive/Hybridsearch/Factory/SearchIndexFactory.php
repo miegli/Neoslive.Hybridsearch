@@ -504,6 +504,7 @@ class SearchIndexFactory
                             }
 
                             if (is_dir($targetSubPath)) {
+                                $nodetype = str_replace("__","",$nodetype);
                                 $fp = fopen($targetSubPath . "/__" . $nodetype . ".json", 'w+');
                                 $this->fwrite_stream($fp, $this->firebase->get("sites/$sitekey/index/$workspacename/$branch/$dimension/__$nodetype"));
                                 fclose($fp);
