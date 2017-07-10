@@ -3708,7 +3708,7 @@
                                     nodetypes.push(nodeType);
                                 });
                             } else {
-                                nodetypes.push(nodeType);
+                                nodetypes.push(nodeType !== undefined ? nodeType : this.getFilter().getNodeType());
                             }
 
                             angular.forEach(nodetypes,function(nodeType) {
@@ -4345,10 +4345,10 @@
                         scope.$watch(nodeType, function (filterNodeInput) {
                             self.$$app.getFilter().setNodeType(filterNodeInput);
                             self.$$app.setSearchIndex();
-
                         }, true);
 
                     } else {
+
                         self.$$app.getFilter().setNodeType(nodeType);
                         self.$$app.setSearchIndex();
 
