@@ -1279,7 +1279,7 @@
                             if (self.getFilter().getNodeType() == 'string' && found == 1) {
                                 return true
                             } else {
-                                if (self.getFilter().getNodeType().length == found) {
+                                if (found > 0 && self.getFilter().getNodeType().length == found) {
                                     return true;
                                 }
                             }
@@ -2309,8 +2309,6 @@
                                         });
 
 
-
-
                                         resultsSearch[0] = lunrSearch.search(customquery == undefined ? self.getFilter().getQuery() : customquery, {
                                             fields: fields,
                                             bool: "AND",
@@ -2450,7 +2448,6 @@
 
                                                 }
                                             );
-
 
 
                                         }
@@ -3005,7 +3002,9 @@
                                 var searchIndex = new this.SearchIndexInstance(self, keywords);
                                 window.clearTimeout(getIndexTimeout);
                                 getIndexTimeout = window.setTimeout(function () {
+
                                     lastSearchInstance = searchIndex.getIndex();
+
                                     var counter = 0;
 
                                     searchInstancesInterval = setInterval(function () {
@@ -3140,6 +3139,7 @@
                                 var cleanedup = false;
 
 
+
                                 if (self.isLoadedAll() === false) {
 
 
@@ -3236,6 +3236,10 @@
 
                                     };
 
+
+                                    if (uniquarrayfinal === undefined) {
+                                        var uniquarrayfinal = [null];
+                                    }
 
                                     clearTimeout(self.getIndexInterval());
 
@@ -3692,14 +3696,31 @@
                         var self = this;
                         var queries = [];
 
-                        if (nodeType !== undefined) {
 
-                            var query = {
-                                isLoadingAllFromNodeType: true,
-                                socket: hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + nodeType),
-                                http: (self.getConfig('cache') ? (hybridsearch.$$conf.cdnStaticURL == undefined ? '/_Hybridsearch' : hybridsearch.$$conf.cdnStaticURL + '/_Hybridsearch') : (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL)) + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + nodeType + ".json" + (self.getConfig('cache') ? "?ls=" + hybridsearch.getLastSync() : "")
-                            };
-                            return query;
+
+
+                        if (nodeType !== undefined || (nodeType == undefined && keyword === null)) {
+
+                            var nodetypes = [];
+
+                            if (keyword == null && typeof this.getFilter().getNodeType() == 'object') {
+                                angular.forEach(this.getFilter().getNodeType(),function(nodeType) {
+                                    nodetypes.push(nodeType);
+                                });
+                            } else {
+                                nodetypes.push(nodeType);
+                            }
+
+                            angular.forEach(nodetypes,function(nodeType) {
+                                var query = {
+                                    isLoadingAllFromNodeType: true,
+                                    socket: hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + nodeType),
+                                    http: (self.getConfig('cache') ? (hybridsearch.$$conf.cdnStaticURL == undefined ? '/_Hybridsearch' : hybridsearch.$$conf.cdnStaticURL + '/_Hybridsearch') : (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL)) + "/sites/" + hybridsearch.$$conf.site + "/" + "index/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/__" + nodeType + ".json" + (self.getConfig('cache') ? "?ls=" + hybridsearch.getLastSync() : "")
+                                };
+                                queries.push(query);
+                            });
+
+                            return queries;
 
                         }
 
@@ -3723,6 +3744,8 @@
                         if (keyword === undefined || keyword === null) {
                             keyword = this.getFilter().getQuery() ? this.getFilter().getQuery() : '';
                         }
+
+
 
 
                         if (queries.length === 0 && this.getFilter().getNodeType()) {
@@ -6504,6 +6527,10 @@
                     }
 
                     if (this.getNodeType() != '') {
+                        return true;
+                    }
+
+                    if (this.getPropertyFilters()) {
                         return true;
                     }
 
