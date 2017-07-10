@@ -3139,7 +3139,6 @@
                                 var cleanedup = false;
 
 
-
                                 if (self.isLoadedAll() === false) {
 
 
@@ -3246,7 +3245,7 @@
                                     angular.forEach(uniquarrayfinal, function (keyword) {
 
                                         var refs = self.getIndex(keyword);
-                                        if (refs.length == undefined) {
+                                        if (refs !== undefined && refs && refs.length == undefined) {
                                             var refs = [refs];
                                         }
 
@@ -3316,7 +3315,6 @@
 
 
                                                                         if (isstaticcached == false) {
-
 
 
                                                                             angular.forEach(groupedByNodeType, function (group, nodetype) {
@@ -3703,21 +3701,19 @@
                         var queries = [];
 
 
-
-
                         if (nodeType !== undefined || (nodeType == undefined && keyword === null)) {
 
                             var nodetypes = [];
 
                             if (keyword == null && nodeType == undefined && typeof this.getFilter().getNodeType() == 'object') {
-                                angular.forEach(this.getFilter().getNodeType(),function(nodeType) {
+                                angular.forEach(this.getFilter().getNodeType(), function (nodeType) {
                                     nodetypes.push(nodeType);
                                 });
                             } else {
                                 nodetypes.push(nodeType !== undefined ? nodeType : this.getFilter().getNodeType());
                             }
 
-                            angular.forEach(nodetypes,function(nodeType) {
+                            angular.forEach(nodetypes, function (nodeType) {
 
                                 if (nodeType !== undefined) {
                                     var query = {
@@ -3757,8 +3753,6 @@
                         if (keyword === undefined || keyword === null) {
                             keyword = this.getFilter().getQuery() ? this.getFilter().getQuery() : '';
                         }
-
-
 
 
                         if (queries.length === 0 && this.getFilter().getNodeType()) {
@@ -4051,13 +4045,18 @@
                                                     }
                                                 });
                                             } else {
+
                                                 angular.forEach(value.node.properties, function (propvalue, property) {
                                                     var boost = self.getBoost(property, value.node.nodeType);
+
                                                     if (boost > 10) {
                                                         if (typeof propvalue == 'string') {
                                                             if (propvalue.indexOf(query) == 0) {
                                                                 doc[property] = propvalue.substr(0, 1024);
                                                             }
+                                                        } else {
+                                                            doc[property] = JSON.stringify(propvalue).toLowerCase().substr(0, 1024);
+
                                                         }
                                                     }
                                                 });
@@ -4139,7 +4138,6 @@
 
                                             doc.id = value.node.identifier;
                                             lunrSearch.addDoc(doc);
-
 
                                             if (cachedindex) {
                                                 nodesIndexed[value.node.hash] = true;
