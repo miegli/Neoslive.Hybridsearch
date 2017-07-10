@@ -3246,7 +3246,9 @@
                                     angular.forEach(uniquarrayfinal, function (keyword) {
 
                                         var refs = self.getIndex(keyword);
-
+                                        if (refs.length == undefined) {
+                                            var refs = [refs];
+                                        }
 
                                         if (refs !== null && refs.length) {
                                             angular.forEach(refs, function (ref) {
