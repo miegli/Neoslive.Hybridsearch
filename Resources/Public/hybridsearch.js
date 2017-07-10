@@ -3314,7 +3314,11 @@
 
 
                                                                         if (isstaticcached == false) {
+
+
+
                                                                             angular.forEach(groupedByNodeType, function (group, nodetype) {
+
 
                                                                                 // fetch all nodes content
                                                                                 if (self.getConfig('cache')) {
@@ -3703,7 +3707,7 @@
 
                             var nodetypes = [];
 
-                            if (keyword == null && typeof this.getFilter().getNodeType() == 'object') {
+                            if (keyword == null && nodeType == undefined && typeof this.getFilter().getNodeType() == 'object') {
                                 angular.forEach(this.getFilter().getNodeType(),function(nodeType) {
                                     nodetypes.push(nodeType);
                                 });
@@ -3722,6 +3726,10 @@
                                     queries.push(query);
                                 }
                             });
+
+                            if (queries.length == 1) {
+                                return queries[0];
+                            }
 
                             return queries;
 
