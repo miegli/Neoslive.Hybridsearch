@@ -3707,10 +3707,15 @@
 
                             if (keyword == null && nodeType == undefined && typeof this.getFilter().getNodeType() == 'object') {
                                 angular.forEach(this.getFilter().getNodeType(), function (nodeType) {
-                                    nodetypes.push(nodeType);
+                                    if (typeof nodeType == 'string') {
+                                        nodetypes.push(nodeType);
+                                    }
                                 });
                             } else {
-                                nodetypes.push(nodeType !== undefined ? nodeType : this.getFilter().getNodeType());
+                                var n = nodeType !== undefined ? nodeType : this.getFilter().getNodeType();
+                                if (typeof n == 'string') {
+                                    nodetypes.push(n);
+                                }
                             }
 
                             angular.forEach(nodetypes, function (nodeType) {
