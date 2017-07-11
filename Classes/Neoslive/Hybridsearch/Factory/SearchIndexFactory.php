@@ -1456,8 +1456,10 @@ class SearchIndexFactory
 
         foreach ($words as $w) {
 
+
             if (strlen($w) > 1) {
                 $wm = $this->getMetaphone($w);
+                $w = str_replace(".","",$w);
                 if (strlen($wm) > 0 && strlen($wm) < 64) {
                     $wordsReduced[$wm][$w] = 1;
                     $wm = $this->getMetaphone(mb_substr($w, 0, 3));
@@ -1500,11 +1502,11 @@ class SearchIndexFactory
             return "";
         }
 
-        if (substr_count($string,".")) {
+        if (substr_count($string,".") && substr($string,-1,1) !== '.' && is_numeric(substr($string,0,1))) {
             return mb_strtoupper(str_replace(".","",$string));
         }
 
-        return mb_strtoupper(metaphone(mb_strtolower($string), 6));
+        return mb_strtoupper(metaphone(mb_strtolower(str_replace($string,".","")), 6));
 
 
     }
