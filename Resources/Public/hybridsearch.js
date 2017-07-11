@@ -555,9 +555,18 @@
 
                     angular.forEach(self.properties, function (val, key) {
 
-                        if (val !== null && typeof val == 'object' && val.properties !== undefined && val.nodeType !== undefined && val.identifier !== undefined) {
+                        if (val !== null && typeof val == 'object' && val.node !== undefined && val.nodeType !== undefined && val.identifier !== undefined) {
                             self.properties[key] = new HybridsearchResultsNode(val);
+                        } else {
+                            if (val !== null && typeof val == 'object' && val[0] !== undefined && val[0].node !== undefined && val[0].nodeType !== undefined && val[0].identifier !== undefined) {
+                                var tv = [];
+                                angular.forEach(self.properties[key], function(v,k) {
+                                    tv.push(new HybridsearchResultsNode(self.properties[key][k].node,k));
+                                });
+                                self.properties[key] = tv;
+                            }
                         }
+
                     });
 
                     self.score = score;
