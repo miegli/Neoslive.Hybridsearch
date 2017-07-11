@@ -1498,10 +1498,6 @@ class SearchIndexFactory
     public function getMetaphone($string)
     {
 
-        if (is_numeric($string)) {
-            return str_replace((string)$string,".","");
-        }
-
         if (substr_count($string,".") && substr($string,-1,1) !== '.' && is_numeric(substr($string,0,1))) {
             return mb_strtoupper(str_replace(".","",$string));
         }
