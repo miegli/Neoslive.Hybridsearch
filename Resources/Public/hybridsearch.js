@@ -3625,7 +3625,12 @@
                     getMetaphone: function (querysegment) {
 
                         querysegment = this.getEmoijQuery(querysegment);
-                        var m = metaphone(querysegment.toLowerCase(), 6).toUpperCase();
+
+                        if (querysegment.indexOf(".") && querysegment.substr(-1,1) !== '.' && isNaN(querysegment.substr(0,1)) === false) {
+                            return String(querysegment).replace(/\./g,"").toUpperCase();
+                        }
+
+                        var m = metaphone(querysegment.toLowerCase(), 6).toUpperCase().replace(/\./g,"");
 
                         return m.length > 0 ? m : null;
 
@@ -3650,10 +3655,12 @@
                         }
 
                         var q = self.getMetaphone(querysegment);
+
                         if (!q) {
                             return self;
                         }
-                        var qfallback = "000" + self.getMetaphone(querysegment.substr(0, 3));
+                        var qf = self.getMetaphone(querysegment.substr(0, 3));
+                        var qfallback = qf ? "000" + qf : null;
 
                         instance.$$data.running++;
 
@@ -3663,10 +3670,12 @@
 
                         instance.$$data.keywords.push({term: q, metaphone: q});
 
-                        ref.socketAutocomplete = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + qfallback);
-                        ref.socketAutocomplete.once("value", function (data) {
-                            self.setAutocomplete(data.val(), querysegment);
-                        });
+                        if (qfallback) {
+                            ref.socketAutocomplete = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + qfallback);
+                            ref.socketAutocomplete.once("value", function (data) {
+                                self.setAutocomplete(data.val(), querysegment);
+                            });
+                        }
 
 
                         ref.socket.once("value", function (data) {
