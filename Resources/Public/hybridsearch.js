@@ -3317,7 +3317,7 @@
                                                                         var isstaticcached = true;
 
                                                                         angular.forEach(groupedByNodeType, function (group, nodetype) {
-                                                                            if (staticCachedNodes[nodetype] == undefined) {
+                                                                            if (staticCachedNodes !== undefined && staticCachedNodes[nodetype] == undefined) {
                                                                                 isstaticcached = false;
                                                                             }
                                                                         });
