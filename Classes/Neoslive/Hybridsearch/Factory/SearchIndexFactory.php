@@ -435,6 +435,7 @@ class SearchIndexFactory
         if ($currentBranch == $this->branch) {
             $this->branch = $this->branchSwitch;
             $this->branchSwitch = $currentBranch;
+            return $this->branchSwitch;
         }
 
 
