@@ -672,6 +672,7 @@ class SearchIndexFactory
 
         $this->output->outputLine('indexing nodes');
 
+
         foreach ($moditifedNodeData as $nodedata) {
 
             $this->output->progressAdvance(1);
@@ -692,17 +693,15 @@ class SearchIndexFactory
                 $this->nodetypes->$nt = 1;
             }
 
-
         }
-        $this->output->progressFinish();
 
+        $this->output->progressFinish();
         $this->output->outputLine('preparing upload');
 
         $this->save();
         $this->unlockReltimeIndexer();
 
         $this->output->outputLine('uploading indexed nodes');
-
         $this->proceedQueue();
 
 
