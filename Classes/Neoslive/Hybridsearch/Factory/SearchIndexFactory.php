@@ -2410,6 +2410,7 @@ class SearchIndexFactory
                 foreach ($workspaces as $workspace => $workspaceData) {
                     $this->firebase->delete("sites/" . $site . "/index/$workspace/" . $branch, array('print' => 'silent'));
                     $this->firebase->delete("sites/" . $site . "/keywords/$workspace/" . $branch, array('print' => 'silent'));
+                    $this->firebase->delete("sites/" . $site . "/nodetypes/$workspace/" . $branch, array('print' => 'silent'));
                 }
             }
 
