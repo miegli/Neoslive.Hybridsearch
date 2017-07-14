@@ -5349,6 +5349,8 @@
                      */
                     setResults: function (results, nodes, object, skipAutocompleteUpdate, caller) {
 
+
+
                         if (self.$$data.isStartedFirstTime == false) {
                             this.setIsStartedFirstTime();
                         }
@@ -5390,13 +5392,22 @@
 
                         self.$$data.searchCounter++;
 
+                        var object = this;
+
+
+                        if (self.$$data._updateTimeout !== undefined) {
+                            window.clearTimeout(self.$$data._updateTimeout);
+                        }
                         if (self.isStarted()) {
-                            self.getApp().setNotFound(false);
-                            self.updateNodesGroupedBy();
-                            this.executeCallbackMethod(self);
-                            if (skipAutocompleteUpdate !== true) {
-                                self.updateAutocomplete(null, null, caller);
-                            }
+                            self.$$data._updateTimeout = window.setTimeout(function() {
+                                self.getApp().setNotFound(false);
+                                self.updateNodesGroupedBy();
+                                object.executeCallbackMethod(self);
+                                if (skipAutocompleteUpdate !== true) {
+                                    self.updateAutocomplete(null, null, caller);
+                                }
+                            },5);
+
                         }
 
                         return self;
@@ -5423,18 +5434,13 @@
                      * @private
                      */
                     setNotFound: function (status) {
-
                         var selfthis = this;
-
                         self.$$data.notfound = status;
 
-                        //
-                        // if (this.getScope() !== undefined) {
-                        //     selfthis.getScope().$digest(function () {
-                        //     });
-                        // }
-
-
+                        if (this.getScope() !== undefined) {
+                            selfthis.getScope().$digest(function () {
+                            });
+                        }
                     },
                     /**
                      * @private
