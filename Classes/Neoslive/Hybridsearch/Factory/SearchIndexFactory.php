@@ -1460,19 +1460,19 @@ class SearchIndexFactory
 
 
             if (strlen($w) > 1) {
+
+                if (mb_substr_count($w,".")) {
+                    $w = mb_substr($w,0,mb_stripos($w,".")-1);
+                }
+
                 $wm = $this->getMetaphone($w);
                 if (mb_strlen($wm) > 0 && mb_strlen($wm) < 64) {
-                    $a = explode(".", $w, 2);
-                    if ($a) {
-                        $w = $a[0];
+                    $wordsReduced[$wm][$w] = 1;
+                    $wm = $this->getMetaphone(mb_substr($w, 0, 3));
+                    if (mb_strlen($wm) > 0) {
+                        $wordsReduced["000" . $wm][$w] = 1;
                     }
-                    if (mb_strlen($wm) > 0 && mb_strlen($wm) < 64) {
-                        $wordsReduced[$wm][$w] = 1;
-                        $wm = $this->getMetaphone(mb_substr($w, 0, 3));
-                        if (mb_strlen($wm) > 0) {
-                            $wordsReduced["000" . $wm][$w] = 1;
-                        }
-                    }
+
                 }
             }
         }
