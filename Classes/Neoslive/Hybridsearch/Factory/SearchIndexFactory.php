@@ -359,7 +359,7 @@ class SearchIndexFactory
         }
 
         $this->temporaryDirectory = $temporaryDirectory;
-        $this->staticCacheDirectory = $this->temporaryDirectory. "../../../../Web/_Hybridsearch";
+        $this->staticCacheDirectory = $this->temporaryDirectory . "../../../../Web/_Hybridsearch";
         $this->queuecounter = 100000000;
         $this->allSiteKeys = array();
         $this->index = new \stdClass();
@@ -505,7 +505,7 @@ class SearchIndexFactory
                             }
 
                             if (is_dir($targetSubPath)) {
-                                $nodetype = str_replace("__","",$nodetype);
+                                $nodetype = str_replace("__", "", $nodetype);
                                 $fp = fopen($targetSubPath . "/__" . $nodetype . ".json", 'w+');
                                 $this->fwrite_stream($fp, $this->firebase->get("sites/$sitekey/index/$workspacename/$branch/$dimension/__$nodetype"));
                                 fclose($fp);
@@ -757,7 +757,7 @@ class SearchIndexFactory
     /**
      * Removes trashes nods
      */
-    public  function removeTrashedNodes()
+    public function removeTrashedNodes()
     {
 
 
@@ -954,7 +954,7 @@ class SearchIndexFactory
      * @param string $workspaceName
      * @param string nodeTypeName
      */
-    public  function syncByNodeType($workspaceName = 'live', $nodeTypeName = null)
+    public function syncByNodeType($workspaceName = 'live', $nodeTypeName = null)
     {
 
 
@@ -986,7 +986,7 @@ class SearchIndexFactory
      * @param string $workspaceName
      * @param string $nodeIdentifier
      */
-    public  function syncByNodeIdentifier($workspaceName = 'live', $nodeIdentifier)
+    public function syncByNodeIdentifier($workspaceName = 'live', $nodeIdentifier)
     {
 
 
@@ -1175,7 +1175,7 @@ class SearchIndexFactory
      * @param string $nodeTypeFilter If specified, only nodes with that node type are considered
      * @return void
      */
-    public  function generateIndex($node, $workspace, $dimensionConfiguration, $nodeTypeFilter = '')
+    public function generateIndex($node, $workspace, $dimensionConfiguration, $nodeTypeFilter = '')
     {
 
 
@@ -1229,7 +1229,7 @@ class SearchIndexFactory
      * @param mixed $removeNodeByNodeTypeName
      * @return void
      */
-    public  function removeSingleIndex($nodeIdentifier, $workspaceHash, $branch, $dimensionConfigurationHash, $keywordsOfNode = array(), $siteIdentifier = null, $removeNodeByNodeTypeName = null)
+    public function removeSingleIndex($nodeIdentifier, $workspaceHash, $branch, $dimensionConfigurationHash, $keywordsOfNode = array(), $siteIdentifier = null, $removeNodeByNodeTypeName = null)
     {
 
         if ($this->creatingFullIndex) {
@@ -1277,7 +1277,7 @@ class SearchIndexFactory
      * @param string $dimensionConfigurationHash
      * @return void
      */
-    public  function generateSingleIndex($node, $workspace, $dimensionConfigurationHash)
+    public function generateSingleIndex($node, $workspace, $dimensionConfigurationHash)
     {
 
         $this->indexcounter++;
@@ -1344,7 +1344,7 @@ class SearchIndexFactory
 
 
                 if (substr($k, 0, 2) !== "__") {
-                      array_push($keywordsOfNode, $k);
+                    array_push($keywordsOfNode, $k);
                 }
 
                 if (substr($k, 0, 9) === "_nodetype") {
@@ -1363,7 +1363,6 @@ class SearchIndexFactory
                     }
 
                 }
-
 
 
                 if (isset($this->index->$workspaceHash->$dimensionConfigurationHash->$k) === false) {
@@ -1450,9 +1449,8 @@ class SearchIndexFactory
         }
 
         $text = (Encoding::UTF8FixWin1252Chars(html_entity_decode($text)));
-        $text = preg_replace('~[^\p{L}\p{N}-\.0-9]++~u', " ", mb_strtolower(strip_tags($text)));
+        $text = preg_replace('~[^\p{L}\p{N}-\.0-9]++~u', " ", mb_strtolower($text));
         $words = explode(" ", ($text));
-
 
 
         // reduce
@@ -1464,18 +1462,18 @@ class SearchIndexFactory
             if (strlen($w) > 1) {
                 $wm = $this->getMetaphone($w);
                 if (mb_strlen($wm) > 0 && mb_strlen($wm) < 64) {
-                    $a = explode(".",$w,2);
+                    $a = explode(".", $w, 2);
                     if ($a) {
                         $w = $a[0];
                     }
-                    $wordsReduced[$wm][$w] = 1;
-                    $wm = $this->getMetaphone(mb_substr($w, 0, 3));
-                    if (mb_strlen($wm) > 0) {
-                        $wordsReduced["000" . $wm][$w] = 1;
+                    if (mb_strlen($wm) > 0 && mb_strlen($wm) < 64) {
+                        $wordsReduced[$wm][$w] = 1;
+                        $wm = $this->getMetaphone(mb_substr($w, 0, 3));
+                        if (mb_strlen($wm) > 0) {
+                            $wordsReduced["000" . $wm][$w] = 1;
+                        }
                     }
                 }
-
-
             }
         }
 
@@ -1484,12 +1482,11 @@ class SearchIndexFactory
 
             if (mb_strlen($w) > 1) {
                 $w = Encoding::UTF8FixWin1252Chars($w);
-                if ($w && mb_strlen($w)>1 && mb_strlen($w) < 128) {
+                if ($w) {
                     $keywords->$w = $k;
                 }
             }
         }
-
 
 
         $properties = null;
@@ -1508,11 +1505,11 @@ class SearchIndexFactory
     public function getMetaphone($string)
     {
 
-        if (substr_count($string,".") && substr($string,-1,1) !== '.' && is_numeric(substr($string,0,1))) {
-            return mb_strtoupper(str_replace(".","",$string));
+        if (substr_count($string, ".") && substr($string, -1, 1) !== '.' && is_numeric(substr($string, 0, 1))) {
+            return mb_strtoupper(str_replace(".", "", $string));
         }
 
-        return str_replace(".","",mb_strtoupper(metaphone(mb_strtolower($string), 6)));
+        return str_replace(".", "", mb_strtoupper(metaphone(mb_strtolower($string), 6)));
 
 
     }
@@ -1535,7 +1532,7 @@ class SearchIndexFactory
      * @param string $parentNodeFilter
      * @return \stdClass
      */
-    public  function convertNodeToSearchIndexResult($node, $grandParentNodeFilter = '', $parentNodeFilter = '', $depth = 0)
+    public function convertNodeToSearchIndexResult($node, $grandParentNodeFilter = '', $parentNodeFilter = '', $depth = 0)
     {
 
 
@@ -1974,7 +1971,6 @@ class SearchIndexFactory
     {
 
 
-
         if ($chunkcounter < 100 && count($data) > 2 && strlen(json_encode($data)) > 1000000) {
             $chunkcounter++;
             $this->addToQueue($path, array_slice($data, 0, ceil(count($data) / 2)), $method, $chunkcounter);
@@ -2032,7 +2028,7 @@ class SearchIndexFactory
      * @param $string
      * @return int
      */
-    public  function fwrite_stream($fp, $string)
+    public function fwrite_stream($fp, $string)
     {
         for ($written = 0; $written < strlen($string); $written += $fwrite) {
             $fwrite = fwrite($fp, substr($string, $written));
@@ -2324,7 +2320,6 @@ class SearchIndexFactory
                 }
             }
         }
-
 
 
         foreach ($this->keywords as $workspace => $workspaceData) {
