@@ -1462,7 +1462,12 @@ class SearchIndexFactory
             if (strlen($w) > 1) {
                 $wm = $this->getMetaphone($w);
                 if (mb_strlen($wm) > 0 && mb_strlen($wm) < 64) {
-                    $w = str_replace(".","",$w);
+                    $a = explode(".",$w,2);
+                    if ($a) {
+                        $w = $a[0];
+                    }
+                    $w = str_replace("-"," ",$w);
+
                     $wordsReduced[$wm][$w] = 1;
                     $wm = $this->getMetaphone(mb_substr($w, 0, 3));
                     if (mb_strlen($wm) > 0) {
@@ -1474,6 +1479,7 @@ class SearchIndexFactory
             }
         }
 
+        \Neos\Flow\var_dump($wordsReduced);
         foreach ($wordsReduced as $w => $k) {
 
             if (strlen($w) > 1) {

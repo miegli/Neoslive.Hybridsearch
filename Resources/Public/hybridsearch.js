@@ -5903,7 +5903,7 @@
                     query = query.toLowerCase();
 
                     angular.forEach(Object.keys(autocomplete), function (a) {
-                        a = a.replace(/-/g, " ").trim();
+                        a = a.replace(/-/g, " ").trim().split(" ",3).join(" ");
                         if (self.$$data.autocompleteKeys[a] == undefined) {
                             self.$$data.autocompleteKeys[a] = true;
                         }
@@ -5916,15 +5916,17 @@
                     var foundinproperty = null;
                     var foundinpropertyLength = 0;
                     angular.forEach(self.getNodes(16), function (node) {
-                        if (foundinproperty === null) {
-                            angular.forEach(node.getProperties(), function (value, property) {
-                                if (query && typeof value == 'string' && value.toLowerCase().substr(0, query.length + 1) == query + " ") {
-                                    if (foundinpropertyLength == 0 || value.length < foundinpropertyLength) {
-                                        foundinproperty = property;
+                        if (node.getScore() > 10) {
+                            if (foundinproperty === null) {
+                                angular.forEach(node.getProperties(), function (value, property) {
+                                    if (query && typeof value == 'string' && value.toLowerCase().substr(0, query.length + 1) == query + " ") {
+                                        if (foundinpropertyLength == 0 || value.length < foundinpropertyLength) {
+                                            foundinproperty = property;
+                                        }
+                                        foundinpropertyLength = value.length;
                                     }
-                                    foundinpropertyLength = value.length;
-                                }
-                            });
+                                });
+                            }
                         }
                     });
 
@@ -5934,24 +5936,25 @@
 
 
                     angular.forEach(self.getNodes(16), function (node) {
-                        var a = node.getProperty(foundinproperty);
-                        if (typeof a == 'string' && a != '') {
-                            if (a.length < 50 && (caller == undefined || caller.isFiltered(node) == false)) {
+                        if (node.getScore() > 10) {
+                            var a = node.getProperty(foundinproperty);
 
-                                var i = a.toLowerCase().indexOf(query);
-                                var b = a.substr(i).toLowerCase();
-
-                                if (b == query && i >= 0) {
-                                    b = a.substr(0, i + query.length).toLowerCase();
+                            if (typeof a == 'string' && a != '') {
+                                if (a.length < 50 && (caller == undefined || caller.isFiltered(node) == false)) {
+                                    var i = a.toLowerCase().indexOf(query);
+                                    var b = a.substr(i).toLowerCase();
+                                    if (b == query && i >= 0) {
+                                        b = a.substr(0, i + query.length).toLowerCase();
+                                        b = b.trim();
+                                    }
                                     b = b.trim();
+                                    if (b.length > query.length && query !== b && autocompleteTemp[b] == undefined && i >= -1 && i < 64) {
+                                        self.$$data.autocomplete.push(b);
+                                        autocompleteTemp[b] = true;
+                                    }
                                 }
-                                b = b.trim();
-                                if (b.length > query.length && query !== b && autocompleteTemp[b] == undefined && i >= -1 && i < 64) {
-                                    self.$$data.autocomplete.push(b);
-                                    autocompleteTemp[b] = true;
-                                }
-                            }
 
+                            }
                         }
 
                     });
