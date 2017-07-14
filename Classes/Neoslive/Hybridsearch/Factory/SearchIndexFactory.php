@@ -1450,7 +1450,7 @@ class SearchIndexFactory
         }
 
         $text = (Encoding::UTF8FixWin1252Chars(html_entity_decode($text)));
-        $text = preg_replace('~[^\p{L}\p{N}-\.0-9]++~u', " ", mb_strtolower($text));
+        $text = preg_replace('~[^\p{L}\p{N}-\.0-9]++~u', " ", mb_strtolower(strip_tags($text)));
         $words = explode(" ", ($text));
 
 
