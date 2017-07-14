@@ -1453,6 +1453,8 @@ class SearchIndexFactory
         $text = preg_replace('~[^\p{L}\p{N}-\.0-9]++~u', " ", mb_strtolower($text));
         $words = explode(" ", ($text));
 
+
+
         // reduce
         $wordsReduced = array();
 
@@ -1479,10 +1481,10 @@ class SearchIndexFactory
             }
         }
 
-        \Neos\Flow\var_dump($wordsReduced);
+
         foreach ($wordsReduced as $w => $k) {
 
-            if (strlen($w) > 1) {
+            if (mb_strlen($w) > 1) {
                 $w = Encoding::UTF8FixWin1252Chars($w);
                 if ($w) {
                     $keywords->$w = $k;
@@ -1977,8 +1979,8 @@ class SearchIndexFactory
 
         if ($chunkcounter < 100 && count($data) > 2 && strlen(json_encode($data)) > 10000000) {
             $chunkcounter++;
-            $this->addToQueue($path, array_slice($data, 0, abs(count($data) / 2)), $method, $chunkcounter);
-            $this->addToQueue($path, array_slice($data, abs(count($data) / 2)), $method, $chunkcounter);
+            $this->addToQueue($path, array_slice($data, 0, ceil(count($data) / 2)), $method, $chunkcounter);
+            $this->addToQueue($path, array_slice($data, floor(count($data) / 2)), $method, $chunkcounter);
             unset($data);
             return true;
         } else {
