@@ -3015,7 +3015,6 @@
                                 }, 25);
 
 
-
                             } else {
 
                                 window.clearTimeout(getIndexTimeout);
@@ -5343,7 +5342,6 @@
                     setResults: function (results, nodes, object, skipAutocompleteUpdate, caller) {
 
 
-
                         if (self.$$data.isStartedFirstTime == false) {
                             this.setIsStartedFirstTime();
                         }
@@ -5392,14 +5390,14 @@
                             window.clearTimeout(self.$$data._updateTimeout);
                         }
                         if (self.isStarted()) {
-                            self.$$data._updateTimeout = window.setTimeout(function() {
+                            self.$$data._updateTimeout = window.setTimeout(function () {
                                 self.getApp().setNotFound(false);
                                 self.updateNodesGroupedBy();
                                 object.executeCallbackMethod(self);
                                 if (skipAutocompleteUpdate !== true) {
                                     self.updateAutocomplete(null, null, caller);
                                 }
-                            },5);
+                            }, 5);
 
                         }
 
@@ -5903,7 +5901,7 @@
                     query = query.toLowerCase();
 
                     angular.forEach(Object.keys(autocomplete), function (a) {
-                        a = a.replace(/-/g, " ").trim().split(" ",6).join(" ");
+                        a = a.replace(/-/g, " ").trim().split(" ", 6).join(" ");
                         if (self.$$data.autocompleteKeys[a] == undefined) {
                             self.$$data.autocompleteKeys[a] = true;
                         }
@@ -5915,20 +5913,23 @@
 
                     var foundinproperty = null;
                     var foundinpropertyLength = 0;
-                    angular.forEach(self.getNodes(16), function (node) {
-                        if (node.getScore() > 10) {
-                            if (foundinproperty === null) {
-                                angular.forEach(node.getProperties(), function (value, property) {
-                                    if (query && typeof value == 'string' && value.toLowerCase().substr(0, query.length + 1) == query + " ") {
-                                        if (foundinpropertyLength == 0 || value.length < foundinpropertyLength) {
-                                            foundinproperty = property;
+
+                    if (self.count() > 1) {
+                        angular.forEach(self.getNodes(16), function (node) {
+                            if (node.getScore() > 10) {
+                                if (foundinproperty === null) {
+                                    angular.forEach(node.getProperties(), function (value, property) {
+                                        if (query && typeof value == 'string' && value.toLowerCase().substr(0, query.length + 1) == query + " ") {
+                                            if (foundinpropertyLength == 0 || value.length < foundinpropertyLength) {
+                                                foundinproperty = property;
+                                            }
+                                            foundinpropertyLength = value.length;
                                         }
-                                        foundinpropertyLength = value.length;
-                                    }
-                                });
+                                    });
+                                }
                             }
-                        }
-                    });
+                        });
+                    }
 
                     if (foundinproperty === null) {
                         foundinproperty = '_nodeLabel';
