@@ -4131,8 +4131,7 @@
                                         if (Object.keys(doc).length) {
 
                                             if (value.node.breadcrumb !== undefined) {
-                                                doc.breadcrumb = value.node.breadcrumb.replace(/(<([^>]+)>)/ig, "");
-                                                doc.breadcrumb = doc.breadcrumb.substr(doc.breadcrumb.trim().lastIndexOf(" ")).toLowerCase();
+                                                doc.breadcrumb = value.node.breadcrumb.replace(/(<([^>]+)>)/ig, "").replace(/\r?\n|\r/g, "");
                                             }
 
                                             if (value.node.properties['__google'] != undefined) {
