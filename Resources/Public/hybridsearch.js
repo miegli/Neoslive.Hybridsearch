@@ -5888,7 +5888,7 @@
                         return null;
                     }
 
-                    if (self.count() == 1) {
+                    if (self.count() < 10) {
                         return null;
                     }
 
