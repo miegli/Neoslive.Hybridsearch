@@ -1385,7 +1385,13 @@
 
                         }
 
+                        if (propertiesBoost[property] === undefined && nodetype !== undefined) {
+                            if (propertiesBoost[property.substr(nodetype.length+1)]) {
+                                propertiesBoost[property] = propertiesBoost[property.substr(nodetype.length+1)];
+                            }
+                        }
 
+                        
                         if (nodetype !== undefined && nodetype.length > property.length) {
                             property = nodetype + "-" + property;
                         }
