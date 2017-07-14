@@ -5888,6 +5888,10 @@
                         return null;
                     }
 
+                    if (self.count() == 1) {
+                        return null;
+                    }
+
                     if (!autocomplete) {
                         autocomplete = {};
                     }
@@ -5906,6 +5910,7 @@
                             self.$$data.autocompleteKeys[a] = true;
                         }
                     });
+
 
                     self.$$data.autocomplete = [];
                     var autocompleteTemp = {};
