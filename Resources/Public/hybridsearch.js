@@ -3003,23 +3003,17 @@
                             if (!self.getConfig('algolia') || keywords.length == 0) {
                                 var searchIndex = new this.SearchIndexInstance(self, keywords);
                                 lastSearchInstance = searchIndex.getIndex();
+                                var counter = 0;
+                                clearInterval(searchInstancesInterval);
+                                searchInstancesInterval = setInterval(function () {
+                                    counter++;
+                                    if (lastSearchInstance.$$data.canceled === true || counter > 55000 || lastSearchInstance.$$data.proceeded.length >= lastSearchInstance.$$data.running) {
+                                        clearInterval(searchInstancesInterval);
+                                        lastSearchInstance.execute(self, lastSearchInstance);
+                                        self.search(nodes);
+                                    }
+                                }, 25);
 
-                                if (lastSearchInstance.$$data.canceled === true || counter > 55000 || lastSearchInstance.$$data.proceeded.length >= lastSearchInstance.$$data.running) {
-                                    clearInterval(searchInstancesInterval);
-                                    lastSearchInstance.execute(self, lastSearchInstance);
-                                    self.search(nodes);
-                                } else {
-                                    var counter = 0;
-                                    clearInterval(searchInstancesInterval);
-                                    searchInstancesInterval = setInterval(function () {
-                                        counter++;
-                                        if (lastSearchInstance.$$data.canceled === true || counter > 55000 || lastSearchInstance.$$data.proceeded.length >= lastSearchInstance.$$data.running) {
-                                            clearInterval(searchInstancesInterval);
-                                            lastSearchInstance.execute(self, lastSearchInstance);
-                                            self.search(nodes);
-                                        }
-                                    }, 10);
-                                }
 
 
                             } else {
