@@ -1450,6 +1450,7 @@ class SearchIndexFactory
 
         $text = (Encoding::UTF8FixWin1252Chars(html_entity_decode($text)));
         $text = preg_replace('~[^\p{L}\p{N}-\.0-9]++~u', " ", mb_strtolower($text));
+
         $words = explode(" ", ($text));
 
 
@@ -1464,6 +1465,8 @@ class SearchIndexFactory
                 if (mb_substr_count($w,".")) {
                     $w = mb_substr($w,0,mb_stripos($w,".")-1);
                 }
+
+                $w = str_replace(".","",$w);
 
                 $wm = $this->getMetaphone($w);
                 if (mb_strlen($wm) > 0 && mb_strlen($wm) < 64) {
