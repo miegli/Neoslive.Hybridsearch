@@ -1400,7 +1400,7 @@ class SearchIndexFactory
             unset($indexData);
             unset($keywords);
 
-            if (time() - $this->time > 300 || count($this->index->$workspaceHash->$dimensionConfigurationHash->$k) > 500) {
+            if (time() - $this->time > 100 || count($this->index->$workspaceHash->$dimensionConfigurationHash->$k) > 250) {
                 $this->time = time();
                 $this->save();
             };
