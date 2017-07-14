@@ -1484,7 +1484,7 @@ class SearchIndexFactory
 
             if (mb_strlen($w) > 1) {
                 $w = Encoding::UTF8FixWin1252Chars($w);
-                if ($w && mb_strlen($w)>1 && mb_strlen($w) < 128 && mb_strlen($k) > 1 && mb_strlen($k) < 128) {
+                if ($w && mb_strlen($w)>1 && mb_strlen($w) < 128) {
                     $keywords->$w = $k;
                 }
             }
