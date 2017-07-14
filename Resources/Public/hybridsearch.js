@@ -5903,7 +5903,7 @@
                     query = query.toLowerCase();
 
                     angular.forEach(Object.keys(autocomplete), function (a) {
-                        a = a.replace(/-/g, " ").trim().split(" ",3).join(" ");
+                        a = a.replace(/-/g, " ").trim().split(" ",6).join(" ");
                         if (self.$$data.autocompleteKeys[a] == undefined) {
                             self.$$data.autocompleteKeys[a] = true;
                         }
