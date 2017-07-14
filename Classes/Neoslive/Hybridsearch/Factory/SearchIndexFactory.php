@@ -1484,7 +1484,7 @@ class SearchIndexFactory
 
             if (mb_strlen($w) > 1) {
                 $w = Encoding::UTF8FixWin1252Chars($w);
-                if ($w) {
+                if ($w && mb_strlen($w)>1 && mb_strlen($w) < 128 && mb_strlen($k) > 1 && mb_strlen($k) < 128) {
                     $keywords->$w = $k;
                 }
             }
@@ -2164,7 +2164,16 @@ class SearchIndexFactory
 
                         if (strlen($out)) {
                             \Neos\Flow\var_dump($out, 'see log file ' . $file . ".error.log");
+//                            foreach ($content->data as $k => $v) {
+//                                $out = $this->firebase->set($content->path."/".$k,$v,array('print' => 'silent'));
+//                                $this->output->outputLine($content->path."/".$k);
+//                                if (strlen($out)) {
+//                                    \Neos\Flow\var_dump($content->path."/".$k, 'see log file ' . $file . ".error.log");
+//                                }
+//                            }
                             rename($file, $file . ".error.log");
+
+
                         } else {
                             unlink($file);
                         }
