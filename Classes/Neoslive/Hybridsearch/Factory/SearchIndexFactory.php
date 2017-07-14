@@ -1461,18 +1461,15 @@ class SearchIndexFactory
 
 
             if (strlen($w) > 1) {
-
-                if (mb_substr_count($w,".")) {
-                    $w = mb_substr($w,0,mb_stripos($w,".")-1);
-                }
-
-                $w = str_replace(".","",$w);
-
                 $wm = $this->getMetaphone($w);
-                if (mb_strlen($wm) > 0 && mb_strlen($wm) < 64) {
+                if (substr_count($w,".")) {
+                    $w = mb_substr($w,0,stripos($w,".")-1);
+                }
+                $w = str_replace(".","",$w);
+                if (strlen($wm) > 0 && strlen($wm) < 64) {
                     $wordsReduced[$wm][$w] = 1;
                     $wm = $this->getMetaphone(mb_substr($w, 0, 3));
-                    if (mb_strlen($wm) > 0) {
+                    if (strlen($wm) > 0) {
                         $wordsReduced["000" . $wm][$w] = 1;
                     }
 
@@ -1483,7 +1480,7 @@ class SearchIndexFactory
 
         foreach ($wordsReduced as $w => $k) {
 
-            if (mb_strlen($w) > 1) {
+            if (strlen($w) > 1) {
                 $w = Encoding::UTF8FixWin1252Chars($w);
                 if ($w) {
                     $keywords->$w = $k;
