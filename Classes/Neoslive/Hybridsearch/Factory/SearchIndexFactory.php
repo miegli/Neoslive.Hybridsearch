@@ -1303,126 +1303,119 @@ class SearchIndexFactory
         $workspaceHash = $this->getWorkspaceHash($workspace);
 
 
-        if (isset($this->nodeProceeded[sha1(json_encode(array($workspaceHash, $dimensionConfigurationHash, $node->getIdentifier())))]) === false) {
+        if (isset($this->index->$workspaceHash) === false) {
+            $this->index->$workspaceHash = new \stdClass();
+        }
+
+        if (isset($this->index->$workspaceHash->$dimensionConfigurationHash) === false) {
+            $this->index->$workspaceHash->$dimensionConfigurationHash = new \stdClass();
+        }
 
 
-            if (isset($this->index->$workspaceHash) === false) {
-                $this->index->$workspaceHash = new \stdClass();
-            }
+        if (isset($this->keywords->$workspaceHash) === false) {
+            $this->keywords->$workspaceHash = new \stdClass();
+        }
 
-            if (isset($this->index->$workspaceHash->$dimensionConfigurationHash) === false) {
-                $this->index->$workspaceHash->$dimensionConfigurationHash = new \stdClass();
-            }
-
-
-            if (isset($this->keywords->$workspaceHash) === false) {
-                $this->keywords->$workspaceHash = new \stdClass();
-            }
-
-            if (isset($this->keywords->$workspaceHash->$dimensionConfigurationHash) === false) {
-                $this->keywords->$workspaceHash->$dimensionConfigurationHash = array();
-            }
+        if (isset($this->keywords->$workspaceHash->$dimensionConfigurationHash) === false) {
+            $this->keywords->$workspaceHash->$dimensionConfigurationHash = array();
+        }
 
 
-            $indexData = $this->convertNodeToSearchIndexResult($node);
+        $indexData = $this->convertNodeToSearchIndexResult($node);
 
-            if (count(get_object_vars($indexData->properties)) == 1) {
-                foreach ($indexData->properties as $p) {
-                    if (!$p) {
-                        // skip emtpy nodes
-                        return null;
-                    }
+        if (count(get_object_vars($indexData->properties)) == 1) {
+            foreach ($indexData->properties as $p) {
+                if (!$p) {
+                    // skip emtpy nodes
+                    return null;
                 }
             }
+        }
 
 
-            $identifier = $indexData->identifier;
+        $identifier = $indexData->identifier;
 
-            if (!$identifier) {
-                return null;
+        if (!$identifier) {
+            return null;
+        }
+
+        $keywords = $this->generateSearchIndexFromProperties($indexData->properties, $indexData->nodeType);
+
+        unset($indexData->properties->rawcontent);
+
+        $nt = "__" . $this->getNodeTypeName($node);
+        $keywords->$nt = true;
+        $keywords->$identifier = true;
+
+
+        $keywordsOfNode = array();
+
+        foreach ($keywords as $keyword => $val) {
+
+            $k = strval($keyword);
+
+
+            if (substr($k, 0, 2) !== "__") {
+                array_push($keywordsOfNode, $k);
             }
 
-            $keywords = $this->generateSearchIndexFromProperties($indexData->properties, $indexData->nodeType);
+            if (substr($k, 0, 9) === "_nodetype") {
+                $k = "_" . $this->getNodeTypeName($node) . mb_substr($k, 9);
+            }
 
-            unset($indexData->properties->rawcontent);
-
-            $nt = "__" . $this->getNodeTypeName($node);
-            $keywords->$nt = true;
-            $keywords->$identifier = true;
-
-
-            $keywordsOfNode = array();
-
-            foreach ($keywords as $keyword => $val) {
-
-                $k = strval($keyword);
-
-
-                if (substr($k, 0, 2) !== "__") {
-                    array_push($keywordsOfNode, $k);
+            if ($k && substr_count($keyword, "-") < 3 && substr_count($keyword, "_") == 0) {
+                if (isset($this->keywords->$workspaceHash->$dimensionConfigurationHash[$k]) == false) {
+                    $this->keywords->$workspaceHash->$dimensionConfigurationHash[$k] = array();
                 }
-
-                if (substr($k, 0, 9) === "_nodetype") {
-                    $k = "_" . $this->getNodeTypeName($node) . mb_substr($k, 9);
+                if (is_array($val) == false) {
+                    $val = array($k);
                 }
-
-                if ($k && substr_count($keyword, "-") < 3 && substr_count($keyword, "_") == 0) {
-                    if (isset($this->keywords->$workspaceHash->$dimensionConfigurationHash[$k]) == false) {
-                        $this->keywords->$workspaceHash->$dimensionConfigurationHash[$k] = array();
-                    }
-                    if (is_array($val) == false) {
-                        $val = array($k);
-                    }
-                    foreach ($val as $kek => $vev) {
-                        $this->keywords->$workspaceHash->$dimensionConfigurationHash[$k][$kek] = $vev;
-                    }
-
+                foreach ($val as $kek => $vev) {
+                    $this->keywords->$workspaceHash->$dimensionConfigurationHash[$k][$kek] = $vev;
                 }
-
-
-                if (isset($this->index->$workspaceHash->$dimensionConfigurationHash->$k) === false) {
-                    $this->index->$workspaceHash->$dimensionConfigurationHash->$k = new \stdClass();
-                }
-
-                $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier = new \stdClass();
-                $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier->nodeType = $indexData->nodeType;
-
-                if (substr($k, 0, 2) == '__') {
-                    $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier->node = $indexData;
-                }
-
 
             }
 
-            if (isset($this->index->$workspaceHash->$dimensionConfigurationHash->___keywords) === false) {
-                $this->index->$workspaceHash->$dimensionConfigurationHash->___keywords = new \stdClass();
+
+            if (isset($this->index->$workspaceHash->$dimensionConfigurationHash->$k) === false) {
+                $this->index->$workspaceHash->$dimensionConfigurationHash->$k = new \stdClass();
             }
 
-            $this->index->$workspaceHash->$dimensionConfigurationHash->___keywords->$identifier = $keywordsOfNode;
+            $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier = new \stdClass();
+            $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier->nodeType = $indexData->nodeType;
 
-
-            if ($this->creatingFullIndex !== true) {
-                $this->removeSingleIndex($node->getIdentifier(), $workspaceHash, $this->branch, $dimensionConfigurationHash, $keywordsOfNode);
+            if (substr($k, 0, 2) == '__') {
+                $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier->node = $indexData;
             }
 
-
-            $this->nodeProceeded[sha1(json_encode(array($workspaceHash, $dimensionConfigurationHash, $node->getIdentifier())))] = true;
-
-            $node = null;
-            $indexData = null;
-            $keywords = null;
-            unset($node);
-            unset($indexData);
-            unset($keywords);
-
-            if (time() - $this->time > 180 || $this->counter > 500) {
-                $this->time = time();
-                $this->counter = 0;
-                $this->save();
-            };
-            $this->counter++;
 
         }
+
+        if (isset($this->index->$workspaceHash->$dimensionConfigurationHash->___keywords) === false) {
+            $this->index->$workspaceHash->$dimensionConfigurationHash->___keywords = new \stdClass();
+        }
+
+        $this->index->$workspaceHash->$dimensionConfigurationHash->___keywords->$identifier = $keywordsOfNode;
+
+
+        if ($this->creatingFullIndex !== true) {
+            $this->removeSingleIndex($node->getIdentifier(), $workspaceHash, $this->branch, $dimensionConfigurationHash, $keywordsOfNode);
+        }
+
+
+        $node = null;
+        $indexData = null;
+        $keywords = null;
+        unset($node);
+        unset($indexData);
+        unset($keywords);
+
+        if (time() - $this->time > 180 || $this->counter > 500) {
+            $this->time = time();
+            $this->counter = 0;
+            $this->save();
+        };
+        $this->counter++;
 
 
     }
