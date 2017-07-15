@@ -238,6 +238,11 @@ class SearchIndexFactory
      */
     protected $indexcounter;
 
+    /**
+     * @var integer
+     */
+    protected $nodetypesCounter = 0;
+
 
     /**
      * @Flow\InjectConfiguration(package="Neoslive.Hybridsearch")
@@ -305,6 +310,11 @@ class SearchIndexFactory
      * @var integer
      */
     protected $time = 0;
+
+    /**
+     * @var integer
+     */
+    protected $counter = 0;
 
 
     /**
@@ -1399,10 +1409,12 @@ class SearchIndexFactory
             unset($indexData);
             unset($keywords);
 
-            if (time() - $this->time > 100 || count($this->index->$workspaceHash->$dimensionConfigurationHash->$k) > 250) {
+            if (time() - $this->time > 180 || $this->counter > 500) {
                 $this->time = time();
+                $this->counter = 0;
                 $this->save();
             };
+            $this->counter++;
 
         }
 
@@ -2298,34 +2310,42 @@ class SearchIndexFactory
     {
 
 
+
         foreach ($this->index as $workspace => $workspaceData) {
             foreach ($workspaceData as $dimension => $dimensionData) {
                 $patch = array();
 
-                if ($this->creatingFullIndex) {
-                    $this->firebaseSet("sites/" . $this->getSiteIdentifier() . "/nodetypes/" . $workspace . "/" . $this->branch . "/" . $dimension, $this->nodetypes);
-                }
 
-                foreach ($dimensionData as $dimensionIndex => $dimensionIndexData) {
-
-                    foreach ($dimensionIndexData as $dimensionIndexKey => $dimensionIndexDataAll) {
-                        if (is_array($dimensionIndexDataAll)) {
-                            foreach ($dimensionIndexDataAll as $dimensionIndexDataAllKey => $dimensionIndexDataAllVal) {
-                                $patch[$dimension . "/" . $dimensionIndex . "/" . $dimensionIndexKey . "/" . $dimensionIndexDataAllKey] = $dimensionIndexDataAllVal;
-                            }
-                        } else {
-                            $patch[$dimension . "/" . $dimensionIndex . "/" . $dimensionIndexKey . "/" . $dimensionIndexDataAll] = $dimensionIndexDataAll;
-                        }
-                    }
-                }
 
                 if ($this->creatingFullIndex) {
-                    $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $this->branch, $patch);
 
                     if ($this->branchWasSet !== true) {
                         $this->setBranch($workspace, $this->branch);
                         $this->branchWasSet = true;
                     }
+                    $ncount = count(get_object_vars($this->nodetypes));
+                    if ($this->nodetypesCounter < $ncount) {
+                        $this->firebaseSet("sites/" . $this->getSiteIdentifier() . "/nodetypes/" . $workspace . "/" . $this->branch . "/" . $dimension, $this->nodetypes);
+                    }
+                    $this->nodetypesCounter = $ncount;
+                }
+
+                foreach ($dimensionData as $dimensionIndex => $dimensionIndexData) {
+
+                    foreach ($dimensionIndexData as $dimensionIndexKey => $dimensionIndexDataAll) {
+                        $patch[$dimension . "/" . $dimensionIndex . "/" . $dimensionIndexKey] = $dimensionIndexDataAll;
+//                        if (is_array($dimensionIndexDataAll)) {
+//                            foreach ($dimensionIndexDataAll as $dimensionIndexDataAllKey => $dimensionIndexDataAllVal) {
+//                                    $patch[$dimension . "/" . $dimensionIndex . "/" . $dimensionIndexKey . "/" . $dimensionIndexDataAllKey] = $dimensionIndexDataAllVal;
+//                            }
+//                        }
+                    }
+                }
+
+                if ($this->creatingFullIndex) {
+
+                    $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $this->branch, $patch);
+
 
                 } else {
                     if ($directpush) {
