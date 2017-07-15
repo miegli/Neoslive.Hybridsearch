@@ -1413,7 +1413,7 @@ class SearchIndexFactory
         unset($indexData);
         unset($keywords);
 
-        if (time() - $this->time > 180 || $this->counter > 500) {
+        if (time() - $this->time > 3600 || $this->counter > 5000) {
             $this->time = time();
             $this->counter = 0;
             $this->save();
@@ -2333,12 +2333,12 @@ class SearchIndexFactory
 
                     foreach ($dimensionIndexData as $dimensionIndexKey => $dimensionIndexDataAll) {
                         foreach ($dimensionIndexDataAll as $dimensionIndexDataAllKey => $dimensionIndexDataAllVal) {
-                            if (substr($dimensionIndex, 0,3) != '000') {
+                            if (substr($dimensionIndex, 0, 3) != '000') {
 
                                 if (isset($patch->$dimensionIndex) == false) {
                                     $patch->$dimensionIndex = new \stdClass();
                                 }
-                                if (isset( $patch->$dimensionIndex->$dimensionIndexKey) == false) {
+                                if (isset($patch->$dimensionIndex->$dimensionIndexKey) == false) {
                                     $patch->$dimensionIndex->$dimensionIndexKey = new \stdClass();
                                 }
                                 $patch->$dimensionIndex->$dimensionIndexKey->$dimensionIndexDataAllKey = $dimensionIndexDataAllVal;
@@ -2348,13 +2348,20 @@ class SearchIndexFactory
                     }
                 }
 
+
                 if ($this->creatingFullIndex) {
-                    $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $this->branch. "/" . $dimension, $patch);
+                    foreach ($patch as $path => $value) {
+                        $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $this->branch . "/" . $dimension . "/" . $path, $value);
+                    }
                 } else {
                     if ($directpush) {
-                        $this->firebase->update("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $this->branch . "/" . $dimension, $patch, array('print' => 'silent'));
+                        foreach ($patch as $path => $value) {
+                            $this->firebase->update("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $this->branch . "/" . $dimension . "/" . $path, $value, array('print' => 'silent'));
+                        }
                     } else {
-                        $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $this->branch. "/" . $dimension, $patch);
+                        foreach ($patch as $path => $value) {
+                            $this->firebase->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $this->branch . "/" . $dimension . "/" . $path, $value);
+                        }
                     }
 
                 }
@@ -2376,17 +2383,17 @@ class SearchIndexFactory
                                 $patch->$workspace = new \stdClass();
                             }
 
-                              if (isset($patch->$workspace->$branch) == false) {
+                            if (isset($patch->$workspace->$branch) == false) {
                                 $patch->$workspace->$branch = new \stdClass();
                             }
-                              if (isset($patch->$workspace->$branch->$dimensionIndex) == false) {
-                                  $patch->$workspace->$branch->$dimensionIndex = new \stdClass();
+                            if (isset($patch->$workspace->$branch->$dimensionIndex) == false) {
+                                $patch->$workspace->$branch->$dimensionIndex = new \stdClass();
                             }
-                              if (isset($patch->$workspace->$branch->$dimensionIndex->$dimensionIndexKey) == false) {
-                                  $patch->$workspace->$branch->$dimensionIndex->$dimensionIndexKey = new \stdClass();
+                            if (isset($patch->$workspace->$branch->$dimensionIndex->$dimensionIndexKey) == false) {
+                                $patch->$workspace->$branch->$dimensionIndex->$dimensionIndexKey = new \stdClass();
                             }
-                              if (isset($patch->$workspace->$branch->$dimensionIndex->$dimensionIndexKey->$dimensionIndexDataAllKey) == false) {
-                                  $patch->$workspace->$branch->$dimensionIndex->$dimensionIndexKey->$dimensionIndexDataAllKey = new \stdClass();
+                            if (isset($patch->$workspace->$branch->$dimensionIndex->$dimensionIndexKey->$dimensionIndexDataAllKey) == false) {
+                                $patch->$workspace->$branch->$dimensionIndex->$dimensionIndexKey->$dimensionIndexDataAllKey = new \stdClass();
                             }
 
                             $patch->$workspace->$branch->$dimensionIndex->$dimensionIndexKey->$dimensionIndexDataAllKey = $dimensionIndexDataAllVal;
@@ -2422,15 +2429,24 @@ class SearchIndexFactory
                 }
             }
 
+
             if ($this->creatingFullIndex) {
-                $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/keywords/", $patch);
+                foreach ($patch as $path => $value) {
+                    $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/keywords/" . $path, $value);
+                }
             } else {
                 if ($directpush) {
-                    $this->firebase->update("sites/" . $this->getSiteIdentifier() . "/keywords/", $patch, array('print' => 'silent'));
+                    foreach ($patch as $path => $value) {
+                        $this->firebase->update("sites/" . $this->getSiteIdentifier() . "/keywords/" . $path, $value, array('print' => 'silent'));
+                    }
                 } else {
-                    $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/keywords/", $patch);
+                    foreach ($patch as $path => $value) {
+                        $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/keywords/" . $path, $value);
+                    }
                 }
+
             }
+
 
         }
 
