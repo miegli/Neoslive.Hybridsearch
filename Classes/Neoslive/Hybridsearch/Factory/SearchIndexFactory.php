@@ -1994,7 +1994,7 @@ class SearchIndexFactory
     {
 
 
-        if ($chunkcounter < 100 && count($data) > 2 && strlen(json_encode($data)) > 5000000) {
+        if (1 == 2 && $chunkcounter < 100 && count($data) > 2 && strlen(json_encode($data)) > 5000000) {
             $chunkcounter++;
             $this->addToQueue($path, array_slice($data, 0, ceil(count($data) / 2)), $method, $chunkcounter);
             $this->addToQueue($path, array_slice($data, floor(count($data) / 2)), $method, $chunkcounter);
