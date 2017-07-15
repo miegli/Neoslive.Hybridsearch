@@ -1364,14 +1364,12 @@ class SearchIndexFactory
             }
 
             if ($k && substr_count($keyword, "-") < 3 && substr_count($keyword, "_") == 0) {
-
                 if (isset($this->keywords->$workspaceHash->$dimensionConfigurationHash[$k]) == false) {
                     $this->keywords->$workspaceHash->$dimensionConfigurationHash[$k] = array();
                 }
                 if (is_array($val) == false) {
                     $val = array($k);
                 }
-
                 foreach ($val as $kek => $vev) {
                     $this->keywords->$workspaceHash->$dimensionConfigurationHash[$k][$kek] = $vev;
                 }
@@ -1381,12 +1379,12 @@ class SearchIndexFactory
 
             if (isset($this->index->$workspaceHash->$dimensionConfigurationHash->$k) === false) {
                 $this->index->$workspaceHash->$dimensionConfigurationHash->$k = new \stdClass();
+            } else {
+
             }
 
-            if (isset($this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier) === false) {
-                $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier = new \stdClass();
-            }
 
+            $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier = new \stdClass();
             $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier->nodeType = $indexData->nodeType;
 
             if (substr($k, 0, 2) == '__') {
@@ -2334,25 +2332,25 @@ class SearchIndexFactory
                 foreach ($dimensionData as $dimensionIndex => $dimensionIndexData) {
 
                     foreach ($dimensionIndexData as $dimensionIndexKey => $dimensionIndexDataAll) {
-                        //$patch[$dimension . "/" . $dimensionIndex . "/" . $dimensionIndexKey] = $dimensionIndexDataAll;
-                        if (is_array($dimensionIndexDataAll)) {
-                            foreach ($dimensionIndexDataAll as $dimensionIndexDataAllKey => $dimensionIndexDataAllVal) {
-                                    $patch[$dimension . "/" . $dimensionIndex . "/" . $dimensionIndexKey . "/" . $dimensionIndexDataAllKey] = $dimensionIndexDataAllVal;
+                        foreach ($dimensionIndexDataAll as $dimensionIndexDataAllKey => $dimensionIndexDataAllVal) {
+                            if (substr($dimensionIndex, 0,3) != '000') {
+                                $patch[$dimensionIndex . "/" . $dimensionIndexKey . "/" . $dimensionIndexDataAllKey] = $dimensionIndexDataAllVal;
                             }
                         }
+
                     }
                 }
 
                 if ($this->creatingFullIndex) {
 
-                    $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $this->branch, $patch);
+                    $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $this->branch. "/" . $dimension, $patch);
 
 
                 } else {
                     if ($directpush) {
-                        $this->firebase->update("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $this->branch, $patch, array('print' => 'silent'));
+                        $this->firebase->update("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $this->branch . "/" . $dimension, $patch, array('print' => 'silent'));
                     } else {
-                        $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $this->branch, $patch);
+                        $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $this->branch. "/" . $dimension, $patch);
                     }
 
                 }
