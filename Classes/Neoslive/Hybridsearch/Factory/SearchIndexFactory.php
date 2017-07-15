@@ -1338,6 +1338,10 @@ class SearchIndexFactory
 
             $identifier = $indexData->identifier;
 
+            if (!$identifier) {
+                return null;
+            }
+
             $keywords = $this->generateSearchIndexFromProperties($indexData->properties, $indexData->nodeType);
 
             unset($indexData->properties->rawcontent);
@@ -1397,7 +1401,7 @@ class SearchIndexFactory
             $this->index->$workspaceHash->$dimensionConfigurationHash->___keywords->$identifier = $keywordsOfNode;
 
 
-            if ($this->creatingFullIndex === false) {
+            if ($this->creatingFullIndex !== true) {
                 $this->removeSingleIndex($node->getIdentifier(), $workspaceHash, $this->branch, $dimensionConfigurationHash, $keywordsOfNode);
             }
 
