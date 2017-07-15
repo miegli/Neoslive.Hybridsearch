@@ -1351,7 +1351,7 @@ class SearchIndexFactory
                     $k = "_" . $this->getNodeTypeName($node) . mb_substr($k, 9);
                 }
 
-                if ($k) {
+                if ($k && substr_count($keyword,"-") < 3 && substr_count($keyword,"_") == 0) {
                     if (isset($this->keywords->$workspaceHash->$dimensionConfigurationHash[$k]) == false) {
                         $this->keywords->$workspaceHash->$dimensionConfigurationHash[$k] = array();
                     }
@@ -1430,26 +1430,30 @@ class SearchIndexFactory
 
         foreach ($properties as $property => $value) {
 
+
             if (gettype($value) == 'string' || is_numeric($value)) {
 
                 $j = json_decode($value);
                 if ($j) {
                     $text .= " " . (json_encode($j, JSON_UNESCAPED_UNICODE));
+                    $text = preg_replace('/_/', "", mb_strtolower($text));
+                    $text = preg_replace('/\{"(.*)":/', " ", mb_strtolower($text));
                 } else {
                     $text .= " " . $value;
                 }
 
 
             } else {
-
                 $text .= " " . (json_encode($value, JSON_UNESCAPED_UNICODE));
-
+                $text = preg_replace('/_/', "", mb_strtolower($text));
+                $text = preg_replace('/\{"(.*)":/', " ", mb_strtolower($text));
             }
 
         }
 
+
         $text = (Encoding::UTF8FixWin1252Chars(html_entity_decode($text)));
-        $text = preg_replace('~[^\p{L}\p{N}-\.0-9]++~u', " ", mb_strtolower($text));
+        $text = preg_replace('~[^\p{L}\p{N}0-9]++~u', " ", mb_strtolower($text));
 
         $words = explode(" ", ($text));
 
@@ -1459,29 +1463,34 @@ class SearchIndexFactory
 
         foreach ($words as $w) {
 
+            $w = trim($w, "-");
 
-            if (strlen($w) > 1) {
-                $wm = $this->getMetaphone($w);
-                if (substr_count($w,".")) {
-                    $w = mb_substr($w,0,stripos($w,".")-1);
-                }
-                $w = str_replace(".","",$w);
-                if (strlen($wm) > 0 && strlen($wm) < 64) {
-                    $wordsReduced[$wm][$w] = 1;
-                    $wm = $this->getMetaphone(mb_substr($w, 0, 3));
-                    if (strlen($wm) > 0) {
-                        $wordsReduced["000" . $wm][$w] = 1;
+            if (strlen($w) > 1 && strlen($w) < 25) {
+
+                if (
+                    substr_count($w, "-") > 3 ||
+                    (is_numeric(substr($w, -1, 1)) && is_numeric(substr($w, 0, 1)) == false)
+                ) {
+                    // skip
+                } else {
+
+                    $wm = $this->getMetaphone($w);
+                    $w = str_replace(".", "", $w);
+                    if (strlen($wm) > 0 && strlen($wm) < 64) {
+                        $wordsReduced[$wm][$w] = 1;
+                        $wm = $this->getMetaphone(mb_substr($w, 0, 3));
+                        if (strlen($wm) > 0) {
+                            $wordsReduced["000" . $wm][$w] = 1;
+                        }
+
                     }
-
                 }
+
             }
         }
 
-
         foreach ($wordsReduced as $w => $k) {
-
             if (strlen($w) > 1) {
-                $w = Encoding::UTF8FixWin1252Chars($w);
                 if ($w) {
                     $keywords->$w = $k;
                 }
@@ -1491,6 +1500,8 @@ class SearchIndexFactory
 
         $properties = null;
         unset($properties);
+
+
 
         return $keywords;
 
@@ -2298,7 +2309,13 @@ class SearchIndexFactory
                 foreach ($dimensionData as $dimensionIndex => $dimensionIndexData) {
 
                     foreach ($dimensionIndexData as $dimensionIndexKey => $dimensionIndexDataAll) {
-                        $patch[$dimension . "/" . $dimensionIndex . "/" . $dimensionIndexKey] = $dimensionIndexDataAll;
+                        if (is_array($dimensionIndexDataAll)) {
+                            foreach ($dimensionIndexDataAll as $dimensionIndexDataAllKey => $dimensionIndexDataAllVal) {
+                                $patch[$dimension . "/" . $dimensionIndex . "/" . $dimensionIndexKey . "/" . $dimensionIndexDataAllKey] = $dimensionIndexDataAllVal;
+                            }
+                        } else {
+                            $patch[$dimension . "/" . $dimensionIndex . "/" . $dimensionIndexKey . "/" . $dimensionIndexDataAll] = $dimensionIndexDataAll;
+                        }
                     }
                 }
 
@@ -2332,7 +2349,7 @@ class SearchIndexFactory
                             $patch[$workspace . "/" . $this->branch . "/" . $dimensionIndex . "/" . $dimensionIndexKey . "/" . $dimensionIndexDataAllKey] = $dimensionIndexDataAllVal;
                         }
                     } else {
-                        $patch[$workspace . "/" . $this->branch . "/" . $dimensionIndex . "/" . $dimensionIndexKey] = $dimensionIndexDataAll;
+                        $patch[$workspace . "/" . $this->branch . "/" . $dimensionIndex . "/" . $dimensionIndexKey . "/" . $dimensionIndexDataAll] = $dimensionIndexDataAll;
                     }
                 }
             }
