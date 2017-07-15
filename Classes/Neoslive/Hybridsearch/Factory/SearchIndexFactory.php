@@ -1379,10 +1379,12 @@ class SearchIndexFactory
                     $this->index->$workspaceHash->$dimensionConfigurationHash->$k = new \stdClass();
                 }
 
+                $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier->nodeType = $indexData->nodeType;
+                
                 if (substr($k, 0, 2) == '__') {
-                    $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier = array('node' => $indexData, 'nodeType' => $indexData->nodeType);
+                    $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier->node = $indexData;
                 } else {
-                    $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier = array('node' => null, 'nodeType' => $indexData->nodeType);
+                    $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier->nodeType = $indexData->nodeType;
                 }
 
 
