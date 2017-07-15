@@ -2327,7 +2327,9 @@ class SearchIndexFactory
                                 if (isset($patch->$dimensionIndex->$dimensionIndexKey) == false) {
                                     $patch->$dimensionIndex->$dimensionIndexKey = new \stdClass();
                                 }
-                                $patchUpdate["$dimensionIndex/$dimensionIndexKey/$dimensionIndexDataAllKey"] = $dimensionIndexDataAllVal;
+                                if ($dimensionIndexDataAllVal) {
+                                    $patchUpdate["$dimensionIndex/$dimensionIndexKey/$dimensionIndexDataAllKey"] = $dimensionIndexDataAllVal;
+                                }
 
                             }
                         }
@@ -2378,7 +2380,9 @@ class SearchIndexFactory
                             $patch->$workspace->$branch->$dimensionIndex->$dimensionIndexKey->$dimensionIndexDataAllKey = new \stdClass();
                         }
 
-                        $patchUpdate["$workspace/$branch/$dimensionIndex/$dimensionIndexKey/$dimensionIndexDataAllKey"] = $dimensionIndexDataAllVal;
+                        if ($dimensionIndexDataAllVal) {
+                            $patchUpdate["$workspace/$branch/$dimensionIndex/$dimensionIndexKey/$dimensionIndexDataAllKey"] = $dimensionIndexDataAllVal;
+                        }
 
 
                     }
