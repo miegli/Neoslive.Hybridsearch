@@ -2401,6 +2401,15 @@
 
                                     }
 
+                                    if (resultsSearch[8] != undefined && resultsSearch[8].length == 0) {
+                                        resultsSearch[9] = lunrSearch.search(self.getFilter().getQuery() + " " + query.substr(0, 1), {
+                                            fields: fields,
+                                            bool: "OR",
+                                            expand: true
+                                        });
+
+                                    }
+
 
                                     var result = resultsSearch[resultsSearch.length - 1];
 
@@ -3831,7 +3840,7 @@
                                 return null;
                             }
 
-                            if (keyword.length < 2) {
+                            if (keyword.length < 1) {
                                 return null;
                             }
 
@@ -3845,7 +3854,6 @@
 
 
                         index[keyword] = queries;
-
 
                         return queries;
 

@@ -1504,7 +1504,7 @@ class SearchIndexFactory
         }
 
         foreach ($wordsReduced as $w => $k) {
-            if (strlen($w) > 1) {
+            if (strlen($w) > 0) {
                 if ($w) {
                     $keywords->$w = $k;
                 }
