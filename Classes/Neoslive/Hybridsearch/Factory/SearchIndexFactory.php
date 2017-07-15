@@ -2183,16 +2183,7 @@ class SearchIndexFactory
 
                         if (strlen($out)) {
                             \Neos\Flow\var_dump($out, 'see log file ' . $file . ".error.log");
-//                            foreach ($content->data as $k => $v) {
-//                                $out = $this->firebase->set($content->path."/".$k,$v,array('print' => 'silent'));
-//                                $this->output->outputLine($content->path."/".$k);
-//                                if (strlen($out)) {
-//                                    \Neos\Flow\var_dump($content->path."/".$k, 'see log file ' . $file . ".error.log");
-//                                }
-//                            }
                             rename($file, $file . ".error.log");
-
-
                         } else {
                             unlink($file);
                         }
@@ -2207,8 +2198,6 @@ class SearchIndexFactory
             if (count($files)) {
                 $this->output->progressFinish();
             }
-
-            $this->output->outputLine("done.");
 
             $this->unlockReltimeIndexer();
         } else {
