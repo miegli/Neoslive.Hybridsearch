@@ -1413,7 +1413,7 @@ class SearchIndexFactory
         unset($indexData);
         unset($keywords);
 
-        if (time() - $this->time > 3600 || $this->counter > 5000) {
+        if (time() - $this->time > 720 || $this->counter > 5000) {
             $this->time = time();
             $this->counter = 0;
             $this->save();
