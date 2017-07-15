@@ -2342,10 +2342,7 @@ class SearchIndexFactory
                 }
 
                 if ($this->creatingFullIndex) {
-
-                    $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $this->branch. "/" . $dimension, $patch);
-
-
+                    $this->firebaseSet("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $this->branch. "/" . $dimension, $patch);
                 } else {
                     if ($directpush) {
                         $this->firebase->update("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $this->branch . "/" . $dimension, $patch, array('print' => 'silent'));
