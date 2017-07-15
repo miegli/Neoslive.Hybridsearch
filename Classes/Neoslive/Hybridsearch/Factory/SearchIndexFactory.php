@@ -1379,10 +1379,7 @@ class SearchIndexFactory
 
             if (isset($this->index->$workspaceHash->$dimensionConfigurationHash->$k) === false) {
                 $this->index->$workspaceHash->$dimensionConfigurationHash->$k = new \stdClass();
-            } else {
-
             }
-
 
             $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier = new \stdClass();
             $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier->nodeType = $indexData->nodeType;
@@ -1994,7 +1991,7 @@ class SearchIndexFactory
     {
 
 
-        if (1 == 2 && $chunkcounter < 100 && count($data) > 2 && strlen(json_encode($data)) > 5000000) {
+        if ($chunkcounter < 100 && gettype($data) == 'array' && strlen(json_encode($data)) > 1000000) {
             $chunkcounter++;
             $this->addToQueue($path, array_slice($data, 0, ceil(count($data) / 2)), $method, $chunkcounter);
             $this->addToQueue($path, array_slice($data, floor(count($data) / 2)), $method, $chunkcounter);
@@ -2330,7 +2327,6 @@ class SearchIndexFactory
                                 if (isset($patch->$dimensionIndex->$dimensionIndexKey) == false) {
                                     $patch->$dimensionIndex->$dimensionIndexKey = new \stdClass();
                                 }
-
                                 $patchUpdate["$dimensionIndex/$dimensionIndexKey/$dimensionIndexDataAllKey"] = $dimensionIndexDataAllVal;
 
                             }
@@ -2340,9 +2336,9 @@ class SearchIndexFactory
                 }
 
 
+
                 if ($this->creatingFullIndex) {
                     $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $this->branch . "/" . $dimension, $patchUpdate);
-
                 } else {
                     if ($directpush) {
                         $this->firebase->update("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $this->branch . "/" . $dimension, $patchUpdate, array('print' => 'silent'));
@@ -2350,6 +2346,8 @@ class SearchIndexFactory
                         $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $this->branch . "/" . $dimension, $patchUpdate);
                     }
                 }
+
+
             }
         }
 
