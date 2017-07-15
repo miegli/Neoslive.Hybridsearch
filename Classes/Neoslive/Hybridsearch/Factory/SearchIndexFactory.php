@@ -1047,10 +1047,7 @@ class SearchIndexFactory
                 // skip dimension
             } else {
 
-
                 $context = $this->contentContextFactory->create(['targetDimension' => $targetDimension, 'dimensions' => $dimensionConfiguration, 'workspaceName' => $nodedata->getWorkspace()->getName()]);
-
-
                 $node = $context->getNodeByIdentifier($nodedata->getIdentifier());
 
                 if ($node) {
@@ -1060,7 +1057,9 @@ class SearchIndexFactory
                         $flowQuery = new FlowQuery(array($node));
 
                         if ($node->isHidden() || $node->isRemoved() || $flowQuery->context(array('invisibleContentShown' => true))->parents('[instanceof Neos.Neos:Node][_hidden=TRUE]')->count() !== 0 || $flowQuery->context(array('invisibleContentShown' => true))->parents('[instanceof Neos.Neos:Node][_visible=FALSE]')->count() !== 0) {
-                            $this->removeSingleIndex($node->getIdentifier(), $this->getWorkspaceHash($workspace), $this->branch, $this->getDimensionConfiugurationHash($dimensionConfiguration), array(), null, $this->getNodeTypeName($node));
+                            if ($this->creatingFullIndex !== true) {
+                                $this->removeSingleIndex($node->getIdentifier(), $this->getWorkspaceHash($workspace), $this->branch, $this->getDimensionConfiugurationHash($dimensionConfiguration), array(), null, $this->getNodeTypeName($node));
+                            }
                         } else {
                             $this->generateSingleIndex($node, $workspace, $this->getDimensionConfiugurationHash($node->getContext()->getDimensions()));
                             $counter++;
@@ -1071,9 +1070,11 @@ class SearchIndexFactory
 
 
                 } else {
-                    // delete node index
-                    foreach ($this->allSiteKeys as $siteKey => $siteVal) {
-                        $this->removeSingleIndex($nodedata->getIdentifier(), $this->getWorkspaceHash($workspace), $this->branch, $this->getDimensionConfiugurationHash($dimensionConfiguration), array(), $siteKey, $this->getNodeTypeName($nodedata));
+                    if ($this->creatingFullIndex !== true) {
+                        // delete node index
+                        foreach ($this->allSiteKeys as $siteKey => $siteVal) {
+                            $this->removeSingleIndex($nodedata->getIdentifier(), $this->getWorkspaceHash($workspace), $this->branch, $this->getDimensionConfiugurationHash($dimensionConfiguration), array(), $siteKey, $this->getNodeTypeName($nodedata));
+                        }
                     }
 
                 }
@@ -1361,7 +1362,7 @@ class SearchIndexFactory
                     $k = "_" . $this->getNodeTypeName($node) . mb_substr($k, 9);
                 }
 
-                if ($k && substr_count($keyword,"-") < 3 && substr_count($keyword,"_") == 0) {
+                if ($k && substr_count($keyword, "-") < 3 && substr_count($keyword, "_") == 0) {
                     if (isset($this->keywords->$workspaceHash->$dimensionConfigurationHash[$k]) == false) {
                         $this->keywords->$workspaceHash->$dimensionConfigurationHash[$k] = array();
                     }
@@ -1513,7 +1514,6 @@ class SearchIndexFactory
 
         $properties = null;
         unset($properties);
-
 
 
         return $keywords;
@@ -2311,11 +2311,9 @@ class SearchIndexFactory
     {
 
 
-
         foreach ($this->index as $workspace => $workspaceData) {
             foreach ($workspaceData as $dimension => $dimensionData) {
                 $patch = array();
-
 
 
                 if ($this->creatingFullIndex) {
