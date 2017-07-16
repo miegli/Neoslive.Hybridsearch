@@ -1418,7 +1418,7 @@ class SearchIndexFactory
         unset($indexData);
         unset($keywords);
 
-        if ($this->counter > 1000) {
+        if ($this->counter > 50000) {
             $this->counter = 0;
             $this->save();
         };
