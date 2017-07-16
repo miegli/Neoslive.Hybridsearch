@@ -2142,7 +2142,7 @@ class SearchIndexFactory
             }
 
 
-            ksort($files);
+            krsort($files);
 
             if (count($files)) {
                 $this->output->progressStart($filesize);
@@ -2185,12 +2185,13 @@ class SearchIndexFactory
 
 
                         $this->output->progressAdvance(floor(filesize($file) / 2));
+                        sleep(5);
 
                         if (strlen($out)) {
                             \Neos\Flow\var_dump($out, 'see log file ' . $file . ".error.log");
                             rename($file, $file . ".error.log");
                         } else {
-                            unlink($file);
+                         //   unlink($file);
                         }
 
 
