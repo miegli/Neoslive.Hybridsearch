@@ -1418,12 +1418,11 @@ class SearchIndexFactory
         unset($indexData);
         unset($keywords);
 
-        if ($this->counter > 50000) {
+        if ($this->counter > 5000) {
             $this->counter = 0;
             $this->save();
         };
         $this->counter++;
-
 
     }
 
@@ -2001,8 +2000,9 @@ class SearchIndexFactory
 
         if ($chunkcounter < 100 && gettype($data) == 'array' && strlen(json_encode($data)) > 250000000) {
             $chunkcounter++;
+
             $this->addToQueue($path, array_slice($data, 0, ceil(count($data) / 2), true), $method, $chunkcounter);
-            $this->addToQueue($path, array_slice($data, floor(count($data) / 2), true), $method, $chunkcounter);
+            $this->addToQueue($path, array_slice($data, floor(count($data) / 2), count($data), true), $method, $chunkcounter);
             unset($data);
             return true;
         } else {
@@ -2398,6 +2398,7 @@ class SearchIndexFactory
 
 
         }
+
 
         if ($this->creatingFullIndex) {
             $this->firebaseUpdate("", $patchUpdate);
