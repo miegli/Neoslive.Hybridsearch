@@ -2157,7 +2157,7 @@ class SearchIndexFactory
                     $count++;
 
 
-                    $content = json_decode(file_get_contents($file),true);
+                    $content = json_decode(file_get_contents($file), true);
 
                     if ($content) {
 
@@ -2167,7 +2167,7 @@ class SearchIndexFactory
 
                         switch ($content['method']) {
                             case 'update':
-                                    $out = $this->firebase->update($content['path'], $content['data'], array('print' => 'silent'));
+                                $out = $this->firebase->update($content['path'], $content['data'], array('print' => 'silent'));
                                 break;
 
                             case 'delete':
@@ -2175,7 +2175,7 @@ class SearchIndexFactory
                                 break;
 
                             case 'set':
-                                    $out = $this->firebase->set($content['path'], $content['data'], array('print' => 'silent'));
+                                $out = $this->firebase->set($content['path'], $content['data'], array('print' => 'silent'));
 
                                 break;
                         }
@@ -2300,10 +2300,11 @@ class SearchIndexFactory
     {
 
 
+        $patchUpdate = array();
+
         foreach ($this->index as $workspace => $workspaceData) {
             foreach ($workspaceData as $dimension => $dimensionData) {
                 $patch = new \stdClass();
-                $patchUpdate = array();
 
 
                 if ($this->creatingFullIndex) {
@@ -2333,7 +2334,7 @@ class SearchIndexFactory
                                     $patch->$dimensionIndex->$dimensionIndexKey = new \stdClass();
                                 }
                                 if ($dimensionIndexDataAllVal) {
-                                    $patchUpdate["$dimensionIndex/$dimensionIndexKey/$dimensionIndexDataAllKey"] = $dimensionIndexDataAllVal;
+                                    $patchUpdate["sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $this->branch . "/" . $dimension . "/$dimensionIndex/$dimensionIndexKey/$dimensionIndexDataAllKey"] = $dimensionIndexDataAllVal;
                                 }
 
                             }
@@ -2361,7 +2362,7 @@ class SearchIndexFactory
         foreach ($this->keywords as $workspace => $workspaceData) {
 
             $patch = new \stdClass();
-            $patchUpdate = array();
+
 
             foreach ($workspaceData as $dimensionIndex => $dimensionIndexData) {
                 foreach ($dimensionIndexData as $dimensionIndexKey => $dimensionIndexDataAll) {
@@ -2385,7 +2386,7 @@ class SearchIndexFactory
                         }
 
                         if ($dimensionIndexDataAllVal) {
-                            $patchUpdate["$workspace/$branch/$dimensionIndex/$dimensionIndexKey/$dimensionIndexDataAllKey"] = $dimensionIndexDataAllVal;
+                            $patchUpdate["sites/" . $this->getSiteIdentifier() . "/keywords/$workspace/$branch/$dimensionIndex/$dimensionIndexKey/$dimensionIndexDataAllKey"] = $dimensionIndexDataAllVal;
                         }
 
 
@@ -2396,26 +2397,18 @@ class SearchIndexFactory
             }
 
 
-            if ($this->creatingFullIndex) {
-
-                $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/keywords/", $patchUpdate);
-
-            } else {
-                if ($directpush) {
-
-                    $this->firebase->update("sites/" . $this->getSiteIdentifier() . "/keywords/", $patchUpdate, array('print' => 'silent'));
-
-                } else {
-
-                    $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/keywords/", $patchUpdate);
-
-                }
-
-            }
-
-
         }
 
+        if ($this->creatingFullIndex) {
+            $this->firebaseUpdate("", $patchUpdate);
+        } else {
+            if ($directpush) {
+                $this->firebase->update("", $patchUpdate, array('print' => 'silent'));
+            } else {
+                $this->firebaseUpdate("", $patchUpdate);
+            }
+
+        }
 
         $this->index = null;
         $this->keywords = null;
