@@ -2185,7 +2185,10 @@ class SearchIndexFactory
 
 
                         $this->output->progressAdvance(floor(filesize($file) / 2));
-                        sleep(5);
+
+                        if ($this->creatingFullIndex) {
+                            sleep(5);
+                        }
 
                         if (strlen($out)) {
                             \Neos\Flow\var_dump($out, 'see log file ' . $file . ".error.log");
