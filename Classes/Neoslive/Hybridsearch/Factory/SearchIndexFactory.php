@@ -658,8 +658,6 @@ class SearchIndexFactory
         }
 
 
-
-
         $basenodedata = $this->nodeDataRepository->findOneByPath("/sites/" . $this->site->getNodeName(), $this->workspaceRepository->findByIdentifier($workspacename));
         $context = $this->createContext($basenodedata->getWorkspace()->getName(), $basenodedata->getDimensions(), array(), $this->site);
 
@@ -1352,6 +1350,13 @@ class SearchIndexFactory
 
         $keywordsOfNode = array();
 
+
+        if (strlen($workspaceHash) > 2 && strlen($dimensionConfigurationHash) > 2 && strlen((string)($identifier)) > 2) {
+            // valid
+        } else {
+            return null;
+        }
+
         foreach ($keywords as $keyword => $val) {
 
             $k = strval($keyword);
@@ -1382,6 +1387,7 @@ class SearchIndexFactory
             if (isset($this->index->$workspaceHash->$dimensionConfigurationHash->$k) === false) {
                 $this->index->$workspaceHash->$dimensionConfigurationHash->$k = new \stdClass();
             }
+
 
             $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier = new \stdClass();
             $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier->nodeType = $indexData->nodeType;
@@ -1995,8 +2001,8 @@ class SearchIndexFactory
 
         if ($chunkcounter < 100 && gettype($data) == 'array' && strlen(json_encode($data)) > 250000000) {
             $chunkcounter++;
-            $this->addToQueue($path, array_slice($data, 0, ceil(count($data) / 2),true), $method, $chunkcounter);
-            $this->addToQueue($path, array_slice($data, floor(count($data) / 2),true), $method, $chunkcounter);
+            $this->addToQueue($path, array_slice($data, 0, ceil(count($data) / 2), true), $method, $chunkcounter);
+            $this->addToQueue($path, array_slice($data, floor(count($data) / 2), true), $method, $chunkcounter);
             unset($data);
             return true;
         } else {
@@ -2339,7 +2345,6 @@ class SearchIndexFactory
 
                     }
                 }
-
 
 
                 if ($this->creatingFullIndex) {
