@@ -2157,7 +2157,7 @@ class SearchIndexFactory
                     $count++;
 
 
-                    $content = json_decode(file_get_contents($file));
+                    $content = json_decode(file_get_contents($file),true);
 
                     if ($content) {
 
@@ -2165,36 +2165,28 @@ class SearchIndexFactory
                         $out = "";
 
 
-                        switch ($content->method) {
+                        switch ($content['method']) {
                             case 'update':
-                                if (count($content->data)) {
-                                    $out = $this->firebase->update($content->path, $content->data, array('print' => 'silent'));
-                                }
+                                    $out = $this->firebase->update($content['path'], $content['data'], array('print' => 'silent'));
                                 break;
 
                             case 'delete':
-                                $out = $this->firebase->delete($content->path, array('print' => 'silent'));
+                                $out = $this->firebase->delete($content['path'], array('print' => 'silent'));
                                 break;
 
                             case 'set':
-                                if (count($content->data)) {
-                                    $out = $this->firebase->set($content->path, $content->data, array('print' => 'silent'));
-                                }
+                                    $out = $this->firebase->set($content['path'], $content['data'], array('print' => 'silent'));
+
                                 break;
                         }
 
-
                         $this->output->progressAdvance(floor(filesize($file) / 2));
-
-                        if ($this->creatingFullIndex) {
-                            sleep(5);
-                        }
 
                         if (strlen($out)) {
                             \Neos\Flow\var_dump($out, 'see log file ' . $file . ".error.log");
                             rename($file, $file . ".error.log");
                         } else {
-                         //   unlink($file);
+                            unlink($file);
                         }
 
 
