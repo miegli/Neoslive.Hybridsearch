@@ -658,6 +658,8 @@ class SearchIndexFactory
         }
 
 
+
+
         $basenodedata = $this->nodeDataRepository->findOneByPath("/sites/" . $this->site->getNodeName(), $this->workspaceRepository->findByIdentifier($workspacename));
         $context = $this->createContext($basenodedata->getWorkspace()->getName(), $basenodedata->getDimensions(), array(), $this->site);
 
@@ -1410,7 +1412,7 @@ class SearchIndexFactory
         unset($indexData);
         unset($keywords);
 
-        if ($this->counter > 500) {
+        if ($this->counter > 1000) {
             $this->counter = 0;
             $this->save();
         };
@@ -2308,6 +2310,7 @@ class SearchIndexFactory
                         $this->setBranch($workspace, $this->branch);
                         $this->branchWasSet = true;
                     }
+
                     $ncount = count(get_object_vars($this->nodetypes));
                     if ($this->nodetypesCounter < $ncount) {
                         $this->firebaseSet("sites/" . $this->getSiteIdentifier() . "/nodetypes/" . $workspace . "/" . $this->branch . "/" . $dimension, $this->nodetypes);
