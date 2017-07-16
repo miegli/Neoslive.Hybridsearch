@@ -649,11 +649,11 @@ class SearchIndexFactory
 
         $this->creatingFullIndex = true;
 
+        $this->switchBranch($workspacename);
 
         foreach ($this->siteRepository->findAll() as $site) {
             $this->site = $site;
             array_push($this->allSiteKeys, $this->getSiteIdentifier());
-            $this->switchBranch($workspacename);
             array_push($sites, $this->getSiteIdentifier());
         }
 
@@ -1998,9 +1998,8 @@ class SearchIndexFactory
     {
 
 
-        if ($chunkcounter < 100 && gettype($data) == 'array' && strlen(json_encode($data)) > 250000000) {
+        if ($chunkcounter < 20 && gettype($data) == 'array' && strlen(json_encode($data)) > 50000000) {
             $chunkcounter++;
-
             $this->addToQueue($path, array_slice($data, 0, ceil(count($data) / 2), true), $method, $chunkcounter);
             $this->addToQueue($path, array_slice($data, floor(count($data) / 2), count($data), true), $method, $chunkcounter);
             unset($data);
