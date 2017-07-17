@@ -283,7 +283,6 @@ class SearchIndexFactory
      */
     protected $firebase;
 
-
     /**
      * @var boolean
      */
@@ -292,19 +291,12 @@ class SearchIndexFactory
     /**
      * @var array
      */
-    protected $nodeProceeded = [];
-
-    /**
-     * @var array
-     */
     protected $nodeTypeConfiguration = [];
-
 
     /**
      * @var array
      */
     protected $renderedcache = [];
-
 
     /**
      * @var integer
@@ -2393,10 +2385,6 @@ class SearchIndexFactory
             }
 
         }
-
-        $this->index = null;
-        $this->keywords = null;
-        $path = null;
 
         unset($this->index);
         unset($this->keywords);
