@@ -1997,15 +1997,13 @@ class SearchIndexFactory
     function addToQueue($path, $data = null, $method = 'update', $chunkcounter = 0)
     {
 
-
-        if ($chunkcounter < 20 && gettype($data) == 'array' && strlen(json_encode($data)) > 5000000) {
+        if ($chunkcounter < 20 && gettype($data) == 'array' && strlen(json_encode($data)) > 100000) {
             $chunkcounter++;
-            $this->addToQueue($path, array_slice($data, 0, ceil(count($data) / 2), true), $method, $chunkcounter);
-            $this->addToQueue($path, array_slice($data, floor(count($data) / 2), count($data), true), $method, $chunkcounter);
+            $this->addToQueue($path, array_slice($data, 0, ceil(count($data) / 2)), $method, $chunkcounter);
+            $this->addToQueue($path, array_slice($data, -1*floor(count($data) / 2)), $method, $chunkcounter);
             unset($data);
             return true;
         } else {
-
 
             $filename = $this->temporaryDirectory . "/queued_" . time() . $this->queuecounter . "_" . Uuid::uuid1() . ".json";
 
@@ -2139,9 +2137,6 @@ class SearchIndexFactory
                 }
 
             }
-
-
-            krsort($files);
 
             if (count($files)) {
                 $this->output->progressStart($filesize);
