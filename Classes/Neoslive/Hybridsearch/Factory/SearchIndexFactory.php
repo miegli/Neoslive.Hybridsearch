@@ -1467,6 +1467,8 @@ class SearchIndexFactory
         $words = explode(" ", ($text));
 
 
+
+
         // reduce
         $wordsReduced = array();
 
@@ -1510,7 +1512,6 @@ class SearchIndexFactory
         $properties = null;
         unset($properties);
 
-
         return $keywords;
 
     }
@@ -1528,7 +1529,7 @@ class SearchIndexFactory
             return mb_strtoupper(str_replace(".", "", $string));
         }
 
-        return str_replace(".", "", mb_strtoupper(metaphone(mb_strtolower($string), 6)));
+        return str_replace(".", "", (metaphone((preg_replace("[^A-z0-9]","",$string)))));
 
 
     }

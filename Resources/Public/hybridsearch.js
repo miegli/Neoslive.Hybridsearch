@@ -3635,11 +3635,13 @@
 
                         querysegment = this.getEmoijQuery(querysegment);
 
+
+
                         if (querysegment.indexOf(".") && querysegment.substr(-1, 1) !== '.' && isNaN(querysegment.substr(0, 1)) === false) {
                             return String(querysegment).replace(/\./g, "").toUpperCase();
                         }
 
-                        var m = metaphone(querysegment.toLowerCase(), 6).toUpperCase().replace(/\./g, "");
+                        var m = metaphone(querysegment.replace(/[^A-z0-9]/g,"")).toUpperCase().replace(/\./g, "");
 
                         return m.length > 0 ? m : null;
 
