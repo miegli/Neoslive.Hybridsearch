@@ -1295,24 +1295,24 @@ class SearchIndexFactory
         $workspaceHash = $this->getWorkspaceHash($workspace);
 
 
-        if (isset($this->index->$workspaceHash) === false) {
+        if (property_exists($this->index,$workspaceHash) === false) {
             $this->index->$workspaceHash = new \stdClass();
         }
 
-        if (isset($this->index->$workspaceHash->$dimensionConfigurationHash) === false) {
+        if (property_exists($this->index->$workspaceHash,$dimensionConfigurationHash) === false) {
             $this->index->$workspaceHash->$dimensionConfigurationHash = new \stdClass();
         }
 
 
-        if (isset($this->keywords->$workspaceHash) === false) {
+        if (property_exists($this->keywords,$workspaceHash) === false) {
             $this->keywords->$workspaceHash = new \stdClass();
         }
 
-        if (isset($this->keywords->$workspaceHash->$dimensionConfigurationHash) === false) {
+        if (property_exists($this->keywords->$workspaceHash,$dimensionConfigurationHash) === false) {
             $this->keywords->$workspaceHash->$dimensionConfigurationHash = new \stdClass();
         }
 
-        if (isset($this->index->$workspaceHash->$dimensionConfigurationHash->___keywords) === false) {
+        if (property_exists($this->index->$workspaceHash->$dimensionConfigurationHash,'___keywords') === false) {
             $this->index->$workspaceHash->$dimensionConfigurationHash->___keywords = new \stdClass();
         }
 
@@ -1364,9 +1364,17 @@ class SearchIndexFactory
                     $val = array($k);
                 }
                 foreach ($val as $kek => $vev) {
+                    if (property_exists($this->keywords->$workspaceHash->$dimensionConfigurationHash,$k) === false) {
+                        $this->keywords->$workspaceHash->$dimensionConfigurationHash->$k = new \stdClass();
+                    }
                     $this->keywords->$workspaceHash->$dimensionConfigurationHash->$k->$kek = $vev;
                 }
 
+            }
+
+
+            if (property_exists($this->index->$workspaceHash->$dimensionConfigurationHash,$k) === false) {
+                $this->index->$workspaceHash->$dimensionConfigurationHash->$k = new \stdClass();
             }
 
             $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier = new \stdClass();
@@ -1668,7 +1676,7 @@ class SearchIndexFactory
         $grandParentNode = $flowQuery->closest($grandParentNodeFilter)->get(0);
         $documentNode = $flowQuery->closest("[instanceof Neos.Neos:Document]")->get(0);
 
-        if (isset($properties->label) == false && $node->getParent()) {
+        if (property_exists($properties,'label') == false && $node->getParent()) {
             $prev = $flowQuery->prev()->get(0);
             if ($prev) {
                 if (strlen($prev->getLabel()) < 64) {
@@ -1680,7 +1688,7 @@ class SearchIndexFactory
 
         }
 
-        if (isset($properties->label) == false) {
+        if (property_exists($properties,'label') == false) {
             if ($parentNode) {
                 $properties->label = $parentNode->getLabel();
             }
@@ -1697,7 +1705,7 @@ class SearchIndexFactory
         $breadcrumb = '';
 
         $urlproperty = mb_strtolower(preg_replace("/[^A-z0-9]/", "-", $node->getNodeType()->getName() . ":url"));
-        if (isset($properties->$urlproperty)) {
+        if (property_exists($properties,$urlproperty)) {
             $uri = trim($properties->$urlproperty);
         }
         if ($node->hasProperty('url') && $this->mb_parse_url($node->getProperty('url')) !== false) {
@@ -2300,10 +2308,10 @@ class SearchIndexFactory
                         foreach ($dimensionIndexDataAll as $dimensionIndexDataAllKey => $dimensionIndexDataAllVal) {
                             if (substr($dimensionIndex, 0, 3) != '000') {
 
-                                if (isset($patch->$dimensionIndex) == false) {
+                                if (property_exists($patch,$dimensionIndex) == false) {
                                     $patch->$dimensionIndex = new \stdClass();
                                 }
-                                if (isset($patch->$dimensionIndex->$dimensionIndexKey) == false) {
+                                if (property_exists($patch->$dimensionIndex,$dimensionIndexKey) == false) {
                                     $patch->$dimensionIndex->$dimensionIndexKey = new \stdClass();
                                 }
                                 if ($dimensionIndexDataAllVal) {
@@ -2327,20 +2335,20 @@ class SearchIndexFactory
                 foreach ($dimensionIndexData as $dimensionIndexKey => $dimensionIndexDataAll) {
                     foreach ($dimensionIndexDataAll as $dimensionIndexDataAllKey => $dimensionIndexDataAllVal) {
 
-                        if (isset($patch->$workspace) == false) {
+                        if (property_exists($patch,$workspace) == false) {
                             $patch->$workspace = new \stdClass();
                         }
 
-                        if (isset($patch->$workspace->$branch) == false) {
+                        if (property_exists($patch->$workspace,$branch) == false) {
                             $patch->$workspace->$branch = new \stdClass();
                         }
-                        if (isset($patch->$workspace->$branch->$dimensionIndex) == false) {
+                        if (property_exists($patch->$workspace->$branch,$dimensionIndex) == false) {
                             $patch->$workspace->$branch->$dimensionIndex = new \stdClass();
                         }
-                        if (isset($patch->$workspace->$branch->$dimensionIndex->$dimensionIndexKey) == false) {
+                        if (property_exists($patch->$workspace->$branch->$dimensionIndex,$dimensionIndexKey) == false) {
                             $patch->$workspace->$branch->$dimensionIndex->$dimensionIndexKey = new \stdClass();
                         }
-                        if (isset($patch->$workspace->$branch->$dimensionIndex->$dimensionIndexKey->$dimensionIndexDataAllKey) == false) {
+                        if (property_exists($patch->$workspace->$branch->$dimensionIndex->$dimensionIndexKey,$dimensionIndexDataAllKey) == false) {
                             $patch->$workspace->$branch->$dimensionIndex->$dimensionIndexKey->$dimensionIndexDataAllKey = new \stdClass();
                         }
 
