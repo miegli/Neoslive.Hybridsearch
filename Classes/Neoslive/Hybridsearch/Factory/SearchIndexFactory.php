@@ -2178,7 +2178,6 @@ class SearchIndexFactory
                             unlink($file);
                         }
 
-
                     }
 
 
