@@ -1486,7 +1486,6 @@ class SearchIndexFactory
                 } else {
 
                     $wm = $this->getMetaphone($w);
-                    $w = str_replace(".", "", $w);
                     if (strlen($wm) > 0 && strlen($wm) < 64) {
                         $wordsReduced[$wm][$w] = 1;
                         $wm1 = $this->getMetaphone(mb_substr($w, 0, 3));
