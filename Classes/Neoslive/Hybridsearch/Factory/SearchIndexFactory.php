@@ -2175,7 +2175,7 @@ class SearchIndexFactory
                             \Neos\Flow\var_dump($out, 'see log file ' . $file . ".error.log");
                             rename($file, $file . ".error.log");
                         } else {
-                       //     unlink($file);
+                            unlink($file);
                         }
 
 
