@@ -1343,15 +1343,9 @@ class SearchIndexFactory
         $keywordsOfNode = array();
 
 
-        if (strlen($workspaceHash) > 2 && strlen($dimensionConfigurationHash) > 2 && strlen((string)($identifier)) > 2) {
-            // valid
-        } else {
-            return null;
-        }
-
         foreach ($keywords as $keyword => $val) {
 
-            $k = strval($keyword);
+            $k = (string)$keyword;
 
 
             if (substr($k, 0, 2) !== "__") {
@@ -1501,10 +1495,8 @@ class SearchIndexFactory
 
         foreach ($wordsReduced as $w => $k) {
             if (strlen($w) > 0) {
-                if ($w) {
-                    $keywords->$w = $k;
-                }
-            }
+                 $keywords->$w = $k;
+             }
         }
 
 
