@@ -1489,9 +1489,9 @@ class SearchIndexFactory
                     $w = str_replace(".", "", $w);
                     if (strlen($wm) > 0 && strlen($wm) < 64) {
                         $wordsReduced[$wm][$w] = 1;
-                        $wm = $this->getMetaphone(mb_substr($w, 0, 3));
+                        $wm1 = $this->getMetaphone(mb_substr($w, 0, 3));
                         if (strlen($wm) > 0) {
-                            $wordsReduced["000" . $wm][$w] = 1;
+                            $wordsReduced["000" . $wm1][$w] = 1;
                         }
 
                     }
