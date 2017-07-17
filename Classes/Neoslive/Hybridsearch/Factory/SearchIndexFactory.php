@@ -2138,6 +2138,9 @@ class SearchIndexFactory
 
             }
 
+
+            krsort($files);
+
             if (count($files)) {
                 $this->output->progressStart($filesize);
             }
@@ -2295,6 +2298,7 @@ class SearchIndexFactory
 
 
         $patchUpdate = array();
+        $branch = $this->branch;
 
         foreach ($this->index as $workspace => $workspaceData) {
             foreach ($workspaceData as $dimension => $dimensionData) {
@@ -2337,22 +2341,8 @@ class SearchIndexFactory
                     }
                 }
 
-
-                if ($this->creatingFullIndex) {
-                    $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $this->branch . "/" . $dimension, $patchUpdate);
-                } else {
-                    if ($directpush) {
-                        $this->firebase->update("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $this->branch . "/" . $dimension, $patchUpdate, array('print' => 'silent'));
-                    } else {
-                        $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $this->branch . "/" . $dimension, $patchUpdate);
-                    }
-                }
-
-
             }
         }
-
-        $branch = $this->branch;
         foreach ($this->keywords as $workspace => $workspaceData) {
 
             $patch = new \stdClass();
@@ -2392,7 +2382,6 @@ class SearchIndexFactory
 
 
         }
-
 
         if ($this->creatingFullIndex) {
             $this->firebaseUpdate("", $patchUpdate);
