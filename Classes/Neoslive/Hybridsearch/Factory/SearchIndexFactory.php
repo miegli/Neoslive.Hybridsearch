@@ -1017,6 +1017,8 @@ class SearchIndexFactory
 
         $config = $nodedata->getNodeType()->getConfiguration('hybridsearch');
 
+
+
         if (isset($config['skip']) && $config['skip'] == true) {
             return $counter;
         }
@@ -1047,12 +1049,12 @@ class SearchIndexFactory
                     if (isset($this->settings['Filter']['NodeTypeFilter'])) {
 
                         $flowQuery = new FlowQuery(array($node));
-
                         if ($node->isHidden() || $node->isRemoved() || $flowQuery->context(array('invisibleContentShown' => true))->parents('[instanceof Neos.Neos:Node][_hidden=TRUE]')->count() !== 0 || $flowQuery->context(array('invisibleContentShown' => true))->parents('[instanceof Neos.Neos:Node][_visible=FALSE]')->count() !== 0) {
                             if ($this->creatingFullIndex !== true) {
                                 $this->removeSingleIndex($node->getIdentifier(), $this->getWorkspaceHash($workspace), $this->branch, $this->getDimensionConfiugurationHash($dimensionConfiguration), array(), null, $this->getNodeTypeName($node));
                             }
                         } else {
+
                             $this->generateSingleIndex($node, $workspace, $this->getDimensionConfiugurationHash($node->getContext()->getDimensions()));
                             $counter++;
                         }
@@ -1329,6 +1331,8 @@ class SearchIndexFactory
 
 
         $identifier = $indexData->identifier;
+
+
 
         if (!$identifier) {
             return null;
@@ -2283,6 +2287,8 @@ class SearchIndexFactory
         $patchUpdate = array();
         $branch = $this->branch;
 
+
+
         foreach ($this->index as $workspace => $workspaceData) {
             foreach ($workspaceData as $dimension => $dimensionData) {
                 $patch = new \stdClass();
@@ -2314,6 +2320,7 @@ class SearchIndexFactory
                                 if (property_exists($patch->$dimensionIndex,$dimensionIndexKey) == false) {
                                     $patch->$dimensionIndex->$dimensionIndexKey = new \stdClass();
                                 }
+
                                 if ($dimensionIndexDataAllVal) {
                                     $patchUpdate["sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $this->branch . "/" . $dimension . "/$dimensionIndex/$dimensionIndexKey/$dimensionIndexDataAllKey"] = $dimensionIndexDataAllVal;
                                 }
@@ -2365,6 +2372,7 @@ class SearchIndexFactory
 
 
         }
+
 
         if ($this->creatingFullIndex) {
             $this->firebaseUpdate("", $patchUpdate);
