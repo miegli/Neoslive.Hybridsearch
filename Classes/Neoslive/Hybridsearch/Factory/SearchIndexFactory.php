@@ -1309,9 +1309,12 @@ class SearchIndexFactory
         }
 
         if (isset($this->keywords->$workspaceHash->$dimensionConfigurationHash) === false) {
-            $this->keywords->$workspaceHash->$dimensionConfigurationHash = array();
+            $this->keywords->$workspaceHash->$dimensionConfigurationHash = new \stdClass();
         }
 
+        if (isset($this->index->$workspaceHash->$dimensionConfigurationHash->___keywords) === false) {
+            $this->index->$workspaceHash->$dimensionConfigurationHash->___keywords = new \stdClass();
+        }
 
         $indexData = $this->convertNodeToSearchIndexResult($node);
 
@@ -1357,23 +1360,14 @@ class SearchIndexFactory
             }
 
             if ($k && substr_count($keyword, "-") < 3 && substr_count($keyword, "_") == 0) {
-                if (isset($this->keywords->$workspaceHash->$dimensionConfigurationHash[$k]) == false) {
-                    $this->keywords->$workspaceHash->$dimensionConfigurationHash[$k] = array();
-                }
                 if (is_array($val) == false) {
                     $val = array($k);
                 }
                 foreach ($val as $kek => $vev) {
-                    $this->keywords->$workspaceHash->$dimensionConfigurationHash[$k][$kek] = $vev;
+                    $this->keywords->$workspaceHash->$dimensionConfigurationHash->$k->$kek = $vev;
                 }
 
             }
-
-
-            if (isset($this->index->$workspaceHash->$dimensionConfigurationHash->$k) === false) {
-                $this->index->$workspaceHash->$dimensionConfigurationHash->$k = new \stdClass();
-            }
-
 
             $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier = new \stdClass();
             $this->index->$workspaceHash->$dimensionConfigurationHash->$k->$identifier->nodeType = $indexData->nodeType;
@@ -1385,9 +1379,7 @@ class SearchIndexFactory
 
         }
 
-        if (isset($this->index->$workspaceHash->$dimensionConfigurationHash->___keywords) === false) {
-            $this->index->$workspaceHash->$dimensionConfigurationHash->___keywords = new \stdClass();
-        }
+
 
         $this->index->$workspaceHash->$dimensionConfigurationHash->___keywords->$identifier = $keywordsOfNode;
 
