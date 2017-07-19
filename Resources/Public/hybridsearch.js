@@ -3670,8 +3670,9 @@
                         if (!q) {
                             return self;
                         }
-                        var qf = self.getMetaphone(querysegment.substr(0, 3));
-                        var qfallback = qf ? "000" + qf : null;
+
+                        // var qf = self.getMetaphone(querysegment.substr(0, 3));
+                        // var qfallback = qf ? "000" + qf : null;
 
                         instance.$$data.running++;
 
@@ -3681,12 +3682,12 @@
 
                         instance.$$data.keywords.push({term: q, metaphone: q});
 
-                        if (qfallback) {
-                            ref.socketAutocomplete = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + qfallback);
-                            ref.socketAutocomplete.once("value", function (data) {
-                                self.setAutocomplete(data.val(), querysegment);
-                            });
-                        }
+                        // if (qfallback) {
+                        //     ref.socketAutocomplete = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + qfallback);
+                        //     ref.socketAutocomplete.once("value", function (data) {
+                        //         self.setAutocomplete(data.val(), querysegment);
+                        //     });
+                        // }
 
 
                         ref.socket.once("value", function (data) {
