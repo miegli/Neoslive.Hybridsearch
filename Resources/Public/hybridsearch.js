@@ -3641,7 +3641,7 @@
                             return String(querysegment).replace(/\./g, "").toUpperCase();
                         }
 
-                        var m = metaphone(querysegment.replace(/[^A-z0-9]/g,"")).toUpperCase().replace(/\./g, "");
+                        var m = metaphone(querysegment).toUpperCase().replace(/\./g, "");
 
                         return m.length > 0 ? m : null;
 
