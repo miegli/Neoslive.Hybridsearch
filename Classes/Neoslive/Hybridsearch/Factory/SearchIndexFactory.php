@@ -1524,7 +1524,7 @@ class SearchIndexFactory
             return mb_strtoupper(str_replace(".", "", $string));
         }
 
-        return str_replace(".", "", (metaphone($string)));
+        return soundex($string);
 
 
     }
