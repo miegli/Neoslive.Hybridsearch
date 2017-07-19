@@ -1018,7 +1018,6 @@ class SearchIndexFactory
         $config = $nodedata->getNodeType()->getConfiguration('hybridsearch');
 
 
-
         if (isset($config['skip']) && $config['skip'] == true) {
             return $counter;
         }
@@ -1297,24 +1296,24 @@ class SearchIndexFactory
         $workspaceHash = $this->getWorkspaceHash($workspace);
 
 
-        if (property_exists($this->index,$workspaceHash) === false) {
+        if (property_exists($this->index, $workspaceHash) === false) {
             $this->index->$workspaceHash = new \stdClass();
         }
 
-        if (property_exists($this->index->$workspaceHash,$dimensionConfigurationHash) === false) {
+        if (property_exists($this->index->$workspaceHash, $dimensionConfigurationHash) === false) {
             $this->index->$workspaceHash->$dimensionConfigurationHash = new \stdClass();
         }
 
 
-        if (property_exists($this->keywords,$workspaceHash) === false) {
+        if (property_exists($this->keywords, $workspaceHash) === false) {
             $this->keywords->$workspaceHash = new \stdClass();
         }
 
-        if (property_exists($this->keywords->$workspaceHash,$dimensionConfigurationHash) === false) {
+        if (property_exists($this->keywords->$workspaceHash, $dimensionConfigurationHash) === false) {
             $this->keywords->$workspaceHash->$dimensionConfigurationHash = new \stdClass();
         }
 
-        if (property_exists($this->index->$workspaceHash->$dimensionConfigurationHash,'___keywords') === false) {
+        if (property_exists($this->index->$workspaceHash->$dimensionConfigurationHash, '___keywords') === false) {
             $this->index->$workspaceHash->$dimensionConfigurationHash->___keywords = new \stdClass();
         }
 
@@ -1331,7 +1330,6 @@ class SearchIndexFactory
 
 
         $identifier = $indexData->identifier;
-
 
 
         if (!$identifier) {
@@ -1368,7 +1366,7 @@ class SearchIndexFactory
                     $val = array($k);
                 }
                 foreach ($val as $kek => $vev) {
-                    if (property_exists($this->keywords->$workspaceHash->$dimensionConfigurationHash,$k) === false) {
+                    if (property_exists($this->keywords->$workspaceHash->$dimensionConfigurationHash, $k) === false) {
                         $this->keywords->$workspaceHash->$dimensionConfigurationHash->$k = new \stdClass();
                     }
                     $this->keywords->$workspaceHash->$dimensionConfigurationHash->$k->$kek = $vev;
@@ -1377,7 +1375,7 @@ class SearchIndexFactory
             }
 
 
-            if (property_exists($this->index->$workspaceHash->$dimensionConfigurationHash,$k) === false) {
+            if (property_exists($this->index->$workspaceHash->$dimensionConfigurationHash, $k) === false) {
                 $this->index->$workspaceHash->$dimensionConfigurationHash->$k = new \stdClass();
             }
 
@@ -1390,7 +1388,6 @@ class SearchIndexFactory
 
 
         }
-
 
 
         $this->index->$workspaceHash->$dimensionConfigurationHash->___keywords->$identifier = $keywordsOfNode;
@@ -1460,11 +1457,9 @@ class SearchIndexFactory
 
 
         $text = (Encoding::UTF8FixWin1252Chars(html_entity_decode($text)));
-        $text = preg_replace('~[^\p{L}\p{N}0-9]++~u', " ", mb_strtolower($text));
+        $text = preg_replace('~[^\.\p{L}\p{N}0-9]++~u', " ", mb_strtolower($text));
 
         $words = explode(" ", ($text));
-
-
 
 
         // reduce
@@ -1476,27 +1471,21 @@ class SearchIndexFactory
 
             if (strlen($w) > 1 && strlen($w) < 25) {
 
-                if (
-                    substr_count($w, "-") > 3 ||
-                    (is_numeric(substr($w, -1, 1)) && is_numeric(substr($w, 0, 1)) == false)
-                ) {
-                    // skip
-                } else {
-
                     $wm = $this->getMetaphone($w);
                     if (strlen($wm) > 0 && strlen($wm) < 64) {
                         $wordsReduced[$wm][$w] = 1;
                     }
-                }
+
 
             }
         }
 
         foreach ($wordsReduced as $w => $k) {
             if (strlen($w) > 0) {
-                 $keywords->$w = $k;
-             }
+                $keywords->$w = $k;
+            }
         }
+
 
 
         $properties = null;
@@ -1515,11 +1504,14 @@ class SearchIndexFactory
     public function getMetaphone($string)
     {
 
-        if (substr_count($string, ".") && substr($string, -1, 1) !== '.' && is_numeric(substr($string, 0, 1))) {
-            return mb_strtoupper(str_replace(".", "", $string));
-        }
 
-        return soundex($string);
+        $s = soundex($string);
+
+        if ($s == '0000') {
+            return preg_replace("/[^0-9]/","",$string);
+        } else {
+            return $s;
+        }
 
 
     }
@@ -1675,7 +1667,7 @@ class SearchIndexFactory
         $grandParentNode = $flowQuery->closest($grandParentNodeFilter)->get(0);
         $documentNode = $flowQuery->closest("[instanceof Neos.Neos:Document]")->get(0);
 
-        if (property_exists($properties,'label') == false && $node->getParent()) {
+        if (property_exists($properties, 'label') == false && $node->getParent()) {
             $prev = $flowQuery->prev()->get(0);
             if ($prev) {
                 if (strlen($prev->getLabel()) < 64) {
@@ -1687,7 +1679,7 @@ class SearchIndexFactory
 
         }
 
-        if (property_exists($properties,'label') == false) {
+        if (property_exists($properties, 'label') == false) {
             if ($parentNode) {
                 $properties->label = $parentNode->getLabel();
             }
@@ -1704,7 +1696,7 @@ class SearchIndexFactory
         $breadcrumb = '';
 
         $urlproperty = mb_strtolower(preg_replace("/[^A-z0-9]/", "-", $node->getNodeType()->getName() . ":url"));
-        if (property_exists($properties,$urlproperty)) {
+        if (property_exists($properties, $urlproperty)) {
             $uri = trim($properties->$urlproperty);
         }
         if ($node->hasProperty('url') && $this->mb_parse_url($node->getProperty('url')) !== false) {
@@ -1983,7 +1975,7 @@ class SearchIndexFactory
         if ($chunkcounter < 20 && gettype($data) == 'array' && strlen(json_encode($data)) > 1000000) {
             $chunkcounter++;
             $this->addToQueue($path, array_slice($data, 0, ceil(count($data) / 2)), $method, $chunkcounter);
-            $this->addToQueue($path, array_slice($data, -1*floor(count($data) / 2)), $method, $chunkcounter);
+            $this->addToQueue($path, array_slice($data, -1 * floor(count($data) / 2)), $method, $chunkcounter);
             unset($data);
             return true;
         } else {
@@ -2283,7 +2275,6 @@ class SearchIndexFactory
         $branch = $this->branch;
 
 
-
         foreach ($this->index as $workspace => $workspaceData) {
             foreach ($workspaceData as $dimension => $dimensionData) {
                 $patch = new \stdClass();
@@ -2309,10 +2300,10 @@ class SearchIndexFactory
                         foreach ($dimensionIndexDataAll as $dimensionIndexDataAllKey => $dimensionIndexDataAllVal) {
                             if (substr($dimensionIndex, 0, 3) != '000') {
 
-                                if (property_exists($patch,$dimensionIndex) == false) {
+                                if (property_exists($patch, $dimensionIndex) == false) {
                                     $patch->$dimensionIndex = new \stdClass();
                                 }
-                                if (property_exists($patch->$dimensionIndex,$dimensionIndexKey) == false) {
+                                if (property_exists($patch->$dimensionIndex, $dimensionIndexKey) == false) {
                                     $patch->$dimensionIndex->$dimensionIndexKey = new \stdClass();
                                 }
 
@@ -2337,20 +2328,20 @@ class SearchIndexFactory
                 foreach ($dimensionIndexData as $dimensionIndexKey => $dimensionIndexDataAll) {
                     foreach ($dimensionIndexDataAll as $dimensionIndexDataAllKey => $dimensionIndexDataAllVal) {
 
-                        if (property_exists($patch,$workspace) == false) {
+                        if (property_exists($patch, $workspace) == false) {
                             $patch->$workspace = new \stdClass();
                         }
 
-                        if (property_exists($patch->$workspace,$branch) == false) {
+                        if (property_exists($patch->$workspace, $branch) == false) {
                             $patch->$workspace->$branch = new \stdClass();
                         }
-                        if (property_exists($patch->$workspace->$branch,$dimensionIndex) == false) {
+                        if (property_exists($patch->$workspace->$branch, $dimensionIndex) == false) {
                             $patch->$workspace->$branch->$dimensionIndex = new \stdClass();
                         }
-                        if (property_exists($patch->$workspace->$branch->$dimensionIndex,$dimensionIndexKey) == false) {
+                        if (property_exists($patch->$workspace->$branch->$dimensionIndex, $dimensionIndexKey) == false) {
                             $patch->$workspace->$branch->$dimensionIndex->$dimensionIndexKey = new \stdClass();
                         }
-                        if (property_exists($patch->$workspace->$branch->$dimensionIndex->$dimensionIndexKey,$dimensionIndexDataAllKey) == false) {
+                        if (property_exists($patch->$workspace->$branch->$dimensionIndex->$dimensionIndexKey, $dimensionIndexDataAllKey) == false) {
                             $patch->$workspace->$branch->$dimensionIndex->$dimensionIndexKey->$dimensionIndexDataAllKey = new \stdClass();
                         }
 

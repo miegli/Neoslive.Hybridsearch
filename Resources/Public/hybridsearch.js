@@ -3635,13 +3635,10 @@
 
                         querysegment = this.getEmoijQuery(querysegment);
 
-
-
-                        if (querysegment.indexOf(".") && querysegment.substr(-1, 1) !== '.' && isNaN(querysegment.substr(0, 1)) === false) {
-                            return String(querysegment).replace(/\./g, "").toUpperCase();
+                        var m = metaphone(querysegment.replace(/\./g, "")).toUpperCase();
+                        if (m == '0000') {
+                            return querysegment.replace(/^0-9/,"");
                         }
-
-                        var m = metaphone(querysegment).toUpperCase().replace(/\./g, "");
 
                         return m.length > 0 ? m : null;
 
@@ -3671,6 +3668,7 @@
                             return self;
                         }
 
+
                         instance.$$data.running++;
 
                         var ref = {};
@@ -3678,6 +3676,7 @@
                         ref.http = (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + ("/sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + q + ".json");
 
                         instance.$$data.keywords.push({term: q, metaphone: q});
+
 
                         ref.socket.once("value", function (data) {
                             if (data.val()) {
