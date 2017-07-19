@@ -4069,12 +4069,19 @@
                                                 angular.forEach(value.node.properties, function (propvalue, property) {
                                                     var boost = self.getBoost(property, value.node.nodeType);
                                                     if (boost > 10) {
-                                                        if (typeof propvalue !== 'object') {
-                                                            doc[property] = propvalue.substr(0, 1024);
+                                                        if (typeof propvalue === 'string') {
+                                                            doc[property] = propvalue.substr(0, 8024);
                                                         } else {
-                                                            doc[property] = JSON.stringify(propvalue).toLowerCase().substr(0, 1024);
+                                                            doc[property] = JSON.stringify(propvalue).toLowerCase().substr(0, 8024);
+                                                        }
+                                                    } else {
+                                                        if (typeof propvalue == 'string') {
+                                                            doc[property] = propvalue.substr(0, 512);
+                                                        } else {
+                                                            doc[property] = JSON.stringify(propvalue).toLowerCase().substr(0, 512);
                                                         }
                                                     }
+
                                                 });
                                             }
 
