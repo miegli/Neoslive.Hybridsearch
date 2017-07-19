@@ -1471,10 +1471,12 @@ class SearchIndexFactory
 
             if (strlen($w) > 1 && strlen($w) < 25) {
 
-                    $wm = $this->getMetaphone($w);
-                    if (strlen($wm) > 0 && strlen($wm) < 64) {
-                        $wordsReduced[$wm][$w] = 1;
-                    }
+                $wm = $this->getMetaphone($w);
+                $wm = trim(str_replace(".", " ", $wm));
+                $w = trim(str_replace(".", " ", $w));
+                if (strlen($wm) > 0 && strlen($wm) < 64) {
+                    $wordsReduced[$wm][$w] = 1;
+                }
 
 
             }
@@ -1482,12 +1484,9 @@ class SearchIndexFactory
 
         foreach ($wordsReduced as $w => $k) {
             if (strlen($w) > 0) {
-                $w = str_replace("."," ",$w);
-                $k = str_replace("."," ",$k);
                 $keywords->$w = $k;
             }
         }
-
 
 
         $properties = null;
@@ -1510,7 +1509,7 @@ class SearchIndexFactory
         $s = soundex($string);
 
         if ($s == '0000') {
-            return preg_replace("/[^0-9]/","",$string);
+            return preg_replace("/[^0-9]/", "", $string);
         } else {
             return $s;
         }
