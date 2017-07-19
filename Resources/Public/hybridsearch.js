@@ -4047,7 +4047,7 @@
                                         if (length > 50) {
                                             // index fast way
 
-                                            if (length < 250) {
+
                                                 angular.forEach(value.node.properties, function (propvalue, property) {
 
 
@@ -4073,21 +4073,7 @@
                                                         }
                                                     }
                                                 });
-                                            } else {
 
-                                                angular.forEach(value.node.properties, function (propvalue, property) {
-                                                    var boost = self.getBoost(property, value.node.nodeType);
-
-                                                        if (typeof propvalue == 'string') {
-                                                            doc[property] = propvalue.replace(/(<([^>]+)>)/ig, " ").substr(0, 2048);
-
-                                                        } else {
-                                                            doc[property] = JSON.stringify(propvalue).toLowerCase().substr(0,2048);
-                                                        }
-
-
-                                                });
-                                            }
 
                                             if (value.node.properties['_nodeLabel'] != undefined) {
                                                 doc['_nodeLabel'] = value.node.properties['_nodeLabel'];
@@ -4130,6 +4116,8 @@
                                                         } else {
                                                             if (typeof propvalue === 'string') {
                                                                 doc[property] = propvalue.replace(/(<([^>]+)>)/ig, " ").substr(0, 1024);
+                                                            } else {
+                                                                doc[property] = propvalue;
                                                             }
                                                         }
 
@@ -4165,9 +4153,8 @@
                                             doc.id = value.node.identifier;
                                             lunrSearch.addDoc(doc);
 
-                                            if (cachedindex) {
+
                                                 nodesIndexed[value.node.hash] = true;
-                                            }
 
                                         }
 
