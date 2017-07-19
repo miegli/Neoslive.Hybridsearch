@@ -4049,6 +4049,8 @@
 
                                             if (length < 250) {
                                                 angular.forEach(value.node.properties, function (propvalue, property) {
+
+
                                                     var boost = self.getBoost(property, value.node.nodeType);
                                                     if (boost > 0) {
                                                         if (boost >= 10) {
@@ -4061,6 +4063,13 @@
                                                                     doc[property] = propvalue;
                                                                 }
                                                             }
+                                                        } else {
+                                                            if (typeof propvalue == 'string') {
+
+                                                                doc[property] = propvalue.substr(0, 512);
+                                                            } else {
+                                                                doc[property] = JSON.stringify(propvalue).toLowerCase().substr(0, 512);
+                                                            }
                                                         }
                                                     }
                                                 });
@@ -4068,19 +4077,14 @@
 
                                                 angular.forEach(value.node.properties, function (propvalue, property) {
                                                     var boost = self.getBoost(property, value.node.nodeType);
-                                                    if (boost > 10) {
-                                                        if (typeof propvalue === 'string') {
-                                                            doc[property] = propvalue.substr(0, 8024);
-                                                        } else {
-                                                            doc[property] = JSON.stringify(propvalue).toLowerCase().substr(0, 8024);
-                                                        }
-                                                    } else {
+
                                                         if (typeof propvalue == 'string') {
-                                                            doc[property] = propvalue.substr(0, 512);
+                                                            doc[property] = propvalue.replace(/(<([^>]+)>)/ig, " ").substr(0, 2048);
+
                                                         } else {
-                                                            doc[property] = JSON.stringify(propvalue).toLowerCase().substr(0, 512);
+                                                            doc[property] = JSON.stringify(propvalue).toLowerCase().substr(0,2048);
                                                         }
-                                                    }
+
 
                                                 });
                                             }
