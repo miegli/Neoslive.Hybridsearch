@@ -2460,12 +2460,6 @@
                                                         preOrdered.push(item);
                                                     }
 
-                                                    //tmp[item.ref] = item.score;
-
-                                                    if (resultByNodeType[nodes[item.ref].nodeType] == undefined) {
-                                                        resultByNodeType[nodes[item.ref].nodeType] = 0;
-                                                    }
-                                                    resultByNodeType[nodes[item.ref].nodeType]++;
 
                                                 }
 
@@ -2481,7 +2475,7 @@
 
                                 var preOrdered = $filter('orderBy')(preOrdered, function (item) {
 
-                                    item.score = Math.floor(item.score * self.getParentNodeTypeBoostFactor(nodes[item.ref]) * self.getNodeTypeBoostFactor(nodes[item.ref]) * self.getNodeUrlBoostFactor(nodes[item.ref]));
+                                    item.score = Math.floor((item.score * self.getParentNodeTypeBoostFactor(nodes[item.ref]) * self.getNodeTypeBoostFactor(nodes[item.ref]) * self.getNodeUrlBoostFactor(nodes[item.ref])));
 
 
 
