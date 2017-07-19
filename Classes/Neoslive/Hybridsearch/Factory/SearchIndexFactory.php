@@ -1484,6 +1484,9 @@ class SearchIndexFactory
                 } else {
 
                     $wm = $this->getMetaphone($w);
+                    if ($wm == 'HRLMN' || $wm == 'RLMN') {
+                        \Neos\Flow\var_dump($wm,$w);
+                    }
                     if (strlen($wm) > 0 && strlen($wm) < 64) {
                         $wordsReduced[$wm][$w] = 1;
                         $wm1 = $this->getMetaphone(mb_substr($w, 0, 3));
@@ -1524,7 +1527,7 @@ class SearchIndexFactory
             return mb_strtoupper(str_replace(".", "", $string));
         }
 
-        return str_replace(".", "", (metaphone((preg_replace("[^A-z0-9]","",$string)))));
+        return str_replace(".", "", (metaphone($string)));
 
 
     }
