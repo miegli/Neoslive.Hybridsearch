@@ -2415,6 +2415,7 @@
 
 
                                     // check if result has filtered results
+
                                     if (result.length) {
                                         var filteredNodes = 0;
                                         angular.forEach(result, function (item) {
@@ -2444,7 +2445,7 @@
                                             );
                                         }
 
-
+                                        var resultByNodeType = {};
                                         angular.forEach(result, function (item) {
 
 
@@ -2461,6 +2462,11 @@
 
                                                     //tmp[item.ref] = item.score;
 
+                                                    if (resultByNodeType[nodes[item.ref].nodeType] == undefined) {
+                                                        resultByNodeType[nodes[item.ref].nodeType] = 0;
+                                                    }
+                                                    resultByNodeType[nodes[item.ref].nodeType]++;
+
                                                 }
 
                                             }
@@ -2472,15 +2478,22 @@
 
                                 }
 
+
                                 var preOrdered = $filter('orderBy')(preOrdered, function (item) {
+
                                     item.score = Math.floor(item.score * self.getParentNodeTypeBoostFactor(nodes[item.ref]) * self.getNodeTypeBoostFactor(nodes[item.ref]) * self.getNodeUrlBoostFactor(nodes[item.ref]));
+
+
+
                                     if (nodes[item.ref]['__algoliaranking'] !== undefined) {
                                         item.score = item.score - (2 * nodes[item.ref]['__algoliaranking']);
                                         if (item.score < 1) {
                                             item.score = 1;
                                         }
                                     }
+
                                     return -1 * item.score;
+
                                 });
 
 
@@ -4061,15 +4074,11 @@
 
                                                 angular.forEach(value.node.properties, function (propvalue, property) {
                                                     var boost = self.getBoost(property, value.node.nodeType);
-
                                                     if (boost > 10) {
-                                                        if (typeof propvalue == 'string') {
-                                                            if (propvalue.indexOf(query) == 0) {
-                                                                doc[property] = propvalue.substr(0, 1024);
-                                                            }
+                                                        if (typeof propvalue !== 'object') {
+                                                            doc[property] = propvalue.substr(0, 1024);
                                                         } else {
                                                             doc[property] = JSON.stringify(propvalue).toLowerCase().substr(0, 1024);
-
                                                         }
                                                     }
                                                 });

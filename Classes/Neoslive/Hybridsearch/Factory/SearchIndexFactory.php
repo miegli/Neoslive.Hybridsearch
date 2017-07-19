@@ -1482,6 +1482,8 @@ class SearchIndexFactory
 
         foreach ($wordsReduced as $w => $k) {
             if (strlen($w) > 0) {
+                $w = preg_replace("[\.]"," ",$w);
+                $k = preg_replace("[\.]"," ",$k);
                 $keywords->$w = $k;
             }
         }
