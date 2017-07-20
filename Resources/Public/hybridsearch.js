@@ -3638,10 +3638,9 @@
 
                         var m = metaphone(querysegment.replace(/\./g, "")).toUpperCase();
                         if (m == '0000') {
-                            return querysegment.replace(/^0-9/, "");
+                            return querysegment.replace(/[^0-9]/, "");
                         }
-
-                        var a = querysegment.replace(/^A-z/g, "").substr(0,2).toUpperCase();
+                        var a = querysegment.replace(/[^A-z]/g, "").substr(0,2).toUpperCase();
 
                         return m.length > 0 ? a+m : null;
 
