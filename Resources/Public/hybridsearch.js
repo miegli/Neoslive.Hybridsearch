@@ -3672,7 +3672,6 @@
                         var query = self.getFilter().getQuery();
 
 
-
                         instance.$$data.running++;
 
                         var ref = {};
@@ -3700,8 +3699,8 @@
 
                                 if (ismatch == false) {
                                     angular.forEach(kwds, function (v, k) {
-                                        if (query.indexOf(v.term.substr(0,3)) >= 0) {
-                                            instance.$$data.keywords.push({term:  v.term, metaphone: q});
+                                        if (query.indexOf(v.term.substr(0, 3)) >= 0) {
+                                            instance.$$data.keywords.push({term: v.term, metaphone: q});
                                             ismatch = true;
                                         }
                                     });
@@ -3709,10 +3708,9 @@
 
                                 if (ismatch == false) {
                                     angular.forEach(kwds, function (v, k) {
-                                        instance.$$data.keywords.push({term:  v.term, metaphone: q});
+                                        instance.$$data.keywords.push({term: v.term, metaphone: q});
                                     });
                                 }
-
 
 
                                 instance.$$data.proceeded.push(1);
@@ -3986,7 +3984,6 @@
                         var self = this, keywords = [];
 
 
-
                         angular.forEach(data, function (val, keyword) {
                             keyword = keyword.indexOf("://") ? keyword.substr(keyword.indexOf("://") + 3) : keyword;
                             angular.forEach(lastSearchInstance.$$data.keywords, function (k) {
@@ -4044,7 +4041,14 @@
                         var self = this;
                         var boost = {};
                         var cachedindex = true;
-                        var fastline = keywords.length*data.length > 5000 ? true : false;
+                        var querySegmentsCount = self.getFilter().getQuery().lastIndexOf(" ");
+
+
+                        if (JSON.stringify(keywords).length > 7 || querySegmentsCount > 9) {
+                            var fastline = data.length > 5000 ? true : false;
+                        } else {
+                            var fastline = data.length > 500 ? true : false;
+                        }
 
 
                         if (keyword !== undefined && keywords == undefined) {
@@ -4055,7 +4059,6 @@
                         cachedindex = fastline ? false : true;
 
                         angular.forEach(data, function (value, key) {
-
 
 
                                 if (value && (nodesIndexed[value.node.hash] == undefined || value.objectID !== undefined)) {
@@ -4115,11 +4118,9 @@
                                                     }
                                                 }
                                             });
-                                        } else {
-                                            doc['_raw'] = JSON.stringify(value.node.properties).replace(/(<([^>]+)>)/ig, " ").substr(0,1024);
                                         }
 
-                                            
+
                                         if (value.node.properties['_nodeLabel'] != undefined) {
                                             doc['_nodeLabel'] = value.node.properties['_nodeLabel'];
                                         }
