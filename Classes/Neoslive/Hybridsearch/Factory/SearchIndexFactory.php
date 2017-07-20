@@ -531,7 +531,7 @@ class SearchIndexFactory
             $this->output->outputLine('static file cache created');
 
         } catch (\Neos\Flow\Exception $exception) {
-            \Neos\Flow\var_dump($exception);
+            var_dump($exception);
             $this->output->outputLine('unable to create static cache.');
         }
 
@@ -605,7 +605,7 @@ class SearchIndexFactory
                     $this->output->outputLine('algolia index created');
 
                 } catch (\Neos\Flow\Exception $exception) {
-                    \Neos\Flow\var_dump($exception);
+                    var_dump($exception);
                 }
 
             }
@@ -680,7 +680,7 @@ class SearchIndexFactory
             $this->output->progressAdvance(1);
             try {
                 if ($verbose) {
-                    \Neos\Flow\var_dump($nodedata->getIdentifier());
+                    var_dump($nodedata->getIdentifier());
                 }
                 $this->updateIndexForNodeData($nodedata, $nodedata->getWorkspace(), true);
             } catch (Exception $exception) {
@@ -2156,7 +2156,7 @@ class SearchIndexFactory
                         $this->output->progressAdvance(floor(filesize($file) / 2));
 
                         if (strlen($out)) {
-                            \Neos\Flow\var_dump($out, 'see log file ' . $file . ".error.log");
+                            var_dump($out, 'see log file ' . $file . ".error.log");
                             rename($file, $file . ".error.log");
                         } else {
                             unlink($file);
