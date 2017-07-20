@@ -4054,9 +4054,9 @@
 
 
                         if (self.getFilter().getQuery().length > 12 && (JSON.stringify(keywords).length > 7 || querySegmentsCount > 9)) {
-                            var fastline = data.length > 500 ? true : false;
+                            var fastline = data.length > 2500 ? true : false;
                         } else {
-                            var fastline = data.length > 250 ? true : false;
+                            var fastline = data.length > 500 ? true : false;
                         }
 
 
