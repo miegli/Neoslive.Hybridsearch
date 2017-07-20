@@ -4116,7 +4116,7 @@
 
                                                         } else {
                                                             if (typeof propvalue === 'string') {
-                                                                doc[property] = propvalue.replace(/(<([^>]+)>)/ig, " ").substr(0, 1024);
+                                                                doc[property] = propvalue.replace(/(<([^>]+)>)/ig, " ").substr(0, 2096);
                                                             } else {
                                                                 doc[property] = propvalue;
                                                             }
@@ -4134,10 +4134,11 @@
                                                 if (boost > 0) {
                                                     if (boost >= 10) {
                                                         if (typeof propvalue == 'object') {
-                                                            doc[property] = JSON.stringify(propvalue).toLowerCase().replace(/"/gi, " ");
+                                                            doc[property] = JSON.stringify(propvalue).toLowerCase().replace(/(<([^>]+)>)/ig, " ");
+                                                            console.log(property,doc[property]);
                                                         } else {
                                                             if (typeof propvalue == 'string') {
-                                                                doc[property] = propvalue.toLowerCase().replace(/"/gi, " ").substr(0, 512);
+                                                                doc[property] = propvalue.toLowerCase().replace(/"/gi, " ").substr(0, 1024);
                                                             } else {
                                                                 doc[property] = propvalue;
                                                             }
