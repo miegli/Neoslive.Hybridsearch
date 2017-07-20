@@ -4044,7 +4044,7 @@
                         var querySegmentsCount = self.getFilter().getQuery().lastIndexOf(" ");
 
 
-                        if (JSON.stringify(keywords).length > 7 || querySegmentsCount > 9) {
+                        if (self.getFilter().getQuery().length > 12 && (JSON.stringify(keywords).length > 7 || querySegmentsCount > 9)) {
                             var fastline = data.length > 5000 ? true : false;
                         } else {
                             var fastline = data.length > 500 ? true : false;
