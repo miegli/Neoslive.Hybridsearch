@@ -1511,7 +1511,7 @@ class SearchIndexFactory
         if ($s == '0000') {
             return preg_replace("/[^0-9]/", "", $string);
         } else {
-            return $s;
+            return  substr(str_replace(".", " ", $string),0,2).$s;
         }
 
 

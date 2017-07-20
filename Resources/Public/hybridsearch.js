@@ -3641,7 +3641,9 @@
                             return querysegment.replace(/^0-9/, "");
                         }
 
-                        return m.length > 0 ? m : null;
+                        var a = querysegment.replace(/\./g, "").substr(0,2).toUpperCase();
+
+                        return m.length > 0 ? a+m : null;
 
                     }
 
@@ -4057,7 +4059,6 @@
                         }
 
 
-
                         angular.forEach(data, function (value, key) {
 
 
@@ -4115,6 +4116,25 @@
                                                         }
 
 
+                                                    }
+                                                }
+                                            });
+                                        } else {
+                                            // fast way
+
+                                            angular.forEach(value.node.properties, function (propvalue, property) {
+                                                var boost = self.getBoost(property, value.node.nodeType);
+                                                if (boost > 0) {
+                                                    if (boost >= 10) {
+                                                        if (typeof propvalue == 'object') {
+                                                            doc[property] = JSON.stringify(propvalue).toLowerCase().replace(/"/gi, " ");
+                                                        } else {
+                                                            if (typeof propvalue == 'string') {
+                                                                doc[property] = propvalue.toLowerCase().replace(/"/gi, " ").substr(0, 512);
+                                                            } else {
+                                                                doc[property] = propvalue;
+                                                            }
+                                                        }
                                                     }
                                                 }
                                             });
