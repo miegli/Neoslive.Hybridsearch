@@ -3683,8 +3683,9 @@
 
                         ref.socket.once("value", function (data) {
                             if (data.val()) {
-                                self.setAutocomplete(data.val(), querysegment);
+
                                 var kwds = [];
+                                var ac = {};
 
                                 angular.forEach(data.val(), function (v, k) {
                                     kwds.push({term: k, metaphone: q});
@@ -3695,24 +3696,31 @@
                                 angular.forEach(kwds, function (v, k) {
                                     if (ismatch == false && v.term == query) {
                                         ismatch = true;
+                                        ac[v.term] = v.term;
                                     }
                                 });
 
                                 if (ismatch == false) {
+
                                     angular.forEach(kwds, function (v, k) {
                                         if (query.indexOf(v.term.substr(0, 3)) >= 0) {
                                             instance.$$data.keywords.push({term: v.term, metaphone: q});
                                             ismatch = true;
+                                            ac[v.term] = v.term;
                                         }
                                     });
+
                                 }
 
                                 if (ismatch == false) {
                                     angular.forEach(kwds, function (v, k) {
                                         instance.$$data.keywords.push({term: v.term, metaphone: q});
                                     });
+
                                 }
 
+
+                                self.setAutocomplete(ac, querysegment);
 
                                 instance.$$data.proceeded.push(1);
                             } else {
@@ -5938,7 +5946,7 @@
                     var foundinproperty = null;
                     var foundinpropertyLength = 0;
 
-                    if (self.count() > 1) {
+                    if (self.count() > 0) {
                         angular.forEach(self.getNodes(16), function (node) {
                             if (node.getScore() > 10) {
                                 if (foundinproperty === null) {
