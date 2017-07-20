@@ -4056,7 +4056,7 @@
                             return null;
                         }
 
-                        cachedindex = fastline ? false : true;
+
 
                         angular.forEach(data, function (value, key) {
 
