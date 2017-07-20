@@ -190,7 +190,7 @@
          * @param $hybridsearchFilterObject
          * @returns {HybridsearchObject}
          */
-            function ($hybridsearchResultsObject, $hybridsearchFilterObject, $http, $q, $location, $filter, $sce, $window) {
+        function ($hybridsearchResultsObject, $hybridsearchFilterObject, $http, $q, $location, $filter, $sce, $window) {
 
             /**
              * @example
@@ -2401,15 +2401,6 @@
 
                                     }
 
-                                    if (resultsSearch[8] != undefined && resultsSearch[8].length == 0) {
-                                        resultsSearch[9] = lunrSearch.search(self.getFilter().getQuery() + " " + query.substr(0, 1), {
-                                            fields: fields,
-                                            bool: "OR",
-                                            expand: true
-                                        });
-
-                                    }
-
 
                                     var result = resultsSearch[resultsSearch.length - 1];
 
@@ -2476,7 +2467,6 @@
                                 var preOrdered = $filter('orderBy')(preOrdered, function (item) {
 
                                     item.score = Math.floor((item.score * self.getParentNodeTypeBoostFactor(nodes[item.ref]) * self.getNodeTypeBoostFactor(nodes[item.ref]) * self.getNodeUrlBoostFactor(nodes[item.ref])));
-
 
 
                                     if (nodes[item.ref]['__algoliaranking'] !== undefined) {
@@ -3161,7 +3151,11 @@
                                     }
 
                                     var execute = function (keyword, data, ref) {
+
+
                                         if (ref) {
+
+
                                             if (self.isLoadedAll(ref.socket !== undefined ? ref.socket.toString() : null) === false) {
 
 
@@ -3644,7 +3638,7 @@
 
                         var m = metaphone(querysegment.replace(/\./g, "")).toUpperCase();
                         if (m == '0000') {
-                            return querysegment.replace(/^0-9/,"");
+                            return querysegment.replace(/^0-9/, "");
                         }
 
                         return m.length > 0 ? m : null;
@@ -3675,6 +3669,9 @@
                             return self;
                         }
 
+                        var query = self.getFilter().getQuery();
+
+
 
                         instance.$$data.running++;
 
@@ -3682,15 +3679,42 @@
                         ref.socket = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + q);
                         ref.http = (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + ("/sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + q + ".json");
 
-                        instance.$$data.keywords.push({term: q, metaphone: q});
-
+                        instance.$$data.keywords.push({term: query, metaphone: q});
 
                         ref.socket.once("value", function (data) {
                             if (data.val()) {
                                 self.setAutocomplete(data.val(), querysegment);
+                                var kwds = [];
+
                                 angular.forEach(data.val(), function (v, k) {
-                                    instance.$$data.keywords.push({term: k, metaphone: q});
+                                    kwds.push({term: k, metaphone: q});
                                 });
+
+                                var ismatch = false;
+
+                                angular.forEach(kwds, function (v, k) {
+                                    if (ismatch == false && v.term == query) {
+                                        ismatch = true;
+                                    }
+                                });
+
+                                if (ismatch == false) {
+                                    angular.forEach(kwds, function (v, k) {
+                                        if (query.indexOf(v.term.substr(0,3)) >= 0) {
+                                            instance.$$data.keywords.push({term:  v.term, metaphone: q});
+                                            ismatch = true;
+                                        }
+                                    });
+                                }
+
+                                if (ismatch == false) {
+                                    angular.forEach(kwds, function (v, k) {
+                                        instance.$$data.keywords.push({term:  v.term, metaphone: q});
+                                    });
+                                }
+
+
+
                                 instance.$$data.proceeded.push(1);
                             } else {
                                 instance.$$data.proceeded.push(1);
@@ -3961,6 +3985,8 @@
 
                         var self = this, keywords = [];
 
+
+
                         angular.forEach(data, function (val, keyword) {
                             keyword = keyword.indexOf("://") ? keyword.substr(keyword.indexOf("://") + 3) : keyword;
                             angular.forEach(lastSearchInstance.$$data.keywords, function (k) {
@@ -4016,11 +4042,9 @@
                     addLocalIndex: function (data, keyword, keywords, isloadingall) {
 
                         var self = this;
-                        //var hasDistinct = self.getResults().hasDistincts();
                         var boost = {};
-                        var length = data.length;
                         var cachedindex = true;
-                        var query = self.getFilter().getQuery();
+                        var fastline = keywords.length*data.length > 5000 ? true : false;
 
 
                         if (keyword !== undefined && keywords == undefined) {
@@ -4028,9 +4052,11 @@
                             return null;
                         }
 
+                        cachedindex = fastline ? false : true;
+
                         angular.forEach(data, function (value, key) {
 
-                                cachedindex = false;
+
 
                                 if (value && (nodesIndexed[value.node.hash] == undefined || value.objectID !== undefined)) {
                                     var doc = {};
@@ -4038,52 +4064,16 @@
                                     nodes[value.node.identifier] = value.node;
 
                                     if (value.node != undefined && value.node.properties != undefined) {
+
                                         //angular.forEach(JSON.parse(JSON.stringify(value.node.properties)), function (propvalue, property) {
                                         if (value.objectID) {
                                             // algolia mode
                                             nodes[value.node.identifier]['__algoliaranking'] = key;
                                         }
 
-                                        if (length > 50) {
-                                            // index fast way
 
-
-                                                angular.forEach(value.node.properties, function (propvalue, property) {
-
-
-                                                    var boost = self.getBoost(property, value.node.nodeType);
-                                                    if (boost > 0) {
-                                                        if (boost >= 10) {
-                                                            if (typeof propvalue == 'object') {
-                                                                doc[property] = JSON.stringify(propvalue).toLowerCase().replace(/"/gi, " ");
-                                                            } else {
-                                                                if (typeof propvalue == 'string') {
-                                                                    doc[property] = propvalue.toLowerCase().replace(/"/gi, " ").substr(0, 512);
-                                                                } else {
-                                                                    doc[property] = propvalue;
-                                                                }
-                                                            }
-                                                        } else {
-                                                            if (typeof propvalue == 'string') {
-
-                                                                doc[property] = propvalue.substr(0, 512);
-                                                            } else {
-                                                                doc[property] = JSON.stringify(propvalue).toLowerCase().substr(0, 512);
-                                                            }
-                                                        }
-                                                    }
-                                                });
-
-
-                                            if (value.node.properties['_nodeLabel'] != undefined) {
-                                                doc['_nodeLabel'] = value.node.properties['_nodeLabel'];
-                                            }
-
-
-                                        } else {
-
+                                        if (fastline == false) {
                                             // index full slow way
-                                            cachedindex = true;
                                             angular.forEach(value.node.properties, function (propvalue, property) {
 
                                                 if (self.getBoost(property, value.node.nodeType) > 0) {
@@ -4125,6 +4115,13 @@
                                                     }
                                                 }
                                             });
+                                        } else {
+                                            doc['_raw'] = JSON.stringify(value.node.properties).replace(/(<([^>]+)>)/ig, " ").substr(0,1024);
+                                        }
+
+                                            
+                                        if (value.node.properties['_nodeLabel'] != undefined) {
+                                            doc['_nodeLabel'] = value.node.properties['_nodeLabel'];
                                         }
 
 
@@ -4153,8 +4150,10 @@
                                             doc.id = value.node.identifier;
                                             lunrSearch.addDoc(doc);
 
-
+                                            if (cachedindex) {
                                                 nodesIndexed[value.node.hash] = true;
+                                            }
+
 
                                         }
 
@@ -7146,11 +7145,11 @@ var generateUUID = function () {
             var j = g.indexOf("(") !== -1, k = g.indexOf(")") !== -1;
             if ((j || k) && d.indexOf(g) == -1 && d.push(g), k && !j) {
                 var l = a.substring(i, h);
-                if (l.indexOf("(") !== -1 && l.indexOf(")") === -1)return e
+                if (l.indexOf("(") !== -1 && l.indexOf(")") === -1) return e
             }
             if ("\n8)" === e) {
                 var m = a.substring(0, h);
-                if (/\n?(6\)|7\))/.test(m))return e
+                if (/\n?(6\)|7\))/.test(m)) return e
             }
             var n = b.data[b.map.emoticons[g]][3][0];
             return n ? f + ":" + n + ":" : e
@@ -7201,24 +7200,24 @@ var generateUUID = function () {
     }, c.prototype.addAliases = function (a) {
         var b = this;
         b.init_colons();
-        for (var c in a)b.map.colons[c] = a[c]
+        for (var c in a) b.map.colons[c] = a[c]
     }, c.prototype.removeAliases = function (a) {
         for (var b = this, c = 0; c < a.length; c++) {
             var d = a[c];
             delete b.map.colons[d];
-            a:for (var e in b.data)for (var f = 0; f < b.data[e][3].length; f++)if (d == b.data[e][3][f]) {
+            a:for (var e in b.data) for (var f = 0; f < b.data[e][3].length; f++) if (d == b.data[e][3][f]) {
                 b.map.colons[d] = e;
                 break a
             }
         }
     }, c.prototype.replacement = function (a, b, c, d) {
         var e = this, f = "", g = null;
-        if ("object" == typeof d && (f = e.replacement(d.idx, d.actual, d.wrapper), g = d.idx), c = c || "", e.colons_mode)return ":" + e.data[a][3][0] + ":" + f;
+        if ("object" == typeof d && (f = e.replacement(d.idx, d.actual, d.wrapper), g = d.idx), c = c || "", e.colons_mode) return ":" + e.data[a][3][0] + ":" + f;
         var h = b ? c + b + c : e.data[a][8] || c + e.data[a][3][0] + c;
-        if (e.text_mode)return h + f;
-        if (e.init_env(), "unified" == e.replace_mode && e.allow_native && e.data[a][0][0])return e.data[a][0][0] + f;
-        if ("softbank" == e.replace_mode && e.allow_native && e.data[a][1])return e.data[a][1] + f;
-        if ("google" == e.replace_mode && e.allow_native && e.data[a][2])return e.data[a][2] + f;
+        if (e.text_mode) return h + f;
+        if (e.init_env(), "unified" == e.replace_mode && e.allow_native && e.data[a][0][0]) return e.data[a][0][0] + f;
+        if ("softbank" == e.replace_mode && e.allow_native && e.data[a][1]) return e.data[a][1] + f;
+        if ("google" == e.replace_mode && e.allow_native && e.data[a][2]) return e.data[a][2] + f;
         var i = e.find_image(a, g), j = e.include_title ? ' title="' + (b || e.data[a][3][0]) + '"' : "",
             k = e.include_text ? c + (b || e.data[a][3][0]) + c : "";
         if (e.data[a][7] && (i.path = e.data[a][7], i.px = null, i.py = null, i.is_var = !1), i.is_var && (f = "", e.include_text && d && d.actual && d.wrapper && (k += d.wrapper + d.actual + d.wrapper)), e.supports_css) {
@@ -7238,10 +7237,10 @@ var generateUUID = function () {
             d.px = f[1], d.py = f[2], d.full_idx = f[0], d.is_var = !0, e = f[3]
         }
         for (var g = [c.img_set, "apple", "emojione", "google", "twitter", "facebook", "messenger"], h = 0; h < g.length; h++) {
-            if (e & c.img_sets[g[h]].mask)return d.path = c.img_sets[g[h]].path + d.full_idx + ".png" + c.img_suffix, d.sheet = c.img_sets[c.img_set].sheet, d;
+            if (e & c.img_sets[g[h]].mask) return d.path = c.img_sets[g[h]].path + d.full_idx + ".png" + c.img_suffix, d.sheet = c.img_sets[c.img_set].sheet, d;
             if (c.obsoletes_data[d.full_idx]) {
                 var i = c.obsoletes_data[d.full_idx];
-                if (i[3] & c.img_sets[g[h]].mask)return d.path = c.img_sets[g[h]].path + i[0] + ".png" + c.img_suffix, d.sheet = c.img_sets[g[h]].sheet, d.px = i[1], d.py = i[2], d
+                if (i[3] & c.img_sets[g[h]].mask) return d.path = c.img_sets[g[h]].path + i[0] + ".png" + c.img_suffix, d.sheet = c.img_sets[g[h]].sheet, d.px = i[1], d.py = i[2], d
             }
         }
         return d
@@ -7261,7 +7260,7 @@ var generateUUID = function () {
         var a = this;
         if (!a.inits.colons) {
             a.inits.colons = 1, a.rx_colons = new RegExp(":[a-zA-Z0-9-_+]+:(:skin-tone-[2-6]:)?", "g"), a.map.colons = {};
-            for (var b in a.data)for (var c = 0; c < a.data[b][3].length; c++)a.map.colons[a.data[b][3][c]] = b
+            for (var b in a.data) for (var c = 0; c < a.data[b][3].length; c++) a.map.colons[a.data[b][3][c]] = b
         }
     }, c.prototype.init_unified = function () {
         var a = this;
@@ -7269,8 +7268,8 @@ var generateUUID = function () {
             a.inits.unified = 1;
             var b = [];
             a.map.unified = {}, a.map.unified_vars = {};
-            for (var c in a.data)for (var d = 0; d < a.data[c][0].length; d++)b.push(a.data[c][0][d].replace("*", "\\*")), a.map.unified[a.data[c][0][d]] = c;
-            for (var c in a.variations_data)if (a.variations_data[c]["1f3fb"][0] != c + "-1f3fb")for (var e in a.variations_data[c])for (var d = 0; d < a.variations_data[c][e][4].length; d++)b.push(a.variations_data[c][e][4][d].replace("*", "\\*")), a.map.unified_vars[a.variations_data[c][e][4][d]] = [c, e];
+            for (var c in a.data) for (var d = 0; d < a.data[c][0].length; d++) b.push(a.data[c][0][d].replace("*", "\\*")), a.map.unified[a.data[c][0][d]] = c;
+            for (var c in a.variations_data) if (a.variations_data[c]["1f3fb"][0] != c + "-1f3fb") for (var e in a.variations_data[c]) for (var d = 0; d < a.variations_data[c][e][4].length; d++) b.push(a.variations_data[c][e][4][d].replace("*", "\\*")), a.map.unified_vars[a.variations_data[c][e][4][d]] = [c, e];
             b = b.sort(function (a, b) {
                 return b.length - a.length
             }), a.rx_unified = new RegExp("(" + b.join("|") + ")(\ud83c[\udffb-\udfff])?", "g")
@@ -7280,18 +7279,18 @@ var generateUUID = function () {
         if (!a.inits.env) {
             if (a.inits.env = 1, a.replace_mode = "img", a.supports_css = !1, "undefined" != typeof navigator) {
                 var b = navigator.userAgent;
-                if (window.getComputedStyle)try {
+                if (window.getComputedStyle) try {
                     var c = window.getComputedStyle(document.body);
                     (c["background-size"] || c.backgroundSize) && (a.supports_css = !0)
                 } catch (d) {
                     b.match(/Firefox/i) && (a.supports_css = !0)
                 }
                 if (b.match(/(iPhone|iPod|iPad|iPhone\s+Simulator)/i)) {
-                    if (b.match(/OS\s+[12345]/i))return void(a.replace_mode = "softbank");
-                    if (b.match(/OS\s+[6789]/i))return void(a.replace_mode = "unified")
+                    if (b.match(/OS\s+[12345]/i)) return void(a.replace_mode = "softbank");
+                    if (b.match(/OS\s+[6789]/i)) return void(a.replace_mode = "unified")
                 }
-                if (b.match(/Mac OS X 10[._ ](?:[789]|1\d)/i))return void(a.replace_mode = "unified");
-                if (!a.avoid_ms_emoji && (b.match(/Windows NT 6.[1-9]/i) || b.match(/Windows NT 10.[0-9]/i)) && !b.match(/Chrome/i) && !b.match(/MSIE 8/i))return void(a.replace_mode = "unified")
+                if (b.match(/Mac OS X 10[._ ](?:[789]|1\d)/i)) return void(a.replace_mode = "unified");
+                if (!a.avoid_ms_emoji && (b.match(/Windows NT 6.[1-9]/i) || b.match(/Windows NT 10.[0-9]/i)) && !b.match(/Chrome/i) && !b.match(/MSIE 8/i)) return void(a.replace_mode = "unified")
             }
             a.supports_css && (a.replace_mode = "css")
         }
@@ -10064,7 +10063,7 @@ var generateUUID = function () {
 
 var XXH = function (t) {
     function r(e) {
-        if (i[e])return i[e].exports;
+        if (i[e]) return i[e].exports;
         var h = i[e] = {exports: {}, id: e, loaded: !1};
         return t[e].call(h.exports, h, h.exports, r), h.loaded = !0, h.exports
     }
@@ -10105,8 +10104,8 @@ var XXH = function (t) {
             var i, h = "string" == typeof t;
             h && (t = e(t), h = !1, i = !0), "undefined" != typeof ArrayBuffer && t instanceof ArrayBuffer && (i = !0, t = new Uint8Array(t));
             var o = 0, n = t.length, s = o + n;
-            if (0 == n)return this;
-            if (this.total_len += n, 0 == this.memsize && (this.memory = h ? "" : i ? new Uint8Array(16) : new r(16)), this.memsize + n < 16)return h ? this.memory += t : i ? this.memory.set(t.subarray(0, n), this.memsize) : t.copy(this.memory, this.memsize, 0, n), this.memsize += n, this;
+            if (0 == n) return this;
+            if (this.total_len += n, 0 == this.memsize && (this.memory = h ? "" : i ? new Uint8Array(16) : new r(16)), this.memsize + n < 16) return h ? this.memory += t : i ? this.memory.set(t.subarray(0, n), this.memsize) : t.copy(this.memory, this.memsize, 0, n), this.memsize += n, this;
             if (this.memsize > 0) {
                 h ? this.memory += t.slice(0, 16 - this.memsize) : i ? this.memory.set(t.subarray(0, 16 - this.memsize), this.memsize) : t.copy(this.memory, this.memsize, 0, 16 - this.memsize);
                 var a = 0;
@@ -10119,14 +10118,15 @@ var XXH = function (t) {
             return s > o && (h ? this.memory += t.slice(o) : i ? this.memory.set(t.subarray(o, s), this.memsize) : t.copy(this.memory, this.memsize, o, s), this.memsize = s - o), this
         }, h.prototype.digest = function () {
             var t, r, i = this.memory, e = "string" == typeof i, h = 0, o = this.memsize, c = new n;
-            for (t = this.total_len >= 16 ? this.v1.rotl(1).add(this.v2.rotl(7).add(this.v3.rotl(12).add(this.v4.rotl(18)))) : this.seed.clone().add(l), t.add(c.fromNumber(this.total_len)); o - 4 >= h;)e ? c.fromBits(i.charCodeAt(h + 1) << 8 | i.charCodeAt(h), i.charCodeAt(h + 3) << 8 | i.charCodeAt(h + 2)) : c.fromBits(i[h + 1] << 8 | i[h], i[h + 3] << 8 | i[h + 2]), t.add(c.multiply(u)).rotl(17).multiply(f), h += 4;
-            for (; o > h;)c.fromBits(e ? i.charCodeAt(h++) : i[h++], 0), t.add(c.multiply(l)).rotl(11).multiply(s);
+            for (t = this.total_len >= 16 ? this.v1.rotl(1).add(this.v2.rotl(7).add(this.v3.rotl(12).add(this.v4.rotl(18)))) : this.seed.clone().add(l), t.add(c.fromNumber(this.total_len)); o - 4 >= h;) e ? c.fromBits(i.charCodeAt(h + 1) << 8 | i.charCodeAt(h), i.charCodeAt(h + 3) << 8 | i.charCodeAt(h + 2)) : c.fromBits(i[h + 1] << 8 | i[h], i[h + 3] << 8 | i[h + 2]), t.add(c.multiply(u)).rotl(17).multiply(f), h += 4;
+            for (; o > h;) c.fromBits(e ? i.charCodeAt(h++) : i[h++], 0), t.add(c.multiply(l)).rotl(11).multiply(s);
             return r = t.clone().shiftRight(15), t.xor(r).multiply(a), r = t.clone().shiftRight(13), t.xor(r).multiply(u), r = t.clone().shiftRight(16), t.xor(r), this.init(this.seed), t
         }, t.exports = h
     }).call(r, i(2).Buffer)
 }, function (t, r, i) {
     (function (t, e) {
         "use strict";
+
         function h() {
             function t() {
             }
@@ -10150,7 +10150,7 @@ var XXH = function (t) {
         }
 
         function n(r, i) {
-            if (r = d(r, 0 > i ? 0 : 0 | _(i)), !t.TYPED_ARRAY_SUPPORT)for (var e = 0; i > e; e++)r[e] = 0;
+            if (r = d(r, 0 > i ? 0 : 0 | _(i)), !t.TYPED_ARRAY_SUPPORT) for (var e = 0; i > e; e++) r[e] = 0;
             return r
         }
 
@@ -10161,12 +10161,12 @@ var XXH = function (t) {
         }
 
         function a(r, i) {
-            if (t.isBuffer(i))return u(r, i);
-            if (Q(i))return f(r, i);
-            if (null == i)throw new TypeError("must start with number, buffer, array or string");
+            if (t.isBuffer(i)) return u(r, i);
+            if (Q(i)) return f(r, i);
+            if (null == i) throw new TypeError("must start with number, buffer, array or string");
             if ("undefined" != typeof ArrayBuffer) {
-                if (i.buffer instanceof ArrayBuffer)return l(r, i);
-                if (i instanceof ArrayBuffer)return c(r, i)
+                if (i.buffer instanceof ArrayBuffer) return l(r, i);
+                if (i instanceof ArrayBuffer) return c(r, i)
             }
             return i.length ? m(r, i) : p(r, i)
         }
@@ -10179,14 +10179,14 @@ var XXH = function (t) {
         function f(t, r) {
             var i = 0 | _(r.length);
             t = d(t, i);
-            for (var e = 0; i > e; e += 1)t[e] = 255 & r[e];
+            for (var e = 0; i > e; e += 1) t[e] = 255 & r[e];
             return t
         }
 
         function l(t, r) {
             var i = 0 | _(r.length);
             t = d(t, i);
-            for (var e = 0; i > e; e += 1)t[e] = 255 & r[e];
+            for (var e = 0; i > e; e += 1) t[e] = 255 & r[e];
             return t
         }
 
@@ -10197,14 +10197,14 @@ var XXH = function (t) {
         function m(t, r) {
             var i = 0 | _(r.length);
             t = d(t, i);
-            for (var e = 0; i > e; e += 1)t[e] = 255 & r[e];
+            for (var e = 0; i > e; e += 1) t[e] = 255 & r[e];
             return t
         }
 
         function p(t, r) {
             var i, e = 0;
             "Buffer" === r.type && Q(r.data) && (i = r.data, e = 0 | _(i.length)), t = d(t, e);
-            for (var h = 0; e > h; h += 1)t[h] = 255 & i[h];
+            for (var h = 0; e > h; h += 1) t[h] = 255 & i[h];
             return t
         }
 
@@ -10215,12 +10215,12 @@ var XXH = function (t) {
         }
 
         function _(t) {
-            if (t >= o())throw new RangeError("Attempt to allocate Buffer larger than maximum size: 0x" + o().toString(16) + " bytes");
+            if (t >= o()) throw new RangeError("Attempt to allocate Buffer larger than maximum size: 0x" + o().toString(16) + " bytes");
             return 0 | t
         }
 
         function y(r, i) {
-            if (!(this instanceof y))return new y(r, i);
+            if (!(this instanceof y)) return new y(r, i);
             var e = new t(r, i);
             return delete e.parent, e
         }
@@ -10228,8 +10228,8 @@ var XXH = function (t) {
         function g(t, r) {
             "string" != typeof t && (t = "" + t);
             var i = t.length;
-            if (0 === i)return 0;
-            for (var e = !1; ;)switch (r) {
+            if (0 === i) return 0;
+            for (var e = !1; ;) switch (r) {
                 case"ascii":
                 case"binary":
                 case"raw":
@@ -10248,15 +10248,15 @@ var XXH = function (t) {
                 case"base64":
                     return H(t).length;
                 default:
-                    if (e)return j(t).length;
+                    if (e) return j(t).length;
                     r = ("" + r).toLowerCase(), e = !0
             }
         }
 
         function w(t, r, i) {
             var e = !1;
-            if (r = 0 | r, i = void 0 === i || i === 1 / 0 ? this.length : 0 | i, t || (t = "utf8"), 0 > r && (r = 0), i > this.length && (i = this.length), r >= i)return "";
-            for (; ;)switch (t) {
+            if (r = 0 | r, i = void 0 === i || i === 1 / 0 ? this.length : 0 | i, t || (t = "utf8"), 0 > r && (r = 0), i > this.length && (i = this.length), r >= i) return "";
+            for (; ;) switch (t) {
                 case"hex":
                     return T(this, r, i);
                 case"utf8":
@@ -10274,7 +10274,7 @@ var XXH = function (t) {
                 case"utf-16le":
                     return S(this, r, i);
                 default:
-                    if (e)throw new TypeError("Unknown encoding: " + t);
+                    if (e) throw new TypeError("Unknown encoding: " + t);
                     t = (t + "").toLowerCase(), e = !0
             }
         }
@@ -10284,11 +10284,11 @@ var XXH = function (t) {
             var h = t.length - i;
             e ? (e = Number(e), e > h && (e = h)) : e = h;
             var o = r.length;
-            if (o % 2 !== 0)throw new Error("Invalid hex string");
+            if (o % 2 !== 0) throw new Error("Invalid hex string");
             e > o / 2 && (e = o / 2);
             for (var n = 0; e > n; n++) {
                 var s = parseInt(r.substr(2 * n, 2), 16);
-                if (isNaN(s))throw new Error("Invalid hex string");
+                if (isNaN(s)) throw new Error("Invalid hex string");
                 t[i + n] = s
             }
             return n
@@ -10345,62 +10345,62 @@ var XXH = function (t) {
 
         function U(t) {
             var r = t.length;
-            if (W >= r)return String.fromCharCode.apply(String, t);
-            for (var i = "", e = 0; r > e;)i += String.fromCharCode.apply(String, t.slice(e, e += W));
+            if (W >= r) return String.fromCharCode.apply(String, t);
+            for (var i = "", e = 0; r > e;) i += String.fromCharCode.apply(String, t.slice(e, e += W));
             return i
         }
 
         function x(t, r, i) {
             var e = "";
             i = Math.min(t.length, i);
-            for (var h = r; i > h; h++)e += String.fromCharCode(127 & t[h]);
+            for (var h = r; i > h; h++) e += String.fromCharCode(127 & t[h]);
             return e
         }
 
         function P(t, r, i) {
             var e = "";
             i = Math.min(t.length, i);
-            for (var h = r; i > h; h++)e += String.fromCharCode(t[h]);
+            for (var h = r; i > h; h++) e += String.fromCharCode(t[h]);
             return e
         }
 
         function T(t, r, i) {
             var e = t.length;
             (!r || 0 > r) && (r = 0), (!i || 0 > i || i > e) && (i = e);
-            for (var h = "", o = r; i > o; o++)h += q(t[o]);
+            for (var h = "", o = r; i > o; o++) h += q(t[o]);
             return h
         }
 
         function S(t, r, i) {
-            for (var e = t.slice(r, i), h = "", o = 0; o < e.length; o += 2)h += String.fromCharCode(e[o] + 256 * e[o + 1]);
+            for (var e = t.slice(r, i), h = "", o = 0; o < e.length; o += 2) h += String.fromCharCode(e[o] + 256 * e[o + 1]);
             return h
         }
 
         function L(t, r, i) {
-            if (t % 1 !== 0 || 0 > t)throw new RangeError("offset is not uint");
-            if (t + r > i)throw new RangeError("Trying to access beyond buffer length")
+            if (t % 1 !== 0 || 0 > t) throw new RangeError("offset is not uint");
+            if (t + r > i) throw new RangeError("Trying to access beyond buffer length")
         }
 
         function Y(r, i, e, h, o, n) {
-            if (!t.isBuffer(r))throw new TypeError("buffer must be a Buffer instance");
-            if (i > o || n > i)throw new RangeError("value is out of bounds");
-            if (e + h > r.length)throw new RangeError("index out of range")
+            if (!t.isBuffer(r)) throw new TypeError("buffer must be a Buffer instance");
+            if (i > o || n > i) throw new RangeError("value is out of bounds");
+            if (e + h > r.length) throw new RangeError("index out of range")
         }
 
         function z(t, r, i, e) {
             0 > r && (r = 65535 + r + 1);
-            for (var h = 0, o = Math.min(t.length - i, 2); o > h; h++)t[i + h] = (r & 255 << 8 * (e ? h : 1 - h)) >>> 8 * (e ? h : 1 - h)
+            for (var h = 0, o = Math.min(t.length - i, 2); o > h; h++) t[i + h] = (r & 255 << 8 * (e ? h : 1 - h)) >>> 8 * (e ? h : 1 - h)
         }
 
         function M(t, r, i, e) {
             0 > r && (r = 4294967295 + r + 1);
-            for (var h = 0, o = Math.min(t.length - i, 4); o > h; h++)t[i + h] = r >>> 8 * (e ? h : 3 - h) & 255
+            for (var h = 0, o = Math.min(t.length - i, 4); o > h; h++) t[i + h] = r >>> 8 * (e ? h : 3 - h) & 255
         }
 
         function D(t, r, i, e, h, o) {
-            if (r > h || o > r)throw new RangeError("value is out of bounds");
-            if (i + e > t.length)throw new RangeError("index out of range");
-            if (0 > i)throw new RangeError("index out of range")
+            if (r > h || o > r) throw new RangeError("value is out of bounds");
+            if (i + e > t.length) throw new RangeError("index out of range");
+            if (0 > i) throw new RangeError("index out of range")
         }
 
         function O(t, r, i, e, h) {
@@ -10412,8 +10412,8 @@ var XXH = function (t) {
         }
 
         function F(t) {
-            if (t = k(t).replace(tt, ""), t.length < 2)return "";
-            for (; t.length % 4 !== 0;)t += "=";
+            if (t = k(t).replace(tt, ""), t.length < 2) return "";
+            for (; t.length % 4 !== 0;) t += "=";
             return t
         }
 
@@ -10448,17 +10448,17 @@ var XXH = function (t) {
                     i = (h - 55296 << 10 | i - 56320) + 65536
                 } else h && (r -= 3) > -1 && o.push(239, 191, 189);
                 if (h = null, 128 > i) {
-                    if ((r -= 1) < 0)break;
+                    if ((r -= 1) < 0) break;
                     o.push(i)
                 } else if (2048 > i) {
-                    if ((r -= 2) < 0)break;
+                    if ((r -= 2) < 0) break;
                     o.push(i >> 6 | 192, 63 & i | 128)
                 } else if (65536 > i) {
-                    if ((r -= 3) < 0)break;
+                    if ((r -= 3) < 0) break;
                     o.push(i >> 12 | 224, i >> 6 & 63 | 128, 63 & i | 128)
                 } else {
-                    if (!(1114112 > i))throw new Error("Invalid code point");
-                    if ((r -= 4) < 0)break;
+                    if (!(1114112 > i)) throw new Error("Invalid code point");
+                    if ((r -= 4) < 0) break;
                     o.push(i >> 18 | 240, i >> 12 & 63 | 128, i >> 6 & 63 | 128, 63 & i | 128)
                 }
             }
@@ -10466,12 +10466,12 @@ var XXH = function (t) {
         }
 
         function X(t) {
-            for (var r = [], i = 0; i < t.length; i++)r.push(255 & t.charCodeAt(i));
+            for (var r = [], i = 0; i < t.length; i++) r.push(255 & t.charCodeAt(i));
             return r
         }
 
         function J(t, r) {
-            for (var i, e, h, o = [], n = 0; n < t.length && !((r -= 2) < 0); n++)i = t.charCodeAt(n), e = i >> 8, h = i % 256, o.push(h), o.push(e);
+            for (var i, e, h, o = [], n = 0; n < t.length && !((r -= 2) < 0); n++) i = t.charCodeAt(n), e = i >> 8, h = i % 256, o.push(h), o.push(e);
             return o
         }
 
@@ -10480,7 +10480,7 @@ var XXH = function (t) {
         }
 
         function Z(t, r, i, e) {
-            for (var h = 0; e > h && !(h + i >= r.length || h >= t.length); h++)r[h + i] = t[h];
+            for (var h = 0; e > h && !(h + i >= r.length || h >= t.length); h++) r[h + i] = t[h];
             return h
         }
 
@@ -10490,9 +10490,9 @@ var XXH = function (t) {
         t.TYPED_ARRAY_SUPPORT = void 0 !== e.TYPED_ARRAY_SUPPORT ? e.TYPED_ARRAY_SUPPORT : h(), t.TYPED_ARRAY_SUPPORT ? (t.prototype.__proto__ = Uint8Array.prototype, t.__proto__ = Uint8Array) : (t.prototype.length = void 0, t.prototype.parent = void 0), t.isBuffer = function (t) {
             return !(null == t || !t._isBuffer)
         }, t.compare = function (r, i) {
-            if (!t.isBuffer(r) || !t.isBuffer(i))throw new TypeError("Arguments must be Buffers");
-            if (r === i)return 0;
-            for (var e = r.length, h = i.length, o = 0, n = Math.min(e, h); n > o && r[o] === i[o];)++o;
+            if (!t.isBuffer(r) || !t.isBuffer(i)) throw new TypeError("Arguments must be Buffers");
+            if (r === i) return 0;
+            for (var e = r.length, h = i.length, o = 0, n = Math.min(e, h); n > o && r[o] === i[o];) ++o;
             return o !== n && (e = r[o], h = i[o]), h > e ? -1 : e > h ? 1 : 0
         }, t.isEncoding = function (t) {
             switch (String(t).toLowerCase()) {
@@ -10512,10 +10512,10 @@ var XXH = function (t) {
                     return !1
             }
         }, t.concat = function (r, i) {
-            if (!Q(r))throw new TypeError("list argument must be an Array of Buffers.");
-            if (0 === r.length)return new t(0);
+            if (!Q(r)) throw new TypeError("list argument must be an Array of Buffers.");
+            if (0 === r.length) return new t(0);
             var e;
-            if (void 0 === i)for (i = 0, e = 0; e < r.length; e++)i += r[e].length;
+            if (void 0 === i) for (i = 0, e = 0; e < r.length; e++) i += r[e].length;
             var h = new t(i), o = 0;
             for (e = 0; e < r.length; e++) {
                 var n = r[e];
@@ -10526,27 +10526,27 @@ var XXH = function (t) {
             var t = 0 | this.length;
             return 0 === t ? "" : 0 === arguments.length ? R(this, 0, t) : w.apply(this, arguments)
         }, t.prototype.equals = function (r) {
-            if (!t.isBuffer(r))throw new TypeError("Argument must be a Buffer");
+            if (!t.isBuffer(r)) throw new TypeError("Argument must be a Buffer");
             return this === r ? !0 : 0 === t.compare(this, r)
         }, t.prototype.inspect = function () {
             var t = "", i = r.INSPECT_MAX_BYTES;
             return this.length > 0 && (t = this.toString("hex", 0, i).match(/.{2}/g).join(" "), this.length > i && (t += " ... ")), "<Buffer " + t + ">"
         }, t.prototype.compare = function (r) {
-            if (!t.isBuffer(r))throw new TypeError("Argument must be a Buffer");
+            if (!t.isBuffer(r)) throw new TypeError("Argument must be a Buffer");
             return this === r ? 0 : t.compare(this, r)
         }, t.prototype.indexOf = function (r, i) {
             function e(t, r, i) {
-                for (var e = -1, h = 0; i + h < t.length; h++)if (t[i + h] === r[-1 === e ? 0 : h - e]) {
-                    if (-1 === e && (e = h), h - e + 1 === r.length)return i + e
+                for (var e = -1, h = 0; i + h < t.length; h++) if (t[i + h] === r[-1 === e ? 0 : h - e]) {
+                    if (-1 === e && (e = h), h - e + 1 === r.length) return i + e
                 } else e = -1;
                 return -1
             }
 
-            if (i > 2147483647 ? i = 2147483647 : -2147483648 > i && (i = -2147483648), i >>= 0, 0 === this.length)return -1;
-            if (i >= this.length)return -1;
-            if (0 > i && (i = Math.max(this.length + i, 0)), "string" == typeof r)return 0 === r.length ? -1 : String.prototype.indexOf.call(this, r, i);
-            if (t.isBuffer(r))return e(this, r, i);
-            if ("number" == typeof r)return t.TYPED_ARRAY_SUPPORT && "function" === Uint8Array.prototype.indexOf ? Uint8Array.prototype.indexOf.call(this, r, i) : e(this, [r], i);
+            if (i > 2147483647 ? i = 2147483647 : -2147483648 > i && (i = -2147483648), i >>= 0, 0 === this.length) return -1;
+            if (i >= this.length) return -1;
+            if (0 > i && (i = Math.max(this.length + i, 0)), "string" == typeof r) return 0 === r.length ? -1 : String.prototype.indexOf.call(this, r, i);
+            if (t.isBuffer(r)) return e(this, r, i);
+            if ("number" == typeof r) return t.TYPED_ARRAY_SUPPORT && "function" === Uint8Array.prototype.indexOf ? Uint8Array.prototype.indexOf.call(this, r, i) : e(this, [r], i);
             throw new TypeError("val must be string, number or Buffer")
         }, t.prototype.get = function (t) {
             return console.log(".get() is deprecated. Access using array indexes instead."), this.readUInt8(t)
@@ -10558,9 +10558,9 @@ var XXH = function (t) {
                 e = r, r = 0 | i, i = h
             }
             var o = this.length - r;
-            if ((void 0 === i || i > o) && (i = o), t.length > 0 && (0 > i || 0 > r) || r > this.length)throw new RangeError("attempt to write outside buffer bounds");
+            if ((void 0 === i || i > o) && (i = o), t.length > 0 && (0 > i || 0 > r) || r > this.length) throw new RangeError("attempt to write outside buffer bounds");
             e || (e = "utf8");
-            for (var n = !1; ;)switch (e) {
+            for (var n = !1; ;) switch (e) {
                 case"hex":
                     return A(this, t, r, i);
                 case"utf8":
@@ -10578,7 +10578,7 @@ var XXH = function (t) {
                 case"utf-16le":
                     return I(this, t, r, i);
                 default:
-                    if (n)throw new TypeError("Unknown encoding: " + e);
+                    if (n) throw new TypeError("Unknown encoding: " + e);
                     e = ("" + e).toLowerCase(), n = !0
             }
         }, t.prototype.toJSON = function () {
@@ -10592,16 +10592,16 @@ var XXH = function (t) {
             if (t.TYPED_ARRAY_SUPPORT) h = t._augment(this.subarray(r, i)); else {
                 var o = i - r;
                 h = new t(o, void 0);
-                for (var n = 0; o > n; n++)h[n] = this[n + r]
+                for (var n = 0; o > n; n++) h[n] = this[n + r]
             }
             return h.length && (h.parent = this.parent || this), h
         }, t.prototype.readUIntLE = function (t, r, i) {
             t = 0 | t, r = 0 | r, i || L(t, r, this.length);
-            for (var e = this[t], h = 1, o = 0; ++o < r && (h *= 256);)e += this[t + o] * h;
+            for (var e = this[t], h = 1, o = 0; ++o < r && (h *= 256);) e += this[t + o] * h;
             return e
         }, t.prototype.readUIntBE = function (t, r, i) {
             t = 0 | t, r = 0 | r, i || L(t, r, this.length);
-            for (var e = this[t + --r], h = 1; r > 0 && (h *= 256);)e += this[t + --r] * h;
+            for (var e = this[t + --r], h = 1; r > 0 && (h *= 256);) e += this[t + --r] * h;
             return e
         }, t.prototype.readUInt8 = function (t, r) {
             return r || L(t, 1, this.length), this[t]
@@ -10615,11 +10615,11 @@ var XXH = function (t) {
             return r || L(t, 4, this.length), 16777216 * this[t] + (this[t + 1] << 16 | this[t + 2] << 8 | this[t + 3])
         }, t.prototype.readIntLE = function (t, r, i) {
             t = 0 | t, r = 0 | r, i || L(t, r, this.length);
-            for (var e = this[t], h = 1, o = 0; ++o < r && (h *= 256);)e += this[t + o] * h;
+            for (var e = this[t], h = 1, o = 0; ++o < r && (h *= 256);) e += this[t + o] * h;
             return h *= 128, e >= h && (e -= Math.pow(2, 8 * r)), e
         }, t.prototype.readIntBE = function (t, r, i) {
             t = 0 | t, r = 0 | r, i || L(t, r, this.length);
-            for (var e = r, h = 1, o = this[t + --e]; e > 0 && (h *= 256);)o += this[t + --e] * h;
+            for (var e = r, h = 1, o = this[t + --e]; e > 0 && (h *= 256);) o += this[t + --e] * h;
             return h *= 128, o >= h && (o -= Math.pow(2, 8 * r)), o
         }, t.prototype.readInt8 = function (t, r) {
             return r || L(t, 1, this.length), 128 & this[t] ? -1 * (255 - this[t] + 1) : this[t]
@@ -10646,12 +10646,12 @@ var XXH = function (t) {
         }, t.prototype.writeUIntLE = function (t, r, i, e) {
             t = +t, r = 0 | r, i = 0 | i, e || Y(this, t, r, i, Math.pow(2, 8 * i), 0);
             var h = 1, o = 0;
-            for (this[r] = 255 & t; ++o < i && (h *= 256);)this[r + o] = t / h & 255;
+            for (this[r] = 255 & t; ++o < i && (h *= 256);) this[r + o] = t / h & 255;
             return r + i
         }, t.prototype.writeUIntBE = function (t, r, i, e) {
             t = +t, r = 0 | r, i = 0 | i, e || Y(this, t, r, i, Math.pow(2, 8 * i), 0);
             var h = i - 1, o = 1;
-            for (this[r + h] = 255 & t; --h >= 0 && (o *= 256);)this[r + h] = t / o & 255;
+            for (this[r + h] = 255 & t; --h >= 0 && (o *= 256);) this[r + h] = t / o & 255;
             return r + i
         }, t.prototype.writeUInt8 = function (r, i, e) {
             return r = +r, i = 0 | i, e || Y(this, r, i, 1, 255, 0), t.TYPED_ARRAY_SUPPORT || (r = Math.floor(r)), this[i] = 255 & r, i + 1
@@ -10669,7 +10669,7 @@ var XXH = function (t) {
                 Y(this, t, r, i, h - 1, -h)
             }
             var o = 0, n = 1, s = 0 > t ? 1 : 0;
-            for (this[r] = 255 & t; ++o < i && (n *= 256);)this[r + o] = (t / n >> 0) - s & 255;
+            for (this[r] = 255 & t; ++o < i && (n *= 256);) this[r + o] = (t / n >> 0) - s & 255;
             return r + i
         }, t.prototype.writeIntBE = function (t, r, i, e) {
             if (t = +t, r = 0 | r, !e) {
@@ -10677,7 +10677,7 @@ var XXH = function (t) {
                 Y(this, t, r, i, h - 1, -h)
             }
             var o = i - 1, n = 1, s = 0 > t ? 1 : 0;
-            for (this[r + o] = 255 & t; --o >= 0 && (n *= 256);)this[r + o] = (t / n >> 0) - s & 255;
+            for (this[r + o] = 255 & t; --o >= 0 && (n *= 256);) this[r + o] = (t / n >> 0) - s & 255;
             return r + i
         }, t.prototype.writeInt8 = function (r, i, e) {
             return r = +r, i = 0 | i, e || Y(this, r, i, 1, 127, -128), t.TYPED_ARRAY_SUPPORT || (r = Math.floor(r)), 0 > r && (r = 255 + r + 1), this[i] = 255 & r, i + 1
@@ -10698,31 +10698,31 @@ var XXH = function (t) {
         }, t.prototype.writeDoubleBE = function (t, r, i) {
             return N(this, t, r, !1, i)
         }, t.prototype.copy = function (r, i, e, h) {
-            if (e || (e = 0), h || 0 === h || (h = this.length), i >= r.length && (i = r.length), i || (i = 0), h > 0 && e > h && (h = e), h === e)return 0;
-            if (0 === r.length || 0 === this.length)return 0;
-            if (0 > i)throw new RangeError("targetStart out of bounds");
-            if (0 > e || e >= this.length)throw new RangeError("sourceStart out of bounds");
-            if (0 > h)throw new RangeError("sourceEnd out of bounds");
+            if (e || (e = 0), h || 0 === h || (h = this.length), i >= r.length && (i = r.length), i || (i = 0), h > 0 && e > h && (h = e), h === e) return 0;
+            if (0 === r.length || 0 === this.length) return 0;
+            if (0 > i) throw new RangeError("targetStart out of bounds");
+            if (0 > e || e >= this.length) throw new RangeError("sourceStart out of bounds");
+            if (0 > h) throw new RangeError("sourceEnd out of bounds");
             h > this.length && (h = this.length), r.length - i < h - e && (h = r.length - i + e);
             var o, n = h - e;
-            if (this === r && i > e && h > i)for (o = n - 1; o >= 0; o--)r[o + i] = this[o + e]; else if (1e3 > n || !t.TYPED_ARRAY_SUPPORT)for (o = 0; n > o; o++)r[o + i] = this[o + e]; else r._set(this.subarray(e, e + n), i);
+            if (this === r && i > e && h > i) for (o = n - 1; o >= 0; o--) r[o + i] = this[o + e]; else if (1e3 > n || !t.TYPED_ARRAY_SUPPORT) for (o = 0; n > o; o++) r[o + i] = this[o + e]; else r._set(this.subarray(e, e + n), i);
             return n
         }, t.prototype.fill = function (t, r, i) {
-            if (t || (t = 0), r || (r = 0), i || (i = this.length), r > i)throw new RangeError("end < start");
+            if (t || (t = 0), r || (r = 0), i || (i = this.length), r > i) throw new RangeError("end < start");
             if (i !== r && 0 !== this.length) {
-                if (0 > r || r >= this.length)throw new RangeError("start out of bounds");
-                if (0 > i || i > this.length)throw new RangeError("end out of bounds");
+                if (0 > r || r >= this.length) throw new RangeError("start out of bounds");
+                if (0 > i || i > this.length) throw new RangeError("end out of bounds");
                 var e;
-                if ("number" == typeof t)for (e = r; i > e; e++)this[e] = t; else {
+                if ("number" == typeof t) for (e = r; i > e; e++) this[e] = t; else {
                     var h = j(t.toString()), o = h.length;
-                    for (e = r; i > e; e++)this[e] = h[e % o]
+                    for (e = r; i > e; e++) this[e] = h[e % o]
                 }
                 return this
             }
         }, t.prototype.toArrayBuffer = function () {
             if ("undefined" != typeof Uint8Array) {
-                if (t.TYPED_ARRAY_SUPPORT)return new t(this).buffer;
-                for (var r = new Uint8Array(this.length), i = 0, e = r.length; e > i; i += 1)r[i] = this[i];
+                if (t.TYPED_ARRAY_SUPPORT) return new t(this).buffer;
+                for (var r = new Uint8Array(this.length), i = 0, e = r.length; e > i; i += 1) r[i] = this[i];
                 return r.buffer
             }
             throw new TypeError("Buffer.toArrayBuffer not supported in this browser")
@@ -10739,6 +10739,7 @@ var XXH = function (t) {
     var i = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     !function (t) {
         "use strict";
+
         function r(t) {
             var r = t.charCodeAt(0);
             return r === n || r === l ? 62 : r === s || r === c ? 63 : a > r ? -1 : a + 10 > r ? r - a + 26 + 26 : f + 26 > r ? r - f : u + 26 > r ? r - u + 26 : void 0
@@ -10750,11 +10751,11 @@ var XXH = function (t) {
             }
 
             var e, h, n, s, a, u;
-            if (t.length % 4 > 0)throw new Error("Invalid string. Length must be a multiple of 4");
+            if (t.length % 4 > 0) throw new Error("Invalid string. Length must be a multiple of 4");
             var f = t.length;
             a = "=" === t.charAt(f - 2) ? 2 : "=" === t.charAt(f - 1) ? 1 : 0, u = new o(3 * t.length / 4 - a), n = a > 0 ? t.length - 4 : t.length;
             var l = 0;
-            for (e = 0, h = 0; n > e; e += 4, h += 3)s = r(t.charAt(e)) << 18 | r(t.charAt(e + 1)) << 12 | r(t.charAt(e + 2)) << 6 | r(t.charAt(e + 3)), i((16711680 & s) >> 16), i((65280 & s) >> 8), i(255 & s);
+            for (e = 0, h = 0; n > e; e += 4, h += 3) s = r(t.charAt(e)) << 18 | r(t.charAt(e + 1)) << 12 | r(t.charAt(e + 2)) << 6 | r(t.charAt(e + 3)), i((16711680 & s) >> 16), i((65280 & s) >> 8), i(255 & s);
             return 2 === a ? (s = r(t.charAt(e)) << 2 | r(t.charAt(e + 1)) >> 4, i(255 & s)) : 1 === a && (s = r(t.charAt(e)) << 10 | r(t.charAt(e + 1)) << 4 | r(t.charAt(e + 2)) >> 2, i(s >> 8 & 255), i(255 & s)), u
         }
 
@@ -10768,7 +10769,7 @@ var XXH = function (t) {
             }
 
             var h, o, n, s = t.length % 3, a = "";
-            for (h = 0, n = t.length - s; n > h; h += 3)o = (t[h] << 16) + (t[h + 1] << 8) + t[h + 2], a += e(o);
+            for (h = 0, n = t.length - s; n > h; h += 3) o = (t[h] << 16) + (t[h + 1] << 8) + t[h + 2], a += e(o);
             switch (s) {
                 case 1:
                     o = t[t.length - 1], a += r(o >> 2), a += r(o << 4 & 63), a += "==";
@@ -10788,10 +10789,10 @@ var XXH = function (t) {
     r.read = function (t, r, i, e, h) {
         var o, n, s = 8 * h - e - 1, a = (1 << s) - 1, u = a >> 1, f = -7, l = i ? h - 1 : 0, c = i ? -1 : 1,
             m = t[r + l];
-        for (l += c, o = m & (1 << -f) - 1, m >>= -f, f += s; f > 0; o = 256 * o + t[r + l], l += c, f -= 8);
-        for (n = o & (1 << -f) - 1, o >>= -f, f += e; f > 0; n = 256 * n + t[r + l], l += c, f -= 8);
+        for (l += c, o = m & (1 << -f) - 1, m >>= -f, f += s; f > 0; o = 256 * o + t[r + l], l += c, f -= 8) ;
+        for (n = o & (1 << -f) - 1, o >>= -f, f += e; f > 0; n = 256 * n + t[r + l], l += c, f -= 8) ;
         if (0 === o) o = 1 - u; else {
-            if (o === a)return n ? 0 / 0 : (m ? -1 : 1) * (1 / 0);
+            if (o === a) return n ? 0 / 0 : (m ? -1 : 1) * (1 / 0);
             n += Math.pow(2, e), o -= u
         }
         return (m ? -1 : 1) * n * Math.pow(2, o - e)
@@ -10799,15 +10800,15 @@ var XXH = function (t) {
         var n, s, a, u = 8 * o - h - 1, f = (1 << u) - 1, l = f >> 1,
             c = 23 === h ? Math.pow(2, -24) - Math.pow(2, -77) : 0, m = e ? 0 : o - 1, p = e ? 1 : -1,
             d = 0 > r || 0 === r && 0 > 1 / r ? 1 : 0;
-        for (r = Math.abs(r), isNaN(r) || r === 1 / 0 ? (s = isNaN(r) ? 1 : 0, n = f) : (n = Math.floor(Math.log(r) / Math.LN2), r * (a = Math.pow(2, -n)) < 1 && (n--, a *= 2), r += n + l >= 1 ? c / a : c * Math.pow(2, 1 - l), r * a >= 2 && (n++, a /= 2), n + l >= f ? (s = 0, n = f) : n + l >= 1 ? (s = (r * a - 1) * Math.pow(2, h), n += l) : (s = r * Math.pow(2, l - 1) * Math.pow(2, h), n = 0)); h >= 8; t[i + m] = 255 & s, m += p, s /= 256, h -= 8);
-        for (n = n << h | s, u += h; u > 0; t[i + m] = 255 & n, m += p, n /= 256, u -= 8);
+        for (r = Math.abs(r), isNaN(r) || r === 1 / 0 ? (s = isNaN(r) ? 1 : 0, n = f) : (n = Math.floor(Math.log(r) / Math.LN2), r * (a = Math.pow(2, -n)) < 1 && (n--, a *= 2), r += n + l >= 1 ? c / a : c * Math.pow(2, 1 - l), r * a >= 2 && (n++, a /= 2), n + l >= f ? (s = 0, n = f) : n + l >= 1 ? (s = (r * a - 1) * Math.pow(2, h), n += l) : (s = r * Math.pow(2, l - 1) * Math.pow(2, h), n = 0)); h >= 8; t[i + m] = 255 & s, m += p, s /= 256, h -= 8) ;
+        for (n = n << h | s, u += h; u > 0; t[i + m] = 255 & n, m += p, n /= 256, u -= 8) ;
         t[i + m - p] |= 128 * d
     }
 }, function (t) {
     var r = {}.toString;
     t.exports = Array.isArray || function (t) {
-            return "[object Array]" == r.call(t)
-        }
+        return "[object Array]" == r.call(t)
+    }
 }, function (t, r, i) {
     r.UINT32 = i(7), r.UINT64 = i(8)
 }, function (t, r) {
@@ -10841,8 +10842,8 @@ var XXH = function (t) {
         }, o.prototype.toString = function (t) {
             t = t || 10;
             var r = u[t] || new o(t);
-            if (!this.gt(r))return this.toNumber().toString(t);
-            for (var i = this.clone(), e = new Array(32), h = 31; h >= 0 && (i.div(r), e[h] = i.remainder.toNumber().toString(t), i.gt(r)); h--);
+            if (!this.gt(r)) return this.toNumber().toString(t);
+            for (var i = this.clone(), e = new Array(32), h = 31; h >= 0 && (i.div(r), e[h] = i.remainder.toNumber().toString(t), i.gt(r)); h--) ;
             return e[h - 1] = i.toNumber().toString(t), e.join("")
         }, o.prototype.add = function (t) {
             var r = this._low + t._low, i = r >>> 16;
@@ -10853,12 +10854,12 @@ var XXH = function (t) {
             var r, i, e = this._high, h = this._low, o = t._high, n = t._low;
             return i = h * n, r = i >>> 16, r += e * n, r &= 65535, r += h * o, this._low = 65535 & i, this._high = 65535 & r, this
         }, o.prototype.div = function (t) {
-            if (0 == t._low && 0 == t._high)throw Error("division by zero");
-            if (0 == t._high && 1 == t._low)return this.remainder = new o(0), this;
-            if (t.gt(this))return this.remainder = new o(0), this._low = 0, this._high = 0, this;
-            if (this.eq(t))return this.remainder = new o(0), this._low = 1, this._high = 0, this;
-            for (var r = t.clone(), i = -1; !this.lt(r);)r.shiftLeft(1, !0), i++;
-            for (this.remainder = this.clone(), this._low = 0, this._high = 0; i >= 0; i--)r.shiftRight(1), this.remainder.lt(r) || (this.remainder.subtract(r), i >= 16 ? this._high |= 1 << i - 16 : this._low |= 1 << i);
+            if (0 == t._low && 0 == t._high) throw Error("division by zero");
+            if (0 == t._high && 1 == t._low) return this.remainder = new o(0), this;
+            if (t.gt(this)) return this.remainder = new o(0), this._low = 0, this._high = 0, this;
+            if (this.eq(t)) return this.remainder = new o(0), this._low = 1, this._high = 0, this;
+            for (var r = t.clone(), i = -1; !this.lt(r);) r.shiftLeft(1, !0), i++;
+            for (this.remainder = this.clone(), this._low = 0, this._high = 0; i >= 0; i--) r.shiftRight(1), this.remainder.lt(r) || (this.remainder.subtract(r), i >= 16 ? this._high |= 1 << i - 16 : this._low |= 1 << i);
             return this
         }, o.prototype.negate = o.prototype.not = function () {
             var t = (65535 & ~this._low) + 1;
@@ -10922,8 +10923,8 @@ var XXH = function (t) {
         }, o.prototype.toString = function (t) {
             t = t || 10;
             var r = f[t] || new o(t);
-            if (!this.gt(r))return this.toNumber().toString(t);
-            for (var i = this.clone(), e = new Array(64), h = 63; h >= 0 && (i.div(r), e[h] = i.remainder.toNumber().toString(t), i.gt(r)); h--);
+            if (!this.gt(r)) return this.toNumber().toString(t);
+            for (var i = this.clone(), e = new Array(64), h = 63; h >= 0 && (i.div(r), e[h] = i.remainder.toNumber().toString(t), i.gt(r)); h--) ;
             return e[h - 1] = i.toNumber().toString(t), e.join("")
         }, o.prototype.add = function (t) {
             var r = this._a00 + t._a00, i = r >>> 16;
@@ -10944,13 +10945,13 @@ var XXH = function (t) {
             return l &= 65535, l += i * n, c += l >>> 16, l &= 65535, l += e * o, c += l >>> 16, c += r * a, c &= 65535, c += i * s, c &= 65535, c += e * n, c &= 65535, c += h * o, this._a00 = 65535 & u, this._a16 = 65535 & f, this._a32 = 65535 & l, this._a48 = 65535 & c, this
         }, o.prototype.div = function (t) {
             if (0 == t._a16 && 0 == t._a32 && 0 == t._a48) {
-                if (0 == t._a00)throw Error("division by zero");
-                if (1 == t._a00)return this.remainder = new o(0), this
+                if (0 == t._a00) throw Error("division by zero");
+                if (1 == t._a00) return this.remainder = new o(0), this
             }
-            if (t.gt(this))return this.remainder = new o(0), this._a00 = 0, this._a16 = 0, this._a32 = 0, this._a48 = 0, this;
-            if (this.eq(t))return this.remainder = new o(0), this._a00 = 1, this._a16 = 0, this._a32 = 0, this._a48 = 0, this;
-            for (var r = t.clone(), i = -1; !this.lt(r);)r.shiftLeft(1, !0), i++;
-            for (this.remainder = this.clone(), this._a00 = 0, this._a16 = 0, this._a32 = 0, this._a48 = 0; i >= 0; i--)r.shiftRight(1), this.remainder.lt(r) || (this.remainder.subtract(r), i >= 48 ? this._a48 |= 1 << i - 48 : i >= 32 ? this._a32 |= 1 << i - 32 : i >= 16 ? this._a16 |= 1 << i - 16 : this._a00 |= 1 << i);
+            if (t.gt(this)) return this.remainder = new o(0), this._a00 = 0, this._a16 = 0, this._a32 = 0, this._a48 = 0, this;
+            if (this.eq(t)) return this.remainder = new o(0), this._a00 = 1, this._a16 = 0, this._a32 = 0, this._a48 = 0, this;
+            for (var r = t.clone(), i = -1; !this.lt(r);) r.shiftLeft(1, !0), i++;
+            for (this.remainder = this.clone(), this._a00 = 0, this._a16 = 0, this._a32 = 0, this._a48 = 0; i >= 0; i--) r.shiftRight(1), this.remainder.lt(r) || (this.remainder.subtract(r), i >= 48 ? this._a48 |= 1 << i - 48 : i >= 32 ? this._a32 |= 1 << i - 32 : i >= 16 ? this._a16 |= 1 << i - 16 : this._a00 |= 1 << i);
             return this
         }, o.prototype.negate = o.prototype.not = function () {
             var t = (65535 & ~this._a00) + 1;
@@ -10973,20 +10974,20 @@ var XXH = function (t) {
         }, o.prototype.shiftLeft = o.prototype.shiftl = function (t, r) {
             return t %= 64, t >= 48 ? (this._a48 = this._a00 << t - 48, this._a32 = 0, this._a16 = 0, this._a00 = 0) : t >= 32 ? (t -= 32, this._a48 = this._a16 << t | this._a00 >> 16 - t, this._a32 = this._a00 << t & 65535, this._a16 = 0, this._a00 = 0) : t >= 16 ? (t -= 16, this._a48 = this._a32 << t | this._a16 >> 16 - t, this._a32 = 65535 & (this._a16 << t | this._a00 >> 16 - t), this._a16 = this._a00 << t & 65535, this._a00 = 0) : (this._a48 = this._a48 << t | this._a32 >> 16 - t, this._a32 = 65535 & (this._a32 << t | this._a16 >> 16 - t), this._a16 = 65535 & (this._a16 << t | this._a00 >> 16 - t), this._a00 = this._a00 << t & 65535), r || (this._a48 &= 65535), this
         }, o.prototype.rotateLeft = o.prototype.rotl = function (t) {
-            if (t %= 64, 0 == t)return this;
+            if (t %= 64, 0 == t) return this;
             if (t >= 32) {
                 var r = this._a00;
-                if (this._a00 = this._a32, this._a32 = r, r = this._a48, this._a48 = this._a16, this._a16 = r, 32 == t)return this;
+                if (this._a00 = this._a32, this._a32 = r, r = this._a48, this._a48 = this._a16, this._a16 = r, 32 == t) return this;
                 t -= 32
             }
             var i = this._a48 << 16 | this._a32, e = this._a16 << 16 | this._a00, h = i << t | e >>> 32 - t,
                 o = e << t | i >>> 32 - t;
             return this._a00 = 65535 & o, this._a16 = o >>> 16, this._a32 = 65535 & h, this._a48 = h >>> 16, this
         }, o.prototype.rotateRight = o.prototype.rotr = function (t) {
-            if (t %= 64, 0 == t)return this;
+            if (t %= 64, 0 == t) return this;
             if (t >= 32) {
                 var r = this._a00;
-                if (this._a00 = this._a32, this._a32 = r, r = this._a48, this._a48 = this._a16, this._a16 = r, 32 == t)return this;
+                if (this._a00 = this._a32, this._a32 = r, r = this._a48, this._a48 = this._a16, this._a16 = r, 32 == t) return this;
                 t -= 32
             }
             var i = this._a48 << 16 | this._a32, e = this._a16 << 16 | this._a00, h = i >>> t | e << 32 - t,
@@ -11022,8 +11023,8 @@ var XXH = function (t) {
             var i, h = "string" == typeof t;
             h && (t = e(t), h = !1, i = !0), "undefined" != typeof ArrayBuffer && t instanceof ArrayBuffer && (i = !0, t = new Uint8Array(t));
             var o = 0, u = t.length, f = o + u;
-            if (0 == u)return this;
-            if (this.total_len += u, 0 == this.memsize && (this.memory = h ? "" : i ? new Uint8Array(32) : new r(32)), this.memsize + u < 32)return h ? this.memory += t : i ? this.memory.set(t.subarray(0, u), this.memsize) : t.copy(this.memory, this.memsize, 0, u), this.memsize += u, this;
+            if (0 == u) return this;
+            if (this.total_len += u, 0 == this.memsize && (this.memory = h ? "" : i ? new Uint8Array(32) : new r(32)), this.memsize + u < 32) return h ? this.memory += t : i ? this.memory.set(t.subarray(0, u), this.memsize) : t.copy(this.memory, this.memsize, 0, u), this.memsize += u, this;
             if (this.memsize > 0) {
                 h ? this.memory += t.slice(0, 32 - this.memsize) : i ? this.memory.set(t.subarray(0, 32 - this.memsize), this.memsize) : t.copy(this.memory, this.memsize, 0, 32 - this.memsize);
                 var l = 0;
@@ -11052,8 +11053,8 @@ var XXH = function (t) {
             return f > o && (h ? this.memory += t.slice(o) : i ? this.memory.set(t.subarray(o, f), this.memsize) : t.copy(this.memory, this.memsize, o, f), this.memsize = f - o), this
         }, h.prototype.digest = function () {
             var t, r, i = this.memory, e = "string" == typeof i, h = 0, o = this.memsize, c = new n;
-            for (this.total_len >= 32 ? (t = this.v1.clone().rotl(1), t.add(this.v2.clone().rotl(7)), t.add(this.v3.clone().rotl(12)), t.add(this.v4.clone().rotl(18)), t.xor(this.v1.multiply(a).rotl(31).multiply(s)), t.multiply(s).add(f), t.xor(this.v2.multiply(a).rotl(31).multiply(s)), t.multiply(s).add(f), t.xor(this.v3.multiply(a).rotl(31).multiply(s)), t.multiply(s).add(f), t.xor(this.v4.multiply(a).rotl(31).multiply(s)), t.multiply(s).add(f)) : t = this.seed.clone().add(l), t.add(c.fromNumber(this.total_len)); o - 8 >= h;)e ? c.fromBits(i.charCodeAt(h + 1) << 8 | i.charCodeAt(h), i.charCodeAt(h + 3) << 8 | i.charCodeAt(h + 2), i.charCodeAt(h + 5) << 8 | i.charCodeAt(h + 4), i.charCodeAt(h + 7) << 8 | i.charCodeAt(h + 6)) : c.fromBits(i[h + 1] << 8 | i[h], i[h + 3] << 8 | i[h + 2], i[h + 5] << 8 | i[h + 4], i[h + 7] << 8 | i[h + 6]), c.multiply(a).rotl(31).multiply(s), t.xor(c).rotl(27).multiply(s).add(f), h += 8;
-            for (o >= h + 4 && (e ? c.fromBits(i.charCodeAt(h + 1) << 8 | i.charCodeAt(h), i.charCodeAt(h + 3) << 8 | i.charCodeAt(h + 2), 0, 0) : c.fromBits(i[h + 1] << 8 | i[h], i[h + 3] << 8 | i[h + 2], 0, 0), t.xor(c.multiply(s)).rotl(23).multiply(a).add(u), h += 4); o > h;)c.fromBits(e ? i.charCodeAt(h++) : i[h++], 0, 0, 0), t.xor(c.multiply(l)).rotl(11).multiply(s);
+            for (this.total_len >= 32 ? (t = this.v1.clone().rotl(1), t.add(this.v2.clone().rotl(7)), t.add(this.v3.clone().rotl(12)), t.add(this.v4.clone().rotl(18)), t.xor(this.v1.multiply(a).rotl(31).multiply(s)), t.multiply(s).add(f), t.xor(this.v2.multiply(a).rotl(31).multiply(s)), t.multiply(s).add(f), t.xor(this.v3.multiply(a).rotl(31).multiply(s)), t.multiply(s).add(f), t.xor(this.v4.multiply(a).rotl(31).multiply(s)), t.multiply(s).add(f)) : t = this.seed.clone().add(l), t.add(c.fromNumber(this.total_len)); o - 8 >= h;) e ? c.fromBits(i.charCodeAt(h + 1) << 8 | i.charCodeAt(h), i.charCodeAt(h + 3) << 8 | i.charCodeAt(h + 2), i.charCodeAt(h + 5) << 8 | i.charCodeAt(h + 4), i.charCodeAt(h + 7) << 8 | i.charCodeAt(h + 6)) : c.fromBits(i[h + 1] << 8 | i[h], i[h + 3] << 8 | i[h + 2], i[h + 5] << 8 | i[h + 4], i[h + 7] << 8 | i[h + 6]), c.multiply(a).rotl(31).multiply(s), t.xor(c).rotl(27).multiply(s).add(f), h += 8;
+            for (o >= h + 4 && (e ? c.fromBits(i.charCodeAt(h + 1) << 8 | i.charCodeAt(h), i.charCodeAt(h + 3) << 8 | i.charCodeAt(h + 2), 0, 0) : c.fromBits(i[h + 1] << 8 | i[h], i[h + 3] << 8 | i[h + 2], 0, 0), t.xor(c.multiply(s)).rotl(23).multiply(a).add(u), h += 4); o > h;) c.fromBits(e ? i.charCodeAt(h++) : i[h++], 0, 0, 0), t.xor(c.multiply(l)).rotl(11).multiply(s);
             return r = t.clone().shiftRight(33), t.xor(r).multiply(a), r = t.clone().shiftRight(29), t.xor(r).multiply(u), r = t.clone().shiftRight(32), t.xor(r), this.init(this.seed), t
         }, t.exports = h
     }).call(r, i(2).Buffer)
@@ -11094,6 +11095,7 @@ Object.defineProperty(Object.prototype, 'getRecursiveStrings', {
  */
 !function (a) {
     "use strict";
+
     function b(a) {
         return a instanceof Object
     }
@@ -11115,7 +11117,7 @@ Object.defineProperty(Object.prototype, 'getRecursiveStrings', {
                     }
                     if (!(m >= h) && b(p)) {
                         if (-1 !== j.indexOf(p)) {
-                            if (f)continue;
+                            if (f) continue;
                             throw new Error("Circular reference")
                         }
                         if (!e) {
@@ -11513,6 +11515,7 @@ function metaphone_metaphone(word, maxPhonemes) {
         z = z || {};
         i();
         u();
+
         function i() {
             if (z.escapeMode === undefined) {
                 z.escapeMode = true;
