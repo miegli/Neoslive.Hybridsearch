@@ -4135,7 +4135,6 @@
                                                     if (boost >= 10) {
                                                         if (typeof propvalue == 'object') {
                                                             doc[property] = JSON.stringify(propvalue).toLowerCase().replace(/(<([^>]+)>)/ig, " ");
-                                                            console.log(property,doc[property]);
                                                         } else {
                                                             if (typeof propvalue == 'string') {
                                                                 doc[property] = propvalue.toLowerCase().replace(/"/gi, " ").substr(0, 1024);
