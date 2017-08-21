@@ -4293,47 +4293,29 @@
                  */
                 startLogStore: function () {
 
-                    // var id = this.getScope().$id;
-                    // var logStoreApplied = {};
-                    // var self = this;
-                    //
-                    //
-                    // jQuery('.ng-scope').each(function () {
-                    //
-                    //     if (angular.element(this).scope().$id == id) {
-                    //
-                    //         jQuery(this).on("click", function (event) {
-                    //
-                    //             var node = angular.element(event.target);
-                    //             if (node !== undefined && node.scope() !== undefined && node.scope().node) {
-                    //
-                    //                 if (logStoreApplied[node.scope().node.getIdentifier()] == undefined) {
-                    //                     var q = self.$$app.getFilter().getQueryLogStoreHash();
-                    //                     if (q.length > 2 && logStoreApplied[q] == undefined) {
-                    //                         var ref = self.$$app.getHybridsearch().$firebase().database().ref("logstore/" + self.$$app.getHybridsearch().$$conf.site + "/" + self.$$app.getHybridsearch().$$conf.workspace + "/" + self.$$app.getHybridsearch().$$conf.dimension + "/" + q);
-                    //                         ref.set(node.scope().node.getIdentifier());
-                    //                         logStoreApplied[node.scope().node.getIdentifier()] = true;
-                    //                         logStoreApplied[q] = true;
-                    //                     }
-                    //
-                    //                 }
-                    //
-                    //                 if (event.target.tagName == 'A') {
-                    //
-                    //                     var identifier = self.save().getIdentifier();
-                    //                     if (identifier !== undefined && window.location.hash !== identifier) {
-                    //                         window.location.hash = identifier;
-                    //                     }
-                    //                 }
-                    //
-                    //
-                    //             }
-                    //
-                    //         });
-                    //
-                    //     }
-                    //
-                    // });
+                    var id = this.getScope().$id;
+                    var logStoreApplied = {};
+                    var self = this;
+
+
+                    jQuery('.ng-scope').each(function () {
+
+                        if (angular.element(this).scope().$id == id) {
+
+                            jQuery(this).on("click", function (event) {
+
+                                var node = angular.element(event.target);
+                                if (node !== undefined && node.scope() !== undefined && node.scope().node) {
+                                    if (typeof self.$$app.getConfig('event_before_redirect') === 'function') {
+                                        self.$$app.getConfig('event_before_redirect')({'node': node.scope().node,'query': self.$$app.getFilter().getQuery()});
+                                    }
+                                }
+
+                            });
+
+                        }
+
+                    });
 
 
                     return this;
@@ -4453,6 +4435,17 @@
                 enableCache: function (expires) {
                     this.$$app.setConfig('cache', expires == undefined ? 3600000 : expires);
                     this.$$app.setConfig('realtime', false);
+                    return this;
+                },
+
+                /**
+                 * Connect event slot
+                 * @param string eventName
+                 * @param function callback
+                 * @returns {HybridsearchObject}
+                 */
+                connectEventSlot: function (eventName, callback) {
+                    this.$$app.setConfig('event_'+eventName, callback);
                     return this;
                 },
 
