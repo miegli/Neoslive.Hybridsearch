@@ -2153,6 +2153,7 @@
                             }
                         });
 
+
                         if (nodesToIndex.length) {
                             self.addLocalIndex(nodesToIndex);
                         }
@@ -3284,7 +3285,7 @@
 
                                                             self.addPendingRequest($http(req).success(function (data) {
 
-                                                                nodesIndexed = {};
+                                                                //nodesIndexed = {};
                                                                 var tmpNodes = [];
                                                                 var tmpNodesCounter = 0;
 
@@ -3405,7 +3406,7 @@
 
                                                                     ref.socket.on("value", function (data) {
 
-                                                                        nodesIndexed = {};
+                                                                        //nodesIndexed = {};
 
                                                                         var tmpNodes = [];
                                                                         var tmpNodesCount = 0;
@@ -3995,9 +3996,13 @@
 
                         angular.forEach(data, function (val, keyword) {
                             keyword = keyword.indexOf("://") ? keyword.substr(keyword.indexOf("://") + 3) : keyword;
+
                             angular.forEach(lastSearchInstance.$$data.keywords, function (k) {
                                 keywords.push(k.term);
                             });
+
+                      
+
                             self.addLocalIndex(val, keyword, keywords, isloadingall);
                             keywords = [];
                         });
@@ -4066,9 +4071,15 @@
                         }
 
 
+
+                        if (nodesIndexed[keyword] == true) {
+                            return null;
+                        }
+
+
+                        nodesIndexed[keyword] = true;
+
                         angular.forEach(data, function (value, key) {
-
-
                                 if (value && (nodesIndexed[value.node.hash] == undefined || value.objectID !== undefined)) {
                                     var doc = {};
 
@@ -4189,7 +4200,6 @@
                                     // }
 
                                 }
-
                             }
                         );
 
