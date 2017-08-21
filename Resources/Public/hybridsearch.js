@@ -4116,7 +4116,7 @@
 
                                                         } else {
                                                             if (typeof propvalue === 'string') {
-                                                                doc[property] = propvalue.replace(/(<([^>]+)>)/ig, " ").substr(0, 2096);
+                                                                doc[property] = propvalue.replace(/(<([^>]+)>)/ig, " ").substr(0, 512);
                                                             } else {
                                                                 doc[property] = propvalue;
                                                             }
@@ -4137,7 +4137,7 @@
                                                             doc[property] = JSON.stringify(propvalue).toLowerCase().replace(/(<([^>]+)>)/ig, " ");
                                                         } else {
                                                             if (typeof propvalue == 'string') {
-                                                                doc[property] = propvalue.toLowerCase().replace(/"/gi, " ").substr(0, 1024);
+                                                                doc[property] = propvalue.toLowerCase().replace(/"/gi, " ").substr(0, 512);
                                                             } else {
                                                                 doc[property] = propvalue;
                                                             }
@@ -4176,7 +4176,7 @@
                                             });
 
                                             doc.id = value.node.identifier;
-                                            lunrSearch.addDoc(doc);
+                                             lunrSearch.addDoc(doc);
 
                                             if (cachedindex) {
                                                 nodesIndexed[value.node.hash] = true;
