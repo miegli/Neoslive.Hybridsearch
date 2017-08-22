@@ -4071,14 +4071,6 @@
                         }
 
 
-
-                        if (nodesIndexed[keyword] == true) {
-                            return null;
-                        }
-
-
-                        nodesIndexed[keyword] = true;
-
                         angular.forEach(data, function (value, key) {
                                 if (value && (nodesIndexed[value.node.hash] == undefined || value.objectID !== undefined)) {
                                     var doc = {};
