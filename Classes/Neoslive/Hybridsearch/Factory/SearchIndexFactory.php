@@ -988,7 +988,7 @@ class SearchIndexFactory
      * @param string $workspaceName
      * @param string $nodeIdentifier
      */
-    public function syncByNodeIdentifier($workspaceName = 'live', $nodeIdentifier)
+    public function psyncByNodeIdentifier($workspaceName = 'live', $nodeIdentifier)
     {
 
 
@@ -2290,7 +2290,7 @@ class SearchIndexFactory
 
                     $ncount = count(get_object_vars($this->nodetypes));
                     if ($this->nodetypesCounter < $ncount) {
-                        $this->firebaseSet("sites/" . $this->getSiteIdentifier() . "/nodetypes/" . $workspace . "/" . $this->branch . "/" . $dimension, $this->nodetypes);
+                        $this->firebaseUpdate("sites/" . $this->getSiteIdentifier() . "/nodetypes/" . $workspace . "/" . $this->branch . "/" . $dimension, $this->nodetypes);
                     }
                     $this->nodetypesCounter = $ncount;
                 }
