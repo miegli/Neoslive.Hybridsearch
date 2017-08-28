@@ -2183,6 +2183,13 @@
                         var hasDistinct = self.getResults().hasDistincts();
 
 
+
+                        results.getApp().setNotFound(true);
+                        window.setTimeout(function() {
+                            results.getApp().setSearchCounter(1);
+                            },1000);
+
+
                         if (self.getFilter().getQuery().length == 0) {
                             self.getResults().getApp().clearQuickNodes();
                         }
@@ -2565,6 +2572,7 @@
                         }
 
 
+                      
                     }
                     ,
 
@@ -3054,6 +3062,8 @@
                                 self.search();
                             }
                         }
+
+
 
 
                     }
@@ -5362,6 +5372,7 @@
                      */
                     setResults: function (results, nodes, object, skipAutocompleteUpdate, caller) {
 
+                        this.setNotFound(false);
 
                         if (self.$$data.isStartedFirstTime == false) {
                             this.setIsStartedFirstTime();
@@ -5411,14 +5422,14 @@
                             window.clearTimeout(self.$$data._updateTimeout);
                         }
                         if (self.isStarted()) {
+
                             self.$$data._updateTimeout = window.setTimeout(function () {
-                                self.getApp().setNotFound(false);
                                 self.updateNodesGroupedBy();
                                 object.executeCallbackMethod(self);
                                 if (skipAutocompleteUpdate !== true) {
                                     self.updateAutocomplete(null, null, caller);
                                 }
-                            }, 5);
+                            }, 1);
 
                         }
 
@@ -5446,14 +5457,31 @@
                      * @private
                      */
                     setNotFound: function (status) {
-                        var selfthis = this;
+
                         self.$$data.notfound = status;
 
+                        var selfthis = this;
+
                         if (this.getScope() !== undefined) {
-                            selfthis.getScope().$digest(function () {
-                            });
+                            window.setTimeout(function () {
+                                selfthis.getScope().$digest(function () {
+                                });
+                            }, 1);
                         }
+
+
                     },
+
+                    /**
+                     * @param {integer} counter
+                     * @private
+                     */
+                    setSearchCounter: function (counter) {
+
+                        self.$$data.searchCounter = counter;
+
+                    },
+
                     /**
                      * @private
                      * @returns {HybridsearchResultsDataObject|*}
@@ -5668,23 +5696,10 @@
                  */
                 isLoading: function () {
 
-                    //
-                    // if (this.$$data.isrunningfirsttimestamp === 0) {
-                    //     return false;
-                    // } else {
-                    //     if (this.$$data.isrunningfirsttimestamp > 0) {
-                    //         if (Date.now() - this.$$data.isrunningfirsttimestamp < 100) {
-                    //             //return false;
-                    //         } else {
-                    //             this.$$data.isrunningfirsttimestamp = -1;
-                    //         }
-                    //     }
-                    // }
-
                     if (this.$$data.searchCounter === 0) {
-                        return false;
+                        return true;
                     } else {
-                        return this.$$data.notfound == true ? false : (this.countAll() > 0) ? false : true;
+                        return false;
                     }
 
                 },
