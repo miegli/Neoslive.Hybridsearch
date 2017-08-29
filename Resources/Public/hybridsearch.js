@@ -502,41 +502,6 @@
                 };
 
 
-                /**
-                 *
-                 * @param value {mixed} a value
-                 * @constructor
-                 */
-                var HybridsearchResultsValue = function (value) {
-
-                    var self = this;
-
-                    self.value = value;
-
-                };
-
-                HybridsearchResultsValue.prototype = {
-                    findUri: function () {
-
-                        var urlRegex = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
-                        var urls = this.value.match(urlRegex)
-                        return urls && urls.length == 1 ? urls[0] : urls;
-                    },
-
-                    findLastUriInBreadcrumb: function () {
-
-                        var urlRegex = /(href="|href=')[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|]("|')/ig;
-                        var urls = this.value.match(urlRegex)
-                        return urls[urls.length - 1].replace("href=", "").replace(/"/g, '').replace(/'/g, '');
-                    },
-
-
-                    toString: function () {
-                        return this.value;
-                    }
-
-                };
-
 
                 /**
                  *
@@ -853,7 +818,9 @@
                             return this.breadcrumb
                         }
 
+
                         return value;
+
 
                     },
 
