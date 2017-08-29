@@ -531,7 +531,6 @@ class SearchIndexFactory
             $this->output->outputLine('static file cache created');
 
         } catch (\Neos\Flow\Exception $exception) {
-            var_dump($exception);
             $this->output->outputLine('unable to create static cache.');
         }
 
