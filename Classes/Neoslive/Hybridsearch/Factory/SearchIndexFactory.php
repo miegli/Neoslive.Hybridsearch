@@ -1111,7 +1111,7 @@ class SearchIndexFactory
 
         if ($this->settings['Realtime'] == true) {
 
-            $this->lockReltimeIndexer();
+
 
             $p = explode("/", $nodedata->getContextPath());
 
@@ -2104,7 +2104,7 @@ class SearchIndexFactory
         }
 
         if ($this->isLockReltimeIndexer() === false) {
-            $this->lockReltimeIndexer();
+
             $files = array();
 
             $fp = opendir($this->temporaryDirectory);
