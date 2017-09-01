@@ -858,6 +858,7 @@ class SearchIndexFactory
             return true;
         }
         if ($nodeIdentifier) {
+
             $this->syncByNodeIdentifier($workspaceName, $nodeIdentifier);
             $this->save(true);
             $this->proceedQueue();
@@ -987,7 +988,7 @@ class SearchIndexFactory
      * @param string $workspaceName
      * @param string $nodeIdentifier
      */
-    public function psyncByNodeIdentifier($workspaceName = 'live', $nodeIdentifier)
+    public function syncByNodeIdentifier($workspaceName = 'live', $nodeIdentifier)
     {
 
 
@@ -1035,6 +1036,8 @@ class SearchIndexFactory
 
 
             $dimensionHash = $this->getDimensionConfiugurationHash($dimensionConfiguration);
+
+
             if ((isset($this->settings['Dimensions']) && array_key_exists($dimensionHash, $this->settings['Dimensions']) && $this->settings['Dimensions'][$dimensionHash] == false) || (isset($this->settings['Dimensions']) && array_key_exists($dimensionHash, $this->settings['Dimensions']) == false)) {
                 // skip dimension
             } else {
@@ -1044,19 +1047,23 @@ class SearchIndexFactory
 
                 if ($node) {
 
+
                     if (isset($this->settings['Filter']['NodeTypeFilter'])) {
 
                         $flowQuery = new FlowQuery(array($node));
-                        if ($node->isHidden() || $node->isRemoved() || $flowQuery->context(array('invisibleContentShown' => true))->parents('[instanceof Neos.Neos:Node][_hidden=TRUE]')->count() !== 0 || $flowQuery->context(array('invisibleContentShown' => true))->parents('[instanceof Neos.Neos:Node][_visible=FALSE]')->count() !== 0) {
-                            if ($this->creatingFullIndex !== true) {
-                                $this->removeSingleIndex($node->getIdentifier(), $this->getWorkspaceHash($workspace), $this->branch, $this->getDimensionConfiugurationHash($dimensionConfiguration), array(), null, $this->getNodeTypeName($node));
+
+                        if ($flowQuery->is($this->settings['Filter']['NodeTypeFilter']) === true) {
+
+                            if ($node->isHidden() || $node->isRemoved() || $flowQuery->context(array('invisibleContentShown' => true))->parents('[instanceof Neos.Neos:Node][_hidden=TRUE]')->count() !== 0 || $flowQuery->context(array('invisibleContentShown' => true))->parents('[instanceof Neos.Neos:Node][_visible=FALSE]')->count() !== 0) {
+                                if ($this->creatingFullIndex !== true) {
+                                    $this->removeSingleIndex($node->getIdentifier(), $this->getWorkspaceHash($workspace), $this->branch, $this->getDimensionConfiugurationHash($dimensionConfiguration), array(), null, $this->getNodeTypeName($node));
+                                }
+                            } else {
+
+                                $this->generateSingleIndex($node, $workspace, $this->getDimensionConfiugurationHash($node->getContext()->getDimensions()));
+                                $counter++;
                             }
-                        } else {
-
-                            $this->generateSingleIndex($node, $workspace, $this->getDimensionConfiugurationHash($node->getContext()->getDimensions()));
-                            $counter++;
                         }
-
 
                     }
 
@@ -1064,7 +1071,7 @@ class SearchIndexFactory
                 } else {
                     if ($this->creatingFullIndex !== true) {
                         // delete node index
-                        foreach ($this->allSiteKeys as $siteKey => $siteVal) {
+                        foreach ($this->allSiteKeys as $siteKey => $siteVal) {;
                             $this->removeSingleIndex($nodedata->getIdentifier(), $this->getWorkspaceHash($workspace), $this->branch, $this->getDimensionConfiugurationHash($dimensionConfiguration), array(), $siteKey, $this->getNodeTypeName($nodedata));
                         }
                     }
@@ -1239,11 +1246,9 @@ class SearchIndexFactory
             return null;
         }
 
-
-        if ($siteIdentifier === null || $siteIdentifier == 0) {
-            $siteIdentifier = $this->getSiteIdentifier();
+        if (!$siteIdentifier || $siteIdentifier === 'nosite') {
+            return null;
         }
-
 
         $keywords = \json_decode($this->firebase->get("sites/" . $siteIdentifier . "/index/$workspaceHash/$branch/$dimensionConfigurationHash" . "/___keywords/" . urlencode($nodeIdentifier)));
 
@@ -1510,7 +1515,7 @@ class SearchIndexFactory
         if ($s == '0000') {
             return preg_replace("/[^0-9]/", "", $string);
         } else {
-            return mb_strtoupper(substr(preg_replace("/[^A-z]/", "", $string),0,2)).$s;
+            return mb_strtoupper(substr(preg_replace("/[^A-z]/", "", $string), 0, 2)) . $s;
         }
 
 

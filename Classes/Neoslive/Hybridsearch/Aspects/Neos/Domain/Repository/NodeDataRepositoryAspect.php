@@ -17,6 +17,7 @@ use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Aop\JoinPointInterface;
 use Neoslive\Hybridsearch\Factory\SearchIndexFactory;
 use Neos\ContentRepository\Domain\Model\NodeData;
+use org\bovigo\vfs\vfsStreamWrapperAlreadyRegisteredTestCase;
 
 
 /**
@@ -54,6 +55,7 @@ class NodeDataRepositoryAspect
 
         $arguments = $joinPoint->getMethodArguments();
         $object = reset($arguments);
+
 
 
         if ($object instanceof NodeData && $object->getWorkspace()->getName() == 'live') {
