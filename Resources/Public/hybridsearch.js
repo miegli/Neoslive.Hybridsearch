@@ -2152,7 +2152,7 @@
 
                         window.setTimeout(function() {
                             self.searchExecute(nodesFromInput, booleanmode, customquery);
-                        },100);
+                        },10);
 
 
                     },
