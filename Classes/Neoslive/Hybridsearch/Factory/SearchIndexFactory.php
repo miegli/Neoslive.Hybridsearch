@@ -1045,6 +1045,8 @@ class SearchIndexFactory
                 $context = $this->contentContextFactory->create(['targetDimension' => $targetDimension, 'dimensions' => $dimensionConfiguration, 'workspaceName' => $nodedata->getWorkspace()->getName()]);
                 $node = $context->getNodeByIdentifier($nodedata->getIdentifier());
 
+
+
                 if ($node) {
 
 
@@ -1059,7 +1061,6 @@ class SearchIndexFactory
                                     $this->removeSingleIndex($node->getIdentifier(), $this->getWorkspaceHash($workspace), $this->branch, $this->getDimensionConfiugurationHash($dimensionConfiguration), array(), null, $this->getNodeTypeName($node));
                                 }
                             } else {
-
                                 $this->generateSingleIndex($node, $workspace, $this->getDimensionConfiugurationHash($node->getContext()->getDimensions()));
                                 $counter++;
                             }
@@ -1409,6 +1410,8 @@ class SearchIndexFactory
         unset($node);
         unset($indexData);
         unset($keywords);
+
+
 
         if ($this->counter > 5000) {
             $this->counter = 0;
@@ -2142,7 +2145,7 @@ class SearchIndexFactory
                         $this->output->progressAdvance(floor(filesize($file) / 2));
                         $out = "";
 
-                        if (strlen($content['path']) > 1) {
+                        if ($content['data']) {
                             switch ($content['method']) {
                                 case 'update':
                                     $out = $this->firebase->update($content['path'], $content['data'], array('print' => 'silent'));
@@ -2282,6 +2285,7 @@ class SearchIndexFactory
         $branch = $this->branch;
 
 
+
         foreach ($this->index as $workspace => $workspaceData) {
             foreach ($workspaceData as $dimension => $dimensionData) {
                 $patch = new \stdClass();
@@ -2365,6 +2369,9 @@ class SearchIndexFactory
 
 
         }
+
+
+
 
 
         if ($this->creatingFullIndex) {
