@@ -1071,7 +1071,8 @@ class SearchIndexFactory
                 } else {
                     if ($this->creatingFullIndex !== true) {
                         // delete node index
-                        foreach ($this->allSiteKeys as $siteKey => $siteVal) {;
+                        foreach ($this->allSiteKeys as $siteKey => $siteVal) {
+                            ;
                             $this->removeSingleIndex($nodedata->getIdentifier(), $this->getWorkspaceHash($workspace), $this->branch, $this->getDimensionConfiugurationHash($dimensionConfiguration), array(), $siteKey, $this->getNodeTypeName($nodedata));
                         }
                     }
@@ -2141,20 +2142,21 @@ class SearchIndexFactory
                         $this->output->progressAdvance(floor(filesize($file) / 2));
                         $out = "";
 
+                        if (strlen($content['path']) > 1) {
+                            switch ($content['method']) {
+                                case 'update':
+                                    $out = $this->firebase->update($content['path'], $content['data'], array('print' => 'silent'));
+                                    break;
 
-                        switch ($content['method']) {
-                            case 'update':
-                                $out = $this->firebase->update($content['path'], $content['data'], array('print' => 'silent'));
-                                break;
+                                case 'delete':
+                                    $out = $this->firebase->delete($content['path'], array('print' => 'silent'));
+                                    break;
 
-                            case 'delete':
-                                $out = $this->firebase->delete($content['path'], array('print' => 'silent'));
-                                break;
+                                case 'set':
+                                    $out = $this->firebase->set($content['path'], $content['data'], array('print' => 'silent'));
 
-                            case 'set':
-                                $out = $this->firebase->set($content['path'], $content['data'], array('print' => 'silent'));
-
-                                break;
+                                    break;
+                            }
                         }
 
                         $this->output->progressAdvance(floor(filesize($file) / 2));
