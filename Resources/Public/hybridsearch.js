@@ -218,7 +218,7 @@
                     searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier,
                     nodesByIdentifier, searchCounter, searchCounterTimeout, nodeTypeProperties, isloadedall,
                     externalSources, isLoadedFromLocalStorage, lastSearchHash, lastSearchApplyTimeout, config,
-                    getKeywordsTimeout, getIndexTimeout, setIndexTimeout, staticCachedNodes;
+                    getKeywordsTimeout, getIndexTimeout, setIndexTimeout, staticCachedNodes, searchTimeout;
 
                 var self = this;
 
@@ -500,7 +500,6 @@
                     return value;
 
                 };
-
 
 
                 /**
@@ -2114,6 +2113,10 @@
                             return null;
                         }
 
+
+
+
+
                         angular.forEach(nodes, function (node) {
                             if (nodesIndexed[node.hash] == undefined) {
                                 nodesToIndex.push({node: node});
@@ -2138,7 +2141,30 @@
                      * @params {string} customquery
                      * @returns mixed
                      */
-                    search: function (nodesFromInput, booleanmode, customquery) {
+                    search: function(nodesFromInput, booleanmode, customquery) {
+
+                        var self = this;
+
+                        if (searchTimeout) {
+                            clearTimeout(searchTimeout);
+
+                        }
+
+                        window.setTimeout(function() {
+                            self.searchExecute(nodesFromInput, booleanmode, customquery);
+                        },100);
+
+
+                    },
+
+                    /**
+                     * @private
+                     * @params nodesFromInput
+                     * @params {boolean} booleanmode
+                     * @params {string} customquery
+                     * @returns mixed
+                     */
+                    searchExecute: function (nodesFromInput, booleanmode, customquery) {
 
 
                         var self = this;
@@ -2152,9 +2178,9 @@
 
 
                         results.getApp().setNotFound(true);
-                        window.setTimeout(function() {
+                        window.setTimeout(function () {
                             results.getApp().setSearchCounter(1);
-                            },1000);
+                        }, 10);
 
 
                         if (self.getFilter().getQuery().length == 0) {
@@ -2539,7 +2565,6 @@
                         }
 
 
-                      
                     }
                     ,
 
@@ -3031,8 +3056,6 @@
                         }
 
 
-
-
                     }
                     ,
 
@@ -3302,9 +3325,7 @@
 
                                                                         if (isstaticcached == false) {
 
-
                                                                             angular.forEach(groupedByNodeType, function (group, nodetype) {
-
 
                                                                                 // fetch all nodes content
                                                                                 if (self.getConfig('cache')) {
@@ -3342,7 +3363,13 @@
                                                                                     if (requestCountDone == requestCount) {
                                                                                         execute(keyword, groupedByNodeTypeNodes, ref);
                                                                                     }
-                                                                                }));
+                                                                                }).error(function (data) {
+                                                                                        requestCountDone++;
+                                                                                        if (requestCountDone == requestCount) {
+                                                                                            execute(keyword, groupedByNodeTypeNodes, ref);
+                                                                                        }
+                                                                                    }
+                                                                                ));
 
 
                                                                             });
@@ -3617,9 +3644,9 @@
                         if (m == '0000') {
                             return querysegment.replace(/[^0-9]/, "");
                         }
-                        var a = querysegment.replace(/[^A-z]/g, "").substr(0,2).toUpperCase();
+                        var a = querysegment.replace(/[^A-z]/g, "").substr(0, 2).toUpperCase();
 
-                        return m.length > 0 ? a+m : null;
+                        return m.length > 0 ? a + m : null;
 
                     }
 
@@ -3977,7 +4004,6 @@
                                 keywords.push(k.term);
                             });
 
-                      
 
                             self.addLocalIndex(val, keyword, keywords, isloadingall);
                             keywords = [];
@@ -4155,7 +4181,7 @@
                                             });
 
                                             doc.id = value.node.identifier;
-                                             lunrSearch.addDoc(doc);
+                                            lunrSearch.addDoc(doc);
 
                                             if (cachedindex) {
                                                 nodesIndexed[value.node.hash] = true;
@@ -4275,7 +4301,10 @@
                                 var node = angular.element(event.target);
                                 if (node !== undefined && node.scope() !== undefined && node.scope().node) {
                                     if (typeof self.$$app.getConfig('event_before_redirect') === 'function') {
-                                        self.$$app.getConfig('event_before_redirect')({'node': node.scope().node,'query': self.$$app.getFilter().getQuery()});
+                                        self.$$app.getConfig('event_before_redirect')({
+                                            'node': node.scope().node,
+                                            'query': self.$$app.getFilter().getQuery()
+                                        });
                                     }
                                 }
 
@@ -4413,7 +4442,7 @@
                  * @returns {HybridsearchObject}
                  */
                 connectEventSlot: function (eventName, callback) {
-                    this.$$app.setConfig('event_'+eventName, callback);
+                    this.$$app.setConfig('event_' + eventName, callback);
                     return this;
                 },
 
@@ -5260,6 +5289,8 @@
                 var nodeTypeLabels = {};
                 var externalSources = {};
                 var nodeTypeProperties = {};
+                var applyTimeout = false;
+                var executeCallbackTimeout = false;
 
                 /**
                  * HybridsearchResultsDataObject
@@ -5508,13 +5539,19 @@
                      */
                     applyScope: function () {
 
+                        if (applyTimeout) {
+                            clearTimeout(applyTimeout);
+                        }
+
                         var self = this;
+
                         if (self.getScope() !== undefined) {
-                            setTimeout(function () {
+                            applyTimeout = setTimeout(function () {
                                 self.getScope().$digest(function () {
                                 });
-                            }, 1);
+                            }, 10);
                         }
+
                     },
 
                     /**
@@ -5524,15 +5561,14 @@
                      */
                     executeCallbackMethod: function (obj) {
 
+                        if (executeCallbackTimeout) {
+                            clearTimeout(executeCallbackTimeout);
+                        }
 
                         var self = this;
-                        if (self.getScope() !== undefined) {
-
-                            // self.getScope().$digest(function () {
-                            // });
-
-                        }
-                        this.callbackMethod(obj);
+                        applyTimeout = setTimeout(function () {
+                            self.callbackMethod(obj);
+                        },10);
 
                     },
                     /**
