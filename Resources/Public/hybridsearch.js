@@ -3087,11 +3087,26 @@
 
 
                             var instance = this;
+                            var keywordsreduced = [];
+                            var keywordsordered = [];
 
 
                             if (Object.keys(keywords).length > 0) {
-                                angular.forEach(keywords, function (keyword) {
-                                    self.getKeywords(keyword, instance);
+
+                                keywordsordered = keywords.sort(function(a, b) {
+                                    return b.length - a.length;
+                                });
+
+                                angular.forEach(keywordsordered, function (keyword, c) {
+
+                                    if (keyword.indexOf(" ") === -1 && c < keywordsordered.length / 3*2) {
+                                        keywordsreduced.push(keyword);
+                                    }
+
+                                });
+
+                                angular.forEach(keywordsreduced, function (keyword) {
+                                        self.getKeywords(keyword, instance);
                                 });
                             } else {
                                 instance.$$data.running++;
@@ -3116,7 +3131,6 @@
 
                                 var uniquarrayfinal = [];
                                 var uniquarrayfinalTerms = {};
-
 
                                 if (lastSearchInstance.$$data.keywords.length) {
                                     var unique = {};
@@ -3722,7 +3736,6 @@
                                     });
 
                                 }
-
 
                                 self.setAutocomplete(ac, querysegment);
 
