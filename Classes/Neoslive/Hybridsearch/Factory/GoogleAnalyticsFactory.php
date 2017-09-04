@@ -232,7 +232,7 @@ class GoogleAnalyticsFactory
          */
         $result = $analytics->data_ga->get(
             'ga:' . $reportId,
-            '90daysAgo',
+            '7daysAgo',
             'today',
             'ga:users',
             array(
