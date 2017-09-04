@@ -237,7 +237,7 @@ class GoogleAnalyticsFactory
             'ga:users',
             array(
                 'dimensions' => 'ga:userAgeBracket,ga:userGender,ga:searchDestinationPage',
-                'filters' => 'ga:timeOnPage>90',
+                'filters' => 'ga:timeOnPage>1',
                 'samplingLevel' => 'higher_precision',
                 'max-results' => '2000000'
             ));
