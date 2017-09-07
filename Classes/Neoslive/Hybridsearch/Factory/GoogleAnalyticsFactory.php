@@ -189,14 +189,13 @@ class GoogleAnalyticsFactory
          */
         $result = $analytics->data_ga->get(
             'ga:' . $reportId,
-            '90daysAgo',
+            '30daysAgo',
             'today',
             'ga:users',
             array(
                 'dimensions' => 'ga:keyword,ga:searchDestinationPage',
-                'filters' => 'ga:timeOnPage>90',
                 'samplingLevel' => 'higher_precision',
-                'max-results' => '2000000'
+                'max-results' => '999999'
             ));
         if ($result->getTotalResults() > 0) {
             $columns = $result->getColumnHeaders();
