@@ -2144,7 +2144,7 @@
 
 
 
-                        if (lastSearchInstance.$$data.autocomplete !== undefined) {
+                        if (lastSearchInstance.$$data !== undefined && lastSearchInstance.$$data.autocomplete !== undefined) {
 
 
                             var query = self.getFilter().getQuery().substr(0, self.getFilter().getQuery().length);
