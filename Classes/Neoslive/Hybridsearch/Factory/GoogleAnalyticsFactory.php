@@ -125,75 +125,16 @@ class GoogleAnalyticsFactory
 
         $analytics = new \Google_Service_Analytics($this->google_client);
 
-
-        /**
-         * get trendings
-         */
-        $result = $analytics->data_ga->get(
-            'ga:' . $reportId,
-            '30daysAgo',
-            'today',
-            'ga:users',
-            array(
-                'dimensions' => 'ga:searchDestinationPage,ga:hour',
-                'filters' => 'ga:timeOnPage>60',
-                'samplingLevel' => 'higher_precision',
-                'max-results' => '2000000'
-            ));
-
-
-        if ($result->getTotalResults() > 0) {
-            $columns = $result->getColumnHeaders();
-
-
-            $columnMapping = array();
-            foreach ($columns as $k => $column) {
-                $columnMapping[$column['name']] = $k;
-            }
-
-            foreach ($result->getRows() as $row) {
-
-                if (isset($this->gaData[$host][$row[$columnMapping['ga:searchDestinationPage']]]) === false) {
-                    $this->gaData[$host][$row[$columnMapping['ga:searchDestinationPage']]] = array(
-                        'userGender' => array(),
-                        'userAgeBracket' => array(),
-                        'trendingHour' => array(),
-                        'trendingRating' => 0,
-                        'keywords' => '');
-                }
-
-                /*
-                 * Get trendings by hour
-                 */
-                if (isset($this->gaData[$host][$row[$columnMapping['ga:searchDestinationPage']]]['trendingHour'][$row[$columnMapping['ga:hour']]]) === false) {
-                    $this->gaData[$host][$row[$columnMapping['ga:searchDestinationPage']]]['trendingHour'][$row[$columnMapping['ga:hour']]] = 0;
-                }
-                $this->gaData[$host][$row[$columnMapping['ga:searchDestinationPage']]]['trendingHour'][$row[$columnMapping['ga:hour']]] = $this->gaData[$host][$row[$columnMapping['ga:searchDestinationPage']]]['trendingHour'][$row[$columnMapping['ga:hour']]] + 1;
-
-
-                /*
-                 * Get trendings overall
-                 */
-                if (isset($this->gaData[$host][$row[$columnMapping['ga:searchDestinationPage']]]['trendingRating']) === false) {
-                    $this->gaData[$host][$row[$columnMapping['ga:searchDestinationPage']]]['trendingRating'] = 0;
-                }
-                $this->gaData[$host][$row[$columnMapping['ga:searchDestinationPage']]]['trendingRating'] = $this->gaData[$host][$row[$columnMapping['ga:searchDestinationPage']]]['trendingRating'] + $row[$columnMapping['ga:users']];
-
-
-            }
-        }
-
-
         /**
          * get keywords
          */
         $result = $analytics->data_ga->get(
             'ga:' . $reportId,
-            '30daysAgo',
+            '7daysAgo',
             'today',
-            'ga:users',
+            'ga:totalEvents',
             array(
-                'dimensions' => 'ga:keyword,ga:searchDestinationPage',
+                'dimensions' => 'ga:eventLabel,ga:eventAction',
                 'samplingLevel' => 'higher_precision',
                 'max-results' => '999999'
             ));
@@ -206,124 +147,41 @@ class GoogleAnalyticsFactory
                 $columnMapping[$column['name']] = $k;
             }
 
+
+
             foreach ($result->getRows() as $row) {
-                if (isset($this->gaData[$host][$row[$columnMapping['ga:searchDestinationPage']]]) === false) {
-                    $this->gaData[$host][$row[$columnMapping['ga:searchDestinationPage']]] = array(
-                        'userGender' => array(),
-                        'userAgeBracket' => array(),
-                        'trendingRating' => array(),
+
+                if (isset($this->gaData[$host][$row[$columnMapping['ga:eventLabel']]]) === false) {
+                    $this->gaData[$host][$row[$columnMapping['ga:eventLabel']]] = array(
                         'keywords' => '');
                 }
                 // keywords
-                if ($row[$columnMapping['ga:keyword']] != '(not set)' && $row[$columnMapping['ga:keyword']] != '(not provided)') {
-                    if (isset($this->gaData[$host][$row[$columnMapping['ga:searchDestinationPage']]]['keywords'][$row[$columnMapping['ga:keyword']]]) === false) {
-                        $this->gaData[$host][$row[$columnMapping['ga:searchDestinationPage']]]['keywords'][$row[$columnMapping['ga:keyword']]] = 0;
+                if ($row[$columnMapping['ga:eventAction']] != '.' && $row[$columnMapping['ga:eventLabel']] !== '(not set)') {
+                    $pa = parse_url($row[$columnMapping['ga:eventLabel']]);
+
+                    if (isset($pa['path'])) {
+                    $row[$columnMapping['ga:eventLabel']] = $pa['path'];
+
+                    if (isset($this->gaData[$host][$row[$columnMapping['ga:eventLabel']]]['keywords'][$row[$columnMapping['ga:eventAction']]]) === false) {
+                        $this->gaData[$host][$row[$columnMapping['ga:eventLabel']]]['keywords'][$row[$columnMapping['ga:eventAction']]] = 0;
                     }
-                    $this->gaData[$host][$row[$columnMapping['ga:searchDestinationPage']]]['keywords'][$row[$columnMapping['ga:keyword']]] = $this->gaData[$host][$row[$columnMapping['ga:searchDestinationPage']]]['keywords'][$row[$columnMapping['ga:keyword']]] + 1;
+                    $this->gaData[$host][$row[$columnMapping['ga:eventLabel']]]['keywords'][$row[$columnMapping['ga:eventAction']]] = $this->gaData[$host][$row[$columnMapping['ga:eventLabel']]]['keywords'][$row[$columnMapping['ga:eventAction']]] + 1;
+
+                    }
+
                 }
 
             }
 
         }
 
-        /**
-         * get user gender and age
-         */
-        $result = $analytics->data_ga->get(
-            'ga:' . $reportId,
-            '7daysAgo',
-            'today',
-            'ga:users',
-            array(
-                'dimensions' => 'ga:userAgeBracket,ga:userGender,ga:searchDestinationPage',
-                'filters' => 'ga:timeOnPage>1',
-                'samplingLevel' => 'higher_precision',
-                'max-results' => '2000000'
-            ));
-        if ($result->getTotalResults() > 0) {
-            $columns = $result->getColumnHeaders();
-
-            $columnMapping = array();
-            foreach ($columns as $k => $column) {
-                $columnMapping[$column['name']] = $k;
-            }
-
-            foreach ($result->getRows() as $row) {
-
-                if (isset($this->gaData[$host][$row[$columnMapping['ga:searchDestinationPage']]]) === false) {
-                    $this->gaData[$host][$row[$columnMapping['ga:searchDestinationPage']]] = array(
-                        'userGender' => array(),
-                        'userAgeBracket' => array(),
-                        'trendingRating' => array(),
-                        'keywords' => '');
-                }
-
-
-                // gender
-                if (isset($this->gaData[$host][$row[$columnMapping['ga:searchDestinationPage']]]['userGender'][$row[$columnMapping['ga:userGender']]]) === false) {
-                    $this->gaData[$host][$row[$columnMapping['ga:searchDestinationPage']]]['userGender'][$row[$columnMapping['ga:userGender']]] = 0;
-                }
-                $this->gaData[$host][$row[$columnMapping['ga:searchDestinationPage']]]['userGender'][$row[$columnMapping['ga:userGender']]] = $this->gaData[$host][$row[$columnMapping['ga:searchDestinationPage']]]['userGender'][$row[$columnMapping['ga:userGender']]] + $row[$columnMapping['ga:users']];
-
-                // age
-                if (isset($this->gaData[$host][$row[$columnMapping['ga:searchDestinationPage']]]['userAgeBracket'][$row[$columnMapping['ga:userAgeBracket']]]) === false) {
-                    $this->gaData[$host][$row[$columnMapping['ga:searchDestinationPage']]]['userAgeBracket'][$row[$columnMapping['ga:userAgeBracket']]] = 0;
-                }
-                $this->gaData[$host][$row[$columnMapping['ga:searchDestinationPage']]]['userAgeBracket'][$row[$columnMapping['ga:userAgeBracket']]] = $this->gaData[$host][$row[$columnMapping['ga:searchDestinationPage']]]['userAgeBracket'][$row[$columnMapping['ga:userAgeBracket']]] + $row[$columnMapping['ga:users']];
-
-
-            }
-        }
 
         if (count($this->gaData)) {
-
-            /**
-             * pre-calculate frequencies
-             */
-            $trendingcount = array();
-            foreach ($this->gaData[$host] as $path => $data) {
-                $trendingcount[$path] = $data['trendingRating'];
-            }
-            arsort($trendingcount);
-            $c = 0;
-            $a = count($trendingcount);
-            foreach ($trendingcount as $key => &$val) {
-                $c++;
-                if ($c < $a / 10) {
-                    $val = "trendingRatingA";
-                } else if ($c < $a / 10 * 5) {
-                    $val = "trendingRatingB";
-                } else {
-                    $val = "trendingRatingC";
-                }
-            }
-
 
             /**
              * calculate frequencies
              */
             foreach ($this->gaData[$host] as $path => &$data) {
-
-                // most frequent users gender
-                if (isset($data['userGender']) && is_array($data['userGender'])) {
-                    arsort($data['userGender']);
-                    $data['userGender'] = (string)key($data['userGender']);
-                }
-
-                // most frequent users age
-                if (isset($data['userAgeBracket']) && is_array($data['userAgeBracket'])) {
-                    arsort($data['userAgeBracket']);
-                    $data['userAgeBracket'] = (string)key($data['userAgeBracket']);
-                }
-
-                // most trending hour
-                if (isset($data['trendingHour']) && is_array($data['trendingHour'])) {
-                    arsort($data['trendingHour']);
-                    $data['trendingHour'] = (string)key($data['trendingHour']);
-                }
-
-                // trending raating
-                $data['trendingRating'] = (string)$trendingcount[$path];
 
                 // most frequent keywords
                 if (isset($data['keywords']) && is_array($data['keywords'])) {
@@ -353,32 +211,13 @@ class GoogleAnalyticsFactory
         }
 
         $data = array(
-            'userGender' => '',
-            'userAgeBracket' => '',
-            'trendingRating' => '',
-            'trendingHour' => '',
             'keywords' => '',
             'path' => $host . $page
         );
 
 
-        if (isset($this->gaData[$host][$page])) {
 
-            if (isset($this->gaData[$host][$page]['userGender'])) {
-                $data['userGender'] = isset($this->gaDataMappings['userGender'][$this->gaData[$host][$page]['userGender']]) ? $this->gaDataMappings['userGender'][$this->gaData[$host][$page]['userGender']] : $this->gaData[$host][$page]['userGender'];
-            }
-
-            if (isset($this->gaData[$host][$page]['userAgeBracket'])) {
-                $data['userAgeBracket'] = isset($this->gaDataMappings['userAgeBracket'][$this->gaData[$host][$page]['userAgeBracket']]) ? $this->gaDataMappings['userAgeBracket'][$this->gaData[$host][$page]['userAgeBracket']] : $this->gaData[$host][$page]['userAgeBracket'];
-            }
-
-            if (isset($this->gaData[$host][$page]['trendingHour'])) {
-                $data['trendingHour'] = isset($this->gaDataMappings['trendingHour'][$this->gaData[$host][$page]['trendingHour']]) ? $this->gaDataMappings['trendingHour'][$this->gaData[$host][$page]['trendingHour']] : $this->gaData[$host][$page]['trendingHour'];
-            }
-
-            if (isset($this->gaData[$host][$page]['trendingRating'])) {
-                $data['trendingRating'] = isset($this->gaData[$host][$page]['trendingRating']) ? $this->gaData[$host][$page]['trendingRating'] : $this->gaData[$host][$page]['trendingRating'];
-            }
+        if (isset($this->gaData[$host]) && isset($this->gaData[$host][$page])) {
 
             if (isset($this->gaData[$host][$page]['keywords'])) {
                 $data['keywords'] = $this->gaData[$host][$page]['keywords'];

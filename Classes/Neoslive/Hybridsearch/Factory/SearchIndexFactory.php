@@ -627,6 +627,8 @@ class SearchIndexFactory
     public function createFullIndex($workspacename = 'live', $nodetype = null, $verbose = false)
     {
 
+
+
         $this->output = new ConsoleOutput();
 
 
@@ -1799,7 +1801,7 @@ class SearchIndexFactory
             }
 
             if ($gaData) {
-                $properties->google = $gaData['keywords'];
+                $properties->__google = $gaData['keywords'];
             }
         }
 
@@ -2584,7 +2586,7 @@ class SearchIndexFactory
         $isbreadcrumb = $typoscriptPath == 'breadcrumb' ? true : false;
         $ispage = $typoscriptPath == 'page' ? true : false;
 
-        
+
 
         $i = $node->getNodeType()->getConfiguration('hybridsearch.render') ? 1 : 0;
 
@@ -2595,7 +2597,6 @@ class SearchIndexFactory
 
         if ($node->getContext()->getCurrentSite()) {
             $this->site = $node->getContext()->getCurrentSite();
-
 
             if (isset($this->settings['FusionPaths'][$typoscriptPath][$this->site->getSiteResourcesPackageKey()])) {
                 $typoscriptPath = $this->settings['FusionPaths'][$typoscriptPath][$this->site->getSiteResourcesPackageKey()];
