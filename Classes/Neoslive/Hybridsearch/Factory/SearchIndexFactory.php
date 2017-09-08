@@ -2584,6 +2584,7 @@ class SearchIndexFactory
         $isbreadcrumb = $typoscriptPath == 'breadcrumb' ? true : false;
         $ispage = $typoscriptPath == 'page' ? true : false;
 
+        
 
         $i = $node->getNodeType()->getConfiguration('hybridsearch.render') ? 1 : 0;
 
@@ -2596,8 +2597,8 @@ class SearchIndexFactory
             $this->site = $node->getContext()->getCurrentSite();
 
 
-            if (isset($this->settings['TypoScriptPaths'][$typoscriptPath][$this->site->getSiteResourcesPackageKey()])) {
-                $typoscriptPath = $this->settings['TypoScriptPaths'][$typoscriptPath][$this->site->getSiteResourcesPackageKey()];
+            if (isset($this->settings['FusionPaths'][$typoscriptPath][$this->site->getSiteResourcesPackageKey()])) {
+                $typoscriptPath = $this->settings['FusionPaths'][$typoscriptPath][$this->site->getSiteResourcesPackageKey()];
             } else {
                 if ($typoscriptPath === 'breadcrumb') {
                     $typoscriptPath = 'neosliveHybridsearchBreadcrumb';
