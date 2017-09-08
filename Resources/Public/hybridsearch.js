@@ -3280,7 +3280,7 @@
                                                         }
 
                                                         angular.forEach(data, function (node, id) {
-                                                            if (node != undefined) {
+                                                            if (node !== undefined && node.node !== undefined) {
                                                                 nodes[node.node.identifier] = node.node;
                                                                 indexdata['__'].push(node);
                                                             }
