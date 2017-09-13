@@ -111,6 +111,8 @@ class GoogleAnalyticsFactory
 
         $this->gaDataLoaded = true;
 
+        \Neos\Flow\var_dump($this->gaData);exit;
+
     }
 
 
@@ -182,11 +184,9 @@ class GoogleAnalyticsFactory
              * calculate frequencies
              */
             foreach ($this->gaData[$host] as $path => &$data) {
-
-                // most frequent keywords
+                //implode keywords
                 if (isset($data['keywords']) && is_array($data['keywords'])) {
-                    arsort($data['keywords']);
-                    $data['keywords'] = (string)key(array_slice($data['keywords'], 0, 1)) . " " . (string)key(array_slice($data['keywords'], 1, 1)) . " " . (string)key(array_slice($data['keywords'], 2, 1));
+                    $data['keywords'] = implode(", ",array_keys($data['keywords']));
                 }
             }
         }
