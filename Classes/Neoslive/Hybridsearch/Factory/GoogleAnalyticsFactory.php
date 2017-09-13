@@ -1,4 +1,5 @@
 <?php
+
 namespace Neoslive\Hybridsearch\Factory;
 
 /*
@@ -22,8 +23,6 @@ class GoogleAnalyticsFactory
      * @var array
      */
     protected $settings;
-
-
 
 
     /**
@@ -111,7 +110,6 @@ class GoogleAnalyticsFactory
 
         $this->gaDataLoaded = true;
 
-        \Neos\Flow\var_dump($this->gaData);exit;
 
     }
 
@@ -150,24 +148,24 @@ class GoogleAnalyticsFactory
             }
 
 
-
             foreach ($result->getRows() as $row) {
 
-                if (isset($this->gaData[$host][$row[$columnMapping['ga:eventLabel']]]) === false) {
-                    $this->gaData[$host][$row[$columnMapping['ga:eventLabel']]] = array(
-                        'keywords' => '');
-                }
+
                 // keywords
                 if ($row[$columnMapping['ga:eventAction']] != '.' && $row[$columnMapping['ga:eventLabel']] !== '(not set)') {
                     $pa = parse_url($row[$columnMapping['ga:eventLabel']]);
 
-                    if (isset($pa['path'])) {
-                    $row[$columnMapping['ga:eventLabel']] = $pa['path'];
+                    if (isset($pa['path']) && strlen($pa['path']) > 3) {
 
-                    if (isset($this->gaData[$host][$row[$columnMapping['ga:eventLabel']]]['keywords'][$row[$columnMapping['ga:eventAction']]]) === false) {
-                        $this->gaData[$host][$row[$columnMapping['ga:eventLabel']]]['keywords'][$row[$columnMapping['ga:eventAction']]] = 0;
-                    }
-                    $this->gaData[$host][$row[$columnMapping['ga:eventLabel']]]['keywords'][$row[$columnMapping['ga:eventAction']]] = $this->gaData[$host][$row[$columnMapping['ga:eventLabel']]]['keywords'][$row[$columnMapping['ga:eventAction']]] + 1;
+                        if (isset($this->gaData[$host][$row[$columnMapping['ga:eventLabel']]]) === false) {
+                            $this->gaData[$host][$row[$columnMapping['ga:eventLabel']]] = array(
+                                'keywords' => '');
+                        }
+
+                        if (isset($this->gaData[$host][$pa['path']]['keywords'][$row[$columnMapping['ga:eventAction']]]) === false) {
+                            $this->gaData[$host][$pa['path']]['keywords'][$row[$columnMapping['ga:eventAction']]] = 0;
+                        }
+                        $this->gaData[$host][$pa['path']]['keywords'][$row[$columnMapping['ga:eventAction']]] = $this->gaData[$host][$pa['path']]['keywords'][$row[$columnMapping['ga:eventAction']]] + 1;
 
                     }
 
@@ -186,7 +184,7 @@ class GoogleAnalyticsFactory
             foreach ($this->gaData[$host] as $path => &$data) {
                 //implode keywords
                 if (isset($data['keywords']) && is_array($data['keywords'])) {
-                    $data['keywords'] = implode(", ",array_keys($data['keywords']));
+                    $data['keywords'] = implode(", ", array_keys($data['keywords']));
                 }
             }
         }
@@ -215,7 +213,10 @@ class GoogleAnalyticsFactory
             'path' => $host . $page
         );
 
-
+        \Neos\Flow\var_dump($this->gaData);
+        \Neos\Flow\var_dump($host);
+        \Neos\Flow\var_dump($page);
+        exit;
 
         if (isset($this->gaData[$host]) && isset($this->gaData[$host][$page])) {
 
