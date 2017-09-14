@@ -1802,7 +1802,9 @@ class SearchIndexFactory
             }
 
             if ($gaData) {
-                $properties->__google = $gaData['keywords'];
+                $properties->_google = $gaData['keywords'];
+            } else {
+                $properties->_google = "";
             }
         }
 

@@ -213,10 +213,6 @@ class GoogleAnalyticsFactory
             'path' => $host . $page
         );
 
-        \Neos\Flow\var_dump($this->gaData);
-        \Neos\Flow\var_dump($host);
-        \Neos\Flow\var_dump($page);
-        exit;
 
         if (isset($this->gaData[$host]) && isset($this->gaData[$host][$page])) {
 
