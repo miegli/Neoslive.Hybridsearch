@@ -2222,6 +2222,7 @@ class SearchIndexFactory
         }
 
 
+        $mergedrules['rules']['documentation'] = array('.read' => true);
         $mergedrules['rules']['branches'] = array('.read' => true);
         $mergedrules['rules']['lastsync'] = array('.read' => true);
         $this->firebase->set('.settings/rules', $mergedrules);
