@@ -1518,11 +1518,10 @@ class SearchIndexFactory
 
         $s = metaphone($string);
 
-
         if ($s == '0000' || $s == '') {
             return preg_replace("/[^0-9]/", "", $string);
         } else {
-            return mb_strtoupper(substr(preg_replace("/[^A-z]/", "", $string), 0, 2)) . $s;
+            return $s;
         }
 
 
