@@ -1516,6 +1516,7 @@ class SearchIndexFactory
     public function getMetaphone($string)
     {
 
+        $string = preg_replace("/[^A-z0-9]/", "", $string);
 
         $s = metaphone($string);
 

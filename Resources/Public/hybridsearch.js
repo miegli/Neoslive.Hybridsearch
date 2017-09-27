@@ -3721,7 +3721,9 @@
                      */
                     getMetaphone: function (querysegment) {
 
-                        querysegment = this.getEmoijQuery(querysegment);
+                        querysegment = this.getEmoijQuery(querysegment).replace(/[^A-z0-9]/, "");
+
+
 
                         var m = metaphone(querysegment.replace(/\./g, "")).toUpperCase();
                         if (m == '0000' || m == '') {
