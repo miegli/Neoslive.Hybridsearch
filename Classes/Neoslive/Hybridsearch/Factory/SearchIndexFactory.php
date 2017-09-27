@@ -1482,8 +1482,10 @@ class SearchIndexFactory
             if (strlen($w) > 1 && strlen($w) < 25) {
 
                 $wm = $this->getMetaphone($w);
-                $wm = trim(str_replace(".", " ", $wm));
-                $w = trim(str_replace(".", " ", $w));
+
+                $wm = Encoding::UTF8FixWin1252Chars(trim(str_replace(".", " ", $wm)));
+                $w = Encoding::UTF8FixWin1252Chars(trim(str_replace(".", " ", $w)));
+
                 if (strlen($wm) > 0 && strlen($wm) < 64) {
                     $wordsReduced[$wm][$w] = 1;
                 }
