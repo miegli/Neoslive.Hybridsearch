@@ -1072,10 +1072,9 @@ class SearchIndexFactory
 
 
                 } else {
-                    if ($this->creatingFullIndex !== true) {
+                    if ($this->creatingFullIndex !== true && is_array($this->allSiteKeys)) {
                         // delete node index
                         foreach ($this->allSiteKeys as $siteKey => $siteVal) {
-                            ;
                             $this->removeSingleIndex($nodedata->getIdentifier(), $this->getWorkspaceHash($workspace), $this->branch, $this->getDimensionConfiugurationHash($dimensionConfiguration), array(), $siteKey, $this->getNodeTypeName($nodedata));
                         }
                     }
@@ -2290,8 +2289,8 @@ class SearchIndexFactory
 
 
         $patchUpdate = array();
+        $patchSet = array();
         $branch = $this->branch;
-
 
 
         foreach ($this->index as $workspace => $workspaceData) {
@@ -2327,7 +2326,13 @@ class SearchIndexFactory
                                 }
 
                                 if ($dimensionIndexDataAllVal) {
-                                    $patchUpdate["sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $this->branch . "/" . $dimension . "/$dimensionIndex/$dimensionIndexKey/$dimensionIndexDataAllKey"] = $dimensionIndexDataAllVal;
+                                    if (is_string($dimensionIndexDataAllVal)) {
+                                        $patchSet["sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $this->branch . "/" . $dimension . "/$dimensionIndex/$dimensionIndexKey/$dimensionIndexDataAllKey"] = $dimensionIndexDataAllVal;
+                                    } else {
+                                        $patchUpdate["sites/" . $this->getSiteIdentifier() . "/index/" . $workspace . "/" . $this->branch . "/" . $dimension . "/$dimensionIndex/$dimensionIndexKey/$dimensionIndexDataAllKey"] = $dimensionIndexDataAllVal;
+                                    }
+
+
                                 }
 
                             }
@@ -2382,13 +2387,18 @@ class SearchIndexFactory
 
 
 
+
+
         if ($this->creatingFullIndex) {
             $this->firebaseUpdate("", $patchUpdate);
+            $this->firebaseUpdate("", $patchSet);
         } else {
             if ($directpush) {
                 $this->firebase->update("", $patchUpdate, array('print' => 'silent'));
+                $this->firebase->update("", $patchSet, array('print' => 'silent'));
             } else {
                 $this->firebaseUpdate("", $patchUpdate);
+                $this->firebaseUpdate("", $patchSet);
             }
 
         }
