@@ -2546,6 +2546,10 @@
                                         }
                                     }
 
+                                    if (nodes[item.ref].turbonode == true) {
+                                        item.score = 9999999 + item.score;
+                                    }
+
                                     return -1 * item.score;
 
                                 });
