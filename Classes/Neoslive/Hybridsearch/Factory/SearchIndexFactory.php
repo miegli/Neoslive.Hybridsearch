@@ -1375,9 +1375,6 @@ class SearchIndexFactory
 
         $keywordsOfNode = array();
 
-        ksort($keywords);
-
-
         foreach ($keywords as $keyword => $val) {
 
             $k = (string)$keyword;
