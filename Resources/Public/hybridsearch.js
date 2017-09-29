@@ -3727,14 +3727,12 @@
 
                         querysegment = this.getEmoijQuery(querysegment).replace(/[^A-z0-9]/, "");
 
-
-
                         var m = metaphone(querysegment.replace(/\./g, "")).toUpperCase();
                         if (m == '0000' || m == '') {
                             return querysegment.replace(/[^0-9]/, "");
                         }
  
-                        return m;
+                        return m.substr(0,4);
 
                     }
 
@@ -3772,6 +3770,8 @@
                         ref.http = (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + ("/sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + q + ".json");
 
                         instance.$$data.keywords.push({term: query, metaphone: q});
+
+                        console.log(ref.http);
 
                         ref.socket.once("value", function (data) {
                             if (data.val()) {
@@ -3811,6 +3811,7 @@
 
                                 }
 
+                                console.log(ac,querysegment);
                                 self.setAutocomplete(ac, querysegment);
 
                                 instance.$$data.proceeded.push(1);

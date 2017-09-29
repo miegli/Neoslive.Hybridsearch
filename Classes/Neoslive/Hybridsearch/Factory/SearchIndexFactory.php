@@ -313,6 +313,7 @@ class SearchIndexFactory
      * Inject the settings
      *
      * @param array $settings
+     *
      * @return void
      */
     public function injectSettings(array $settings)
@@ -328,6 +329,7 @@ class SearchIndexFactory
      * Injects the Environment object
      *
      * @param \Neos\Flow\Utility\Environment $environment
+     *
      * @return void
      */
     public function injectEnvironment(\Neos\Flow\Utility\Environment $environment)
@@ -384,8 +386,10 @@ class SearchIndexFactory
 
     /**
      * Set current branch
+     *
      * @param string $workspacename
      * @param string $branch
+     *
      * @return void
      */
     public function setBranch($workspacename = 'live', $branch = 'master')
@@ -398,7 +402,9 @@ class SearchIndexFactory
 
     /**
      * get current branch
+     *
      * @param string $workspacename
+     *
      * @return string
      */
     public function getBranch($workspacename = 'live')
@@ -426,7 +432,9 @@ class SearchIndexFactory
 
     /**
      * switch current branch
+     *
      * @param string $workspacename
+     *
      * @return string
      */
     public function switchBranch($workspacename = 'live')
@@ -540,7 +548,9 @@ class SearchIndexFactory
 
     /**
      * Create algolia search index for given workspace
+     *
      * @param string $workspacename
+     *
      * @return void
      */
     public function createIndexAlgolia($workspacename = 'live')
@@ -619,14 +629,15 @@ class SearchIndexFactory
 
     /**
      * Create full search index for given workspace
-     * @param string $workspacename
-     * @param string $nodetype
+     *
+     * @param string  $workspacename
+     * @param string  $nodetype
      * @param boolean $verbose
+     *
      * @return void
      */
     public function createFullIndex($workspacename = 'live', $nodetype = null, $verbose = false)
     {
-
 
 
         $this->output = new ConsoleOutput();
@@ -737,7 +748,8 @@ class SearchIndexFactory
 
     /**
      * Sync index
-     * @param string $workspaceName
+     *
+     * @param string   $workspaceName
      * @param NodeData $nodedata
      */
     public function syncIndexRealtime($workspaceName = 'live', $nodedata = null)
@@ -836,11 +848,13 @@ class SearchIndexFactory
 
     /**
      * Update index
+     *
      * @param string $workspaceName
-     * @param string nodeTypeName
-     * @param integer timestamp
-     * @param string node identifier
+     * @param        string nodeTypeName
+     * @param        integer timestamp
+     * @param        string node identifier
      * @param string $nodesSerialized
+     *
      * @return boolean
      */
     public function sync($workspaceName = 'live', $nodeTypeName = null, $timestamp = null, $nodeIdentifier = null, $nodesSerialized = null)
@@ -955,8 +969,9 @@ class SearchIndexFactory
 
     /**
      * Update index
+     *
      * @param string $workspaceName
-     * @param string nodeTypeName
+     * @param        string nodeTypeName
      */
     public function syncByNodeType($workspaceName = 'live', $nodeTypeName = null)
     {
@@ -987,6 +1002,7 @@ class SearchIndexFactory
 
     /**
      * Update index
+     *
      * @param string $workspaceName
      * @param string $nodeIdentifier
      */
@@ -1007,9 +1023,11 @@ class SearchIndexFactory
 
     /**
      * Update index for given nodedata
-     * @param NodeData $nodedata
+     *
+     * @param NodeData  $nodedata
      * @param Workspace $workspace
-     * @param boolean $noparentcheck
+     * @param boolean   $noparentcheck
+     *
      * @return integer count of proceed nodes
      */
     public function updateIndexForNodeData($nodedata, $workspace, $noparentcheck = false)
@@ -1046,7 +1064,6 @@ class SearchIndexFactory
 
                 $context = $this->contentContextFactory->create(['targetDimension' => $targetDimension, 'dimensions' => $dimensionConfiguration, 'workspaceName' => $nodedata->getWorkspace()->getName()]);
                 $node = $context->getNodeByIdentifier($nodedata->getIdentifier());
-
 
 
                 if ($node) {
@@ -1104,6 +1121,7 @@ class SearchIndexFactory
 
     /**
      * Check and Remove index for given nodeData
+     *
      * @param NodeData $nodedata
      */
     public function checkIndexRealtimeForRemovingNodeData($nodedata)
@@ -1111,7 +1129,6 @@ class SearchIndexFactory
 
 
         if ($this->settings['Realtime'] == true) {
-
 
 
             $p = explode("/", $nodedata->getContextPath());
@@ -1161,6 +1178,7 @@ class SearchIndexFactory
 
     /**
      * Check and Remove index for given node and target workspace
+     *
      * @param Node $node
      */
     public function checkIndexRealtimeForRemovingNode($node, $targetWorkspace)
@@ -1182,10 +1200,11 @@ class SearchIndexFactory
     /**
      * Generates recursive search index for given root node
      *
-     * @param Node $node node used as entry point for creating search index
+     * @param Node      $node node used as entry point for creating search index
      * @param Workspace $workspace for generating index
-     * @param array $dimensionConfiguration dimension configuration array
-     * @param string $nodeTypeFilter If specified, only nodes with that node type are considered
+     * @param array     $dimensionConfiguration dimension configuration array
+     * @param string    $nodeTypeFilter If specified, only nodes with that node type are considered
+     *
      * @return void
      */
     public function generateIndex($node, $workspace, $dimensionConfiguration, $nodeTypeFilter = '')
@@ -1237,9 +1256,10 @@ class SearchIndexFactory
      * @param String $workspaceHash
      * @param String $branch
      * @param string $dimensionConfigurationHash
-     * @param array $keywordsOfNode current keywords
+     * @param array  $keywordsOfNode current keywords
      * @param string $siteIdentifier
-     * @param mixed $removeNodeByNodeTypeName
+     * @param mixed  $removeNodeByNodeTypeName
+     *
      * @return void
      */
     public function removeSingleIndex($nodeIdentifier, $workspaceHash, $branch, $dimensionConfigurationHash, $keywordsOfNode = array(), $siteIdentifier = null, $removeNodeByNodeTypeName = null)
@@ -1283,9 +1303,10 @@ class SearchIndexFactory
     /**
      * Generates single index for given node
      *
-     * @param Node $node
+     * @param Node      $node
      * @param Workspace $workspace
-     * @param string $dimensionConfigurationHash
+     * @param string    $dimensionConfigurationHash
+     *
      * @return void
      */
     public function generateSingleIndex($node, $workspace, $dimensionConfigurationHash)
@@ -1413,7 +1434,6 @@ class SearchIndexFactory
         unset($keywords);
 
 
-
         if ($this->counter > 5000) {
             $this->counter = 0;
             $this->save();
@@ -1425,8 +1445,9 @@ class SearchIndexFactory
     /**
      * Generate search index words from properties array
      *
-     * @param array $properties
+     * @param array  $properties
      * @param string $nodeTypeName
+     *
      * @return void
      */
     protected function generateSearchIndexFromProperties($properties, $nodeTypeName)
@@ -1477,6 +1498,8 @@ class SearchIndexFactory
         foreach ($words as $w) {
 
             $w = trim($w, "-");
+            $x = explode(" ", $w);
+            $w = $x[0];
 
             if (strlen($w) > 1 && strlen($w) < 25) {
 
@@ -1510,7 +1533,9 @@ class SearchIndexFactory
 
     /**
      * gets meta phone hash of given string
+     *
      * @param string $string
+     *
      * @return string
      */
     public function getMetaphone($string)
@@ -1523,7 +1548,7 @@ class SearchIndexFactory
         if ($s == '0000' || $s == '') {
             return preg_replace("/[^0-9]/", "", $string);
         } else {
-            return $s;
+            return mb_substr($s,0,4);
         }
 
 
@@ -1532,7 +1557,9 @@ class SearchIndexFactory
 
     /**
      * gets node type name
+     *
      * @param Node $node
+     *
      * @return string
      */
     public function getNodeTypeName($node)
@@ -1542,9 +1569,10 @@ class SearchIndexFactory
 
 
     /**
-     * @param Node $node
+     * @param Node   $node
      * @param string $grandParentNodeFilter
      * @param string $parentNodeFilter
+     *
      * @return \stdClass
      */
     public function convertNodeToSearchIndexResult($node, $grandParentNodeFilter = '', $parentNodeFilter = '', $depth = 0)
@@ -1908,7 +1936,9 @@ class SearchIndexFactory
 
     /**
      * Get dimension confiuguration hash (replace critical strings)
+     *
      * @param array $dimensionConfiguration
+     *
      * @return string
      */
     public
@@ -1922,7 +1952,9 @@ class SearchIndexFactory
 
     /**
      * Get workspace hash (replace critical strings) for given workspace
+     *
      * @param Workspace $workspace
+     *
      * @return string
      */
     public
@@ -1936,7 +1968,8 @@ class SearchIndexFactory
 
     /**
      * @param string $path
-     * @param mixed $data
+     * @param mixed  $data
+     *
      * @return void
      */
     public
@@ -1951,7 +1984,8 @@ class SearchIndexFactory
 
     /**
      * @param string $path
-     * @param mixed $data
+     * @param mixed  $data
+     *
      * @return void
      */
     public
@@ -1966,6 +2000,7 @@ class SearchIndexFactory
 
     /**
      * @param string $path
+     *
      * @return void
      */
     public
@@ -1978,10 +2013,11 @@ class SearchIndexFactory
 
 
     /**
-     * @param string $path
-     * @param mixed $data
-     * @param string $method
+     * @param string  $path
+     * @param mixed   $data
+     * @param string  $method
      * @param integer $chunkcounter
+     *
      * @return void
      */
     protected
@@ -2042,6 +2078,7 @@ class SearchIndexFactory
     /**
      * @param $fp
      * @param $string
+     *
      * @return int
      */
     public function fwrite_stream($fp, $string)
@@ -2057,7 +2094,9 @@ class SearchIndexFactory
 
     /**
      * UTF-8 aware parse_url() replacement.
+     *
      * @param string $url
+     *
      * @return array
      */
     function mb_parse_url($url)
@@ -2197,7 +2236,9 @@ class SearchIndexFactory
 
     /**
      * Updates firebase rules for performance increase
+     *
      * @param $update true if update, false if override
+     *
      * @return void
      */
     public
@@ -2281,7 +2322,9 @@ class SearchIndexFactory
 
     /**
      * Save generated search index as tempory json file for persisting later
+     *
      * @param $directpush true when dont write temporary files
+     *
      * @return void
      */
     protected
@@ -2385,11 +2428,6 @@ class SearchIndexFactory
         }
 
 
-
-
-
-
-
         if ($this->creatingFullIndex) {
             $this->firebaseUpdate("", $patchUpdate);
             $this->firebaseUpdate("", $patchSet);
@@ -2417,10 +2455,12 @@ class SearchIndexFactory
 
     /**
      * Get Firebase index by node
-     * @param Node $node
+     *
+     * @param Node   $node
      * @param String $workspaceHash
      * @param string $dimensionConfigurationHash
-     * @param array $skipKeywords
+     * @param array  $skipKeywords
+     *
      * @return array
      */
     public
@@ -2454,8 +2494,10 @@ class SearchIndexFactory
     /**
      * Delete index for given site
      * Do firebase delete request
+     *
      * @param string $site
      * @param string $branch
+     *
      * @return mixed
      */
     protected
@@ -2489,9 +2531,10 @@ class SearchIndexFactory
      * Creates a content context for given workspace
      *
      * @param string $workspaceName
-     * @param array $dimensions
-     * @param array $targetDimensions
-     * @param Site $currentSite
+     * @param array  $dimensions
+     * @param array  $targetDimensions
+     * @param Site   $currentSite
+     *
      * @return \Neos\ContentRepository\Domain\Service\Context
      */
     protected
@@ -2514,6 +2557,7 @@ class SearchIndexFactory
 
     /**
      * @param html to raw text
+     *
      * @return string
      */
     public
@@ -2525,6 +2569,7 @@ class SearchIndexFactory
 
     /**
      * @param NodeInterface $node
+     *
      * @return NodeInterface
      */
     protected
@@ -2538,6 +2583,7 @@ class SearchIndexFactory
 
     /**
      * @param NodeInterface $node
+     *
      * @return NodeInterface
      */
     protected
@@ -2551,6 +2597,7 @@ class SearchIndexFactory
 
     /**
      * @param NodeInterface $node
+     *
      * @return NodeInterface
      */
     protected
@@ -2592,7 +2639,8 @@ class SearchIndexFactory
      * get rendered turbo node
      *
      * @param Node $node
-     * @param string page|breadcrumb
+     * @param      string page|breadcrumb
+     *
      * @return string
      */
     public
@@ -2602,7 +2650,6 @@ class SearchIndexFactory
 
         $isbreadcrumb = $typoscriptPath == 'breadcrumb' ? true : false;
         $ispage = $typoscriptPath == 'page' ? true : false;
-
 
 
         $i = $node->getNodeType()->getConfiguration('hybridsearch.render') ? 1 : 0;
@@ -2738,8 +2785,10 @@ class SearchIndexFactory
 
     /**
      * filesize human redable
-     * @param $bytes
+     *
+     * @param     $bytes
      * @param int $decimals
+     *
      * @return string
      */
     public
@@ -2752,7 +2801,9 @@ class SearchIndexFactory
 
     /**
      * get all keys from array
+     *
      * @param $array
+     *
      * @return array
      */
     public
