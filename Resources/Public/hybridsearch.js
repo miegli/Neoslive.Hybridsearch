@@ -3370,11 +3370,13 @@
                                                             };
 
 
-                                                            self.addPendingRequest($http(req).success(function (data) {
+                                                            self.addPendingRequest($http(req).then(function (data) {
 
                                                                 //nodesIndexed = {};
                                                                 var tmpNodes = [];
                                                                 var tmpNodesCounter = 0;
+
+                                                                data = data.data;
 
                                                                 var reqNodesCount = data ? Object.keys(data).length : 0;
 
@@ -3436,27 +3438,30 @@
                                                                                     };
                                                                                 }
 
-                                                                                self.addPendingRequest($http(req).success(function (data) {
-                                                                                    if (data) {
-                                                                                        angular.forEach(groupedByNodeType[nodetype].nodes, function (node, identifier) {
-                                                                                            groupedByNodeTypeNodes.push(data[identifier]);
-                                                                                        });
-                                                                                        requestCountDone++;
-                                                                                        if (staticCachedNodes[nodetype] == undefined) {
-                                                                                            staticCachedNodes[nodetype] = data;
+                                                                                if (group.ref.http !== undefined) {
+                                                                                    self.addPendingRequest($http(req).then(function (data) {
+                                                                                        data = data.data;
+                                                                                        if (data) {
+                                                                                            angular.forEach(groupedByNodeType[nodetype].nodes, function (node, identifier) {
+                                                                                                groupedByNodeTypeNodes.push(data[identifier]);
+                                                                                            });
+                                                                                            requestCountDone++;
+                                                                                            if (staticCachedNodes[nodetype] == undefined) {
+                                                                                                staticCachedNodes[nodetype] = data;
+                                                                                            }
                                                                                         }
-                                                                                    }
-                                                                                    //execute(keyword, groupedByNodeType[nodetype]['nodes'], ref);
-                                                                                    if (requestCountDone == requestCount) {
-                                                                                        execute(keyword, groupedByNodeTypeNodes, ref);
-                                                                                    }
-                                                                                }).error(function (data) {
-                                                                                        requestCountDone++;
+                                                                                        //execute(keyword, groupedByNodeType[nodetype]['nodes'], ref);
                                                                                         if (requestCountDone == requestCount) {
                                                                                             execute(keyword, groupedByNodeTypeNodes, ref);
                                                                                         }
-                                                                                    }
-                                                                                ));
+                                                                                    },function (data) {
+                                                                                            requestCountDone++;
+                                                                                            if (requestCountDone == requestCount) {
+                                                                                                execute(keyword, groupedByNodeTypeNodes, ref);
+                                                                                            }
+                                                                                        }
+                                                                                    ));
+                                                                                }
 
 
                                                                             });
@@ -3476,6 +3481,8 @@
 
 
                                                                 }
+                                                            },function(e) {
+                                                                //
                                                             }));
 
                                                         } else {
@@ -3635,8 +3642,11 @@
                                                         cancel: function (reason) {
                                                             canceller.resolve(reason);
                                                         }
-                                                    }).success(function (data) {
+                                                    }).then(function (data) {
+                                                        data = data.data;
                                                         execute(self.getFilter().getQuery(), data, ref);
+                                                    }, function(e) {
+                                                        //
                                                     }));
                                                 }
                                                 ref.proceeded = true;
@@ -3773,7 +3783,6 @@
 
                         instance.$$data.keywords.push({term: query, metaphone: q});
 
-                        console.log(ref.http);
 
                         ref.socket.once("value", function (data) {
                             if (data.val()) {
@@ -3813,7 +3822,7 @@
 
                                 }
 
-                                console.log(ac,querysegment);
+
                                 self.setAutocomplete(ac, querysegment);
 
                                 instance.$$data.proceeded.push(1);
@@ -6114,8 +6123,7 @@
 
                     var counter = 0;
                     angular.forEach(Object.keys(self.$$data.autocompleteKeys), function (a) {
-                        //if (query !== a.toLowerCase() && autocompleteTemp[a] == undefined) {
-                        if (query !== a.toLowerCase() && a.indexOf(query) == 0 && autocompleteTemp[a] == undefined) {
+                        if (query !== a.toLowerCase() && a.indexOf(query) >= 0 && autocompleteTemp[a] == undefined) {
                             self.$$data.autocomplete.push(a);
                             autocompleteTemp[a] = true;
                         }
@@ -6128,7 +6136,7 @@
                     autocompleteTemp = {};
 
 
-                    if (self.$$data.autocomplete.length > 32) {
+                    if (self.$$data.autocomplete.length > 64) {
                         angular.forEach(self.$$data.autocomplete, function (a) {
                             if (autocompleteTemp[a] == undefined) {
                                 var m = metaphone(a.substr(0, a.length - 3));
@@ -6165,14 +6173,10 @@
                         });
 
 
-
                         self.$$data.autocomplete = autocompleteTempPostProcessed;
 
 
                     }
-
-
-
 
 
                     this.getApp().applyScope();
