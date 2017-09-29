@@ -1398,7 +1398,7 @@ class SearchIndexFactory
                         $this->keywords->$workspaceHash->$dimensionConfigurationHash->$k = new \stdClass();
                     }
                     $this->keywords->$workspaceHash->$dimensionConfigurationHash->$k->$kek = $vev;
-                    $kek1 = substr($kek,0,4);
+                    $kek1 = mb_substr($kek,0,4);
                     $this->keywords->$workspaceHash->$dimensionConfigurationHash->$k->$kek1 = $vev;
                 }
 
