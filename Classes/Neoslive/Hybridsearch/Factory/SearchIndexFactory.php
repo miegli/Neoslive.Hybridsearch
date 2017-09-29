@@ -1398,6 +1398,8 @@ class SearchIndexFactory
                         $this->keywords->$workspaceHash->$dimensionConfigurationHash->$k = new \stdClass();
                     }
                     $this->keywords->$workspaceHash->$dimensionConfigurationHash->$k->$kek = $vev;
+                    $kek1 = substr($kek,0,4);
+                    $this->keywords->$workspaceHash->$dimensionConfigurationHash->$k->$kek1 = $vev;
                 }
 
             }
@@ -2414,9 +2416,7 @@ class SearchIndexFactory
                         }
 
                         if ($dimensionIndexDataAllVal) {
-                            $dimensionIndexDataAllKeyShort = mb_substr($dimensionIndexDataAllKey,0,4);
                             $patchUpdate["sites/" . $this->getSiteIdentifier() . "/keywords/$workspace/$branch/$dimensionIndex/$dimensionIndexKey/$dimensionIndexDataAllKey"] = $dimensionIndexDataAllVal;
-                            $patchUpdate["sites/" . $this->getSiteIdentifier() . "/keywords/$workspace/$branch/$dimensionIndex/$dimensionIndexKey/$dimensionIndexDataAllKeyShort"] = $dimensionIndexDataAllVal;
                         }
 
 
