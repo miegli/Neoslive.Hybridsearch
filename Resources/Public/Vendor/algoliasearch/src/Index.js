@@ -174,7 +174,7 @@ Index.prototype.saveObject = function(object, callback) {
     hostType: 'write',
     callback: callback
   });
-};
+}
 
 /*
 * Override the content of several objects
@@ -471,7 +471,7 @@ Index.prototype.browseAll = function(query, queryParameters) {
 * Get a Typeahead.js adapter
 * @param searchParams contains an object with query parameters (see search for details)
 */
-Index.prototype.ttAdapter = function(params) {
+Index.prototype.ttAdapter = deprecate(function(params) {
   var self = this;
   return function ttAdapter(query, syncCb, asyncCb) {
     var cb;
@@ -493,7 +493,9 @@ Index.prototype.ttAdapter = function(params) {
       cb(content.hits);
     });
   };
-};
+},
+'ttAdapter is not necessary anymore and will be removed in the next version,\n' +
+'have a look at autocomplete.js (https://github.com/algolia/autocomplete.js)');
 
 /*
 * Wait the publication of a task on the server.

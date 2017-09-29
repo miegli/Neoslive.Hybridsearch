@@ -1,4 +1,33 @@
 CHANGELOG
+2017-09-22 3.24.4
+  * chore(build): provide jsDelivr the right file (#599)
+
+2017-07-24 3.24.3
+  * chore(deprecation): remove deprecation from singular/plural methods; all these methods will stay existing
+    * index.addObject(obj) or index.addObjects([obj])
+    * index.partialUpdateObject(obj) or partialUpdateObjects([obj])
+    * index.saveObject(obj) or index.saveObjects([obj])
+    * index.deleteObject(objectID) or index.deleteObjects([objectID])
+    * index.getObject(objectID) or index.getObjects([objectID])
+
+2017-07-24 3.24.2
+  * chore(deprecation): add deprecation message to all methods that will be removed in v4 (#573)
+    * index.addObject(obj) --> index.addObjects([obj])
+    * index.ttAdapter --> autocomplete.js
+    * index.partialUpdateObject(obj) --> partialUpdateObjects([obj])
+    * index.saveObject(obj) --> index.saveObjects([obj])
+    * index.deleteObject(objectID) --> index.deleteObjects([objectID])
+    * index.getObject(objectID) --> index.getObjects([objectID])
+    * see https://github.com/algolia/algoliasearch-client-javascript/wiki/Deprecated for more information
+
+2017-07-20 3.24.1
+  * feat(headers): add functions to remove and get extra headers (#572)
+    * client.setExtraHeader('X-cool-header','hello there');
+    * client.getExtraHeader('X-cool-header'); //hello there
+    * client.unsetExtraHeader('X-cool-header');
+    * client.getExtraHeader('X-cool-header'); //undefined
+  * feat(deprecation): use console.warn to be more visible
+  * refact(rules): Adapt to latest JSON schema for Query Rules
 
 2017-06-21 3.24.0
   * feat(rules): Add query rules beta version, you cannot use this for now

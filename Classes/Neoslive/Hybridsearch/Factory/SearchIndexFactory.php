@@ -1398,7 +1398,7 @@ class SearchIndexFactory
                     }
                     $this->keywords->$workspaceHash->$dimensionConfigurationHash->$k->$kek = $vev;
 
-                    
+
                     $k1 = mb_substr($k,0,4);
                     if (property_exists($this->keywords->$workspaceHash->$dimensionConfigurationHash, $k1) === false) {
                         $this->keywords->$workspaceHash->$dimensionConfigurationHash->$k1 = new \stdClass();

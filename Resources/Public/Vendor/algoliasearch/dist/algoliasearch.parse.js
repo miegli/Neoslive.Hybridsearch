@@ -974,7 +974,7 @@ module.exports =
 	    hostType: 'write',
 	    callback: callback
 	  });
-	};
+	}
 
 	/*
 	* Override the content of several objects
@@ -1271,7 +1271,7 @@ module.exports =
 	* Get a Typeahead.js adapter
 	* @param searchParams contains an object with query parameters (see search for details)
 	*/
-	Index.prototype.ttAdapter = function(params) {
+	Index.prototype.ttAdapter = deprecate(function(params) {
 	  var self = this;
 	  return function ttAdapter(query, syncCb, asyncCb) {
 	    var cb;
@@ -1293,7 +1293,9 @@ module.exports =
 	      cb(content.hits);
 	    });
 	  };
-	};
+	},
+	'ttAdapter is not necessary anymore and will be removed in the next version,\n' +
+	'have a look at autocomplete.js (https://github.com/algolia/autocomplete.js)');
 
 	/*
 	* Wait the publication of a task on the server.
@@ -2527,7 +2529,7 @@ module.exports =
 	  function deprecated() {
 	    if (!warned) {
 	      /* eslint no-console:0 */
-	      console.log(message);
+	      console.warn(message);
 	      warned = true;
 	    }
 
@@ -2544,11 +2546,10 @@ module.exports =
 
 	module.exports = function deprecatedMessage(previousUsage, newUsage) {
 	  var githubAnchorLink = previousUsage.toLowerCase()
-	    .replace('.', '')
-	    .replace('()', '');
+	    .replace(/[\.\(\)]/g, '');
 
 	  return 'algoliasearch: `' + previousUsage + '` was replaced by `' + newUsage +
-	    '`. Please see https://github.com/algolia/algoliasearch-client-js/wiki/Deprecated#' + githubAnchorLink;
+	    '`. Please see https://github.com/algolia/algoliasearch-client-javascript/wiki/Deprecated#' + githubAnchorLink;
 	};
 
 
@@ -2982,7 +2983,7 @@ module.exports =
 	  this.hosts.read = map(this.hosts.read, prepareHost(protocol));
 	  this.hosts.write = map(this.hosts.write, prepareHost(protocol));
 
-	  this.extraHeaders = [];
+	  this.extraHeaders = {};
 
 	  // In some situations you might want to warm the cache
 	  this.cache = opts._cache || {};
@@ -3013,9 +3014,25 @@ module.exports =
 	* @param value the header field value
 	*/
 	AlgoliaSearchCore.prototype.setExtraHeader = function(name, value) {
-	  this.extraHeaders.push({
-	    name: name.toLowerCase(), value: value
-	  });
+	  this.extraHeaders[name.toLowerCase()] = value;
+	};
+
+	/**
+	* Get the value of an extra HTTP header
+	*
+	* @param name the header field name
+	*/
+	AlgoliaSearchCore.prototype.getExtraHeader = function(name) {
+	  return this.extraHeaders[name.toLowerCase()];
+	};
+
+	/**
+	* Remove an extra field from the HTTP request
+	*
+	* @param name the header field name
+	*/
+	AlgoliaSearchCore.prototype.unsetExtraHeader = function(name) {
+	  delete this.extraHeaders[name.toLowerCase()];
 	};
 
 	/**
@@ -3357,11 +3374,9 @@ module.exports =
 	    requestHeaders['x-algolia-tagfilters'] = this.securityTags;
 	  }
 
-	  if (this.extraHeaders) {
-	    forEach(this.extraHeaders, function addToRequestHeaders(header) {
-	      requestHeaders[header.name] = header.value;
-	    });
-	  }
+	  forEach(this.extraHeaders, function addToRequestHeaders(value, key) {
+	    requestHeaders[key] = value;
+	  });
 
 	  return requestHeaders;
 	};
@@ -3761,7 +3776,7 @@ module.exports =
 
 	
 
-	module.exports = '3.24.0';
+	module.exports = '3.24.4';
 
 
 /***/ }

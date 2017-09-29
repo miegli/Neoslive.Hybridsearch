@@ -44,6 +44,7 @@ You can find the full reference on [Algolia's website](https://www.algolia.com/d
     * [Frontend](#frontend)
     * [Node.js / React Native / Browserify / webpack](#nodejs--react-native--browserify--webpack)
     * [TypeScript typings](#typescript-typings)
+    * [NativeScript](#nativescript)
     * [Bower](#bower)
     * [&lt;script&gt; tag using CDNs](#script-tag-using-cdns)
     * [Search only/lite client](#search-onlylite-client)
@@ -95,6 +96,11 @@ For Typescript typings, we provide the definition file via [typings](https://git
 npm install --save @types/algoliasearch
 ```
 
+#### NativeScript
+
+```sh
+tns plugin add nativescript-algolia
+```
 #### Bower
 
 ```sh
@@ -152,7 +158,7 @@ var client = algoliasearch('applicationID', 'apiKey');
 
 ### Push data
 
-Without any prior configuration, you can start indexing [500 contacts](https://github.com/algolia/algoliasearch-client-csharp/blob/master/contacts.json) in the `contacts` index using the following code:
+Without any prior configuration, you can start indexing [500 contacts](https://github.com/algolia/datasets-public/blob/master/contacts.json) in the `contacts` index using the following code:
 
 ```js
 var index = client.initIndex('contacts');

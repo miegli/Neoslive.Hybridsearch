@@ -1,6 +1,6 @@
 {
   "name": "algoliasearch",
-  "version": "3.24.0",
+  "version": "3.24.4",
   "homepage": "https://github.com/algolia/algoliasearch-client-js",
   "authors": [
     "Algolia Team <support@algolia.com>"
@@ -21,11 +21,11 @@
     "bower_components",
     "test"
   ],
-  "_release": "3.24.0",
+  "_release": "3.24.4",
   "_resolution": {
     "type": "version",
-    "tag": "3.24.0",
-    "commit": "04c3e9e6ff9532a9f30853a197fed93936b23fb8"
+    "tag": "3.24.4",
+    "commit": "11eab458ca454851fbd9cc3a3651aa0a779128f3"
   },
   "_source": "https://github.com/algolia/algoliasearch-client-js.git",
   "_target": "*",
