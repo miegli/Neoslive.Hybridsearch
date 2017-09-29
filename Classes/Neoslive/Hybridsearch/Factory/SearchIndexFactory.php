@@ -1548,7 +1548,7 @@ class SearchIndexFactory
         if ($s == '0000' || $s == '') {
             return preg_replace("/[^0-9]/", "", $string);
         } else {
-            return mb_substr($s,0,4);
+            return $s;
         }
 
 
@@ -2414,7 +2414,9 @@ class SearchIndexFactory
                         }
 
                         if ($dimensionIndexDataAllVal) {
+                            $dimensionIndexDataAllKeyShort = mb_substr($dimensionIndexDataAllKey,0,4);
                             $patchUpdate["sites/" . $this->getSiteIdentifier() . "/keywords/$workspace/$branch/$dimensionIndex/$dimensionIndexKey/$dimensionIndexDataAllKey"] = $dimensionIndexDataAllVal;
+                            $patchUpdate["sites/" . $this->getSiteIdentifier() . "/keywords/$workspace/$branch/$dimensionIndex/$dimensionIndexKey/$dimensionIndexDataAllKeyShort"] = $dimensionIndexDataAllVal;
                         }
 
 
