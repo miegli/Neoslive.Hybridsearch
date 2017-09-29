@@ -1375,6 +1375,8 @@ class SearchIndexFactory
 
         $keywordsOfNode = array();
 
+        ksort($keywords);
+
 
         foreach ($keywords as $keyword => $val) {
 
@@ -1398,8 +1400,14 @@ class SearchIndexFactory
                         $this->keywords->$workspaceHash->$dimensionConfigurationHash->$k = new \stdClass();
                     }
                     $this->keywords->$workspaceHash->$dimensionConfigurationHash->$k->$kek = $vev;
+
                     $kek1 = mb_substr($kek,0,4);
-                    $this->keywords->$workspaceHash->$dimensionConfigurationHash->$k->$kek1 = $vev;
+                    if (property_exists($this->keywords->$workspaceHash->$dimensionConfigurationHash->$k,$kek1) && is_array($this->keywords->$workspaceHash->$dimensionConfigurationHash->$k->$kek1)) {
+                        array_push($this->keywords->$workspaceHash->$dimensionConfigurationHash->$k->$kek1,$vev);
+                    }
+
+
+
                 }
 
             }
