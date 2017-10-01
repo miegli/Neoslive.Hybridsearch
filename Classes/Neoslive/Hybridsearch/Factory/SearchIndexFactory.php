@@ -1399,12 +1399,13 @@ class SearchIndexFactory
                     $this->keywords->$workspaceHash->$dimensionConfigurationHash->$k->$kek = $vev;
 
 
-                    $vev1 = mb_substr($kek,0,4);
-                    $k1 = $this->getMetaphone($vev1);
-                    if (property_exists($this->keywords->$workspaceHash->$dimensionConfigurationHash, $k1) === false) {
-                        $this->keywords->$workspaceHash->$dimensionConfigurationHash->$k1 = new \stdClass();
+                    $k1 = $this->getMetaphone(mb_substr($kek,0,4));
+                    if (mb_strlen($k1) && is_string($k1)) {
+                        if (property_exists($this->keywords->$workspaceHash->$dimensionConfigurationHash, $k1) === false) {
+                            $this->keywords->$workspaceHash->$dimensionConfigurationHash->$k1 = new \stdClass();
+                        }
+                        $this->keywords->$workspaceHash->$dimensionConfigurationHash->$k1->$kek = $vev;
                     }
-                    $this->keywords->$workspaceHash->$dimensionConfigurationHash->$k1->$kek = $vev;
 
                 }
 
