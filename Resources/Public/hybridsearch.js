@@ -3778,6 +3778,7 @@
                         ref.socket = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + q);
                         ref.http = (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + ("/sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + q + ".json");
 
+
                         instance.$$data.keywords.push({term: query, metaphone: q});
 
 
@@ -6123,63 +6124,19 @@
                     var autocompleteTempPostProcessed = [];
                     var autocompleteTemp = {};
 
-
                     angular.forEach(self.$$data.autocomplete, function (a) {
 
-                            if (autocompleteTemp[a] == undefined && a.indexOf(query) > -1 && autocompleteTemp[a] !== query) {
+                        var a = a.trim();
+
+                            if (a.indexOf(query) >= 0 && autocompleteTemp[a] == undefined && a !== query) {
                                 autocompleteTempPostProcessed.push(a);
                             }
                             autocompleteTemp[a] = true;
                     });
                     
-                    self.$$data.autocomplete = autocompleteTempPostProcessed;
 
-                    //
-                    // var autocompleteTempPostProcessed = [];
-                    // autocompleteTemp = {};
-                    //
-                    //
-                    // if (self.$$data.autocomplete.length > 64) {
-                    //     angular.forEach(self.$$data.autocomplete, function (a) {
-                    //         if (autocompleteTemp[a] == undefined) {
-                    //             var m = metaphone(a.substr(0, a.length - 3));
-                    //             if (autocompleteTemp[m] == undefined) {
-                    //                 autocompleteTempPostProcessed.push(a);
-                    //             }
-                    //             autocompleteTemp[m] = true;
-                    //
-                    //         }
-                    //         autocompleteTemp[a] = true;
-                    //     });
-                    //     self.$$data.autocomplete = autocompleteTempPostProcessed;
-                    // } else {
-                    //
-                    //     angular.forEach(self.$$data.autocomplete, function (a) {
-                    //         if (autocompleteTemp[a] == undefined) {
-                    //
-                    //             // if (a.substr(0, 1).isNaN == true) {
-                    //             //     var m1 = a.substr(0, a.length - 1);
-                    //             //     var m2 = a.substr(0, a.length - 2);
-                    //             //     if (autocompleteTemp[m1] == undefined) {
-                    //             //         autocompleteTempPostProcessed.push(a);
-                    //             //         autocompleteTemp[m1] = true;
-                    //             //         autocompleteTemp[m2] = true;
-                    //             //     }
-                    //             // } else {
-                    //                 autocompleteTempPostProcessed.push(a);
-                    //                 autocompleteTemp[a] = true;
-                    //            // }
-                    //
-                    //         }
-                    //         autocompleteTemp[a] = true
-                    //         ;
-                    //     });
-                    //
-                    //
-                    //     self.$$data.autocomplete = autocompleteTempPostProcessed;
+                   self.$$data.autocomplete = autocompleteTempPostProcessed;
 
-
-                    //}
 
                     window.setTimeout(function () {
                         //      self.getApp().applyScope();

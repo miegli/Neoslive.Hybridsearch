@@ -1399,7 +1399,8 @@ class SearchIndexFactory
                     $this->keywords->$workspaceHash->$dimensionConfigurationHash->$k->$kek = $vev;
 
 
-                    $k1 = mb_substr($k,0,4);
+                    $vev1 = mb_substr($vev,0,4);
+                    $k1 = $this->getMetaphone($vev1);
                     if (property_exists($this->keywords->$workspaceHash->$dimensionConfigurationHash, $k1) === false) {
                         $this->keywords->$workspaceHash->$dimensionConfigurationHash->$k1 = new \stdClass();
                     }
