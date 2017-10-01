@@ -3803,11 +3803,11 @@
                                 if (ismatch == false) {
 
                                     angular.forEach(kwds, function (v, k) {
-                                        if (query.indexOf(v.term.substr(0, 3)) >= 0) {
+                                       // if (query.indexOf(v.term.substr(0, 3)) >= 0) {
                                             instance.$$data.keywords.push({term: v.term, metaphone: q});
                                             ismatch = true;
                                             ac[v.term] = v.term;
-                                        }
+                                        //}
                                     });
 
                                 }
@@ -6047,13 +6047,7 @@
                     query = query.toLowerCase();
 
                     angular.forEach(Object.keys(autocomplete), function (a) {
-                        a = a.replace(/-/g, " ").trim().split(" ", 6).join(" ");
-                        //a = a.replace(/-/g, " ").trim();
-                        if (a.length > 1 && self.$$data.autocompleteKeys[a] == undefined) {
                             self.$$data.autocompleteKeys[a] = true;
-                        }
-
-
                     });
 
 
@@ -6126,6 +6120,19 @@
                         counter++;
                     });
 
+                    var autocompleteTempPostProcessed = [];
+                    var autocompleteTemp = {};
+
+
+                    angular.forEach(self.$$data.autocomplete, function (a) {
+
+                            if (autocompleteTemp[a] == undefined && a.indexOf(query) > -1 && autocompleteTemp[a] !== query) {
+                                autocompleteTempPostProcessed.push(a);
+                            }
+                            autocompleteTemp[a] = true;
+                    });
+                    
+                    self.$$data.autocomplete = autocompleteTempPostProcessed;
 
                     //
                     // var autocompleteTempPostProcessed = [];
@@ -6175,7 +6182,7 @@
                     //}
 
                     window.setTimeout(function () {
-                  //      self.getApp().applyScope();
+                        //      self.getApp().applyScope();
                     });
 
 
