@@ -1504,13 +1504,14 @@ class SearchIndexFactory
         // reduce
         $wordsReduced = array();
 
+
         foreach ($words as $w) {
 
             $w = trim($w, "-");
             $x = explode(" ", $w);
             $w = $x[0];
 
-            if (strlen($w) > 1 && strlen($w) < 25) {
+            if (strlen($w) > 1 && strlen($w) < 25 && substr($w,-5,1) !== '.' && substr($w,-4,1) !== '.') {
 
                 $wm = $this->getMetaphone($w);
 
