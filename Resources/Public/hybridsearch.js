@@ -6128,16 +6128,17 @@
                     angular.forEach(self.$$data.autocomplete.reverse(), function (a) {
 
                         var a = a.trim();
-                        var b = metaphone(a,6);
-                            if (a.indexOf(query) >= 0 && autocompleteTemp[a] == undefined && autocompleteTemp[b] == undefined && a !== query) {
+                        var b = metaphone(a,7);
+                            if (a.indexOf(query) >= 0 && autocompleteTemp[a] == undefined && autocompleteTemp[b] == undefined && a !== query && a.substr(-5,5).indexOf(" ") == -1) {
                                 autocompleteTempPostProcessed.push(a);
                                 autocompleteTemp[b] = true;
+                                autocompleteTemp[a] = true;
                             }
-                            autocompleteTemp[a] = true;
+
                     });
                     
 
-                   self.$$data.autocomplete = autocompleteTempPostProcessed;
+                   self.$$data.autocomplete = autocompleteTempPostProcessed.sort();
 
 
                     window.setTimeout(function () {
