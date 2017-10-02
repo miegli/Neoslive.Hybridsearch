@@ -3784,6 +3784,8 @@
 
                         ref.socket.once("value", function (data) {
                             if (data.val()) {
+                                
+
 
                                 var kwds = [];
                                 var ac = {};
@@ -3797,8 +3799,8 @@
                                 angular.forEach(kwds, function (v, k) {
                                     if (ismatch == false && v.term == query) {
                                         ismatch = true;
-                                        ac[v.term] = v.term;
                                     }
+                                    ac[v.term] = v.term;
                                 });
 
                                 if (ismatch == false) {
@@ -3819,7 +3821,6 @@
                                     });
 
                                 }
-
 
                                 self.setAutocomplete(ac, querysegment);
 
