@@ -3784,7 +3784,6 @@
 
                         ref.socket.once("value", function (data) {
                             if (data.val()) {
-                                
 
 
                                 var kwds = [];
@@ -3806,10 +3805,10 @@
                                 if (ismatch == false) {
 
                                     angular.forEach(kwds, function (v, k) {
-                                       // if (query.indexOf(v.term.substr(0, 3)) >= 0) {
-                                            instance.$$data.keywords.push({term: v.term, metaphone: q});
-                                            ismatch = true;
-                                            ac[v.term] = v.term;
+                                        // if (query.indexOf(v.term.substr(0, 3)) >= 0) {
+                                        instance.$$data.keywords.push({term: v.term, metaphone: q});
+                                        ismatch = true;
+                                        ac[v.term] = v.term;
                                         //}
                                     });
 
@@ -6049,95 +6048,94 @@
                     query = query.toLowerCase();
 
                     angular.forEach(Object.keys(autocomplete), function (a) {
-                            self.$$data.autocompleteKeys[a] = true;
+                        self.$$data.autocompleteKeys[a] = true;
                     });
 
 
-                   // self.$$data.autocomplete = [];
+                    // self.$$data.autocomplete = [];
                     var autocompleteTemp = {};
 
 
                     var foundinproperty = null;
-                    var foundinpropertyLength = 0;
+                    var foundinpropertyTmp = null;
 
                     if (self.count() > 0) {
                         angular.forEach(self.getNodes(16), function (node) {
-                            if (node.getScore() > 10) {
-                                if (foundinproperty === null) {
-                                    angular.forEach(node.getProperties(), function (value, property) {
-                                        if (query && typeof value == 'string' && value.toLowerCase().substr(0, query.length + 1) == query + " ") {
-                                            if (foundinpropertyLength == 0 || value.length < foundinpropertyLength) {
-                                                foundinproperty = property;
-                                            }
-                                            foundinpropertyLength = value.length;
+
+                            if (foundinproperty === null) {
+                                angular.forEach(node.getProperties(), function (value, property) {
+
+                                    if (foundinproperty === null && query && typeof value == 'string' && value.length < 64 && value.toLowerCase().indexOf(query) >= 0 && value.substr(query.length, 1) != '.') {
+
+                                        if (foundinpropertyTmp == property) {
+                                            foundinproperty = property;
                                         }
-                                    });
-                                }
+                                        foundinpropertyTmp = property;
+                                    }
+                                });
                             }
+
                         });
                     }
 
                     if (foundinproperty === null) {
                         foundinproperty = '_nodeLabel';
+                    } else {
+                        self.$$data.autocompleteKeys = {};
                     }
 
 
-                    angular.forEach(self.getNodes(16), function (node) {
-                        if (node.getScore() > 10) {
-                            var a = node.getProperty(foundinproperty);
+                    angular.forEach(self.getNodes(60), function (node) {
 
-                            if (typeof a == 'string' && a != '') {
-                                if (a.length < 50 && (caller == undefined || caller.isFiltered(node) == false)) {
-                                    var i = a.toLowerCase().indexOf(query);
-                                    var b = a.substr(i).toLowerCase();
-                                    if (b == query && i >= 0) {
-                                        b = a.substr(0, i + query.length).toLowerCase();
-                                        b = b.trim();
-                                    }
+                        var a = node.getProperty(foundinproperty);
+
+
+                        if (a && typeof a != 'object') {
+                            if (a.length < 50 && (caller == undefined || caller.isFiltered(node) == false)) {
+
+
+                                var i = a.toLowerCase().indexOf(query);
+                                var b = a.substr(i).toLowerCase();
+                                if (b == query && i >= 0) {
+                                    b = a.substr(0, i + query.length).toLowerCase();
                                     b = b.trim();
-                                    if (b.length > query.length && query !== b && autocompleteTemp[b] == undefined && i >= -1 && i < 64) {
-                                       // self.$$data.autocomplete.push(b);
-                                        self.$$data.autocompleteKeys[b] = true;
-                                        autocompleteTemp[b] = true;
-                                    }
                                 }
+                                b = b.trim();
+                                if (b.length > query.length && query !== b && autocompleteTemp[b] == undefined && i >= -1 && i < 64) {
+                                    // self.$$data.autocomplete.push(b);
+                                    self.$$data.autocompleteKeys[b] = true;
+                                    autocompleteTemp[b] = true;
 
+                                }
                             }
+
                         }
 
+
                     });
 
-
-                    //  if (self.$$data.autocomplete.length > 0) {
-                    //    self.$$data.autocompleteKeys = {};
-                    //  return true;
-                    //}
-
-
-                    var counter = 0;
-                    var autocompleteprocess = [];
-                    angular.forEach(Object.keys(self.$$data.autocompleteKeys), function (a) {
-                        // if (query !== a.toLowerCase() && a.indexOf(query) >= 0 && autocompleteTemp[a] == undefined) {
-                        autocompleteprocess.push(a);
-                    });
 
                     var autocompleteTempPostProcessed = [];
                     var autocompleteTemp = {};
 
 
-
-                    angular.forEach(autocompleteprocess.reverse(), function (a) {
+                    angular.forEach(Object.keys(self.$$data.autocompleteKeys).reverse(), function (a) {
 
                         var a = a.trim();
-                        var b = a.indexOf(" ") == query.length-2 ? a : metaphone(a,7);
-                            if (a.indexOf(query) >= 0 && autocompleteTemp[b] == undefined && a !== query) {
-                                autocompleteTempPostProcessed.push(a);
-                                autocompleteTemp[b] = true;
-                            }
-                    });
-                    
+                        var b = typeof a == 'string' ? (a.indexOf(" ") == query.length - 2 ? a : metaphone(a, 7)) : a;
+                        if (b.length == 0) {
+                            b = a;
+                        }
 
-                   self.$$data.autocomplete = autocompleteTempPostProcessed.sort();
+
+                        if ((typeof a !== 'string' || a.indexOf(query) >= 0) && autocompleteTemp[b] == undefined && a !== query) {
+                            autocompleteTempPostProcessed.push(a);
+                            autocompleteTemp[b] = true;
+                        }
+                    });
+
+
+                    self.$$data.autocomplete = autocompleteTempPostProcessed.sort();
 
 
                     window.setTimeout(function () {
