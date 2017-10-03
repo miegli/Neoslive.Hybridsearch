@@ -3779,11 +3779,6 @@
 
                         instance.$$data.running++;
 
-                        if (lastAutocomplateQuery == q) {
-                            // skip
-                            instance.$$data.proceeded.push(1);
-                        } else {
-
                             var ref = {};
                             ref.socket = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + q);
                             ref.http = (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + ("/sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + q + ".json");
@@ -3839,7 +3834,7 @@
 
                             instance.$$data.proceeded.push(1);
                             lastAutocomplateQuery = q;
-                        }
+
 
 
                     }
@@ -6098,31 +6093,17 @@
                     }
 
 
+
                     if (self.count() > 0) {
-                        angular.forEach(self.getNodes(60), function (node) {
+                        angular.forEach(self.getNodes(32), function (node) {
 
                             if (foundinpropertyNodeType === null || node.getNodeType() == foundinpropertyNodeType) {
                                 var a = node.getProperty(foundinproperty);
 
                                 if (a && typeof a != 'object') {
-                                    if (a.length < 50 && (caller == undefined || caller.isFiltered(node) == false)) {
 
-
-                                        var i = a.toLowerCase().indexOf(query);
-                                        var b = a.substr(i).toLowerCase();
-                                        if (b == query && i >= 0) {
-                                            b = a.substr(0, i + query.length).toLowerCase();
-                                            b = b.trim();
-                                        }
-                                        b = b.trim();
-
-
-                                        if (b.length > query.length && query !== b && autocompleteTemp[b] == undefined && i >= -1 && i < 64) {
-                                            // self.$$data.autocomplete.push(b);
-                                            self.$$data.autocompleteKeys[b] = true;
-                                            autocompleteTemp[b] = true;
-
-                                        }
+                                    if (a.length < 128 && a.length > query.length && (caller == undefined || caller.isFiltered(node) == false)) {
+                                            self.$$data.autocompleteKeys[a.toLowerCase()] = true;
                                     }
 
                                 }
@@ -6134,6 +6115,8 @@
                     }
 
 
+
+
                     var autocompleteTempPostProcessed = [];
                     var autocompleteTemp = {};
 
@@ -6141,16 +6124,16 @@
                     angular.forEach(Object.keys(self.$$data.autocompleteKeys).reverse(), function (a) {
 
                         var a = a.trim();
-                        var b = typeof a == 'string' ? (a.indexOf(" ") == query.length - 2 ? a : metaphone(a, 7)) : a;
+                        var b = typeof a == 'string' ? (a.indexOf(" ") == query.length - 2 ? a : metaphone(a)) : a;
                         if (b.length == 0) {
                             b = a;
                         }
-
 
                         if ((typeof a !== 'string' || a.indexOf(query) >= 0) && autocompleteTemp[b] == undefined && a !== query) {
                             autocompleteTempPostProcessed.push(a);
                             autocompleteTemp[b] = true;
                         }
+
                     });
 
 
