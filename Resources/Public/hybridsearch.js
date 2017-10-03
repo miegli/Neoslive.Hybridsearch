@@ -6059,6 +6059,7 @@
 
                     var foundinproperty = null;
                     var foundinpropertyNodeType = null;
+                    var foundinpropertyParentNodeType = null;
                     var foundinpropertyTmp = null;
 
                     if (self.count() > 0) {
@@ -6074,6 +6075,7 @@
                                         if (foundinpropertyTmp == property) {
                                             foundinproperty = property;
                                             foundinpropertyNodeType = node.getNodeType();
+                                            foundinpropertyParentNodeType = node.grandParentNode.nodeType;
                                         }
                                         if (foundinpropertyTmp == null) {
                                             foundinpropertyTmp = property;
@@ -6088,8 +6090,9 @@
                     if (foundinproperty === null) {
                         foundinproperty = '_nodeLabel';
                         foundinpropertyNodeType = null;
+                        foundinpropertyParentNodeType = null;
                     } else {
-                        self.$$data.autocompleteKeys = {};
+                       self.$$data.autocompleteKeys = {};
                     }
 
 
@@ -6097,12 +6100,13 @@
                     if (self.count() > 0) {
                         angular.forEach(self.getNodes(32), function (node) {
 
-                            if (foundinpropertyNodeType === null || node.getNodeType() == foundinpropertyNodeType) {
+                            if ((foundinpropertyNodeType === null || node.getNodeType() == foundinpropertyNodeType) && (foundinpropertyParentNodeType == null || node.grandParentNode.nodeType == foundinpropertyParentNodeType)) {
                                 var a = node.getProperty(foundinproperty);
+
 
                                 if (a && typeof a != 'object') {
 
-                                    if (a.length < 128 && a.length > query.length && (caller == undefined || caller.isFiltered(node) == false)) {
+                                    if (a.length < 64 && a.length > query.length && (caller == undefined || caller.isFiltered(node) == false)) {
                                             self.$$data.autocompleteKeys[a.toLowerCase()] = true;
                                     }
 
