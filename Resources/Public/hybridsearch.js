@@ -218,7 +218,8 @@
                     searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier,
                     nodesByIdentifier, searchCounter, searchCounterTimeout, nodeTypeProperties, isloadedall,
                     externalSources, isLoadedFromLocalStorage, lastSearchHash, lastSearchApplyTimeout, config,
-                    getKeywordsTimeout, getIndexTimeout, setIndexTimeout, staticCachedNodes, searchTimeout, lastAutocomplateQuery;
+                    getKeywordsTimeout, getIndexTimeout, setIndexTimeout, staticCachedNodes, searchTimeout,
+                    lastAutocomplateQuery;
 
                 var self = this;
 
@@ -2484,7 +2485,7 @@
                                             }
                                         });
                                         if (result.length - filteredNodes === 0) {
-                                            result = lunrSearch.search(self.getFilter().getQuery().substr(0,self.getFilter().getQuery().length-2), {
+                                            result = lunrSearch.search(self.getFilter().getQuery().substr(0, self.getFilter().getQuery().length - 2), {
                                                 fields: fields,
                                                 bool: "OR",
                                                 expand: true
@@ -6062,20 +6063,26 @@
 
 
                     var foundinproperty = null;
+                    var foundinpropertyNodeType = null;
                     var foundinpropertyTmp = null;
 
                     if (self.count() > 0) {
                         angular.forEach(self.getNodes(16), function (node) {
 
                             if (foundinproperty === null) {
+
+
                                 angular.forEach(node.getProperties(), function (value, property) {
 
-                                    if (foundinproperty === null && query && typeof value == 'string' && value.length < 64 && value.toLowerCase().indexOf(query) >= 0 && value.substr(query.length, 1) != '.') {
+                                    if (foundinproperty === null && query && typeof value == 'string' && value.length < 64 && value.toLowerCase().indexOf(query) >= 0 && value.substr(query.length, 1) != '.' && value.indexOf("<") == -1) {
 
                                         if (foundinpropertyTmp == property) {
                                             foundinproperty = property;
+                                            foundinpropertyNodeType = node.getNodeType();
                                         }
-                                        foundinpropertyTmp = property;
+                                        if (foundinpropertyTmp == null) {
+                                            foundinpropertyTmp = property;
+                                        }
                                     }
                                 });
                             }
@@ -6085,39 +6092,45 @@
 
                     if (foundinproperty === null) {
                         foundinproperty = '_nodeLabel';
+                        foundinpropertyNodeType = null;
                     } else {
                         self.$$data.autocompleteKeys = {};
                     }
 
+
                     if (self.count() > 0) {
                         angular.forEach(self.getNodes(60), function (node) {
 
-                            var a = node.getProperty(foundinproperty);
+                            if (foundinpropertyNodeType === null || node.getNodeType() == foundinpropertyNodeType) {
+                                var a = node.getProperty(foundinproperty);
+
+                                if (a && typeof a != 'object') {
+                                    if (a.length < 50 && (caller == undefined || caller.isFiltered(node) == false)) {
 
 
-                            if (a && typeof a != 'object') {
-                                if (a.length < 50 && (caller == undefined || caller.isFiltered(node) == false)) {
-
-
-                                    var i = a.toLowerCase().indexOf(query);
-                                    var b = a.substr(i).toLowerCase();
-                                    if (b == query && i >= 0) {
-                                        b = a.substr(0, i + query.length).toLowerCase();
+                                        var i = a.toLowerCase().indexOf(query);
+                                        var b = a.substr(i).toLowerCase();
+                                        if (b == query && i >= 0) {
+                                            b = a.substr(0, i + query.length).toLowerCase();
+                                            b = b.trim();
+                                        }
                                         b = b.trim();
-                                    }
-                                    b = b.trim();
-                                    if (b.length > query.length && query !== b && autocompleteTemp[b] == undefined && i >= -1 && i < 64) {
-                                        // self.$$data.autocomplete.push(b);
-                                        self.$$data.autocompleteKeys[b] = true;
-                                        autocompleteTemp[b] = true;
 
+
+                                        if (b.length > query.length && query !== b && autocompleteTemp[b] == undefined && i >= -1 && i < 64) {
+                                            // self.$$data.autocomplete.push(b);
+                                            self.$$data.autocompleteKeys[b] = true;
+                                            autocompleteTemp[b] = true;
+
+                                        }
                                     }
+
                                 }
-
                             }
 
-
                         });
+
+
                     }
 
 
@@ -6142,7 +6155,6 @@
 
 
                     self.$$data.autocomplete = autocompleteTempPostProcessed.sort();
-
 
 
                     window.setTimeout(function () {
