@@ -218,7 +218,7 @@
                     searchInstancesInterval, lastSearchInstance, lastIndexHash, indexInterval, isNodesByIdentifier,
                     nodesByIdentifier, searchCounter, searchCounterTimeout, nodeTypeProperties, isloadedall,
                     externalSources, isLoadedFromLocalStorage, lastSearchHash, lastSearchApplyTimeout, config,
-                    getKeywordsTimeout, getIndexTimeout, setIndexTimeout, staticCachedNodes, searchTimeout;
+                    getKeywordsTimeout, getIndexTimeout, setIndexTimeout, staticCachedNodes, searchTimeout, lastAutocomplateQuery;
 
                 var self = this;
 
@@ -255,6 +255,7 @@
                 pendingRequests = [];
                 resultGroupedBy = {};
                 resultOrderBy = {};
+                lastAutocomplateQuery = null;
                 getKeywordsTimeout = null;
                 getIndexTimeout = null;
                 setIndexTimeout = null;
@@ -3090,7 +3091,7 @@
                                         lastSearchInstance.execute(self, lastSearchInstance);
                                         self.search(nodes);
                                     }
-                                }, 5);
+                                }, 1);
 
 
                             } else {
@@ -3774,67 +3775,70 @@
 
                         var query = self.getFilter().getQuery();
 
-
                         instance.$$data.running++;
 
-                        var ref = {};
-                        ref.socket = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + q);
-                        ref.http = (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + ("/sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + q + ".json");
+                        if (lastAutocomplateQuery == q) {
+                            // skip
+                            instance.$$data.proceeded.push(1);
+                        } else {
 
+                            var ref = {};
+                            ref.socket = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + q);
+                            ref.http = (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + ("/sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + q + ".json");
 
+                            instance.$$data.keywords.push({term: query, metaphone: q});
+                            ref.socket.once("value", function (data) {
+                                if (data.val()) {
 
-                        instance.$$data.keywords.push({term: query, metaphone: q});
+                                    var kwds = [];
+                                    var ac = {};
 
+                                    angular.forEach(data.val(), function (v, k) {
+                                        kwds.push({term: k, metaphone: q});
+                                    });
 
-                        ref.socket.once("value", function (data) {
-                            if (data.val()) {
-
-
-                                var kwds = [];
-                                var ac = {};
-
-                                angular.forEach(data.val(), function (v, k) {
-                                    kwds.push({term: k, metaphone: q});
-                                });
-
-                                var ismatch = false;
-
-                                angular.forEach(kwds, function (v, k) {
-                                    if (ismatch == false && v.term == query) {
-                                        ismatch = true;
-                                    }
-                                    ac[v.term] = v.term;
-                                });
-
-                                if (ismatch == false) {
+                                    var ismatch = false;
 
                                     angular.forEach(kwds, function (v, k) {
-                                        // if (query.indexOf(v.term.substr(0, 3)) >= 0) {
-                                        instance.$$data.keywords.push({term: v.term, metaphone: q});
-                                        ismatch = true;
+                                        if (ismatch == false && v.term == query) {
+                                            ismatch = true;
+                                        }
                                         ac[v.term] = v.term;
-                                        //}
                                     });
 
+                                    if (ismatch == false) {
+
+                                        angular.forEach(kwds, function (v, k) {
+                                            // if (query.indexOf(v.term.substr(0, 3)) >= 0) {
+                                            instance.$$data.keywords.push({term: v.term, metaphone: q});
+                                            ismatch = true;
+                                            ac[v.term] = v.term;
+                                            //}
+                                        });
+
+                                    }
+
+                                    if (ismatch == false) {
+                                        angular.forEach(kwds, function (v, k) {
+                                            instance.$$data.keywords.push({term: v.term, metaphone: q});
+                                        });
+
+                                    }
+
+                                    self.setAutocomplete(ac, querysegment);
+
+                                    instance.$$data.proceeded.push(1);
+
+                                } else {
+                                    instance.$$data.proceeded.push(1);
                                 }
 
-                                if (ismatch == false) {
-                                    angular.forEach(kwds, function (v, k) {
-                                        instance.$$data.keywords.push({term: v.term, metaphone: q});
-                                    });
+                            });
 
-                                }
+                            instance.$$data.proceeded.push(1);
+                            lastAutocomplateQuery = q;
+                        }
 
-                                self.setAutocomplete(ac, querysegment);
-
-                                instance.$$data.proceeded.push(1);
-                            } else {
-                                instance.$$data.proceeded.push(1);
-                            }
-
-                        });
-
-                        instance.$$data.proceeded.push(1);
 
                     }
 
