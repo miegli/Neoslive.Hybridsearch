@@ -2218,7 +2218,7 @@
 
                         window.setTimeout(function () {
                             self.searchExecute(nodesFromInput, booleanmode, customquery);
-                        }, 10);
+                        }, 1);
 
 
                     },
@@ -2247,7 +2247,7 @@
 
                         window.setTimeout(function () {
                             results.getApp().setSearchCounter(1);
-                        }, 10);
+                        }, 1);
 
 
                         if (self.getFilter().getQuery().length == 0) {
@@ -3090,7 +3090,7 @@
                                         lastSearchInstance.execute(self, lastSearchInstance);
                                         self.search(nodes);
                                     }
-                                }, 25);
+                                }, 5);
 
 
                             } else {
@@ -3439,6 +3439,7 @@
                                                                                 if (group.ref.http !== undefined) {
                                                                                     self.addPendingRequest($http(req).then(function (data) {
                                                                                             data = data.data;
+
                                                                                             if (data) {
                                                                                                 angular.forEach(groupedByNodeType[nodetype].nodes, function (node, identifier) {
                                                                                                     groupedByNodeTypeNodes.push(data[identifier]);
@@ -3447,6 +3448,8 @@
                                                                                                 if (staticCachedNodes[nodetype] == undefined) {
                                                                                                     staticCachedNodes[nodetype] = data;
                                                                                                 }
+                                                                                            } else {
+                                                                                                requestCountDone++;
                                                                                             }
                                                                                             //execute(keyword, groupedByNodeType[nodetype]['nodes'], ref);
                                                                                             if (requestCountDone == requestCount) {
@@ -3777,6 +3780,7 @@
                         var ref = {};
                         ref.socket = hybridsearch.$firebase().database().ref("sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + q);
                         ref.http = (hybridsearch.$$conf.cdnDatabaseURL == undefined ? hybridsearch.$$conf.databaseURL : hybridsearch.$$conf.cdnDatabaseURL) + ("/sites/" + hybridsearch.$$conf.site + "/" + "keywords/" + hybridsearch.$$conf.workspace + "/" + hybridsearch.$$conf.branch + "/" + hybridsearch.$$conf.dimension + "/" + q + ".json");
+
 
 
                         instance.$$data.keywords.push({term: query, metaphone: q});
@@ -4448,7 +4452,7 @@
                                 self.$$app.setSearchIndex();
                             }
 
-                        }, 10);
+                        }, 2);
 
                         self.$$app.getHybridsearch().$$conf.branchInitialized = true;
 
@@ -4688,7 +4692,7 @@
                                 execute(nodesArray);
                             }
 
-                        }, 5);
+                        }, 1);
                     } else {
                         execute(nodesArray);
                     }
@@ -5652,7 +5656,7 @@
                             applyTimeout = setTimeout(function () {
                                 self.getScope().$digest(function () {
                                 });
-                            }, 10);
+                            }, 1);
                         }
 
                     },
@@ -5671,7 +5675,7 @@
                         var self = this;
                         applyTimeout = setTimeout(function () {
                             self.callbackMethod(obj);
-                        }, 10);
+                        }, 1);
 
                     },
                     /**
@@ -6032,10 +6036,6 @@
                         return null;
                     }
 
-                    if (self.count() == 1) {
-                        return null;
-                    }
-
                     if (!autocomplete) {
                         autocomplete = {};
                     }
@@ -6084,35 +6084,36 @@
                         self.$$data.autocompleteKeys = {};
                     }
 
+                    if (self.count() > 0) {
+                        angular.forEach(self.getNodes(60), function (node) {
 
-                    angular.forEach(self.getNodes(60), function (node) {
-
-                        var a = node.getProperty(foundinproperty);
-
-
-                        if (a && typeof a != 'object') {
-                            if (a.length < 50 && (caller == undefined || caller.isFiltered(node) == false)) {
+                            var a = node.getProperty(foundinproperty);
 
 
-                                var i = a.toLowerCase().indexOf(query);
-                                var b = a.substr(i).toLowerCase();
-                                if (b == query && i >= 0) {
-                                    b = a.substr(0, i + query.length).toLowerCase();
+                            if (a && typeof a != 'object') {
+                                if (a.length < 50 && (caller == undefined || caller.isFiltered(node) == false)) {
+
+
+                                    var i = a.toLowerCase().indexOf(query);
+                                    var b = a.substr(i).toLowerCase();
+                                    if (b == query && i >= 0) {
+                                        b = a.substr(0, i + query.length).toLowerCase();
+                                        b = b.trim();
+                                    }
                                     b = b.trim();
-                                }
-                                b = b.trim();
-                                if (b.length > query.length && query !== b && autocompleteTemp[b] == undefined && i >= -1 && i < 64) {
-                                    // self.$$data.autocomplete.push(b);
-                                    self.$$data.autocompleteKeys[b] = true;
-                                    autocompleteTemp[b] = true;
+                                    if (b.length > query.length && query !== b && autocompleteTemp[b] == undefined && i >= -1 && i < 64) {
+                                        // self.$$data.autocomplete.push(b);
+                                        self.$$data.autocompleteKeys[b] = true;
+                                        autocompleteTemp[b] = true;
 
+                                    }
                                 }
+
                             }
 
-                        }
 
-
-                    });
+                        });
+                    }
 
 
                     var autocompleteTempPostProcessed = [];
@@ -6138,9 +6139,10 @@
                     self.$$data.autocomplete = autocompleteTempPostProcessed.sort();
 
 
+
                     window.setTimeout(function () {
-                        //      self.getApp().applyScope();
-                    });
+                        self.getApp().applyScope();
+                    }, 1);
 
 
                     return this;
