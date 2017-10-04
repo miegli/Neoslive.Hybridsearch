@@ -3284,11 +3284,11 @@
                                                             indexdata['__'] = [];
                                                         }
 
-                                                        angular.forEach(data, function (node, id) {
-                                                            if (node !== undefined && node.node !== undefined) {
-                                                                nodes[node.node.identifier] = node.node;
-                                                                indexdata['__'].push(node);
-                                                            }
+                                                        angular.forEach(data, function (n, id) {
+                                                            if (n !== undefined && n.node !== undefined) {
+                                                                    nodes[n.node.identifier] = n.node;
+                                                                }
+                                                            indexdata['__'].push(n);
                                                         });
 
                                                         if (setIndexTimeout) {
