@@ -6072,7 +6072,7 @@
 
                                 angular.forEach(node.getProperties(), function (value, property) {
 
-                                    if (foundinproperty === null && query && typeof value == 'string' && value.length < 64 && value.toLowerCase().indexOf(query) >= 0 && value.substr(query.length, 1) != '.' && value.indexOf("<") == -1) {
+                                    if (foundinproperty === null && query && property !== 'url' && typeof value == 'string' && value.length < 64 && value.toLowerCase().indexOf(query) >= 0 && value.substr(query.length, 1) != '.' && value.indexOf("<") == -1) {
 
                                         if (foundinpropertyTmp == property) {
                                             foundinproperty = property;
@@ -6096,6 +6096,7 @@
                     } else {
                         self.$$data.autocompleteKeys = {};
                     }
+
 
 
                     if (self.count() > 0) {
