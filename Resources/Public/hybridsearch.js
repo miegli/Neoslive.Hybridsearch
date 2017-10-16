@@ -2158,6 +2158,8 @@
                                 expand: true
                             });
 
+
+
                             if (resultsSearch.length == 0) {
                                 var query = self.getFilter().getQuery().substr(0, 4);
                                 resultsSearch = lunrSearch.search(query, {
@@ -2401,7 +2403,7 @@
                                     resultsSearch[0] = lunrSearch.search(customquery == undefined ? self.getFilter().getQuery() : customquery, {
                                         fields: fields,
                                         bool: "AND",
-                                        expand: false
+                                        expand: true
                                     });
 
 
@@ -2513,6 +2515,7 @@
                                             angular.forEach(result, function (item) {
                                                     if (nodes[item.ref] !== undefined) {
                                                         unfilteredResult.push(nodes[item.ref]);
+
                                                     }
                                                 }
                                             );
@@ -2548,7 +2551,8 @@
 
                                 var preOrdered = $filter('orderBy')(preOrdered, function (item) {
 
-                                    item.score = Math.floor((item.score * self.getParentNodeTypeBoostFactor(nodes[item.ref]) * self.getNodeTypeBoostFactor(nodes[item.ref]) * self.getNodeUrlBoostFactor(nodes[item.ref])));
+
+                                    item.score = 1+Math.floor((item.score * self.getParentNodeTypeBoostFactor(nodes[item.ref]) * self.getNodeTypeBoostFactor(nodes[item.ref]) * self.getNodeUrlBoostFactor(nodes[item.ref])));
 
 
                                     if (nodes[item.ref]['__algoliaranking'] !== undefined) {
@@ -3831,6 +3835,8 @@
                                     });
 
                                 }
+
+
 
                                 self.setAutocomplete(ac, querysegment);
 
