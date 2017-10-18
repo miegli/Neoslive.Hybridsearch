@@ -1486,15 +1486,16 @@ class SearchIndexFactory
 
 
                     if (gettype($j) == 'array') {
-                        $text .= " " . (json_encode($j, JSON_UNESCAPED_UNICODE));
-                        $text = preg_replace('/_/', "", mb_strtolower($text));
-                        $text = preg_replace('/\{"(.*)":/', " ", mb_strtolower($text));
+                        $t = (json_encode($j, JSON_UNESCAPED_UNICODE));
+                        $t = preg_replace('/_/', "", mb_strtolower($t));
+                        $t = preg_replace('/\{"(.*)":/', " ", mb_strtolower($t));
+                        $text .= " " . $t;
                     }
+
 
                     if (gettype($j) == 'object') {
-                        $text .= " ".implode(" ",explode(":",implode(" ", explode(',"',implode(" ",explode('":"',json_encode(get_object_vars($value))))))));
+                        $text .= " ".implode(" ",explode(":",implode(" ", explode(',"',implode(" ",explode('":"',json_encode(get_object_vars($j))))))));
                     }
-
 
                 } else {
                     $text .= " " . $value;
@@ -1504,9 +1505,10 @@ class SearchIndexFactory
             } else {
 
                 if (gettype($value) == 'array') {
-                    $text .= " " . (json_encode($value, JSON_UNESCAPED_UNICODE));
-                    $text = preg_replace('/_/', "", mb_strtolower($text));
-                    $text = preg_replace('/\{"(.*)":/', " ", mb_strtolower($text));
+                    $t = (json_encode($value, JSON_UNESCAPED_UNICODE));
+                    $t = preg_replace('/_/', "", mb_strtolower($t));
+                    $t = preg_replace('/\{"(.*)":/', " ", mb_strtolower($t));
+                    $text .= " " . $t;
                 }
 
 
@@ -1560,9 +1562,7 @@ class SearchIndexFactory
 
         $properties = null;
         unset($properties);
-
-
-
+        
         return $keywords;
 
     }
