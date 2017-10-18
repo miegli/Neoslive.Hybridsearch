@@ -1487,12 +1487,21 @@ class SearchIndexFactory
 
 
             } else {
-                $text .= " " . (json_encode($value, JSON_UNESCAPED_UNICODE));
-                $text = preg_replace('/_/', "", mb_strtolower($text));
-                $text = preg_replace('/\{"(.*)":/', " ", mb_strtolower($text));
+
+                if (gettype($value) == 'array') {
+                    $text .= " " . (json_encode($value, JSON_UNESCAPED_UNICODE));
+                    $text = preg_replace('/_/', "", mb_strtolower($text));
+                    $text = preg_replace('/\{"(.*)":/', " ", mb_strtolower($text));
+                }
+
+                if (gettype($value) == 'object') {
+                    $text .= " ".implode(" ",explode(":",implode(" ", explode(',"',implode(" ",explode('":"',json_encode(get_object_vars($value))))))));
+                }
+
             }
 
         }
+
 
 
         $text = (Encoding::UTF8FixWin1252Chars(html_entity_decode($text)));
