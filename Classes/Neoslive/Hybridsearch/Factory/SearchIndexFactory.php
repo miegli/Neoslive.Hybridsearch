@@ -1474,13 +1474,28 @@ class SearchIndexFactory
         foreach ($properties as $property => $value) {
 
 
+
+
             if (gettype($value) == 'string' || is_numeric($value)) {
 
                 $j = json_decode($value);
+
+
+
                 if ($j) {
-                    $text .= " " . (json_encode($j, JSON_UNESCAPED_UNICODE));
-                    $text = preg_replace('/_/', "", mb_strtolower($text));
-                    $text = preg_replace('/\{"(.*)":/', " ", mb_strtolower($text));
+
+
+                    if (gettype($j) == 'array') {
+                        $text .= " " . (json_encode($j, JSON_UNESCAPED_UNICODE));
+                        $text = preg_replace('/_/', "", mb_strtolower($text));
+                        $text = preg_replace('/\{"(.*)":/', " ", mb_strtolower($text));
+                    }
+
+
+                    if (gettype($j) == 'object') {
+                    }
+
+
                 } else {
                     $text .= " " . $value;
                 }
@@ -1494,6 +1509,7 @@ class SearchIndexFactory
                     $text = preg_replace('/\{"(.*)":/', " ", mb_strtolower($text));
                 }
 
+
                 if (gettype($value) == 'object') {
                     $text .= " ".implode(" ",explode(":",implode(" ", explode(',"',implode(" ",explode('":"',json_encode(get_object_vars($value))))))));
                 }
@@ -1501,7 +1517,6 @@ class SearchIndexFactory
             }
 
         }
-
 
 
         $text = (Encoding::UTF8FixWin1252Chars(html_entity_decode($text)));
@@ -1524,6 +1539,7 @@ class SearchIndexFactory
 
                 $wm = $this->getMetaphone($w);
 
+
                 $wm = Encoding::UTF8FixWin1252Chars(trim(str_replace(".", " ", $wm)));
                 $w = Encoding::UTF8FixWin1252Chars(trim(str_replace(".", " ", $w)));
 
@@ -1544,6 +1560,8 @@ class SearchIndexFactory
 
         $properties = null;
         unset($properties);
+
+
 
         return $keywords;
 
