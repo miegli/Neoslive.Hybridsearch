@@ -1491,8 +1491,8 @@ class SearchIndexFactory
                         $text = preg_replace('/\{"(.*)":/', " ", mb_strtolower($text));
                     }
 
-
                     if (gettype($j) == 'object') {
+                        $text .= " ".implode(" ",explode(":",implode(" ", explode(',"',implode(" ",explode('":"',json_encode(get_object_vars($value))))))));
                     }
 
 
