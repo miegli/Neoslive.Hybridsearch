@@ -1066,6 +1066,8 @@ class SearchIndexFactory
                 $node = $context->getNodeByIdentifier($nodedata->getIdentifier());
 
 
+
+
                 if ($node) {
 
 
@@ -1366,6 +1368,8 @@ class SearchIndexFactory
 
         $keywords = $this->generateSearchIndexFromProperties($indexData->properties, $indexData->nodeType);
 
+
+
         unset($indexData->properties->rawcontent);
 
         $nt = "__" . $this->getNodeTypeName($node);
@@ -1524,6 +1528,8 @@ class SearchIndexFactory
         $text = (Encoding::UTF8FixWin1252Chars(html_entity_decode($text)));
         $text = preg_replace('~[^\.\p{L}\p{N}0-9]++~u', " ", mb_strtolower($text));
 
+
+
         $words = explode(" ", ($text));
 
 
@@ -1537,7 +1543,7 @@ class SearchIndexFactory
             $x = explode(" ", $w);
             $w = $x[0];
 
-            if (strlen($w) > 1 && strlen($w) < 25 && substr($w,-5,1) !== '.' && substr($w,-4,1) !== '.') {
+            if (strlen($w) > 1 && strlen($w) < 64 && substr($w,-5,1) !== '.' && substr($w,-4,1) !== '.') {
 
                 $wm = $this->getMetaphone($w);
 
@@ -1562,7 +1568,11 @@ class SearchIndexFactory
 
         $properties = null;
         unset($properties);
-        
+
+        \Neos\Flow\var_dump($keywords);
+
+        exit;
+
         return $keywords;
 
     }
