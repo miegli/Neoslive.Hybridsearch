@@ -1569,10 +1569,7 @@ class SearchIndexFactory
         $properties = null;
         unset($properties);
 
-        \Neos\Flow\var_dump($keywords);
-
-        exit;
-
+  
         return $keywords;
 
     }
