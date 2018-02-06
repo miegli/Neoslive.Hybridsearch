@@ -2400,18 +2400,20 @@
                                     });
 
 
-                                    resultsSearch[0] = lunrSearch.search(self.getResults().$$data.autocomplete.splice(0,20).join(" ") + " " + (customquery == undefined ? self.getFilter().getQuery() : customquery), {
+                                    resultsSearch[0] = lunrSearch.search(self.getFilter().getQuery(), {
+                                        fields: fields,
+                                        bool: "AND",
+                                        expand: false
+                                    });
+
+
+                                    if (resultsSearch[0].length == 0) {
+                                    resultsSearch[1] = lunrSearch.search(self.getResults().$$data.autocomplete.splice(0,20).join(" ") + " " + (customquery == undefined ? self.getFilter().getQuery() : customquery), {
                                         bool: "OR",
                                         expand: true
                                     });
-
-                                    if (resultsSearch[0].length == 0) {
-                                        resultsSearch[1] = lunrSearch.search(self.getFilter().getQuery(), {
-                                            fields: fields,
-                                            bool: "AND",
-                                            expand: false
-                                        });
                                     }
+
 
 
                                     if (resultsSearch[1] != undefined && resultsSearch[1].length == 0) {
