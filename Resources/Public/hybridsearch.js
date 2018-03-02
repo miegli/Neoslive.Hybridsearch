@@ -2380,6 +2380,148 @@
 
                                 } else {
 
+                                    if (Object.keys(lunrSearch.index).length == 0) {
+                                        return self;
+                                    }
+
+                                    var resultsSearch = [];
+                                    var sq = query;
+                                    var qq = self.getFilter().getQuery();
+                                    var qqq = self.getFilter().getQuery().split(" ");
+                                    angular.forEach(qqq, function (i) {
+                                        if (qq.indexOf(i + " ") < 0) {
+                                            sq = sq.replace(" " + i, "");
+                                        } else {
+                                            angular.forEach(sq.split(" "), function (a) {
+                                                if (a.indexOf(i) == 0) {
+                                                    sq = sq.replace(" " + a, " " + i);
+                                                }
+                                            });
+                                        }
+
+                                    });
+
+                                    resultsSearch = lunrSearch.search(self.getFilter().getQuery(), {
+                                        fields: fields,
+                                        bool: "AND",
+                                        expand: true
+                                    });
+
+
+                                    if (resultsSearch.length == 0) {
+
+                                        resultsSearch = lunrSearch.search(self.getFilter().getQuery(), {
+                                            fields: fields,
+                                            bool: "OR",
+                                            expand: true
+                                        });
+                                    }
+
+
+                                    if (resultsSearch.length == 0) {
+
+                                        resultsSearch = lunrSearch.search(sq, {
+                                            fields: fields,
+                                            bool: "AND"
+                                        });
+
+
+                                    }
+
+
+                                    if (resultsSearch.length == 0) {
+
+                                        resultsSearch = lunrSearch.search(sq, {
+                                            fields: fields,
+                                            expand: true,
+                                            bool: "OR"
+                                        });
+
+
+                                    }
+
+
+                                    if (resultsSearch.length == 0) {
+
+                                        resultsSearch = lunrSearch.search(query, {
+                                            fields: fields,
+                                            bool: "OR",
+                                            expand: true
+                                        });
+                                    }
+
+
+                                    if (resultsSearch.length == 0) {
+
+                                        resultsSearch = lunrSearch.search(self.getFilter().getQuery() + " " + query, {
+                                            fields: fields,
+                                            bool: "OR",
+                                            expand: true
+                                        });
+
+                                    }
+
+
+                                    var result = resultsSearch;
+
+
+                                    // check if result has filtered results
+
+                                    if (result.length) {
+                                        var filteredNodes = 0;
+                                        angular.forEach(result, function (item) {
+                                            if (self.isFiltered(nodes[item.ref]) === true) {
+                                                filteredNodes++;
+                                            }
+                                        });
+                                        if (result.length - filteredNodes === 0) {
+                                            result = lunrSearch.search(self.getFilter().getQuery().substr(0, self.getFilter().getQuery().length - 2), {
+                                                fields: fields,
+                                                bool: "OR",
+                                                expand: true
+                                            });
+
+                                        }
+
+                                    }
+
+
+                                    if (result.length > 0) {
+
+                                        if (hasDistinct) {
+                                            angular.forEach(result, function (item) {
+                                                    if (nodes[item.ref] !== undefined) {
+                                                        unfilteredResult.push(nodes[item.ref]);
+
+                                                    }
+                                                }
+                                            );
+                                        }
+
+                                        var resultByNodeType = {};
+                                        angular.forEach(result, function (item) {
+
+
+                                                if (nodes[item.ref] !== undefined) {
+                                                    if (self.isNodesByIdentifier()) {
+                                                        // post filter node
+                                                        if (self.isFiltered(nodes[item.ref]) === false) {
+                                                            preOrdered.push(item);
+                                                        }
+                                                    } else {
+                                                        // dont post filter because filter were applied before while filling search index
+                                                        preOrdered.push(item);
+                                                    }
+
+
+                                                }
+
+                                            }
+                                        );
+
+
+                                    }
+
 
                                 }
 
