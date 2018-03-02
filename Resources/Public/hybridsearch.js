@@ -4172,7 +4172,7 @@
                             return null;
                         }
 
-                        var lunrFields = lunrSearch.getFields();
+
                         angular.forEach(data, function (value, key) {
                                 if (value && (nodesIndexed[value.node.hash] == undefined || value.objectID !== undefined)) {
                                     var doc = {};
@@ -4277,7 +4277,7 @@
                                             }
 
                                             var eachObjecKeys = Object.keys(doc);
-
+                                            var lunrFields = lunrSearch.getFields();
                                             angular.forEach(eachObjecKeys, function (key) {
                                                 if (lunrFields.indexOf(key) < 0) {
                                                     lunrSearch.addField(key);
