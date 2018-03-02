@@ -266,6 +266,7 @@
                 lunrSearch = elasticlunr(function () {
                     this.setRef('id');
                 });
+                elasticlunr.clearStopWords();
 
 
                 /**
@@ -1364,7 +1365,8 @@
                             property = nodetype + "-" + property;
                         }
 
-                        var pb = propertiesBoost !== undefined && propertiesBoost[property] !== undefined ? propertiesBoost[property] : property == 'breadcrumb' ? 50 : property.substr(-28) == 'neoslivehybridsearchkeywords' ? 500 : 10;
+                        var pb = propertiesBoost !== undefined && propertiesBoost[property] !== undefined ? propertiesBoost[property] : property == 'breadcrumb' ? 50 : property == 'neoslivehybridsearchkeywords' ? 500 : 10;
+
                         propertiesBoost[property] = pb;
 
                         return pb;
@@ -2378,174 +2380,7 @@
 
                                 } else {
 
-                                    if (Object.keys(lunrSearch.index).length == 0) {
-                                        return self;
-                                    }
-
-                                    var resultsSearch = [];
-                                    var sq = query;
-                                    var qq = self.getFilter().getQuery();
-                                    var qqq = self.getFilter().getQuery().split(" ");
-                                    angular.forEach(qqq, function (i) {
-                                        if (qq.indexOf(i + " ") < 0) {
-                                            sq = sq.replace(" " + i, "");
-                                        } else {
-                                            angular.forEach(sq.split(" "), function (a) {
-                                                if (a.indexOf(i) == 0) {
-                                                    sq = sq.replace(" " + a, " " + i);
-                                                }
-                                            });
-                                        }
-
-                                    });
-
-
-                                    resultsSearch[0] = lunrSearch.search(self.getFilter().getQuery(), {
-                                        fields: fields,
-                                        bool: "AND",
-                                        expand: false
-                                    });
-
-
-                                    if (resultsSearch[0].length == 0) {
-                                    resultsSearch[1] = lunrSearch.search(self.getResults().$$data.autocomplete.splice(0,20).join(" ") + " " + (customquery == undefined ? self.getFilter().getQuery() : customquery), {
-                                        bool: "OR",
-                                        expand: true
-                                    });
-                                    }
-
-
-
-                                    if (resultsSearch[1] != undefined && resultsSearch[1].length == 0) {
-
-                                        resultsSearch[2] = lunrSearch.search(self.getFilter().getQuery(), {
-                                            fields: fields,
-                                            bool: "AND",
-                                            expand: true
-                                        });
-                                    }
-
-
-                                    if (resultsSearch[2] != undefined && resultsSearch[2].length == 0) {
-
-                                        resultsSearch[3] = lunrSearch.search(sq, {
-                                            fields: fields,
-                                            bool: "AND",
-                                            expand: false
-                                        });
-                                    }
-
-
-                                    if (resultsSearch[3] != undefined && resultsSearch[3].length == 0) {
-                                        resultsSearch[4] = lunrSearch.search(self.getFilter().getQuery(), {
-                                            fields: fields,
-                                            bool: "OR"
-                                        });
-
-
-                                    }
-
-
-                                    if (resultsSearch[4] != undefined && resultsSearch[4].length == 0) {
-
-                                        resultsSearch[5] = lunrSearch.search(self.getFilter().getQuery(), {
-                                            fields: fields,
-                                            bool: "OR",
-                                            expand: true
-                                        });
-                                    }
-
-
-                                    if (resultsSearch[5] != undefined && resultsSearch[5].length == 0) {
-
-                                        resultsSearch[6] = lunrSearch.search(sq, {
-                                            fields: fields,
-                                            bool: "OR",
-                                            expand: false
-                                        });
-                                    }
-
-
-                                    if (resultsSearch[6] != undefined && resultsSearch[6].length == 0) {
-                                        resultsSearch[7] = lunrSearch.search(query, {
-                                            fields: fields,
-                                            bool: "OR",
-                                            expand: true
-                                        });
-                                    }
-
-
-                                    if (resultsSearch[7] != undefined && resultsSearch[7].length == 0) {
-                                        resultsSearch[8] = lunrSearch.search(self.getFilter().getQuery() + " " + query, {
-                                            fields: fields,
-                                            bool: "OR",
-                                            expand: true
-                                        });
-
-                                    }
-
-
-                                    var result = resultsSearch[resultsSearch.length - 1];
-
-
-                                    // check if result has filtered results
-
-                                    if (result.length) {
-                                        var filteredNodes = 0;
-                                        angular.forEach(result, function (item) {
-                                            if (self.isFiltered(nodes[item.ref]) === true) {
-                                                filteredNodes++;
-                                            }
-                                        });
-                                        if (result.length - filteredNodes === 0) {
-                                            result = lunrSearch.search(self.getFilter().getQuery().substr(0, self.getFilter().getQuery().length - 2), {
-                                                fields: fields,
-                                                bool: "OR",
-                                                expand: true
-                                            });
-
-                                        }
-
-                                    }
-
-
-                                    if (result.length > 0) {
-
-                                        if (hasDistinct) {
-                                            angular.forEach(result, function (item) {
-                                                    if (nodes[item.ref] !== undefined) {
-                                                        unfilteredResult.push(nodes[item.ref]);
-
-                                                    }
-                                                }
-                                            );
-                                        }
-
-                                        var resultByNodeType = {};
-                                        angular.forEach(result, function (item) {
-
-
-                                                if (nodes[item.ref] !== undefined) {
-                                                    if (self.isNodesByIdentifier()) {
-                                                        // post filter node
-                                                        if (self.isFiltered(nodes[item.ref]) === false) {
-                                                            preOrdered.push(item);
-                                                        }
-                                                    } else {
-                                                        // dont post filter because filter were applied before while filling search index
-                                                        preOrdered.push(item);
-                                                    }
-
-
-                                                }
-
-                                            }
-                                        );
-
-
-                                    }
-
-
+pwd
                                 }
 
 
@@ -4199,6 +4034,8 @@
                         }
 
 
+                        var lunrFields = lunrSearch.getFields();
+
                         angular.forEach(data, function (value, key) {
                                 if (value && (nodesIndexed[value.node.hash] == undefined || value.objectID !== undefined)) {
                                     var doc = {};
@@ -4298,12 +4135,13 @@
                                                 doc['__google'] = value.node.properties['__google'];
                                             }
 
-                                            if (value.node.properties[value.nodeType + '-neoslivehybridsearchkeywords'] != undefined) {
-                                                doc[value.nodeType + '-neoslivehybridsearchkeywords'] = value.node.properties[value.nodeType + '-neoslivehybridsearchkeywords'];
+                                            if (value.node.properties[value.nodeType + '-neoslivehybridsearchkeywords'] !== undefined) {
+                                                doc['neoslivehybridsearchkeywords'] = value.node.properties[value.nodeType + '-neoslivehybridsearchkeywords'];
+
                                             }
 
                                             var eachObjecKeys = Object.keys(doc);
-                                            var lunrFields = lunrSearch.getFields();
+
                                             angular.forEach(eachObjecKeys, function (key) {
                                                 if (lunrFields.indexOf(key) < 0) {
                                                     lunrSearch.addField(key);
