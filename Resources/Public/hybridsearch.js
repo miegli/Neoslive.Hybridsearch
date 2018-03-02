@@ -268,7 +268,6 @@
                 });
                 elasticlunr.clearStopWords();
 
-
                 /**
                  * @private
                  * global function get property from object
@@ -1365,8 +1364,7 @@
                             property = nodetype + "-" + property;
                         }
 
-                        var pb = propertiesBoost !== undefined && propertiesBoost[property] !== undefined ? propertiesBoost[property] : property == 'breadcrumb' ? 50 : property == 'neoslivehybridsearchkeywords' ? 500 : 10;
-
+                        var pb = propertiesBoost !== undefined && propertiesBoost[property] !== undefined ? propertiesBoost[property] : property == 'breadcrumb' ? 50 : property.substr(-28) == 'neoslivehybridsearchkeywords' ? 500 : 10;
                         propertiesBoost[property] = pb;
 
                         return pb;
@@ -2463,7 +2461,6 @@
 
 
                                     var result = resultsSearch;
-
 
                                     // check if result has filtered results
 
@@ -4175,9 +4172,7 @@
                             return null;
                         }
 
-
                         var lunrFields = lunrSearch.getFields();
-
                         angular.forEach(data, function (value, key) {
                                 if (value && (nodesIndexed[value.node.hash] == undefined || value.objectID !== undefined)) {
                                     var doc = {};
@@ -4277,9 +4272,8 @@
                                                 doc['__google'] = value.node.properties['__google'];
                                             }
 
-                                            if (value.node.properties[value.nodeType + '-neoslivehybridsearchkeywords'] !== undefined) {
-                                                doc['neoslivehybridsearchkeywords'] = value.node.properties[value.nodeType + '-neoslivehybridsearchkeywords'];
-
+                                            if (value.node.properties[value.nodeType + '-neoslivehybridsearchkeywords'] != undefined) {
+                                                doc[value.nodeType + '-neoslivehybridsearchkeywords'] = value.node.properties[value.nodeType + '-neoslivehybridsearchkeywords'];
                                             }
 
                                             var eachObjecKeys = Object.keys(doc);
