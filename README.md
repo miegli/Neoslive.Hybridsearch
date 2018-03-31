@@ -15,8 +15,7 @@ HybridSearch is a powerful realtime search engine written in Javascript/AngularJ
 * Supports up to 100'000 concurrency search request. To reach 100,000 concurrent search requests, you usually first need to accumulate tens of millions of daily actives
 
 ## Demo / Show case 
-- http://phlu.ch.phlu-eduweb5.nine.ch/weiterbildung.html (Neos)
-- http://hybridsearch.io/magento1/search/index.html (Magento 1.9)
+- https://www.phlu.ch (Neos)
 
 ## Implementations
 HybridSearch comes with default integration for [Neos CMS](https://www.neos.io). Other implementations can be done very easy. Default Implementation for Magento is coming soon.
